@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { rootReducer } from '@/store'
 import type { RootState } from '@/store'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
   preloadedState?: Partial<RootState>
@@ -28,19 +29,21 @@ export function renderWithProviders(
 
   function Wrapper({ children }: { children: React.ReactNode }) {
     return (
-      <Provider store={store}>
-        <QueryClientProvider client={queryClient}>
-          <MemoryRouter initialEntries={[route]}>
-            {routePath ? (
-              <Routes>
-                <Route path={routePath} element={children} />
-              </Routes>
-            ) : (
-              children
-            )}
-          </MemoryRouter>
-        </QueryClientProvider>
-      </Provider>
+      <ThemeProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter initialEntries={[route]}>
+              {routePath ? (
+                <Routes>
+                  <Route path={routePath} element={children} />
+                </Routes>
+              ) : (
+                children
+              )}
+            </MemoryRouter>
+          </QueryClientProvider>
+        </Provider>
+      </ThemeProvider>
     )
   }
 
