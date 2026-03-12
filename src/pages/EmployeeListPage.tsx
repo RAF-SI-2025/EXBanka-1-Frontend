@@ -72,6 +72,11 @@ export function EmployeeListPage() {
     if (!filter || !filter.value.trim()) return employees
     const val = filter.value.toLowerCase().trim()
     return employees.filter((emp) => {
+      if (filter.category === 'all') {
+        return (['first_name', 'last_name', 'email', 'position'] as const).some(
+          (field) => emp[field]?.toLowerCase().includes(val) ?? false
+        )
+      }
       const field = emp[filter.category]
       return field?.toLowerCase().includes(val) ?? false
     })

@@ -61,6 +61,22 @@ describe('EmployeeFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith(null)
   })
 
+  it('renders "All" as a category option', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    expect(screen.getByRole('option', { name: /^all$/i })).toBeInTheDocument()
+  })
+
+  it('calls onFilterChange with category "all" when All is selected and input is non-empty', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    const input = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(input, { target: { value: 'test' } })
+    mockOnFilterChange.mockClear()
+
+    fireEvent.click(screen.getByRole('option', { name: /^all$/i }))
+
+    expect(mockOnFilterChange).toHaveBeenCalledWith({ category: 'all', value: 'test' })
+  })
+
   it('updates category and re-emits filter when category changes with non-empty input', () => {
     renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
     const input = screen.getByPlaceholderText(/type to filter/i)
