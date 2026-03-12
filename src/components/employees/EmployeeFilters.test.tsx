@@ -2,52 +2,8 @@ import { screen, fireEvent } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { EmployeeFilters } from '@/components/employees/EmployeeFilters'
 
-// Mock Base UI Select so we can control value changes in jsdom.
-// Uses React context to pass onValueChange down to SelectItem without
-// any render-time side effects (avoids react-hooks/globals lint rule).
-jest.mock('@/components/ui/select', () => {
-  const { createContext, useContext } = jest.requireActual<typeof import('react')>('react')
-
-  const SelectContext = createContext<((v: string | null) => void) | undefined>(undefined)
-
-  function Select({
-    onValueChange,
-    children,
-  }: {
-    value?: string
-    onValueChange?: (v: string | null) => void
-    children?: React.ReactNode
-  }) {
-    return <SelectContext.Provider value={onValueChange}>{children}</SelectContext.Provider>
-  }
-
-  function SelectTrigger({ children }: { children?: React.ReactNode }) {
-    return (
-      <button role="combobox" data-testid="select-trigger">
-        {children}
-      </button>
-    )
-  }
-
-  function SelectContent({ children }: { children?: React.ReactNode }) {
-    return <div data-testid="select-content">{children}</div>
-  }
-
-  function SelectItem({ value, children }: { value: string; children?: React.ReactNode }) {
-    const onValueChange = useContext(SelectContext)
-    return (
-      <div role="option" data-value={value} onClick={() => onValueChange?.(value)}>
-        {children}
-      </div>
-    )
-  }
-
-  function SelectValue() {
-    return null
-  }
-
-  return { Select, SelectTrigger, SelectContent, SelectItem, SelectValue }
-})
+// Shared Select mock — see src/__tests__/mocks/select-mock.tsx
+jest.mock('@/components/ui/select', () => require('@/__tests__/mocks/select-mock'))
 
 const mockOnFilterChange = jest.fn()
 

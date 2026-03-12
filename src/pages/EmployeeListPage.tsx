@@ -73,7 +73,7 @@ export function EmployeeListPage() {
     const val = filter.value.toLowerCase().trim()
     return employees.filter((emp) => {
       const field = emp[filter.category]
-      return field.toLowerCase().includes(val)
+      return field?.toLowerCase().includes(val) ?? false
     })
   }, [data?.employees, filter])
 

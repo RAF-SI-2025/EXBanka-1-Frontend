@@ -5,52 +5,8 @@ import * as employeesApi from '@/lib/api/employees'
 import { createMockEmployee } from '@/__tests__/fixtures/employee-fixtures'
 import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
 
-// Mock Base UI Select so we can control value changes in jsdom.
-// Uses React context to pass onValueChange down to SelectItem without
-// any render-time side effects (avoids react-hooks/globals lint rule).
-jest.mock('@/components/ui/select', () => {
-  const { createContext, useContext } = jest.requireActual<typeof import('react')>('react')
-
-  const SelectContext = createContext<((v: string | null) => void) | undefined>(undefined)
-
-  function Select({
-    onValueChange,
-    children,
-  }: {
-    value?: string
-    onValueChange?: (v: string | null) => void
-    children?: React.ReactNode
-  }) {
-    return <SelectContext.Provider value={onValueChange}>{children}</SelectContext.Provider>
-  }
-
-  function SelectTrigger({ children }: { children?: React.ReactNode }) {
-    return (
-      <button role="combobox" data-testid="select-trigger">
-        {children}
-      </button>
-    )
-  }
-
-  function SelectContent({ children }: { children?: React.ReactNode }) {
-    return <div data-testid="select-content">{children}</div>
-  }
-
-  function SelectItem({ value, children }: { value: string; children?: React.ReactNode }) {
-    const onValueChange = useContext(SelectContext)
-    return (
-      <div role="option" data-value={value} onClick={() => onValueChange?.(value)}>
-        {children}
-      </div>
-    )
-  }
-
-  function SelectValue() {
-    return null
-  }
-
-  return { Select, SelectTrigger, SelectContent, SelectItem, SelectValue }
-})
+// Shared Select mock — see src/__tests__/mocks/select-mock.tsx
+jest.mock('@/components/ui/select', () => require('@/__tests__/mocks/select-mock'))
 
 jest.mock('@/lib/api/employees')
 
@@ -181,5 +137,74 @@ describe('EmployeeListPage', () => {
     expect(screen.getByText('John Smith')).toBeInTheDocument()
     expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
     expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument()
+  })
+})
+
+describe('EmployeeListPage — pagination', () => {
+  // Generate 25 employees: first 20 have last_name "PageOne", last 5 have last_name "PageTwo"
+  const employees25 = Array.from({ length: 25 }, (_, i) =>
+    createMockEmployee({
+      id: i + 1,
+      first_name: `Employee`,
+      last_name: i < 20 ? `PageOne${i + 1}` : `PageTwo${i - 19}`,
+      email: `emp${i + 1}@test.com`,
+    })
+  )
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    jest.mocked(employeesApi.getEmployees).mockResolvedValue({
+      employees: employees25,
+      total_count: 25,
+    })
+  })
+
+  it('shows pagination controls when there are more than 20 employees', async () => {
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Employee PageOne1')
+    expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument()
+    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument()
+  })
+
+  it('shows the first 20 employees on page 1', async () => {
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Employee PageOne1')
+    expect(screen.getByText('Employee PageOne20')).toBeInTheDocument()
+    expect(screen.queryByText('Employee PageTwo1')).not.toBeInTheDocument()
+  })
+
+  it('navigates to page 2 showing the remaining 5 employees when Next is clicked', async () => {
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Employee PageOne1')
+
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+
+    expect(screen.getByText('Employee PageTwo1')).toBeInTheDocument()
+    expect(screen.getByText('Employee PageTwo5')).toBeInTheDocument()
+    expect(screen.queryByText('Employee PageOne1')).not.toBeInTheDocument()
+    expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument()
+  })
+
+  it('navigates back to page 1 when Previous is clicked from page 2', async () => {
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Employee PageOne1')
+
+    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /previous/i }))
+
+    expect(screen.getByText('Employee PageOne1')).toBeInTheDocument()
+    expect(screen.queryByText('Employee PageTwo1')).not.toBeInTheDocument()
+    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument()
   })
 })
