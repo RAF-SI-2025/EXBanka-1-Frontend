@@ -1,49 +1,86 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
-import type { EmployeeFilters as Filters } from '@/types/employee'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import type { FilterCategory } from '@/types/employee'
+
+const FILTER_CATEGORIES: { value: FilterCategory; label: string }[] = [
+  { value: 'first_name', label: 'First Name' },
+  { value: 'last_name', label: 'Last Name' },
+  { value: 'email', label: 'Email' },
+  { value: 'position', label: 'Position' },
+]
 
 interface EmployeeFiltersProps {
-  onFilter: (filters: Filters) => void
+  onFilterChange: (filter: { category: FilterCategory; value: string } | null) => void
 }
 
-export function EmployeeFilters({ onFilter }: EmployeeFiltersProps) {
-  const [search, setSearch] = useState('')
+export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
+  const [category, setCategory] = useState<FilterCategory>('first_name')
+  const [value, setValue] = useState('')
 
-  const applyFilter = useCallback(
-    (value: string) => {
-      const trimmed = value.trim()
-      if (!trimmed) {
-        onFilter({})
-        return
-      }
-      if (trimmed.includes('@')) {
-        onFilter({ email: trimmed })
-      } else {
-        onFilter({ name: trimmed })
-      }
-    },
-    [onFilter]
-  )
+  const handleCategoryChange = (newCategory: string | null) => {
+    if (!newCategory) return
+    const cat = newCategory as FilterCategory
+    setCategory(cat)
+    if (value.trim()) {
+      onFilterChange({ category: cat, value })
+    }
+  }
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      applyFilter(search)
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [search, applyFilter])
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value
+    setValue(newValue)
+    if (newValue.trim()) {
+      onFilterChange({ category, value: newValue })
+    } else {
+      onFilterChange(null)
+    }
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value)
+  const handleClear = () => {
+    setValue('')
+    onFilterChange(null)
   }
 
   return (
-    <div className="mb-4">
-      <Input
-        placeholder="Search by name, email or position..."
-        value={search}
-        onChange={handleChange}
-        className="max-w-sm"
-      />
+    <div className="flex items-center gap-2 mb-4">
+      <Select value={category} onValueChange={handleCategoryChange}>
+        <SelectTrigger className="w-[160px] shrink-0">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {FILTER_CATEGORIES.map((cat) => (
+            <SelectItem key={cat.value} value={cat.value}>
+              {cat.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="relative max-w-sm flex-1">
+        <Input
+          placeholder="Type to filter..."
+          value={value}
+          onChange={handleValueChange}
+          className="pr-8"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label="Clear filter"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-sm"
+          >
+            ✕
+          </button>
+        )}
+      </div>
     </div>
   )
 }

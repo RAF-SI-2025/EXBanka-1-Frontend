@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -8,7 +8,9 @@ import { useEmployees } from '@/hooks/useEmployees'
 import { useEmployee } from '@/hooks/useEmployee'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectCurrentUser } from '@/store/selectors/authSelectors'
-import type { EmployeeFilters as Filters } from '@/types/employee'
+import type { FilterCategory } from '@/types/employee'
+
+const PAGE_SIZE = 20
 
 function MeTab() {
   const currentUser = useAppSelector(selectCurrentUser)
@@ -58,19 +60,34 @@ function MeTab() {
 
 export function EmployeeListPage() {
   const navigate = useNavigate()
-  const [filters, setFilters] = useState<Filters>({ page: 1, page_size: 20 })
-  const { data, isLoading } = useEmployees(filters)
+  const { data, isLoading } = useEmployees()
+  const [filter, setFilter] = useState<{
+    category: FilterCategory
+    value: string
+  } | null>(null)
+  const [page, setPage] = useState(1)
 
-  const handleFilter = (newFilters: Filters) => {
-    setFilters({ ...newFilters, page: 1, page_size: 20 })
+  const filteredEmployees = useMemo(() => {
+    const employees = data?.employees ?? []
+    if (!filter || !filter.value.trim()) return employees
+    const val = filter.value.toLowerCase().trim()
+    return employees.filter((emp) => {
+      const field = emp[filter.category]
+      return field?.toLowerCase().includes(val) ?? false
+    })
+  }, [data?.employees, filter])
+
+  const totalPages = Math.ceil(filteredEmployees.length / PAGE_SIZE)
+  const paginatedEmployees = filteredEmployees.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  const handleFilterChange = (newFilter: { category: FilterCategory; value: string } | null) => {
+    setFilter(newFilter)
+    setPage(1)
   }
 
   const handleRowClick = (id: number) => {
     navigate(`/employees/${id}`)
   }
-
-  const totalPages = Math.ceil((data?.total_count ?? 0) / (filters.page_size ?? 20))
-  const currentPage = filters.page ?? 1
 
   return (
     <div>
@@ -91,32 +108,34 @@ export function EmployeeListPage() {
         </TabsList>
 
         <TabsContent value="employees">
-          <EmployeeFilters onFilter={handleFilter} />
+          <EmployeeFilters onFilterChange={handleFilterChange} />
 
           {isLoading ? (
             <p>Loading...</p>
-          ) : data?.employees.length ? (
+          ) : paginatedEmployees.length ? (
             <>
-              <EmployeeTable employees={data.employees} onRowClick={handleRowClick} />
-              <p className="text-sm text-muted-foreground mt-2">Total: {data.total_count}</p>
+              <EmployeeTable employees={paginatedEmployees} onRowClick={handleRowClick} />
+              <p className="text-sm text-muted-foreground mt-2">
+                {filteredEmployees.length} of {data?.employees.length ?? 0} employees
+              </p>
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={currentPage <= 1}
-                    onClick={() => setFilters({ ...filters, page: currentPage - 1 })}
+                    disabled={page <= 1}
+                    onClick={() => setPage(page - 1)}
                   >
                     Previous
                   </Button>
                   <span className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
+                    Page {page} of {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={currentPage >= totalPages}
-                    onClick={() => setFilters({ ...filters, page: currentPage + 1 })}
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(page + 1)}
                   >
                     Next
                   </Button>

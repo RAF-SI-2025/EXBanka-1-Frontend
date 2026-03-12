@@ -16,6 +16,7 @@ import { updateEmployeeSchema } from '@/lib/utils/validation'
 import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '@/types/employee'
 
 const ROLES = ['EmployeeBasic', 'EmployeeAgent', 'EmployeeSupervisor', 'EmployeeAdmin'] as const
+const GENDERS = ['Male', 'Female', 'Other', 'Misha'] as const
 
 const COUNTRY_CODES = [
   { code: '+381', flag: '🇷🇸', iso: 'SRB' },
@@ -216,6 +217,7 @@ function EditForm({
   const role = watch('role')
   const active = watch('active')
   const phone = watch('phone') ?? ''
+  const gender = watch('gender')
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -246,6 +248,26 @@ function EditForm({
           defaultValue={formatDateDisplay(employee.date_of_birth)}
           disabled
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="gender">Gender</Label>
+        <Select
+          value={gender ?? ''}
+          onValueChange={(val) => setValue('gender', val || undefined)}
+          disabled={readOnly}
+        >
+          <SelectTrigger id="gender" aria-label="Gender">
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            {GENDERS.map((g) => (
+              <SelectItem key={g} value={g}>
+                {g}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
@@ -363,6 +385,7 @@ function CreateForm({
   const role = watch('role')
   const active = watch('active') ?? true
   const phone = watch('phone') ?? ''
+  const gender = watch('gender')
 
   const handleCreateSubmit = (data: CreateFormData) => {
     const timestamp = data.date_of_birth
@@ -402,7 +425,18 @@ function CreateForm({
 
       <div className="space-y-2">
         <Label htmlFor="gender">Gender</Label>
-        <Input id="gender" {...register('gender')} />
+        <Select value={gender ?? ''} onValueChange={(val) => setValue('gender', val || undefined)}>
+          <SelectTrigger id="gender" aria-label="Gender">
+            <SelectValue placeholder="Select gender" />
+          </SelectTrigger>
+          <SelectContent>
+            {GENDERS.map((g) => (
+              <SelectItem key={g} value={g}>
+                {g}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

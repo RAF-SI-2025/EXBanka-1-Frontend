@@ -1,60 +1,79 @@
-import { screen, waitFor, act, fireEvent } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { EmployeeFilters } from '@/components/employees/EmployeeFilters'
 
-const mockOnFilter = jest.fn()
+// Shared Select mock — see src/__tests__/mocks/select-mock.tsx
+jest.mock('@/components/ui/select', () => require('@/__tests__/mocks/select-mock'))
 
-beforeEach(() => {
-  jest.clearAllMocks()
-  jest.useFakeTimers()
-})
+const mockOnFilterChange = jest.fn()
 
-afterEach(() => {
-  jest.useRealTimers()
-})
+beforeEach(() => jest.clearAllMocks())
 
 describe('EmployeeFilters', () => {
-  it('renders a single search input', () => {
-    renderWithProviders(<EmployeeFilters onFilter={mockOnFilter} />)
-    expect(screen.getByPlaceholderText(/search by name, email or position/i)).toBeInTheDocument()
+  it('renders category dropdown and text input', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    expect(screen.getByText('First Name')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/type to filter/i)).toBeInTheDocument()
   })
 
-  it('debounces and calls onFilter with email when input contains @', async () => {
-    renderWithProviders(<EmployeeFilters onFilter={mockOnFilter} />)
-    const input = screen.getByPlaceholderText(/search by name, email or position/i)
-
-    fireEvent.change(input, { target: { value: 'jane@example.com' } })
-    act(() => jest.runAllTimers())
-
-    await waitFor(() => {
-      expect(mockOnFilter).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'jane@example.com' })
-      )
+  it('calls onFilterChange with default category and typed value', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    const input = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(input, { target: { value: 'Jane' } })
+    expect(mockOnFilterChange).toHaveBeenCalledWith({
+      category: 'first_name',
+      value: 'Jane',
     })
   })
 
-  it('debounces and calls onFilter with name when input has no @', async () => {
-    renderWithProviders(<EmployeeFilters onFilter={mockOnFilter} />)
-    const input = screen.getByPlaceholderText(/search by name, email or position/i)
-
-    fireEvent.change(input, { target: { value: 'Jane' } })
-    act(() => jest.runAllTimers())
-
-    await waitFor(() => {
-      expect(mockOnFilter).toHaveBeenCalledWith(expect.objectContaining({ name: 'Jane' }))
-    })
+  it('does not show clear button when input is empty', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    expect(screen.queryByRole('button', { name: /clear filter/i })).not.toBeInTheDocument()
   })
 
-  it('calls onFilter with empty object when input is cleared', async () => {
-    renderWithProviders(<EmployeeFilters onFilter={mockOnFilter} />)
-    const input = screen.getByPlaceholderText(/search by name, email or position/i)
-
+  it('shows clear button when text is entered', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    const input = screen.getByPlaceholderText(/type to filter/i)
     fireEvent.change(input, { target: { value: 'Jane' } })
+    expect(screen.getByRole('button', { name: /clear filter/i })).toBeInTheDocument()
+  })
+
+  it('clears input and calls onFilterChange(null) when clear is clicked', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    const input = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(input, { target: { value: 'Jane' } })
+    mockOnFilterChange.mockClear()
+
+    fireEvent.click(screen.getByRole('button', { name: /clear filter/i }))
+
+    expect(input).toHaveValue('')
+    expect(mockOnFilterChange).toHaveBeenCalledWith(null)
+  })
+
+  it('calls onFilterChange(null) when input is cleared by typing', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    const input = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(input, { target: { value: 'Jane' } })
+    mockOnFilterChange.mockClear()
+
     fireEvent.change(input, { target: { value: '' } })
-    act(() => jest.runAllTimers())
 
-    await waitFor(() => {
-      expect(mockOnFilter).toHaveBeenCalledWith({})
+    expect(mockOnFilterChange).toHaveBeenCalledWith(null)
+  })
+
+  it('updates category and re-emits filter when category changes with non-empty input', () => {
+    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
+    const input = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(input, { target: { value: 'jane@test.com' } })
+    mockOnFilterChange.mockClear()
+
+    // Click the Email option via the mocked Select
+    const emailOption = screen.getByRole('option', { name: /email/i })
+    fireEvent.click(emailOption)
+
+    expect(mockOnFilterChange).toHaveBeenCalledWith({
+      category: 'email',
+      value: 'jane@test.com',
     })
   })
 })

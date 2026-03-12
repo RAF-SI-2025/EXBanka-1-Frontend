@@ -43,4 +43,27 @@ describe('EmployeeForm', () => {
       expect(mockOnSubmit).not.toHaveBeenCalled()
     })
   })
+
+  it('renders gender as a dropdown, not a text input, in create mode', () => {
+    renderWithProviders(<EmployeeForm onSubmit={mockOnSubmit} isLoading={false} />)
+    expect(screen.queryByRole('textbox', { name: /gender/i })).not.toBeInTheDocument()
+    expect(screen.getByText('Select gender')).toBeInTheDocument()
+  })
+
+  it('pre-fills gender dropdown in edit mode', () => {
+    const employee = createMockEmployee({ gender: 'Female' })
+    renderWithProviders(
+      <EmployeeForm onSubmit={mockOnSubmit} isLoading={false} employee={employee} />
+    )
+    expect(screen.getByText('Female')).toBeInTheDocument()
+  })
+
+  it('disables gender dropdown when readOnly', () => {
+    const employee = createMockEmployee({ gender: 'Male' })
+    renderWithProviders(
+      <EmployeeForm onSubmit={mockOnSubmit} isLoading={false} employee={employee} readOnly />
+    )
+    const genderTrigger = screen.getByRole('combobox', { name: /gender/i })
+    expect(genderTrigger).toBeDisabled()
+  })
 })
