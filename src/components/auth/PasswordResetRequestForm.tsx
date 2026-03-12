@@ -34,7 +34,7 @@ export function PasswordResetRequestForm({
 
   if (isSuccess) {
     return (
-      <Card>
+      <Card className="border-t-4 border-t-primary">
         <CardContent className="pt-6">
           <p className="text-center text-sm">Reset link has been sent to your email.</p>
           <div className="text-center mt-4">
