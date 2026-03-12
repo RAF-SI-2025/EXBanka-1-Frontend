@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
 import { EmployeeForm } from '@/components/employees/EmployeeForm'
+import { BackButton } from '@/components/shared/BackButton'
 import { useEmployee } from '@/hooks/useEmployee'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectCurrentUser } from '@/store/selectors/authSelectors'
@@ -40,15 +40,7 @@ export function EditEmployeePage() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label="Back"
-          onClick={() => navigate('/employees')}
-          className="text-accent-2 border-accent-2 hover:bg-accent-2/10"
-        >
-          ←
-        </Button>
+        <BackButton to="/employees" />
         <h1 className="text-2xl font-bold">{title}</h1>
       </div>
       <EmployeeForm
