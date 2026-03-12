@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Button } from '@/components/ui/button'
 import { EmployeeForm } from '@/components/employees/EmployeeForm'
 import { useEmployee } from '@/hooks/useEmployee'
 import { useAppSelector } from '@/hooks/useAppSelector'
@@ -38,7 +39,12 @@ export function EditEmployeePage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">{title}</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="outline" size="sm" onClick={() => navigate('/employees')}>
+          ← Back
+        </Button>
+        <h1 className="text-2xl font-bold">{title}</h1>
+      </div>
       <EmployeeForm
         employee={employee}
         onSubmit={(data) => mutation.mutate(data as UpdateEmployeeRequest)}

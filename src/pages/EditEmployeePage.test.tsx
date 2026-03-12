@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { EditEmployeePage } from '@/pages/EditEmployeePage'
 import * as employeesApi from '@/lib/api/employees'
@@ -6,6 +7,12 @@ import { createMockEmployee } from '@/__tests__/fixtures/employee-fixtures'
 import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
 
 jest.mock('@/lib/api/employees')
+
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}))
 
 beforeEach(() => jest.clearAllMocks())
 
@@ -34,6 +41,21 @@ describe('EditEmployeePage', () => {
     })
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument()
+  })
+
+  it('has a back button that navigates to /employees', async () => {
+    const employee = createMockEmployee({ first_name: 'Jane' })
+    jest.mocked(employeesApi.getEmployee).mockResolvedValue(employee)
+
+    renderWithProviders(<EditEmployeePage />, {
+      preloadedState: { auth: createMockAuthState() },
+      route: '/employees/1',
+      routePath: '/employees/:id',
+    })
+
+    await screen.findByDisplayValue('Jane')
+    await userEvent.click(screen.getByRole('button', { name: /back/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/employees')
   })
 
   it('shows read-only view when viewing a different admin', async () => {

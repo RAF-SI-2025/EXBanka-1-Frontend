@@ -43,7 +43,7 @@ export function PasswordResetForm({
 
   if (isSuccess) {
     return (
-      <Card>
+      <Card className="border-t-4 border-t-primary">
         <CardContent className="pt-6 text-center space-y-4">
           <p className="text-sm">Password reset successfully.</p>
           <Link to="/login" className="text-primary underline text-sm">
@@ -55,7 +55,7 @@ export function PasswordResetForm({
   }
 
   return (
-    <Card>
+    <Card className="border-t-4 border-t-primary">
       <CardHeader>
         <CardTitle className="text-2xl text-center">Set New Password</CardTitle>
       </CardHeader>

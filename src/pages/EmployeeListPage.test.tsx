@@ -120,6 +120,24 @@ describe('EmployeeListPage', () => {
     expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
   })
 
+  it('filters across all fields when "All" category is selected', async () => {
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Jane Doe')
+
+    // Switch to "All" category
+    fireEvent.click(screen.getByRole('option', { name: /^all$/i }))
+
+    // Filter by an email fragment — only matchable via email field
+    const filterInput = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(filterInput, { target: { value: 'alice@test' } })
+
+    expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
+    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
+    expect(screen.queryByText('John Smith')).not.toBeInTheDocument()
+  })
+
   it('filters employees by position when category is changed', async () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
