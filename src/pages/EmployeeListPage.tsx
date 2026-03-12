@@ -95,7 +95,7 @@ export function EmployeeListPage() {
         <h1 className="text-2xl font-bold">Employees</h1>
         <Link
           to="/employees/new"
-          className="inline-flex items-center justify-center rounded-lg bg-primary px-2.5 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          className="inline-flex items-center justify-center rounded-lg bg-accent-2 px-2.5 py-1.5 text-sm font-medium text-accent-2-foreground transition-colors hover:bg-accent-2/90"
         >
           Create Employee
         </Link>

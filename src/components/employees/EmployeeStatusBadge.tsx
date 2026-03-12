@@ -5,5 +5,8 @@ interface EmployeeStatusBadgeProps {
 }
 
 export function EmployeeStatusBadge({ active }: EmployeeStatusBadgeProps) {
-  return <Badge variant={active ? 'default' : 'secondary'}>{active ? 'Active' : 'Inactive'}</Badge>
+  if (active) {
+    return <Badge className="bg-accent text-accent-foreground hover:bg-accent/90">Active</Badge>
+  }
+  return <Badge variant="secondary">Inactive</Badge>
 }
