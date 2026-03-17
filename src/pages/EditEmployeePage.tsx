@@ -21,7 +21,7 @@ export function EditEmployeePage() {
 
   const mutation = useMutationWithRedirect({
     mutationFn: (data: UpdateEmployeeRequest) => updateEmployee(employeeId, data),
-    invalidateKeys: [['employees'], ['employee', employeeId]],
+    invalidateKeys: [['employees']],
     redirectTo: '/employees',
   })
 

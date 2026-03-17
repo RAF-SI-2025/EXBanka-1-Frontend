@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { EmployeeTable } from '@/components/employees/EmployeeTable'
@@ -47,9 +47,7 @@ export function EmployeeListPage() {
     setPage(1)
   }
 
-  const handleRowClick = (id: number) => {
-    navigate(`/employees/${id}`)
-  }
+  const handleRowClick = useCallback((id: number) => navigate(`/employees/${id}`), [navigate])
 
   return (
     <div>
