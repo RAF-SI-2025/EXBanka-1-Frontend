@@ -1,0 +1,1040 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2868
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 ________________\
+Osnovno poslovanje banke\
+Opis\
+Druga celina obuhvata osnovno poslovanje banke, Za sada su sve transakcije internal tj u okviru jedne banke. Aplikacije za Klijenta i Zaposlenog:\
+Za Zaposlene:\
+1. Kreiranje ra\uc0\u269 una klijenta \
+3. Portal za \'93Upravljanje ra\uc0\u269 unima\'94 \
+3. Portal za \'93Upravljanje klijentima\'94\
+4. Portal za \'93Upravljanje kreditima\'94\
+\
+\
+Za Klijente:\
+1. Po\uc0\u269 etna strana banke i opcije iz menija - ra\u269 uni, pla\u263 anja, transferi, menja\u269 nica, kartice, krediti \
+Verifikacioni kod\
+Potrebna je mobilna aplikacija. Flow:\
+1. Klijent vr\'9ai neko pla\uc0\u263 anje na laptopu, treba da ga potvrdi na mobilnom.\
+2. Klijent ulazi na mobilnu apl. i na nama je kako da implementiramo:\
+   * na mobilnom klik\uc0\u263 e "approve transaction" dugme\
+   * dobija kod na mobilnom i ukucava ga na laptopu (kod traje 5 min i nakon 3 neuspe\'9ana poku\'9aaja se otkazuje transakcija)\
+Kreiranje ra\uc0\u269 una klijenata\
+Ra\uc0\u269 un kreira Zaposleni. Da bi zaposleni mogao da kreira novi ra\u269 un, potrebno je da se prijavi u aplikaciju. Pored \u269 uvanja podataka o vlasniku (klijentu), \u269 uvaju se i podaci o zaposlenima koji su napravili ra\u269 une. Nakon prijave, izabira jedan od tipova ra\u269 una: Teku\u263 i ra\u269 un, Devizni ra\u269 un. Nakon uspe\'9anog kreiranog ra\u269 una vlasnik dobija email o uspehu.\
+\
+\
+Napomena 1: Prilikom kreiranja ra\uc0\u269 una postoji checkbox \'93Napravi karticu\'94 koji automatski kreira karticu za novi ra\u269 un - pro\u269 itati vi\'9ae o tome u Upravljanje karticama.\
+Napomena 2: Prilikom kreiranja ra\uc0\u269 una za vlasnika se ili bira postoje\u263 i Klijent ili kreira novi. \
+Napomena 3: Postoji i polje za unos po\uc0\u269 etnog stanja ra\u269 una.\
+\
+\
+Teku\uc0\u263 i i devizni ra\u269 un mo\'9ee biti:\
+1. Li\uc0\u269 ni - pripada Klijentu\
+2. Poslovni - pripada Firmi. Pogledati \'93Flow ako je poslovni ra\uc0\u269 un\'94.\
+Teku\uc0\u263 i ra\u269 un\
+Pri kreiranju teku\uc0\u263 eg ra\u269 una postoji opcija odabira podvrste ra\u269 una kao \'9ato su: li\u269 ni (standardni, \'9atedni, penzionerski, za mlade, za studente i nezaposlene), poslovni (DOO, AD, fondacija). Teku\u263 i \u263 e imati samo jednu valutu (doma\u263 u - RSD).\
+\
+\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Broj ra\uc0\u269 una\
+	Broj ra\uc0\u269 una\
+	265000000000123456\
+	Ne menja se\
+	Naziv ra\uc0\u269 una\
+	\
+\
+	Devizni ra\uc0\u269 una 1\
+	Ne menja se\
+	Vlasnik\
+	Korisnik koji \uc0\u263 e biti povezan sa ra\u269 unom\
+	Korisnik-id\
+	Ne menja se\
+	Stanje\
+	Stanje ra\uc0\u269 una\
+	180,00.00\
+	Menja se po kupovini/potro\'9anji\
+	Raspolo\'9eivo stanje\
+	Raspolo\'9eivo stanje ra\uc0\u269 una korisnika\
+	178,00.00\
+	Menja se po kupovini/potro\'9anji\
+	Zaposleni\
+	id Zaposlenog koji je kreirao r\uc0\u1072 \u269 un\
+	Petar Petrovi\uc0\u263 \
+	Ne menja se\
+	Datum kreiranja\
+	Datum kreiranja ra\uc0\u269 una\
+	Odgovaraju\uc0\u263 i date format\
+	Ne menja se\
+	Datum Isteka\
+	Datum isteka ra\uc0\u269 una\
+	Odgovaraju\uc0\u263 i date format\
+	Ne menja se\
+	Currency\
+	Valuta ra\uc0\u269 una\
+	RSD\
+	Ne menja se\
+	Status\
+	Da li je ra\uc0\u269 un aktivan ili ne\
+	Aktivan/ Neaktivan\
+	Na zahtev\
+	Vrsta ra\uc0\u269 una\
+	Li\uc0\u269 ni (sa podvrstama) ili poslovni\
+	Standardni\
+	Ne menja se\
+	Odr\'9eavanje ra\uc0\u269 una\
+	Mese\uc0\u269 ni iznos za odr\'9eavanje ra\u269 una\
+	255.00,00 RSD\
+	Ne menja se\
+	Dnevni limit\
+	Maksimalni iznos transakcija dnevno\
+	250,000.00 RSD\
+	Mo\'9ee se menjati\
+	Mese\uc0\u269 ni limit\
+	Maksimalni iznos transakcija mese\uc0\u269 no\
+	1,000,000.00 RSD\
+	Mo\'9ee se menjati\
+	Dnevna potro\'9anja\
+	Ukupan iznos potro\'9aen tokom dana\
+	150,000.00 RSD\
+	Menja se po transakciji\
+	Mese\uc0\u269 na potro\'9anja\
+	Ukupan iznos potro\'9aen tokom meseca\
+	600,000.00 RSD\
+	Menja se po transakciji\
+	Devizni ra\uc0\u269 un \
+Pri kreiranju ra\uc0\u269 una bira se da li je li\u269 ni ili poslovni. Klijent mo\'9ee imati vi\'9ae deviznih ra\u269 una. Svaki devizni ra\u269 un je u jednoj valuti. \
+Valute: Ne treba omogu\uc0\u263 iti sve valute, ve\u263  samo : EUR, CHF, USD, GBP, JPY, CAD i AUD.\
+\
+\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Broj ra\uc0\u269 una\
+	Broj ra\uc0\u269 una\
+	265000000000123456\
+	Ne menja se\
+	Naziv ra\uc0\u269 una\
+	\
+\
+	Devizni ra\uc0\u269 una 1\
+	Ne menja se\
+	Vlasnik\
+	Korisnik koji \uc0\u263 e biti povezan sa ra\u269 unom\
+	Korisnik-id\
+	Ne menja se\
+	Stanje\
+	Stanje ra\uc0\u269 una\
+	180,00.00\
+	Menja se po kupovini/potro\'9anji\
+	Raspolo\'9eivo stanje\
+	Raspolo\'9eivo stanje ra\uc0\u269 una korisnika\
+	178,00.00\
+	Menja se po kupovini/potro\'9anji\
+	Zaposleni\
+	id zaposlenog koji je kreirao ra\uc0\u269 un\
+	Petar Petrovi\uc0\u263 \
+	Ne menja se\
+	Datum kreiranja\
+	Datum kreiranja ra\uc0\u269 una\
+	Odgovaraju\uc0\u263 i date format\
+	Ne menja se\
+	Datum Isteka\
+	Datum isteka ra\uc0\u269 una\
+	Odgovaraju\uc0\u263 i date format\
+	Ne menja se\
+	Currency\
+	Valuta ra\uc0\u269 una\
+	EUR\
+	Ne menja se\
+	Status\
+	Da li je ra\uc0\u269 un aktivan ili ne\
+	Aktivan/ Neaktivan\
+	Na zahtev\
+	Vrsta ra\uc0\u269 una\
+	Li\uc0\u269 ni ili poslovni\
+	Poslovni\
+	Ne menja se\
+	Dnevni limit\
+	Maksimalni iznos transakcija dnevno\
+	5,000.00 EUR\
+	Mo\'9ee se menjati\
+	Mese\uc0\u269 ni limit\
+	Maksimalni iznos transakcija mese\uc0\u269 no\
+	20,000.00 EUR\
+	Mo\'9ee se menjati\
+	Dnevna potro\'9anja\
+	Ukupan iznos potro\'9aen tokom dana\
+	3,200.00 EUR\
+	Menja se po transakciji\
+	Mese\uc0\u269 na potro\'9anja\
+	Ukupan iznos potro\'9aen tokom meseca\
+	12,500.00 EUR\
+	Menja se po transakciji\
+	  \
+\
+________________\
+Flow ako je poslovni ra\uc0\u269 un\
+Poslovni ra\uc0\u269 un se koristi za upravljanje finansijama preduze\u263 a i obi\u269 no dolazi sa dodatnim funkcijama, kao \'9ato su pla\u263 anje poreza na dodatu vrednost (PDV), porez na dobit i drugi doprinosi.\
+\
+\
+Ako je izabran poslovni ra\uc0\u269 un (teku\u263 i ili devizni), definise se vlasnik (Klijent) i Firma za koju je vezan taj ra\u269 un. Flow:\
+1. Za ra\uc0\u269 un (teku\u263 i ili devizni) se bira da je poslovni\
+2. Za vlasnika se selektuje ili kreira Klijent\
+3. Za Firmu se unose podaci (ovo je informativnog karaktera da bi stajalo u bazi)\
+\
+\
+Firma\
+\
+\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Naziv firme\
+	Naziv firme\
+	Firme DOO\
+	Mo\'9ee da se promeni\
+	Mati\uc0\u269 ni broj firme\
+	Jedinstveni broj pod kojim je firma zavedena u odgovaraju\uc0\u263 em registru\
+	12345678\
+	Ne menja se\
+	Poreski broj firme\
+	Jedinstveni broj pod kojim je firma zavedena za svrhu naplate poreza (PIB)\
+	123456789\
+	Ne menja se\
+	\'8aifra delatnosti\
+	\'8aifra delatnosti firme\
+	01.9\
+	Mo\'9ee da se promeni\
+	Adresa\
+	Adresa, mesto i dr\'9eava        sedi\'9ata firme\
+\
+\
+\
+\
+	Trg Republike V/5, Beograd, Srbija\
+\
+\
+\
+\
+	Mo\'9ee se promeniti\
+	Vlasnik\
+	ID Klijenta koji je vlasnik firme (in real life to bi bio kao ve\uc0\u263 inski vlasnik)\
+	Petar Petrovi\uc0\u263 \
+	Mo\'9ee se promeniti\
+	\
+\
+\'8aifra delatnosti je u formatu xx.xx. Predlog je da se napravi tabela \'8aifra delatnosti gde \uc0\u263 e biti navedena \'9aifra i opis (npr. 10.1 Proizvodnja hrane).\
+\
+\
+Napomena: \
+Klijent mo\'9ee imati vi\'9ae i li\uc0\u269 nih i poslovnih ra\u269 una. Samo vlasnik poslovnog ra\u269 una mo\'9ee da se uloguje u aplikaciju. Zaposleni u firmi, koji \u263 e imati kartice vezano za poslovni racun, se zove  OvlascenoLice. Vi\'9ae o ovome u Kreiranju kartica. Informacije za OvlascenaLica koja dr\'9ee kartice su samo informativnog karaktera. Oni se ne loguju u aplikaciju.\
+\
+\
+  \
+\
+  \
+\
+Na\'9aa Banka = Firma\
+Nasa banka je tako\uc0\u273 e Firma. Nasa banka ima po ra\u269 un u svakoj valuti, oni se koriste za:\
+1. Provizije transakcija se prebacuju na ra\uc0\u269 un banke u toj valuti\
+2. U Menja\uc0\u269 ini, \'93from\'94 novac se prebacuje na bankin racun i \'93to\'94 novac se skida sa ra\u269 una na\'9ae banke\
+3. Mo\'9eemo videti svoje ra\uc0\u269 une i pratiti transakcije izvr\'9aene nad njima.\
+4. Kasnije: mo\'9eemo videti koje hartije od vrednosti posedujemo, \'9ata su na\'9ai zaposleni koji su aktuari kupovali \
+Opis podataka\
+Currency Default - Neophodno je da se obezbedi jedna osnovna valuta kako bi korisnik mogao da vr\'9ai transakcije preko kartice povezane sa deviznim ra\uc0\u269 unom. Teku\u263 i ra\u269 un mo\'9ee biti samo u RSD.\
+\
+\
+Valute koje podr\'9eavamo su EUR, CHF, USD, GBP, JPY, CAD i AUD + RSD. \
+Currency (valute) su zasebni entiteti u bazi podataka:\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Naziv\
+	Naziv valute\
+	European Union\
+	Ne menja se\
+	Oznaka\
+	Oznaka valute\
+	EUR\
+	Ne menja se\
+	Simbol\
+	Simbol valute\
+	\'80\
+	Ne menja se\
+	Zemlja\
+	Zemlje koje koriste valutu\
+	Belgija, Francuska,Italija..\
+	Ne menja se\
+	Opis\
+	Opis valute\
+	The euro is the monetary unit\'85\
+	Ne menja se\
+	Status\
+	Aktivnost\
+	Aktivna\
+	Ne menja se\
+	\
+\
+\
+\
+Broj ra\uc0\u269 una - ima 18 cifara od kojih su prvih 7 uvek iste.\
+   * \'8aifra banke (3 cifre)\
+Banka1 - 111, Banka2 - 222, Banka3 - 333, Banka4 - 444\
+   * \'8aifra filijale (ili ekspoziture, to je lokalna poslovnica) banke (4 cifre) \
+Po\'9ato banke imaju svoje \'9aifre, filijale mogu krenuti od 0001\
+   * Broj ra\uc0\u269 una (9 cifara)\
+Random 9 cifara u intervalu od 0 do 9\
+   * Tip ra\uc0\u269 una (2 cifre)\
+Teku\uc0\u263 i ra\u269 un 10 (Li\u269 ni: 11, Poslovni: 12, \'8atedni ra\u269 un: 13, Penzionerski ra\u269 un: 14, Ra\u269 un za mlade: 15, Ra\u269 un za studente: 16, Ra\u269 un za nezaposlene: 17)\
+Devizni ra\uc0\u269 un: 20 (Li\u269 ni: 21, Poslovni: 22)\
+\
+\
+Napomena: Kako cemo kasnije uvesti placanja izmedju banaka, treba da imamo isti algoritam za cekiranje broja racuna. Predlog je (zbir svih cifara) % 11.      \
+\
+\
+Raspolo\'9eivo stanje = stanje ra\uc0\u269 una - rezervisana sredstva. Rezervisana sredstva nastaju kod transakcija izme\u273 u banaka zbog ka\'9anjenja. Unutra\'9anje transakcije (u 1 banci) su instant i ne rezervi\'9au sredstva.\
+\
+\
+Vlasnik - pri unosu podataka za ra\uc0\u269 un, za polje Vlasnik postoje dve opcije:\
+   1. Izabrati postoje\uc0\u263 eg korisnika - zaposleni \u263 e mo\u263 i da bira iz liste postoje\u263 ih korisnika.\
+   2. Kreiraj novog korisnika - vodi do view-a za kreiranje novog korisnika. Nakon \'9ato je zaposleni kreirao novog korisnika, aplikacija treba da ga vrati na stranicu kreiranja ra\uc0\u269 una i da automatski selektuje (popuni polje) novonapravljenog korisnika.\
+Primer kreiranja ra\uc0\u269 una\
+Opcija za kreiranje ra\uc0\u269 una:  \
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+Napomena: Dodati polje za unos po\uc0\u269 etnog stanja ra\u269 una.\
+\
+\
+Kreiranje teku\uc0\u263 eg ra\u269 una:                                     Kreiranje deviznog ra\u269 una:\
+________________\
+    Po\uc0\u269 etna strana Banke\
+  \
+\
+1 Meni\
+1. Ra\uc0\u269 uni\
+2. Pla\uc0\u263 anja (pre\u263 anje i prenos)\
+3. Transferi\
+4. Menja\uc0\u269 nica\
+5. Kartice \
+6. Krediti.\
+\
+2 Zaglavlje\
+Sadr\'9ei dodatne opcije Profil (Klijent samo vidi svoj profil) i Odjava.\
+\
+\
+3 Pregled ra\uc0\u269 una - lista ra\u269 una, mo\'9ee se promeniti klikom ili skrolovanjem\
+\
+\
+4 Transakcije vezano za ra\uc0\u269 un - poslednjih 5 transakcija po odabranom ra\u269 unu. Ra\u269 un mo\'9eete promeniti klikom na ikonicu koja prikazuje listu svih ra\u269 una.\
+\
+\
+5 Brzo pla\uc0\u263 anje - sekcija u kojoj se nalaze klijentovi primaoci pla\u263 anja i pru\'9ea mogu\u263 nost da se pla\u263 anje izvr\'9ai brzo, odmah sa po\u269 etne strane ili da doda novog primaoca pla\u263 anja.\
+\
+\
+6 Kalkulator za menja\uc0\u269 nicu - kalkulacije ekvivalentne vrednosti u drugoj valuti na osnovu aktuelnih kurseva\
+Opcija \'93Ra\uc0\u269 uni"\
+Korisnik \uc0\u263 e opcijom Ra\u269 uni mo\u263 i da otvori view u kome \u263 e mo\u263 i da vidi pregled stanja i detalja svojih ra\u269 una. View treba da se sastoji iz 2 dela:\
+   1. Niz ra\uc0\u269 una koje poseduje korisnik - samo aktivni\
+   2. Liste transakcija za izabrani ra\uc0\u269 un\
+Napomena: U ovoj listi se nalaze samo ra\uc0\u269 uni koje poseduje trenutno ulogovan klijent. \
+\
+\
+Za svaki ra\uc0\u269 un bi\u263 e predstavljeni osnovni podaci o ra\u269 unu: naziv ra\u269 una, broj ra\u269 una i raspolo\'9eivo stanje (sortirani u opadaju\u263 em redosledu u zavisnosti od raspolo\'9eivog stanja odgovaraju\u263 eg ra\u269 una). Svaki prikazani ra\u269 un tako\u273 e ima i opciju (dugme) \'93Detalji\'94 koji \u263 e korisniku otvoriti detaljni prikaz odgovaraju\u263 eg ra\u269 una.\
+\
+\
+Korisnik mo\'9ee da selektuje ra\uc0\u269 un klikom na njega - po difoltu je selektovan prvi ra\u269 un. Za selektovani ra\u269 un se, u drugom delu stranice npr. ispod ili pored, prikazuje lista transakcija (mo\'9ee sortirati po datumu isplate-uplate ili po tipu transakcije). \
+\
+\
+Napomena: Ozna\uc0\u269 avanje ra\u269 una i dugme \'93Detalji" su dve razli\u269 ite funkcionalnosti.\
+\
+\
+  \
+  \
+\
+\
+\
+________________\
+Detaljan prikaz ra\uc0\u269 una - li\u269 nog\
+Odabirom opcije \'93Detalji\'94 za odgovaraju\uc0\u263 i ra\u269 un se otvara prozor sa detaljima o istom:\
+   * Naziv ra\uc0\u269 una\
+   * Broj ra\uc0\u269 una\
+   * Vlasnik\
+   * Tip\
+   * Raspolo\'9eivo stanje\
+   * Rezervisana sredstva - ovo je za sada uvek 0 jer su sva placanja u okviru nase banke, tj. bez delay-a. Kada uvedemo placanja izmedju banaka, postojace delay i te i rezervisana sredstva. \
+   * Stanje ra\uc0\u269 una\
+Ispod prikazanih detalja klijenata tako\uc0\u273 e ima slede\u263 e opcije:\
+   * Promena naziva ra\uc0\u269 una\
+   * Novo pla\uc0\u263 anje (vodi ga na rutu za novo pla\u263 anje)\
+   * Promena limita (zahteva verifikaciju)\
+Promenu limita mo\'9ee uraditi samo vlasnik ra\uc0\u269 una. \
+Odabirom opcije \'93Promena naziva ra\uc0\u269 una\'94 korisniku se otvara pop-up pod istim nazivom. Treba predstaviti: trenutno ime ra\u269 una, labelu \'93Novo ime ra\u269 una\'94, polje za unos novog imena za ra\u269 un. Potrebna validacija: novo ime se ne poklapa sa trenutnim, kao i da se ne poklapa sa imenom nekog drugog ra\u269 una iste mu\'9aterije.  \
+Detaljan prikaz ra\uc0\u269 una - poslovnog\
+Izgled prikaza poslovnog ra\uc0\u269 una je skoro identi\u269 an prikazu za li\u269 ni ra\u269 un. Razlika je u tome \'9ato su na ovoj strani tako\u273 e prikazani i podaci o firmi kojoj pripada ra\u269 un (Ime firme npr.). \
+Opcija \'93Pla\uc0\u263 anja\'94\
+Pla\uc0\u263 anja se odnose na prebacivanje novca sa ra\u269 una jednog Klijenta na ra\u269 un drugog Klijenta. \
+Klikom na opciju \'93Pla\uc0\u263 anja\'94 otvara se podmeni sa \u269 etiri opcije:\
+   1. Novo pla\uc0\u263 anje\
+   2. Prenos\
+   3. Primaoci pla\uc0\u263 anja\
+   4. Pregled pla\uc0\u263 anja\
+Novo pla\uc0\u263 anje\
+Izme\uc0\u273 u ra\u269 una razli\u269 itih klijenata, mogu biti iste i razli\u269 ite valute. \
+\
+\
+Odabirom opcije \'93Novo pla\uc0\u263 anje\'94, prikazuje se nalog za pla\u263 anje (uplatnica), kojim dajete nalog banci, da na teret Va\'9aeg izabranog ra\u269 una prenese sredstva u korist ra\u269 una primaoca. Sastavni delovi prozora su:\
+   * Naziv primaoca: Klijent unosi naziv primaoca ili ga bira iz liste Primaoca pla\uc0\u263 anja. (lista primaoca pla\u263 anja predstavlja listu ve\u263  kori\'9a\u263 enih primalaca)\
+   * Ra\uc0\u269 un primaoca: Korisnik unosi broj ra\u269 una primaoca kome prenosi sredstva.\
+   * Iznos: Korisnik unosi iznos pla\uc0\u263 anja. Preostali iznos limita za pla\u263 anje mo\'9ee proveriti klikom na Info polje koje se nalazi pored polja za unos iznosa.\
+   * Poziv na broj - Sadr\'9ei numeri\uc0\u269 ki podatak koji bli\'9ee odre\u273 uje pla\u263 anje (\'9aifru pod kojom se odre\u273 eni korisnik vodi u instituciji kojoj pla\u263 a, broj kredita, broj ra\u269 una kreditne visa kartice i sl.). Polje mo\'9ee ostati nepopunjeno.\
+   * \'8aifra pla\uc0\u263 anja - Birate odgovaraju\u263 u \'9aifru iz padaju\u263 eg menija, default je 289.\
+   * Svrha pla\uc0\u263 anja \'96 Korisnik unosi namenu odnosno osnov zbog kojeg izvr\'9aava uplatu (opisno).\
+   * Ra\uc0\u269 un platioca - Promena ra\u269 una platioca\
+   * Nakon klika na dugme \'93Nastavi\'94, neophodno je odraditi verifikaciju.\
+   * Nakon izvr\'9aene transakcije mogu\uc0\u263 e je ukoliko je pla\u263 anje izvr\'9aeno novom korisniku (ne postoji kod trenutnog korisnika u \'93Primaoci pla\u263 anja\'94), da se na dugme \'93Dodaj primaoca\'94 pla\u263 anja kreira \'9aablon za tog korisnika koji \u263 e se sa\u269 uvati u Primaoci pla\u263 anja.\
+\
+\
+Napomena: \'8aifra pla\uc0\u263 anja se sastoji od 3 cifre. Prva cifra je uvek 1 ili 2, to ozna\u269 ava da li je transakcija gotovinska ili bezgotovinska. U na\'9aem slu\u269 aju online pla\u263 anja \'9aifra \u263 e uvek biti 2xx.\
+\'8aifre pla\uc0\u263 anja mo\'9eete pogledati na slede\u263 em linku.\
+\
+\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Broj naloga\
+	Broj koji se automatski generi\'9ae i koristi kao identifikacija transfera\
+	1265463698391\
+	Ne menja se\
+	Sa ra\uc0\u269 una\
+	Broj ra\uc0\u269 una od kojeg uzimamo novac, konvertujemo i zatim prosledjujemo drugom ra\u269 unu\
+	102-39443942389\
+	Ne menja se\
+	Na ra\uc0\u269 un\
+	Broj ra\uc0\u269 una na kom \'9eelimo da prebacimo novac\
+	102-394438340549\
+	Ne menja se\
+	Po\uc0\u269 etni iznos\
+	Iznos koji \'9eelimo da prebacimo \
+	1.00 EUR\
+	Ne menja se\
+	Krajnji iznos\
+	Iznos koji je primalac dobio\
+	1.00 EUR\
+	Ne menja se\
+	Provizija\
+	Provizija banke - uzima proviziju kada su razl. valute\
+	0 EUR\
+	Ne menja se\
+	Primalac\
+	Klijent primalac\
+	clientId\
+\
+\
+	Ne menja se\
+	\'8aifra pla\uc0\u263 anja\
+	obja\'9anjenje\
+	289\
+	Ne menja se\
+	Poziv na broj\
+	Nije obavezan, uglavnom se prepisuje se sa dobijene uplatnice\
+	117.6926\
+	Ne menja se\
+	Svrha pla\uc0\u263 anja\
+	Opis svrhe pla\uc0\u263 anja\
+	za privatni \uc0\u269 as\
+	Ne menja se\
+	Timestamp\
+	Timestamp pla\uc0\u263 anja\
+	Bilo koji format\
+	Ne menja se\
+	\
+\
+  ________________\
+Prenos\
+Izme\uc0\u273 u ra\u269 una istog klijenta iste valute. Polja \'93Sa ra\u269 una\'94 i \'93Na ra\u269 un\'94 se popunjavaju iz drop down menija - treba prikazati naziv i broj ra\u269 una. Nakon klika na dugme \'93Nastavi\'94 korisnik ima 2 opcije - \'93potvrdi\'94 ili \'93nazad\'94. Ako odabere opciju \'93potvrdi\'94 vr\'9ai se verifikacija.\
+  \
+\
+\
+\
+\
+\
+\
+\
+Primaoci pla\uc0\u263 anja\
+Mogu\uc0\u263  je pregled, kreiranje, menjanje i brisanje primalaca pla\u263 anja.\
+\
+\
+Izlistani su svi primaoci pla\uc0\u263 anja i pored svakog postoji opcija za brisanje na dugme \'91Obri\'9ai\'92 ili izmena na dugme \'91Izmeni\'92. Klikom na dugme \'91Obri\'9ai\'92 ra\u269 un se izbacuje iz liste primaoca. Klikom na dugme \'91Izmeni\'92 otvara se forma sa poljima Naziv i Broj ra\u269 una koji se mogu menjati.\
+\
+\
+Dodavanje novog primaoca pla\uc0\u263 anja se vr\'9ai klikom dugme \'91Dodaj\'92, nakon \u269 ega se otvara forma za kreiranje novog primaoca, na kojoj imamo polja za Naziv i Broj ra\u269 una. Klikom na \'91Potvrdi\'92 vra\u263 amo se na prethodni prozor i primalac \u263 e biti dodat u listu. Klikom na \'91Poni\'9ati\'92 se obustavlja procedura i vra\u263 a se na prethodni prozor.\
+  \
+\
+\
+\
+\
+\
+\
+\
+________________\
+\
+\
+Pregled pla\uc0\u263 anja\
+Opcija pregled pla\uc0\u263 anja omogu\u263 ava korisniku pregled slede\u263 ih tipova transakcija:\
+   * pla\uc0\u263 anja\
+   * menja\uc0\u269 nica (prenos novca izmedju korisnikovog teku\u263 eg i deviznog ra\u269 una)\
+\
+\
+Prilikom pregleda postoji mogu\uc0\u263 nost filtriranja po datumu, iznosu i statusu pla\u263 anja. Na listi transakcija prikazana je informacija o statusu u kome se transakcija nalazi: Realizovano, Odbijeno, U Obradi (transakcija je \'93U Obradi\'94 sve dok sredstva nisu uspe\'9ano stigla na ciljni ra\u269 un).\
+\
+\
+Detaljima transakcije pristupate jednostavno, klikom na red/nalog \uc0\u269 ije detalje \'9eelite pregledati, nakon \u269 ega se otvara novi prozor sa detaljima. U okviru Detalja transakcije dostupna je opcija \'93\'8atampaj potvrdu\'94 - korisniku se downloaduje pdf sa svim detaljima transakcije. \
+\
+\
+  \
+\
+  \
+\
+\
+\
+\
+\
+\
+\
+________________\
+Opcija \'93Transferi\'94\
+Izme\uc0\u273 u ra\u269 una istog klijenta u razli\u269 itim valutama. \
+Klijentovo iskustvo \
+  \
+\
+\
+\
+Postoje 2 opcije - \'93Uradi transfer\'94 i \'93Istorija transfera\'94:\
+   1. Flow za opciju \'93Uradi transfer\'94:\
+Stranica "Kreiraj transfer" \'96 Klijent bira izvorni (from) i odredi\'9ani (to) ra\uc0\u269 un, kao i iznos.\
+Stranica "Potvrdi transfer" \'96 Prikazuje se ime i prezime Klijenta, brojevi ra\uc0\u269 una, iznos, kurs i provizija.\
+   2. Opcija \'93Istorija transfera\'94 prikazuje stranicu gde su prikazani svi Klijentovi transferi sortirani hronolo\'9aki od najnovijeg.\
+Logika\
+Ista valuta: Novac se direktno prebacuje, provizija = 0, kurs = /\
+Razli\uc0\u269 ite valute: provizija = 0-1%, kurs = dnevni. Logika kada se prebacuje novac izme\u273 u razl. valuta je detaljno obja\'9anjena u \'93Menja\u269 nica \u8594  Logika\'94.\
+\
+\
+Entitet \'93Transfer\'94\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Broj naloga\
+	Broj naloga koji se automatski generi\'9ae za identifikaciju transfera\
+	1234568902873\
+	Ne\
+	Sa ra\uc0\u269 una\
+	Broj ra\uc0\u269 una \
+	265000000000123456\
+	Ne\
+	Na ra\uc0\u269 un\
+	Broj ra\uc0\u269 una\
+	265000000000654321\
+	Ne\
+	Po\uc0\u269 etni iznos\
+	Iznos koji \'9eelimo da prebacimo\
+	1300.00 RSD\
+	Ne\
+	Krajnji iznos\
+	Iznos koji je legao na ra\uc0\u269 un\
+	11.00 EUR\
+	Ne\
+	Kurs\
+	Kurs po kojem je menjan novac\
+	117.69\
+	Ne\
+	Provizija\
+	Provizija banke prilikom konvertovanja\
+	0.70 EUR\
+	Ne\
+	Timestamp\
+	Timestamp transfera\
+	Bilo koji format\
+	Ne\
+	\
+\
+Opcija \'93Menja\uc0\u269 nica\'94\
+Klijentovo iskustvo\
+Menja\uc0\u269 nica je informativnog karaktera i ima 2 stranice. Stranica Kursna lista prikazuje va\'9ee\u263 e kurseve, dok stranica Proveri ekvivalentnost omogu\u263 ava unos iznosa i valute kako bi sistem izra\u269 unao prera\u269 unatu vrednost prema dnevnom kursu.\
+Logika\
+Valute koje podr\'9eavamo su EUR, CHF, USD, GBP, JPY, CAD i AUD + RSD. \
+Predlo\'9eeni API servisi za Kursnu Listu:\
+      * https://exchangeratesapi.io/\
+      * https://fixer.io/\
+      * https://www.exchangerate-api.com/\
+Za precizan i a\'9euriran prikaz kursne liste, kao i za siguran transfer novca, mo\'9ee se koristiti Alpha Vantage API (Currency Exchange Rate).\
+\
+\
+Kada su razli\uc0\u269 ite valute\
+Pri svakoj konverziji novca, banka klijentima uvek prodaje drugu valutu, tj. uvek koristi prodajni kurs za toCurrency + uzima proviziju (0-1%, \'9ato manja jer kasnije \uc0\u263 e biti vi\'9aa provizija izme\u273 u banaka). Transferi uvek idu preko bazne valute, tj. dinara (primer 2).\
+\
+\
+Primer 1: 100 RSD \uc0\u10145  EUR:\
+1. Dinari se prebacuju na dinarski ra\uc0\u269 un banke.\
+2. Banka obra\uc0\u269 unava ekvivalent u evrima (prodajni kurs za evro) i umanjuje za proviziju. \
+3. Sa evro ra\uc0\u269 una banke sredstva se prebacuju na Klijentov evro ra\u269 un.\
+\
+\
+Primer 2: 100 EUR \uc0\u10145  USD:\
+- EUR  \uc0\u10145  RSD  \u10145  USD\
+- Na svakom koraku koristimo prodajni kurs, uzimamo proviziju i ide preko ra\uc0\u269 una na\'9ae Banke.\
+Opcija \'93Kartice\'94\
+Osnovne informacije\
+Broj kartice se sastoji od 16 cifara i ima CVV kod od 3 cifre. Svaka kartica je povezana sa ra\uc0\u269 unom korisnika (u bazi je to \'93broj ra\u269 una\'94). Jedan ra\u269 un mo\'9ee da ima vi\'9ae kartica, ali je broj kartica koji postoji za jedan ra\u269 un ograni\u269 en:\
+- Li\uc0\u269 ni ra\u269 un - max 2 kartice za ra\u269 un\
+- Poslovni ra\uc0\u269 un - max 1 kartice po osobi\
+Mogu postojati kartice, kao \'9ato je Mastercard, koje su povezane sa dinarskim ra\uc0\u269 unom korisnika, ali omogu\u263 avaju pla\u263 anje u razli\u269 itim valutama. Prvo se primenjuje kurs banke, zatim se dodaje provizija i konverziona naknada [upla\u263 ujemo na racun nase banke], nakon \u269 ega se kona\u269 an iznos skida sa ra\u269 una korisnika. Za implementaciju koristimo prose\u269 ne vrednosti:\
+      * Provizija banke: 2%\
+      * Konverziona naknada Mastercard-a: 0.5%\
+Cifre kartice:\
+      * Cifra 1. (MII - Major Industry Identifier) - identifikuje sektor izdava\uc0\u269 a. \
+1, 2 - Airlines & Other Travel (avio-kompanije i putni\uc0\u269 ki sektor)\
+3 - Travel & Entertainment (putovanja i zabava)\
+4, 5 - Banking & Financial (banke i finansijske institucije)\
+6 -  Merchants & Banking (trgovci i bankarstvo)\
+7 -  Petroleum & Energy (naftna industrija)\
+8 - Telecommunications & Healthcare (telekomunikacije i zdravstveni sektor)\
+9 - National Assignment (nacionalna dodela)\
+      * Cifre 2. - 6. (IIN - Issuer Identification Number) - odre\uc0\u273 uju banku ili finansijsku instituciju koja izdaje karticu. Vrednosti 00000-99999. Svaka banka ima svoj jedinstveni IIN.\
+      * Cifre 7. - 15. (Account Number) - unique broj ra\uc0\u269 una. Vrednosti 000000000-999999999.\
+      * Cifra 16. (Check Digit) - kontrolna cifra koja se koristi za verifikaciju broja kartice koriste\uc0\u263 i Luhn algoritam. Vrednosti 0-9.\
+\
+\
+Vrste kartica koje indektifikujemo po MII i IIN:\
+         * Visa po\uc0\u269 inje sa cifrom 4.\
+         * MasterCard po\uc0\u269 inje sa brojevima od 51 do 55 ili od 2221 do 2720.\
+         * DinaCard po\uc0\u269 inje sa 9891.\
+         * American Express po\uc0\u269 inje sa 34 ili 37 \
+(Napomena: ima 15 cifara ukupno, Account Number je manji za jednu cifru).\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+Kartica\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Broj kartice\
+	Identifikacioni broj kartice\
+	1000000000000000\
+	Ne menja se\
+	Vrsta kartice\
+	Razli\uc0\u269 ite vrste platnih kartica - uvek debit, mogu\u263 e pro\'9airenje za 2025/26 da podr\'9ee funkc. kreditnih kartica\
+	Debit\
+	Ne menja se\
+	Naziv kartice\
+	Vrsta kartice, brend ili proizvod koji predstavlja\
+	Debit\
+	Ne menja se\
+	Datum kreiranja\
+	Datum kreiranja kartice za odredjenog korisnika\
+	Bilo koji format datuma\
+	Ne menja se\
+	Datum isteka\
+	Datum isteka kartice za odredjenog korisnika\
+	Bilo koji format datuma, automatski se generi\'9ae\
+	Ne menja se\
+	Broj ra\uc0\u269 una\
+	Broj ra\uc0\u269 una korisnika za koji se kartica povezuje\
+	10000000000000\
+	Ne menja se\
+	CVV kod\
+	Koristi se za potvrdu identiteta vlasnika kartice tokom online transakcije\
+	343\
+	Ne menja se\
+	Limit\
+	Limit dozvoljen na kartici korisnika\
+	1000000,00.00\
+	Mo\'9ee se promeniti, ali retko\
+	Status\
+	Aktivnost kartice\
+	Aktivna\
+	Mo\'9ee se promeniti na zahtev korisnika ili u slu\uc0\u269 aju malverzacije\
+	\
+\
+Upravljanje karticama \
+            1. Kreiranje kartica\
+            2. Pregled svih kartica \
+            3. Blokiranje kartice\
+\
+\
+Kreiranje kartice \
+Kartice mogu biti kreirane na 2 na\uc0\u269 ina:\
+1. Prilikom otvaranja ra\uc0\u269 una - postoji checkbox \'93Napravi karticu\'94. Ako se selektuje ova opcija sistem automatski kreira karticu za novi ra\u269 un.\
+2. Na zahtev klijenta - klijent u okviru \'93Kartice\'94 stranice iz menija aplikacije ima opciju da zatra\'9ei novu karticu za \'9eeljeni ra\uc0\u269 un. Prvo se proverava da li je prema\'9aen maksimalni dozvoljeni broj kartica za taj ra\u269 un. Ako nije, klijent dobija mejl sa kodom koji treba da unese u aplikaciju (mejl \'93Potvrdite da ste Vi podneli ovaj zahtev\'94) i nakon toga sistem automatski kreira karticu za odabrani ra\u269 un. U slucaju uspeha ili neuspeha izvr\'9aavanja ovog procesa \'9aalje se obave\'9atenje klijenta o rezultatima ove operacije.\
+\
+\
+\
+\
+Napomena: Za sve ra\uc0\u269 une, samo Vlasnik ra\u269 una mo\'9ee da se uloguje u klijentsku aplikaciju. Vlasnik poslovnog ra\u269 una mo\'9ee da zatra\'9ei karticu za:\
+1. sebe (ako pri kreiranju ra\uc0\u269 una nije checkiran box za automatsko kreiranje kartice uz ra\u269 un, te vlasnik jo\'9a nema svoju karticu) \
+2. ovlasceno lice za taj racun (kako mo\'9ee biti max 1 kartica po osobi za poslovne ra\uc0\u269 une, uvek se kreira novo ovlasceno lice). \
+OvlascenoLice u bazi postoji samo kao entitet radi pra\uc0\u263 enja, nema ikakve funkcionalnosti. \
+\
+\
+Podatak\
+	Tip podatka\
+	Primer\
+	U\uc0\u269 estalost promena\
+	id\
+	Long\
+	1234\
+	Ne menja se\
+	Ime\
+	String\
+	Petar\
+	Ne menja se\
+	Prezime\
+	String\
+	Petrovi\uc0\u263 \
+	Menja se (retko)\
+	Datum rodjenja\
+	Long\
+	(Unix vreme)\
+	Ne menja se\
+	Pol\
+	String\
+	M\
+	Menja se (retko)\
+	Email adresa\
+	String\
+	petar@primer.raf\
+	Ne menja se\
+	Broj telefona\
+	String\
+	+381645555555\
+	Menja se (retko)\
+	Adresa\
+	String\
+	Njego\'9aeva 25\
+	Menja se (retko)\
+	\
+\
+Lista kartica\
+Napomena: Za sve ra\uc0\u269 une, samo Vlasnik ra\u269 una mo\'9ee da se uloguje u klijentsku aplikaciju.\
+Klijentu se prikazuju sve kartice. Za svaku karticu vidi:\
+ - ra\uc0\u269 un (ime i broj) \
+- broj kartice (prve 4 cifre, potom 8 zvezdica i zadnje 4 cifre - primer 5798********5571). \
+\
+\
+Pro\'9airenje za 2025/26: osmisliti gde je mogu\uc0\u263 e imati pla\u263 anja sa kartice (po\'9ato smo svo vreme u bankinoj aplikaciji i skidamo novac sa ra\u269 una) i prikazati i listu transakcija, sortiranje po datumu i po tipu transakcije. Ako neko ima re\'9aenje za ovo u 2024/25 neka slobodno implementira.\
+\
+\
+Blokiranje kartice\
+Klijent mo\'9ee samo da blokira sam svoju karticu. Da bi ona bila odblokirana korisnik mora kontaktirati zaposlenog kako bi on to uradio (samo zaposleni u banci mogu odblokirati). Zaposleni mo\'9ee da blokira, odblokira blokiranu karticu i deaktivira karticu preko \'93Portala za upravljanje Ra\uc0\u269 unima\'94.\
+\
+\
+Blokirana kartica zna\uc0\u269 i da samo trenutno nije u funkciji. Deaktivirana kartica je kartica koja je istekla ili koju zaposleni deaktivira. Jednom deaktivirana kartica ne mo\'9ee biti aktivirana.\
+\
+\
+  \
+\
+  \
+\
+________________\
+Opcija \'93Krediti\'94\
+Klijentovo iskustvo\
+Stranica \'93Krediti\'94\
+Klijent vidi spisak svih svojih kredita, sortirano opadaju\uc0\u263 e po iznosu. Za svaki kredit je prikazan naziv, broj kredita i ukupan iznos kredita. Pored svakog kredita se nalazi dugme \'93Detalji\'94 koji otvara detaljan prikaz kredita i svih rata vezano za njega. U Detaljnom prikazu, za svaki kredit je navedeno:\
+            * Broj kredita\
+            * Vrsta kredita (gotovinski (ke\'9a), stambeni, auto, refinansiraju\uc0\u263 i, studentski)\
+            * Ukupni iznos kredita\
+            * Period otplate (broj meseci/rata)\
+            * Nominalna kamatna stopa (po\uc0\u269 etna pri kreiranju kredita)\
+            * Efektivna kamatna stopa (trenutna - kod varijabilne kamatne stope to je koliko bi im trenutno naplatili, tj. r = R + M)\
+            * Datum ugovaranja kredita\
+            * Datum kada kredit treba da bude isplacen\
+            * Iznos slede\uc0\u263 e rate\
+            * Datum slede\uc0\u263 e rate\
+            * Preostalo dugovanje (koliko jos treba da se otplati)\
+            * Valuta kredita (RSD, EUR itd.)\
+\
+Stranica \'93Podno\'9aenje zahteva\'94\
+Klijent podnosi zahtev za novi kredit klikom na opciju "Zahtev za kredit". Forma zahteva:\
+               * Vrstu kredita (gotovinski, stambeni, auto, refinansirajuci, studentski)\
+               * Tip kamatne stope (fiksna, varijabilna)\
+               * Iznos kredita i valuta\
+               * Svrha kredita \
+               * Iznos mese\uc0\u269 ne plate\
+               * Status zaposlenja (stalno, privremeno, nezaposlen)\
+               * Period zaposlenja kod trenutnog poslodavca\
+               * Rok otplate u ratama tj. mesecima:\
+Gotovinski, auto, studentski, refinansiraju\uc0\u263 i: 12, 24, 36, 48, 60, 72, 84\
+Stambeni: 60, 120, 180, 240, 300, 360\
+               * Kontakt telefon\
+               * Broj ra\uc0\u269 una - bira iz drop down menija, valuta ra\u269 una mora da se poklapa sa valutom kredita\
+Nakon popunjavanja forme, sistem proverava unete podatke i prikazuje korisniku potvrdu o uspesnom podnosenju zahteva i novac na racun.\
+Logika\
+Entiteti - kredit i rata\
+Na timovima je da li \uc0\u263 e da imaju i entitet ZahtevZaKredit (LoanRequest) i kako \u263 e on da izgleda.\
+Napomena: potrebno je da se \uc0\u269 uva istorija rata + 1 rata u budu\u263 nosti\
+\
+\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	Vrsta kredita\
+	Vrsta kredita - mo\'9ee biti gotovinski (ke\'9a), stambeni, auto, refinansiraju\uc0\u263 i, studentski\
+	Gotovinski\
+	Ne menja se\
+	Broj ra\uc0\u269 una / ra\u269 un\
+	Ra\uc0\u269 un sa kojeg se skidaju rate\
+	265000000111111111111\
+	Ne menja se\
+	Broj kredita\
+	Jedinstveni identifikator kredita\
+	17629\
+	Ne menja se\
+	Iznos kredita\
+	Osnovni iznos koji je klijent pozajmio\
+	296.304,55 RSD\
+	Ne menja se\
+	Period otplate\
+	Broj rata\
+	86\
+	Ne menja se\
+	Kamatna stopa (osnovica)\
+	Fiksna ili varijabilna, u %\
+	10.24%\
+	Menja se pri penalima\
+	Datum ugovaranja\
+	Datum kada je kredit odobren\
+	23.04.2018\
+	Ne menja se\
+	Datum dospe\uc0\u263 a kredita\
+	Datum zavr\'9aetka ispla\uc0\u263 ivanja kredita\
+	31.10.2022\
+	Ne menja se\
+	Iznos mese\uc0\u269 ne rate\
+	Iznos rate na osnovu formule\
+	6.177,99 RSD\
+	Menja se zajedno sa kursom\
+	Datum slede\uc0\u263 e rate\
+	Datum slede\uc0\u263 e rate\
+	31.10.2019\
+	Menja se nakon svake rate (+1 mesec)\
+	Preostalo dugovanje\
+	Preostali iznos\
+	55.341,66\
+	Menja se nakon svake rate\
+	Valuta\
+	Valuta kredita\
+	RSD\
+	Ne menja se\
+	Status kredita\
+	odobren, odbijen, otpla\uc0\u263 en, u ka\'9anjenju\
+	Odbijen\
+	Menja se\
+	Tip kamate\
+	Fiksna ili varijabilna\
+	fiksna\
+	Ne menja se\
+	\
+\
+\
+\
+Podatak\
+	Opis\
+	Primer\
+	U\uc0\u269 estalost promena\
+	id\
+	Jedinstevni ID rate\
+	2\
+	Ne\
+	Broj kredita\
+	ID kredita na koji se odnosi\
+	17629\
+	Ne\
+	Iznos rate\
+	Iznos rate\
+	23.000\
+	Pri ka\'9anjenju\
+	Iznos kamatne stope\
+	Iznos kamatne stope na datum pla\uc0\u263 anja. Ovo je va\'9eno kod varijabilnih stopa\
+	7.50%\
+	Ne\
+	Valuta\
+	Valuta rate i kredita\
+	RSD\
+	Ne\
+	O\uc0\u269 ekivani datum dospe\u263 a\
+	Kada se povla\uc0\u269 i novac sa ra\u269 una\
+	3.10.2024.\
+	Ne\
+	Pravi datum dospe\uc0\u263 a\
+	Kada je novac sa ra\uc0\u269 una uspe\'9ano povu\u269 en\
+	6.10.2024.\
+	Kada dospe rata\
+	Status pla\uc0\u263 anja\
+	Pla\uc0\u263 eno, nepla\u263 eno, kasni\
+	pla\uc0\u263 eno\
+	Pri skidanju rate - uspe\'9ano i neuspe\'9ano\
+	\
+\
+Kamatne stope i mar\'9ea banke\
+Kamatna stopa se odre\uc0\u273 uje na osnovu iznosa kredita, i one su date na godi\'9anjem nivou. Ako je iznos u drugoj valuti, kamatnu stopu ra\u269 unamo na osnovu ekvivalentne vrednosti u RSD (API-ji koji se mogu koristiti za ovo su navedeni u delu Menja\u269 nica).\
+\
+\
+Iznos kredita (RSD)\
+	Godi\'9anja fiksna kamatna stopa (%)\
+	Godi\'9anja varijabilna kamatna stopa (%) - osnovica \'b1 pomeraj \
+	0 - 500.000\
+	6.25%\
+	6.25% \'b1 do 1.50%\
+	500.001 - 1.000.000\
+	6.00%\
+	6.00% \'b1 do 1.50%\
+	1.000.001 - 2.000.000\
+	5.75%\
+	5.75% \'b1 do 1.50%\
+	2.000.001 - 5.000.000\
+	5.50%\
+	5.50% \'b1 do 1.50%\
+	5.000.001 - 10.000.000\
+	5.25%\
+	5.25% \'b1 do 1.50%\
+	10.000.001 - 20.000.000\
+	5.00%\
+	5.00% \'b1 do 1.50%\
+	20.000.001 +\
+	4.75%\
+	4.75% \'b1 do 1.50%\
+	\
+\
+Mar\'9ea banke obi\uc0\u269 no zavisi od tipa kredita, da li je kredit obezbe\u273 en ili ne. Kod nas \u263 e zavisiti samo od vrste kredita.\
+\
+\
+Tip kredita\
+	Mar\'9ea banke (%) - M\
+	Gotovinski (ke\'9a)\
+	1.75%\
+	Stambeni \
+	1.50%\
+	Auto\
+	1.25%\
+	Refinansiraju\uc0\u263 i\
+	1.00%\
+	Studentski\
+	0.75%\
+	Formula za izra\uc0\u269 unavanje rate kredita\
+\
+A - mese\uc0\u269 na rata\
+P - iznos kredita\
+r - mese\uc0\u269 na kamatna stopa (godi\'9anja / 12)\
+N - (po\uc0\u269 etni) broj rata \
+\
+\
+Fiksna kamatna stopa - mo\'9eemo direktno da koristimo formulu.\
+\
+\
+Varijabilna kamatna stopa\
+Vrednost godi\'9anje kamatne stope se a\'9eurira periodi\uc0\u269 no (npr. jednom mese\u269 no). U realnim uslovima, nova mese\u269 na kamatna stopa se ra\u269 una prema formuli:\
+\
+R \'96 referentna vrednost (EURIBOR, BELIBOR), kod nas osnovica + pomeraj za taj mesec\
+M \'96 mar\'9ea banke, zavisno od tipa kredita\
+\
+\
+Na\'9aa simulacija:\
+Opcija 1: Me\uc0\u273 utim, po\'9ato API-ji za dohvat referentnih vrednosti u Evropi i Srbiji zahtevaju registraciju i/ili pla\u263 anje, mi \u263 emo ovaj proces simulirati. Jednom mese\u269 no (cron job), sistem generi\'9ae nasumi\u269 an pomeraj u rasponu [-1.50%, +1.50%], \u269 ime \u263 e se imitirati realne promene tr\'9ei\'9anih uslova. Nova godi\'9anja kamatna stopa \u263 e se ra\u269 unati prema slede\u263 oj formuli:\
+\
+Osnovica - osnovica iz tabele\
+Pomeraj - od -1.50 do 1.50\
+M - mar\'9ea banke, zavisno od tipa kredita\
+\
+\
+Opcija 2: U okviru \'93Portala za upravljanje Kreditima\'94 Zaposleni mo\'9ee jednom mese\uc0\u269 no da unese aktuelne varijabilne kamatne stope (u gornjoj formuli to predstavlja osnovicu + pomeraj).\
+\
+\
+Informativno:\
+Referentna vrednost dolazi iz finansijskih tr\'9ei\'9ata i odre\uc0\u273 uju je bankarske institucije:\
+1. EURIBOR (Euro Interbank Offered Rate) \'96 koristi se u EU i predstavlja kamatu po kojoj evropske banke me\uc0\u273 usobno pozajmljuju novac.\
+2. BELIBOR (Beogradska me\uc0\u273 ubankarska kamatna stopa) \'96 koristi se u Srbiji i odre\u273 uje se na osnovu kamata koje banke me\u273 usobno dogovaraju.\
+\
+\
+________________\
+Automatsko skidanje rata\
+Sistem pokre\uc0\u263 e cron job jednom dnevno i obavlja slede\u263 e radnje:\
+                  1. Proverava sve kredite \uc0\u269 iji je datum slede\u263 e rate danas.\
+                  2. Poku\'9aava da skine iznos rate sa teku\uc0\u263 eg ra\u269 una klijenta.\
+                  3. Ako sredstva nisu dovoljna, korak 3 se ponavlja dok se ne isplati rata.\
+                  * Klijent dobija obave\'9atenje putem mejla/SMS-a.\
+                  * Sistem ponovo poku\'9aava da naplati ratu za 72h - odluka tima za broj sati\
+                  * Ako ni tada nema dovoljno sredstava, mo\'9ee do\uc0\u263 i do:\
+                  * Pove\uc0\u263 anja osnovice kamatne stope (npr. +0.05% za ka\'9anjenje) \
+                  * Pokretanja pravnog postupka ako dug prema\'9ai odre\uc0\u273 eni prag - van sistema banke, timovi ovo ne implementiraju\
+Portal za upravljanje Ra\uc0\u269 unima \
+Ovom portalu imaju pristup Zaposleni. Prikazani su svi ra\uc0\u269 uni, sortirani abecedno po prezimenu Klijenata. Prikazano je broj ra\u269 una, ime i prezime vlasnika, da li je ra\u269 un li\u269 ni ili poslovni i da li je ra\u269 un teku\u263 i ili devizni. Dodatno, postoji filter\u8747 na osnovu imena i prezimena vlasnika ra\u269 una, kao i broja ra\u269 una. Klikom na ra\u269 un se otvara Stranica svih kartice vezane za taj ra\u269 un. \
+\
+\
+Stranica svih kartica vezane za ra\uc0\u269 un\
+U zaglavlju se vide iste informacije o ra\uc0\u269 unu kao na prethodnoj stranici. Za svaku karticu je prikazano:\
+- Broj kartice\
+- Vlasnik kartice (ime i prezime, email adresa) \
+- Stanje kartice (aktivna, blokirana ili deaktivirana). \
+\
+\
+Zaposleni mo\'9ee da blokira aktivnu karticu, deblokira blokiranu ili deaktivira karticu. Nakon ovoga, Klijent dobija mejl koji ga informi\'9ae o tom doga\uc0\u273 aju. U slu\u269 aju poslovnog ra\u269 una, mejl dobijaju i Vlasnik ra\u269 una i OvlascenoLice kome pripada kartica. \
+\
+\
+Portal za upravljanje Klijentima\
+Ovom portalu imaju pristup Zaposleni. Prikazani su svi klijenti, sortirano abecedno po prezimenu. Prikazano je ime i prezime, email adresa i broj telefona. Postoji filter na osnovu imena i prezimena, kao i mejla. Klikom na Klijenta se otvara stranica za editovanje klijenta - mogu se menjati sve stavke sem passworda i jmbg-a (za timove koji imaju jmbg u bazi). \
+\
+\
+Prilikom menjanja mejla treba proveriti da je mejl i dalje unique u bazi.\
+\
+\
+Portal za Upravljanje Kreditima\
+Ovom portalu imaju pristup Zaposleni. Postoje 2 stranice:\
+1. Zahtevi za kredit\
+Prikazani su svi zahtevi za kredite, sortirani po datumu podno\'9aenja zahteva. Postoji filter po vrsti kredita i broju ra\uc0\u269 una. Za svaki zahtev su prikazane sve stavke koje je Klijent morao da upi\'9ae i postoje dugmad \'93Odobri\'94 ili \'93Odbij\'94.\
+2. Spisak svih kredita \
+Prikazani su svi krediti sortirani po broju ra\uc0\u269 na. Postoji filter po vrsti kredita, broja ra\u269 una i statusa kredita. Za svaki kredit je prikazano vrsta kredita, tip kamate, datum ugovaranja, period otplate, broj ra\u269 una, iznos kredita, preostalo dugovanje, valuta i status kredita.}

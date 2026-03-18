@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd \"C:\\\\Users\\\\Nevena\\\\Desktop\\\\si\\\\EXBanka-1-Frontend\" && npx shadcn@latest add tabs --yes 2>&1)"
+      "Bash(cd \"C:\\\\Users\\\\Nevena\\\\Desktop\\\\si\\\\EXBanka-1-Frontend\" && npx shadcn@latest add tabs --yes 2>&1)",
+      "Bash(git -C /c/Users/Nevena/Desktop/si/EXBanka-1-Frontend stash)",
+      "Bash(npm run:*)",
+      "Bash(git -C /c/Users/Nevena/Desktop/si/EXBanka-1-Frontend stash pop)",
+      "Bash(cat /c/Users/Nevena/Desktop/si/EXBanka-1-Frontend/.eslintrc.*)",
+      "Bash(npm test:*)"
     ]
   }
 }
