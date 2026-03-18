@@ -1,4 +1,4 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { EmployeeListPage } from '@/pages/EmployeeListPage'
 import * as employeesApi from '@/lib/api/employees'
@@ -52,7 +52,14 @@ describe('EmployeeListPage', () => {
     expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
   })
 
-  it('filters employees locally by first name', async () => {
+  it('calls API with name filter when typing', async () => {
+    jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
+      if (filters.name === 'Jane') {
+        return { employees: [allEmployees[0]], total_count: 1 }
+      }
+      return { employees: allEmployees, total_count: 3 }
+    })
+
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
@@ -61,12 +68,23 @@ describe('EmployeeListPage', () => {
     const filterInput = screen.getByPlaceholderText(/type to filter/i)
     fireEvent.change(filterInput, { target: { value: 'Jane' } })
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(employeesApi.getEmployees).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Jane', page: 1, page_size: 20 })
+      )
+    )
+    await screen.findByText('Jane Doe')
     expect(screen.queryByText('John Smith')).not.toBeInTheDocument()
-    expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument()
   })
 
-  it('shows all employees when filter is cleared', async () => {
+  it('calls API without filter params when filter is cleared', async () => {
+    jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
+      if (filters.name === 'Jane') {
+        return { employees: [allEmployees[0]], total_count: 1 }
+      }
+      return { employees: allEmployees, total_count: 3 }
+    })
+
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
@@ -74,12 +92,16 @@ describe('EmployeeListPage', () => {
 
     const filterInput = screen.getByPlaceholderText(/type to filter/i)
     fireEvent.change(filterInput, { target: { value: 'Jane' } })
-    expect(screen.queryByText('John Smith')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('John Smith')).not.toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: /clear filter/i }))
 
-    expect(screen.getByText('Jane Doe')).toBeInTheDocument()
-    expect(screen.getByText('John Smith')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(employeesApi.getEmployees).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, page_size: 20 })
+      )
+    )
+    await screen.findByText('John Smith')
     expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
   })
 
@@ -96,18 +118,75 @@ describe('EmployeeListPage', () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
   })
 
-  it('fetches employees without filter or pagination params', async () => {
+  it('fetches with page and page_size on initial load', async () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
     await screen.findByText('Jane Doe')
-    expect(employeesApi.getEmployees).toHaveBeenCalledWith({})
+    expect(employeesApi.getEmployees).toHaveBeenCalledWith({ page: 1, page_size: 20 })
   })
 
-  it('shows "No employees found." when filter matches nothing', async () => {
+  it('calls API with email filter when category is changed to email', async () => {
+    jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
+      if (filters.email === 'john@test.com') {
+        return { employees: [allEmployees[1]], total_count: 1 }
+      }
+      return { employees: allEmployees, total_count: 3 }
+    })
+
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Jane Doe')
+
+    fireEvent.click(screen.getByRole('option', { name: /email/i }))
+    const filterInput = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(filterInput, { target: { value: 'john@test.com' } })
+
+    await waitFor(() =>
+      expect(employeesApi.getEmployees).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'john@test.com', page: 1, page_size: 20 })
+      )
+    )
+  })
+
+  it('calls API with position filter when category is changed to position', async () => {
+    jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
+      if (filters.position === 'Manager') {
+        return { employees: [allEmployees[1]], total_count: 1 }
+      }
+      return { employees: allEmployees, total_count: 3 }
+    })
+
+    renderWithProviders(<EmployeeListPage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await screen.findByText('Jane Doe')
+
+    fireEvent.click(screen.getByRole('option', { name: /position/i }))
+    const filterInput = screen.getByPlaceholderText(/type to filter/i)
+    fireEvent.change(filterInput, { target: { value: 'Manager' } })
+
+    await waitFor(() =>
+      expect(employeesApi.getEmployees).toHaveBeenCalledWith(
+        expect.objectContaining({ position: 'Manager', page: 1, page_size: 20 })
+      )
+    )
+    await screen.findByText('John Smith')
+    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
+  })
+
+  it('shows "No employees found." when API returns empty array', async () => {
+    jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
+      if (filters.name === 'ZZZZZ') {
+        return { employees: [], total_count: 0 }
+      }
+      return { employees: allEmployees, total_count: 3 }
+    })
+
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
@@ -116,50 +195,12 @@ describe('EmployeeListPage', () => {
     const filterInput = screen.getByPlaceholderText(/type to filter/i)
     fireEvent.change(filterInput, { target: { value: 'ZZZZZ' } })
 
-    expect(screen.getByText('No employees found.')).toBeInTheDocument()
+    await screen.findByText('No employees found.')
     expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
-  })
-
-  it('filters across all fields when "All" category is selected', async () => {
-    renderWithProviders(<EmployeeListPage />, {
-      preloadedState: { auth: createMockAuthState() },
-    })
-    await screen.findByText('Jane Doe')
-
-    // Switch to "All" category
-    fireEvent.click(screen.getByRole('option', { name: /^all$/i }))
-
-    // Filter by an email fragment — only matchable via email field
-    const filterInput = screen.getByPlaceholderText(/type to filter/i)
-    fireEvent.change(filterInput, { target: { value: 'alice@test' } })
-
-    expect(screen.getByText('Alice Johnson')).toBeInTheDocument()
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
-    expect(screen.queryByText('John Smith')).not.toBeInTheDocument()
-  })
-
-  it('filters employees by position when category is changed', async () => {
-    renderWithProviders(<EmployeeListPage />, {
-      preloadedState: { auth: createMockAuthState() },
-    })
-    await screen.findByText('Jane Doe')
-
-    // Switch category to Position using the mocked Select
-    const positionOption = screen.getByRole('option', { name: /position/i })
-    fireEvent.click(positionOption)
-
-    // Filter by "Manager"
-    const filterInput = screen.getByPlaceholderText(/type to filter/i)
-    fireEvent.change(filterInput, { target: { value: 'Manager' } })
-
-    expect(screen.getByText('John Smith')).toBeInTheDocument()
-    expect(screen.queryByText('Jane Doe')).not.toBeInTheDocument()
-    expect(screen.queryByText('Alice Johnson')).not.toBeInTheDocument()
   })
 })
 
 describe('EmployeeListPage — pagination', () => {
-  // Generate 25 employees: first 20 have last_name "PageOne", last 5 have last_name "PageTwo"
   const employees25 = Array.from({ length: 25 }, (_, i) =>
     createMockEmployee({
       id: i + 1,
@@ -171,13 +212,15 @@ describe('EmployeeListPage — pagination', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-    jest.mocked(employeesApi.getEmployees).mockResolvedValue({
-      employees: employees25,
-      total_count: 25,
+    jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
+      if (filters.page === 2) {
+        return { employees: employees25.slice(20), total_count: 25 }
+      }
+      return { employees: employees25.slice(0, 20), total_count: 25 }
     })
   })
 
-  it('shows pagination controls when there are more than 20 employees', async () => {
+  it('shows pagination controls when total_count > PAGE_SIZE', async () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
@@ -204,7 +247,7 @@ describe('EmployeeListPage — pagination', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
 
-    expect(screen.getByText('Employee PageTwo1')).toBeInTheDocument()
+    await screen.findByText('Employee PageTwo1')
     expect(screen.getByText('Employee PageTwo5')).toBeInTheDocument()
     expect(screen.queryByText('Employee PageOne1')).not.toBeInTheDocument()
     expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument()
@@ -217,11 +260,11 @@ describe('EmployeeListPage — pagination', () => {
     await screen.findByText('Employee PageOne1')
 
     fireEvent.click(screen.getByRole('button', { name: /next/i }))
-    expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument()
+    await screen.findByText(/page 2 of 2/i)
 
     fireEvent.click(screen.getByRole('button', { name: /previous/i }))
 
-    expect(screen.getByText('Employee PageOne1')).toBeInTheDocument()
+    await screen.findByText('Employee PageOne1')
     expect(screen.queryByText('Employee PageTwo1')).not.toBeInTheDocument()
     expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument()
   })

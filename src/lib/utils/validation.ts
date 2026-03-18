@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { EMPLOYEE_ROLES } from '@/lib/utils/constants'
 
 export const passwordSchema = z
   .string()
@@ -42,13 +43,6 @@ export const activationSchema = z
     message: 'Passwords do not match',
     path: ['confirm_password'],
   })
-
-const EMPLOYEE_ROLES = [
-  'EmployeeBasic',
-  'EmployeeAgent',
-  'EmployeeSupervisor',
-  'EmployeeAdmin',
-] as const
 
 export const createEmployeeSchema = z.object({
   first_name: z
