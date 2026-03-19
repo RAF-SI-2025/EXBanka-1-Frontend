@@ -30,6 +30,7 @@ export async function getLoanRequests(
   const params = new URLSearchParams()
   if (filters?.loan_type) params.append('loan_type', filters.loan_type)
   if (filters?.account_number) params.append('account_number', filters.account_number)
+  if (filters?.status) params.append('status', filters.status)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
   const response = await apiClient.get<LoanRequestListResponse>('/api/loans/requests', { params })
