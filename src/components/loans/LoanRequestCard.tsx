@@ -16,6 +16,11 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
   REJECTED: 'destructive',
 }
 
+const INTEREST_TYPE_LABELS: Record<string, string> = {
+  FIXED: 'Fiksna',
+  VARIABLE: 'Varijabilna',
+}
+
 interface LoanRequestCardProps {
   request: LoanRequest
   onApprove: (id: number) => void
@@ -35,13 +40,24 @@ export function LoanRequestCard({
     LOAN_TYPES.find((t) => t.value === request.loan_type)?.label ?? request.loan_type
   const isPending = request.status === 'PENDING'
   const isDisabled = approving || rejecting
+  const currency = request.currency_code ?? 'RSD'
 
   return (
     <tr>
       <td className="p-4">{loanTypeLabel}</td>
-      <td className="p-4">{formatCurrency(request.amount, 'RSD')}</td>
+      <td className="p-4">{formatCurrency(request.amount, currency)}</td>
       <td className="p-4">{request.period} mes.</td>
       <td className="p-4">{request.account_number}</td>
+      <td className="p-4">
+        {request.interest_type ? INTEREST_TYPE_LABELS[request.interest_type] : '—'}
+      </td>
+      <td className="p-4">{request.currency_code ?? '—'}</td>
+      <td className="p-4">{request.purpose ?? '—'}</td>
+      <td className="p-4">
+        {request.monthly_salary ? formatCurrency(request.monthly_salary, 'RSD') : '—'}
+      </td>
+      <td className="p-4">{request.employment_status ?? '—'}</td>
+      <td className="p-4">{request.phone ?? '—'}</td>
       <td className="p-4">{formatDate(request.created_at)}</td>
       <td className="p-4">
         <Badge variant={STATUS_VARIANT[request.status] ?? 'secondary'}>
