@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -8,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatCurrency, formatDate, formatAccountNumber } from '@/lib/utils/format'
+import { generateReceiptPdf } from '@/lib/utils/receipt-pdf'
 import type { Payment } from '@/types/payment'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -36,6 +38,7 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
           <TableHead>Primalac</TableHead>
           <TableHead>Iznos</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -52,11 +55,16 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
                 {STATUS_LABELS[p.status] ?? p.status}
               </Badge>
             </TableCell>
+            <TableCell>
+              <Button variant="outline" size="sm" onClick={() => generateReceiptPdf(p)}>
+                PDF
+              </Button>
+            </TableCell>
           </TableRow>
         ))}
         {payments.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground">
+            <TableCell colSpan={6} className="text-center text-muted-foreground">
               Nema plaćanja.
             </TableCell>
           </TableRow>
