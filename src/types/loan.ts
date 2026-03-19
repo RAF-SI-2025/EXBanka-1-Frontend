@@ -2,6 +2,7 @@ export type LoanType = 'CASH' | 'MORTGAGE' | 'AUTO' | 'REFINANCING' | 'STUDENT'
 export type LoanStatus = 'ACTIVE' | 'PAID_OFF' | 'DELINQUENT'
 export type LoanRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type InstallmentStatus = 'PAID' | 'UNPAID' | 'OVERDUE'
+export type InterestType = 'FIXED' | 'VARIABLE'
 
 export interface LoanInstallment {
   id: number
@@ -18,8 +19,17 @@ export interface Loan {
   account_number: string
   amount: number
   interest_rate: number
+  nominal_interest_rate?: number
+  effective_interest_rate?: number
+  interest_type?: InterestType
   period: number
   installment_amount: number
+  contract_date?: string
+  maturity_date?: string
+  next_installment_amount?: number
+  next_installment_date?: string
+  remaining_debt?: number
+  currency_code?: string
   status: LoanStatus
   created_at: string
   installments?: LoanInstallment[]
@@ -32,11 +42,19 @@ export interface LoanListResponse {
 
 export interface LoanRequest {
   id: number
+  client_id?: number
   loan_type: LoanType
+  interest_type?: InterestType
   account_number: string
   amount: number
-  period: number
   interest_rate: number
+  currency_code?: string
+  purpose?: string
+  monthly_salary?: number
+  employment_status?: string
+  employment_period?: number
+  period: number
+  phone?: string
   status: LoanRequestStatus
   created_at: string
 }
@@ -57,14 +75,21 @@ export interface LoanFilters {
 export interface LoanRequestFilters {
   loan_type?: LoanType
   account_number?: string
+  status?: LoanRequestStatus
   page?: number
   page_size?: number
 }
 
 export interface CreateLoanRequest {
   loan_type: LoanType
+  interest_type?: InterestType
   account_number: string
   amount: number
-  period: number
   currency_code?: string
+  purpose?: string
+  monthly_salary?: number
+  employment_status?: string
+  employment_period?: number
+  period: number
+  phone?: string
 }

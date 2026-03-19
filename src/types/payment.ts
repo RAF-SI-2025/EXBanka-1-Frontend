@@ -25,6 +25,8 @@ export interface PaymentFilters {
   from_date?: string
   to_date?: string
   status?: PaymentStatus
+  amount_min?: number
+  amount_max?: number
   page?: number
   page_size?: number
 }

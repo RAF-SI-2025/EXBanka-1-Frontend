@@ -6,18 +6,34 @@ import { AccountCard } from '@/components/accounts/AccountCard'
 import { RecentTransactions } from '@/components/accounts/RecentTransactions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
 import type { Account } from '@/types/account'
+import type { Payment } from '@/types/payment'
 
 export function AccountListPage() {
   const navigate = useNavigate()
   const { data: accountsData, isLoading } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
+  const [sortBy, setSortBy] = useState<'date' | 'type'>('date')
+
+  const effectiveAccount = selectedAccount ?? accounts[0] ?? null
 
   const { data: paymentsData } = usePayments(
-    selectedAccount ? { account_number: selectedAccount.account_number } : undefined
+    effectiveAccount ? { account_number: effectiveAccount.account_number } : undefined
   )
-  const transactions = paymentsData?.payments ?? []
+
+  const sortedTransactions = [...(paymentsData?.payments ?? [])].sort((a: Payment, b: Payment) => {
+    if (sortBy === 'date') return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    return a.status.localeCompare(b.status)
+  })
 
   if (isLoading) return <p>Učitavanje...</p>
 
@@ -35,22 +51,34 @@ export function AccountListPage() {
         {accounts.length === 0 && <p className="text-muted-foreground">Nemate aktivnih računa.</p>}
       </div>
 
-      {selectedAccount && (
+      {effectiveAccount && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">
-              Poslednje transakcije — {selectedAccount.name}
+              Poslednje transakcije — {effectiveAccount.name}
             </CardTitle>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/accounts/${selectedAccount.id}`)}
+              onClick={() => navigate(`/accounts/${effectiveAccount.id}`)}
             >
               Detalji računa
             </Button>
           </CardHeader>
           <CardContent>
-            <RecentTransactions transactions={transactions} />
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Sortiraj po:</Label>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'type')}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Datumu</SelectItem>
+                  <SelectItem value="type">Tipu transakcije</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <RecentTransactions transactions={sortedTransactions} />
           </CardContent>
         </Card>
       )}

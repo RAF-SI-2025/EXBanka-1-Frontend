@@ -130,11 +130,19 @@ export const createInternalTransferSchema = z
   })
 
 export const createLoanRequestSchema = z.object({
-  loan_type: z.enum(LOAN_TYPES_ENUM),
-  account_number: z.string().min(1, 'Account is required'),
-  amount: z.number().positive('Amount must be greater than 0'),
-  period: z.number().int().positive('Period must be positive'),
-  currency_code: z.string().optional(),
+  loan_type: z.enum(LOAN_TYPES_ENUM, { message: 'Izaberite vrstu kredita' }),
+  interest_type: z.enum(['FIXED', 'VARIABLE'] as const, {
+    message: 'Izaberite tip kamatne stope',
+  }),
+  account_number: z.string().min(1, 'Izaberite račun'),
+  amount: z.number({ error: 'Unesite iznos' }).positive('Iznos mora biti pozitivan'),
+  currency_code: z.string().min(1, 'Izaberite valutu'),
+  purpose: z.string().optional(),
+  monthly_salary: z.number().positive('Plata mora biti pozitivna').optional(),
+  employment_status: z.string().optional(),
+  employment_period: z.number().int().min(0).optional(),
+  period: z.number({ error: 'Izaberite period otplate' }).int().positive(),
+  phone: z.string().max(15).optional().or(z.literal('')),
 })
 
 export const paymentRecipientSchema = z.object({

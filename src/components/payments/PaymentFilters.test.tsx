@@ -58,6 +58,12 @@ describe('PaymentFilters', () => {
     expect(onFilterChange).toHaveBeenCalledWith(expect.objectContaining({ status: 'REALIZED' }))
   })
 
+  it('renders amount min and max inputs', () => {
+    render(<PaymentFilters filters={defaultFilters} onFilterChange={jest.fn()} />)
+    expect(screen.getByLabelText(/min iznos/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/max iznos/i)).toBeInTheDocument()
+  })
+
   it('displays current filter values', () => {
     const filters: PaymentFiltersType = {
       from_date: '2026-01-01',

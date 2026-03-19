@@ -128,4 +128,60 @@ describe('LoanRequestCard', () => {
     expect(screen.getByRole('button', { name: /odobri/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /odbij/i })).toBeDisabled()
   })
+
+  it('displays interest type when present', () => {
+    const request = createMockLoanRequest({ interest_type: 'FIXED' })
+    renderWithProviders(
+      <LoanRequestCard
+        request={request}
+        onApprove={mockOnApprove}
+        onReject={mockOnReject}
+        approving={false}
+        rejecting={false}
+      />
+    )
+    expect(screen.getByText(/fiksna/i)).toBeInTheDocument()
+  })
+
+  it('displays currency when present', () => {
+    const request = createMockLoanRequest({ currency_code: 'EUR' })
+    renderWithProviders(
+      <LoanRequestCard
+        request={request}
+        onApprove={mockOnApprove}
+        onReject={mockOnReject}
+        approving={false}
+        rejecting={false}
+      />
+    )
+    expect(screen.getAllByText(/EUR/).length).toBeGreaterThan(0)
+  })
+
+  it('displays purpose when present', () => {
+    const request = createMockLoanRequest({ purpose: 'Renoviranje stana' })
+    renderWithProviders(
+      <LoanRequestCard
+        request={request}
+        onApprove={mockOnApprove}
+        onReject={mockOnReject}
+        approving={false}
+        rejecting={false}
+      />
+    )
+    expect(screen.getByText('Renoviranje stana')).toBeInTheDocument()
+  })
+
+  it('displays phone when present', () => {
+    const request = createMockLoanRequest({ phone: '+381611234567' })
+    renderWithProviders(
+      <LoanRequestCard
+        request={request}
+        onApprove={mockOnApprove}
+        onReject={mockOnReject}
+        approving={false}
+        rejecting={false}
+      />
+    )
+    expect(screen.getByText('+381611234567')).toBeInTheDocument()
+  })
 })

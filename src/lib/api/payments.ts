@@ -27,6 +27,8 @@ export async function getPayments(filters?: PaymentFilters): Promise<PaymentList
   if (filters?.from_date) params.append('from_date', filters.from_date)
   if (filters?.to_date) params.append('to_date', filters.to_date)
   if (filters?.status) params.append('status', filters.status)
+  if (filters?.amount_min) params.append('amount_min', String(filters.amount_min))
+  if (filters?.amount_max) params.append('amount_max', String(filters.amount_max))
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
   const response = await apiClient.get<PaymentListResponse>('/api/payments', { params })

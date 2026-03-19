@@ -35,6 +35,9 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(createPaymentSchema),
+    defaultValues: {
+      payment_code: '289',
+    },
   })
 
   const { handleRecipientSelect } = useRecipientAutofill(recipients, setValue)

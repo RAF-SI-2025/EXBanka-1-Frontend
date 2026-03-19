@@ -17,6 +17,16 @@ const STATUS_LABELS: Record<string, string> = {
   BLOCKED: 'Blokiran',
 }
 
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  CURRENT: 'Tekući',
+  FOREIGN_CURRENCY: 'Devizni',
+}
+
+const OWNER_TYPE_LABELS: Record<string, string> = {
+  PERSONAL: 'Lični',
+  BUSINESS: 'Poslovni',
+}
+
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
   ACTIVE: 'default',
   INACTIVE: 'secondary',
@@ -36,6 +46,8 @@ export function AccountTable({ accounts, onViewCards }: AccountTableProps) {
           <TableHead>Vlasnik</TableHead>
           <TableHead>Broj računa</TableHead>
           <TableHead>Naziv</TableHead>
+          <TableHead>Tip</TableHead>
+          <TableHead>Vlasnik tip</TableHead>
           <TableHead>Valuta</TableHead>
           <TableHead>Stanje</TableHead>
           <TableHead>Status</TableHead>
@@ -50,6 +62,8 @@ export function AccountTable({ accounts, onViewCards }: AccountTableProps) {
               {formatAccountNumber(acc.account_number)}
             </TableCell>
             <TableCell>{acc.name}</TableCell>
+            <TableCell>{ACCOUNT_TYPE_LABELS[acc.account_type] ?? acc.account_type}</TableCell>
+            <TableCell>{OWNER_TYPE_LABELS[acc.owner_type] ?? acc.owner_type}</TableCell>
             <TableCell>{acc.currency}</TableCell>
             <TableCell>{formatCurrency(acc.available_balance, acc.currency)}</TableCell>
             <TableCell>
@@ -66,7 +80,7 @@ export function AccountTable({ accounts, onViewCards }: AccountTableProps) {
         ))}
         {accounts.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="text-center text-muted-foreground">
+            <TableCell colSpan={9} className="text-center text-muted-foreground">
               Nema računa.
             </TableCell>
           </TableRow>

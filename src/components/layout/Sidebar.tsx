@@ -80,8 +80,11 @@ function EmployeeNav() {
       <Link to="/admin/clients" className={navLinkClass}>
         Clients
       </Link>
+      <Link to="/admin/loans/requests" className={navLinkClass}>
+        Zahtevi za kredite
+      </Link>
       <Link to="/admin/loans" className={navLinkClass}>
-        Loans Admin
+        Svi krediti
       </Link>
     </>
   )

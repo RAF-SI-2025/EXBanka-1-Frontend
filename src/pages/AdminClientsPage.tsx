@@ -26,7 +26,7 @@ export function AdminClientsPage() {
       ) : (
         <ClientTable
           clients={clients}
-          onEdit={(clientId) => navigate(`/admin/clients/${clientId}/edit`)}
+          onEdit={(clientId) => navigate(`/admin/clients/${clientId}`)}
         />
       )}
     </div>

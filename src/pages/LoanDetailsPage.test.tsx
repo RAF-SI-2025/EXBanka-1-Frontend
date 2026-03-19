@@ -18,6 +18,6 @@ describe('LoanDetailsPage', () => {
   it('renders loan details', () => {
     renderWithProviders(<LoanDetailsPage />, { route: '/loans/1' })
     expect(screen.getAllByText(/gotovinski/i).length).toBeGreaterThan(0)
-    expect(screen.getByText(/kamatna stopa/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/kamatna stopa/i).length).toBeGreaterThan(0)
   })
 })

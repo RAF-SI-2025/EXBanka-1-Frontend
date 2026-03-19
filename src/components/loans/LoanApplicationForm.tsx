@@ -1,5 +1,4 @@
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { Controller } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -10,13 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createLoanRequestSchema } from '@/lib/utils/validation'
-import { LOAN_TYPES, LOAN_PERIODS_MONTHS } from '@/lib/constants/banking'
+import { useLoanApplicationForm } from '@/hooks/useLoanApplicationForm'
+import { LOAN_TYPES, INTEREST_TYPES, EMPLOYMENT_STATUSES } from '@/lib/constants/banking'
 import type { Account } from '@/types/account'
 import type { CreateLoanRequest } from '@/types/loan'
-import type { z } from 'zod'
-
-type FormValues = z.infer<typeof createLoanRequestSchema>
 
 interface LoanApplicationFormProps {
   accounts: Account[]
@@ -31,21 +27,11 @@ export function LoanApplicationForm({
   submitting,
   error,
 }: LoanApplicationFormProps) {
-  const {
-    register,
-    handleSubmit,
-    control,
-    formState: { errors },
-  } = useForm<FormValues>({
-    resolver: zodResolver(createLoanRequestSchema),
-  })
-
-  const handleFormSubmit = (data: FormValues) => {
-    onSubmit(data)
-  }
+  const { register, control, errors, periodOptions, handleAccountChange, submitForm } =
+    useLoanApplicationForm(accounts, onSubmit)
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={submitForm} className="space-y-4">
       <div>
         <Label>Tip kredita</Label>
         <Controller
@@ -53,7 +39,7 @@ export function LoanApplicationForm({
           control={control}
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
-              <SelectTrigger>
+              <SelectTrigger aria-label="Tip kredita">
                 <SelectValue placeholder="Izaberite tip" />
               </SelectTrigger>
               <SelectContent>
@@ -70,12 +56,43 @@ export function LoanApplicationForm({
       </div>
 
       <div>
+        <Label>Tip kamatne stope</Label>
+        <Controller
+          name="interest_type"
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger>
+                <SelectValue placeholder="Izaberite tip kamate" />
+              </SelectTrigger>
+              <SelectContent>
+                {INTEREST_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.interest_type && (
+          <p className="text-sm text-destructive">{errors.interest_type.message}</p>
+        )}
+      </div>
+
+      <div>
         <Label>Račun za isplatu</Label>
         <Controller
           name="account_number"
           control={control}
           render={({ field }) => (
-            <Select onValueChange={field.onChange} value={field.value}>
+            <Select
+              onValueChange={(v) => {
+                handleAccountChange(v)
+                field.onChange(v)
+              }}
+              value={field.value}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Izaberite račun" />
               </SelectTrigger>
@@ -94,6 +111,8 @@ export function LoanApplicationForm({
         )}
       </div>
 
+      <input type="hidden" {...register('currency_code')} />
+
       <div>
         <Label htmlFor="amount">Iznos</Label>
         <Input id="amount" type="number" {...register('amount', { valueAsNumber: true })} />
@@ -110,11 +129,11 @@ export function LoanApplicationForm({
               onValueChange={(v) => field.onChange(Number(v))}
               value={field.value ? String(field.value) : ''}
             >
-              <SelectTrigger>
+              <SelectTrigger aria-label="Period otplate">
                 <SelectValue placeholder="Izaberite period" />
               </SelectTrigger>
               <SelectContent>
-                {LOAN_PERIODS_MONTHS.map((m) => (
+                {periodOptions.map((m) => (
                   <SelectItem key={m} value={String(m)}>
                     {m} meseci
                   </SelectItem>
@@ -124,6 +143,60 @@ export function LoanApplicationForm({
           )}
         />
         {errors.period && <p className="text-sm text-destructive">{errors.period.message}</p>}
+      </div>
+
+      <div>
+        <Label htmlFor="purpose">Svrha kredita</Label>
+        <Input id="purpose" {...register('purpose')} />
+      </div>
+
+      <div>
+        <Label htmlFor="monthly_salary">Mesečna plata</Label>
+        <Input
+          id="monthly_salary"
+          type="number"
+          {...register('monthly_salary', { valueAsNumber: true })}
+        />
+        {errors.monthly_salary && (
+          <p className="text-sm text-destructive">{errors.monthly_salary.message}</p>
+        )}
+      </div>
+
+      <div>
+        <Label>Status zaposlenja</Label>
+        <Controller
+          name="employment_status"
+          control={control}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger>
+                <SelectValue placeholder="Izaberite status" />
+              </SelectTrigger>
+              <SelectContent>
+                {EMPLOYMENT_STATUSES.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="employment_period">Period zaposlenja (godine)</Label>
+        <Input
+          id="employment_period"
+          type="number"
+          {...register('employment_period', { valueAsNumber: true })}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="phone">Telefon</Label>
+        <Input id="phone" {...register('phone')} />
+        {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

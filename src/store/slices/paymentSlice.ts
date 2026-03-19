@@ -5,12 +5,15 @@ import type { Payment, CreatePaymentRequest, CreateInternalTransferRequest } fro
 export type PaymentFlowType = 'payment' | 'internal'
 
 export interface PaymentFlowState {
-  step: 'form' | 'confirmation' | 'success'
+  step: 'form' | 'confirmation' | 'verification' | 'success'
   flowType: PaymentFlowType
   formData: CreatePaymentRequest | CreateInternalTransferRequest | null
   submitting: boolean
   error: string | null
   result: Payment | null
+  transactionId: number | null
+  codeRequested: boolean
+  verificationError: string | null
 }
 
 const initialState: PaymentFlowState = {
@@ -20,6 +23,9 @@ const initialState: PaymentFlowState = {
   submitting: false,
   error: null,
   result: null,
+  transactionId: null,
+  codeRequested: false,
+  verificationError: null,
 }
 
 export const submitPayment = createAsyncThunk(
@@ -56,6 +62,15 @@ const paymentSlice = createSlice({
     ) {
       state.formData = action.payload
     },
+    setTransactionId(state, action: PayloadAction<number | null>) {
+      state.transactionId = action.payload
+    },
+    setCodeRequested(state, action: PayloadAction<boolean>) {
+      state.codeRequested = action.payload
+    },
+    setVerificationError(state, action: PayloadAction<string | null>) {
+      state.verificationError = action.payload
+    },
     resetPaymentFlow() {
       return initialState
     },
@@ -69,7 +84,8 @@ const paymentSlice = createSlice({
       .addCase(submitPayment.fulfilled, (state, action) => {
         state.submitting = false
         state.result = action.payload
-        state.step = 'success'
+        state.transactionId = action.payload.id
+        state.step = 'verification'
       })
       .addCase(submitPayment.rejected, (state, action) => {
         state.submitting = false
@@ -78,6 +94,13 @@ const paymentSlice = createSlice({
   },
 })
 
-export const { setPaymentStep, setPaymentFlowType, setPaymentFormData, resetPaymentFlow } =
-  paymentSlice.actions
+export const {
+  setPaymentStep,
+  setPaymentFlowType,
+  setPaymentFormData,
+  setTransactionId,
+  setCodeRequested,
+  setVerificationError,
+  resetPaymentFlow,
+} = paymentSlice.actions
 export default paymentSlice.reducer

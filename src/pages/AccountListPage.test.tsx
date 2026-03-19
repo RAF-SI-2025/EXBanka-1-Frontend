@@ -31,9 +31,10 @@ describe('AccountListPage', () => {
     expect(screen.getByText('Tekući RSD')).toBeInTheDocument()
   })
 
-  it('does not show recent transactions section before an account is selected', () => {
+  it('shows recent transactions for the first account by default', () => {
     renderWithProviders(<AccountListPage />)
-    expect(screen.queryByText(/poslednje transakcije/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/poslednje transakcije/i)).toBeInTheDocument()
+    expect(screen.getByText('Elektro Beograd')).toBeInTheDocument()
   })
 
   it('shows recent transactions after clicking an account', () => {

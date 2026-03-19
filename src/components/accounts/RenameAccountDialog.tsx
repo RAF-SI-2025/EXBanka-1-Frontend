@@ -14,6 +14,7 @@ interface RenameAccountDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentName: string
+  existingNames?: string[]
   onRename: (name: string) => void
   loading: boolean
 }
@@ -22,10 +23,15 @@ export function RenameAccountDialog({
   open,
   onOpenChange,
   currentName,
+  existingNames = [],
   onRename,
   loading,
 }: RenameAccountDialogProps) {
   const [name, setName] = useState(currentName)
+
+  const isSameName = name === currentName
+  const isDuplicate = existingNames.includes(name)
+  const isInvalid = !name || isSameName || isDuplicate
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -36,12 +42,18 @@ export function RenameAccountDialog({
         <div className="space-y-2">
           <Label htmlFor="account-name">Naziv računa</Label>
           <Input id="account-name" value={name} onChange={(e) => setName(e.target.value)} />
+          {isSameName && name && (
+            <p className="text-sm text-destructive">Naziv je isti kao trenutni.</p>
+          )}
+          {isDuplicate && !isSameName && (
+            <p className="text-sm text-destructive">Naziv se već koristi za drugi račun.</p>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Otkaži
           </Button>
-          <Button onClick={() => onRename(name)} disabled={loading || !name}>
+          <Button onClick={() => onRename(name)} disabled={loading || isInvalid}>
             {loading ? 'Čuvanje...' : 'Sačuvaj'}
           </Button>
         </DialogFooter>

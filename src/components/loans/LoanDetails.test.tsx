@@ -21,4 +21,34 @@ describe('LoanDetails', () => {
     renderWithProviders(<LoanDetails loan={loan} />)
     expect(screen.getByText(/8\.5%/)).toBeInTheDocument()
   })
+
+  it('renders effective interest rate', () => {
+    renderWithProviders(<LoanDetails loan={createMockLoan()} />)
+    expect(screen.getByText(/efektivna/i)).toBeInTheDocument()
+  })
+
+  it('renders maturity date', () => {
+    renderWithProviders(<LoanDetails loan={createMockLoan()} />)
+    expect(screen.getByText(/datum dospeća/i)).toBeInTheDocument()
+  })
+
+  it('renders remaining debt', () => {
+    renderWithProviders(<LoanDetails loan={createMockLoan()} />)
+    expect(screen.getByText(/preostalo dugovanje/i)).toBeInTheDocument()
+  })
+
+  it('renders next installment info', () => {
+    renderWithProviders(<LoanDetails loan={createMockLoan()} />)
+    expect(screen.getByText(/sledeća rata/i)).toBeInTheDocument()
+  })
+
+  it('renders currency from loan data', () => {
+    renderWithProviders(<LoanDetails loan={createMockLoan({ currency_code: 'EUR' })} />)
+    expect(screen.getAllByText(/EUR/).length).toBeGreaterThan(0)
+  })
+
+  it('renders interest type', () => {
+    renderWithProviders(<LoanDetails loan={createMockLoan({ interest_type: 'VARIABLE' })} />)
+    expect(screen.getByText(/varijabilna/i)).toBeInTheDocument()
+  })
 })

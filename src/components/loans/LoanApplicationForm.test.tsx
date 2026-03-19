@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { LoanApplicationForm } from '@/components/loans/LoanApplicationForm'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
+import userEvent from '@testing-library/user-event'
 
 const mockAccounts = [
   createMockAccount({ account_number: '111000100000000011', name: 'Tekući RSD', currency: 'RSD' }),
@@ -44,5 +45,44 @@ describe('LoanApplicationForm', () => {
     const errorMessage = 'Greška pri podnošenju zahteva'
     renderWithProviders(<LoanApplicationForm {...defaultProps} error={errorMessage} />)
     expect(screen.getByText(errorMessage)).toBeInTheDocument()
+  })
+
+  it('renders interest type selector', () => {
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+    expect(screen.getByText(/tip kamatne stope/i)).toBeInTheDocument()
+  })
+
+  it('renders purpose field', () => {
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+    expect(screen.getByLabelText(/svrha kredita/i)).toBeInTheDocument()
+  })
+
+  it('renders monthly salary field', () => {
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+    expect(screen.getByLabelText(/mesečna plata/i)).toBeInTheDocument()
+  })
+
+  it('renders employment status selector', () => {
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+    expect(screen.getByText(/status zaposlenja/i)).toBeInTheDocument()
+  })
+
+  it('renders phone field', () => {
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+    expect(screen.getByLabelText(/telefon/i)).toBeInTheDocument()
+  })
+
+  it('shows mortgage period options when mortgage loan type is selected', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+    // Open loan type select
+    const loanTypeSelect = screen.getByRole('combobox', { name: /tip kredita/i })
+    await user.click(loanTypeSelect)
+    const mortgageOption = screen.getByText('Stambeni')
+    await user.click(mortgageOption)
+    // Mortgage periods include 360 months
+    const periodSelect = screen.getByRole('combobox', { name: /period/i })
+    await user.click(periodSelect)
+    expect(screen.getByText('360 meseci')).toBeInTheDocument()
   })
 })

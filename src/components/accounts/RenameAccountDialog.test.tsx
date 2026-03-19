@@ -18,6 +18,41 @@ describe('RenameAccountDialog', () => {
     expect(screen.getByText(/preimenuj račun/i)).toBeInTheDocument()
   })
 
+  it('shows error when new name is the same as current', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <RenameAccountDialog
+        open={true}
+        onOpenChange={jest.fn()}
+        currentName="Tekući RSD"
+        onRename={jest.fn()}
+        loading={false}
+      />
+    )
+    const input = screen.getByLabelText(/naziv računa/i)
+    await user.clear(input)
+    await user.type(input, 'Tekući RSD')
+    expect(screen.getByText(/isti kao trenutni/i)).toBeInTheDocument()
+  })
+
+  it('shows error when name matches an existing account', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <RenameAccountDialog
+        open={true}
+        onOpenChange={jest.fn()}
+        currentName="Tekući RSD"
+        existingNames={['Devizni EUR']}
+        onRename={jest.fn()}
+        loading={false}
+      />
+    )
+    const input = screen.getByLabelText(/naziv računa/i)
+    await user.clear(input)
+    await user.type(input, 'Devizni EUR')
+    expect(screen.getByText(/već koristi/i)).toBeInTheDocument()
+  })
+
   it('calls onRename with new name', async () => {
     const user = userEvent.setup()
     const onRename = jest.fn()

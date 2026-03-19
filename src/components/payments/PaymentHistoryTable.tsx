@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { TransactionDetailsDialog } from '@/components/payments/TransactionDetailsDialog'
 import { formatCurrency, formatDate, formatAccountNumber } from '@/lib/utils/format'
 import { generateReceiptPdf } from '@/lib/utils/receipt-pdf'
 import type { Payment } from '@/types/payment'
@@ -29,47 +31,56 @@ interface PaymentHistoryTableProps {
 }
 
 export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Datum</TableHead>
-          <TableHead>Sa računa</TableHead>
-          <TableHead>Primalac</TableHead>
-          <TableHead>Iznos</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {payments.map((p) => (
-          <TableRow key={p.id}>
-            <TableCell>{formatDate(p.timestamp)}</TableCell>
-            <TableCell className="font-mono text-sm">
-              {formatAccountNumber(p.from_account)}
-            </TableCell>
-            <TableCell>{p.receiver_name}</TableCell>
-            <TableCell>{formatCurrency(p.amount, p.currency)}</TableCell>
-            <TableCell>
-              <Badge variant={STATUS_VARIANT[p.status] ?? 'secondary'}>
-                {STATUS_LABELS[p.status] ?? p.status}
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Button variant="outline" size="sm" onClick={() => generateReceiptPdf(p)}>
-                PDF
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-        {payments.length === 0 && (
+    <>
+      <Table>
+        <TableHeader>
           <TableRow>
-            <TableCell colSpan={6} className="text-center text-muted-foreground">
-              Nema plaćanja.
-            </TableCell>
+            <TableHead>Datum</TableHead>
+            <TableHead>Sa računa</TableHead>
+            <TableHead>Primalac</TableHead>
+            <TableHead>Iznos</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead></TableHead>
           </TableRow>
-        )}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {payments.map((p) => (
+            <TableRow key={p.id} className="cursor-pointer" onClick={() => setSelectedPayment(p)}>
+              <TableCell>{formatDate(p.timestamp)}</TableCell>
+              <TableCell className="font-mono text-sm">
+                {formatAccountNumber(p.from_account)}
+              </TableCell>
+              <TableCell>{p.receiver_name}</TableCell>
+              <TableCell>{formatCurrency(p.amount, p.currency)}</TableCell>
+              <TableCell>
+                <Badge variant={STATUS_VARIANT[p.status] ?? 'secondary'}>
+                  {STATUS_LABELS[p.status] ?? p.status}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Button variant="outline" size="sm" onClick={() => generateReceiptPdf(p)}>
+                  PDF
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+          {payments.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
+                Nema plaćanja.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <TransactionDetailsDialog
+        payment={selectedPayment}
+        open={!!selectedPayment}
+        onOpenChange={(open) => !open && setSelectedPayment(null)}
+      />
+    </>
   )
 }

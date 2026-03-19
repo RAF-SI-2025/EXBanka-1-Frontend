@@ -71,6 +71,42 @@ export function PaymentFilters({ filters, onFilterChange }: PaymentFiltersProps)
           ))}
         </select>
       </div>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="amount_min" className="text-sm font-medium">
+          Min iznos
+        </label>
+        <input
+          id="amount_min"
+          type="number"
+          value={filters.amount_min ?? ''}
+          onChange={(e) =>
+            onFilterChange({
+              ...filters,
+              amount_min: e.target.value ? Number(e.target.value) : undefined,
+            })
+          }
+          className="border rounded px-2 py-1 text-sm"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="amount_max" className="text-sm font-medium">
+          Max iznos
+        </label>
+        <input
+          id="amount_max"
+          type="number"
+          value={filters.amount_max ?? ''}
+          onChange={(e) =>
+            onFilterChange({
+              ...filters,
+              amount_max: e.target.value ? Number(e.target.value) : undefined,
+            })
+          }
+          className="border rounded px-2 py-1 text-sm"
+        />
+      </div>
     </div>
   )
 }
