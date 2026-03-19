@@ -51,7 +51,7 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
           <div>
             <Label>Sa računa</Label>
             <Controller
-              name="from_account"
+              name="from_account_number"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -61,15 +61,16 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
                   <SelectContent>
                     {accounts.map((acc) => (
                       <SelectItem key={acc.account_number} value={acc.account_number}>
-                        {acc.name} — {formatCurrency(acc.available_balance, acc.currency)}
+                        {acc.account_name} —{' '}
+                        {formatCurrency(acc.available_balance, acc.currency_code)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.from_account && (
-              <p className="text-sm text-destructive">{errors.from_account.message}</p>
+            {errors.from_account_number && (
+              <p className="text-sm text-destructive">{errors.from_account_number.message}</p>
             )}
           </div>
 
@@ -83,7 +84,7 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
                 <SelectContent>
                   {recipients.map((r) => (
                     <SelectItem key={r.id} value={String(r.id)}>
-                      {r.name}
+                      {r.recipient_name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -92,18 +93,18 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
           )}
 
           <div>
-            <Label htmlFor="to_account">Broj računa primaoca</Label>
-            <Input id="to_account" {...register('to_account')} />
-            {errors.to_account && (
-              <p className="text-sm text-destructive">{errors.to_account.message}</p>
+            <Label htmlFor="to_account_number">Broj računa primaoca</Label>
+            <Input id="to_account_number" {...register('to_account_number')} />
+            {errors.to_account_number && (
+              <p className="text-sm text-destructive">{errors.to_account_number.message}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="receiver_name">Ime primaoca</Label>
-            <Input id="receiver_name" {...register('receiver_name')} />
-            {errors.receiver_name && (
-              <p className="text-sm text-destructive">{errors.receiver_name.message}</p>
+            <Label htmlFor="recipient_name">Ime primaoca</Label>
+            <Input id="recipient_name" {...register('recipient_name')} />
+            {errors.recipient_name && (
+              <p className="text-sm text-destructive">{errors.recipient_name.message}</p>
             )}
           </div>
 
@@ -139,13 +140,13 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
           </div>
 
           <div>
-            <Label htmlFor="reference">Poziv na broj (opciono)</Label>
-            <Input id="reference" {...register('reference')} />
+            <Label htmlFor="reference_number">Poziv na broj (opciono)</Label>
+            <Input id="reference_number" {...register('reference_number')} />
           </div>
 
           <div>
-            <Label htmlFor="description">Opis (opciono)</Label>
-            <Input id="description" {...register('description')} />
+            <Label htmlFor="payment_purpose">Opis (opciono)</Label>
+            <Input id="payment_purpose" {...register('payment_purpose')} />
           </div>
 
           <Button type="submit" className="w-full">

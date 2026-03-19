@@ -4,8 +4,8 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { TransferConfirmation } from '@/components/payments/TransferConfirmation'
 
 const defaultFormData = {
-  from_account: '111000100000000011',
-  to_account: '111000100000000022',
+  from_account_number: '111000100000000011',
+  to_account_number: '111000100000000022',
   amount: 1300,
   description: 'Test prenos',
 }

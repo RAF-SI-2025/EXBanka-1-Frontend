@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
-import { createPayment, createInternalTransfer } from '@/lib/api/payments'
-import type { Payment, CreatePaymentRequest, CreateInternalTransferRequest } from '@/types/payment'
+import { createPayment } from '@/lib/api/payments'
+import { createTransfer } from '@/lib/api/transfers'
+import type { CreatePaymentRequest, CreateInternalTransferRequest } from '@/types/payment'
 
 export type PaymentFlowType = 'payment' | 'internal'
 
@@ -10,7 +11,7 @@ export interface PaymentFlowState {
   formData: CreatePaymentRequest | CreateInternalTransferRequest | null
   submitting: boolean
   error: string | null
-  result: Payment | null
+  result: { id: number } | null
   transactionId: number | null
   codeRequested: boolean
   verificationError: string | null
@@ -36,7 +37,12 @@ export const submitPayment = createAsyncThunk(
   ) => {
     try {
       if (payload.type === 'internal') {
-        return await createInternalTransfer(payload.data as CreateInternalTransferRequest)
+        const data = payload.data as CreateInternalTransferRequest
+        return await createTransfer({
+          from_account_number: data.from_account_number,
+          to_account_number: data.to_account_number,
+          amount: data.amount,
+        })
       }
       return await createPayment(payload.data as CreatePaymentRequest)
     } catch (err: unknown) {

@@ -35,7 +35,9 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
     resolver: zodResolver(createTransferSchema),
   })
 
-  const toAccounts = accounts.filter((acc) => (fromCurrency ? acc.currency !== fromCurrency : true))
+  const toAccounts = accounts.filter((acc) =>
+    fromCurrency ? acc.currency_code !== fromCurrency : true
+  )
 
   return (
     <Card>
@@ -45,16 +47,16 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="from_account">Izvorni račun</Label>
+            <Label htmlFor="from_account_number">Izvorni račun</Label>
             <Controller
-              name="from_account"
+              name="from_account_number"
               control={control}
               render={({ field }) => (
                 <Select
                   onValueChange={(val) => {
                     field.onChange(val)
                     const acc = accounts.find((a) => a.account_number === val)
-                    setFromCurrency(acc?.currency ?? '')
+                    setFromCurrency(acc?.currency_code ?? '')
                   }}
                   value={field.value}
                 >
@@ -64,22 +66,22 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
                   <SelectContent>
                     {accounts.map((acc) => (
                       <SelectItem key={acc.account_number} value={acc.account_number}>
-                        {acc.name} — {acc.available_balance} {acc.currency}
+                        {acc.account_name} — {acc.available_balance} {acc.currency_code}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.from_account && (
-              <p className="text-sm text-destructive">{errors.from_account.message}</p>
+            {errors.from_account_number && (
+              <p className="text-sm text-destructive">{errors.from_account_number.message}</p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="to_account">Odredišni račun</Label>
+            <Label htmlFor="to_account_number">Odredišni račun</Label>
             <Controller
-              name="to_account"
+              name="to_account_number"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -89,15 +91,15 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
                   <SelectContent>
                     {toAccounts.map((acc) => (
                       <SelectItem key={acc.account_number} value={acc.account_number}>
-                        {acc.name} — {acc.available_balance} {acc.currency}
+                        {acc.account_name} — {acc.available_balance} {acc.currency_code}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.to_account && (
-              <p className="text-sm text-destructive">{errors.to_account.message}</p>
+            {errors.to_account_number && (
+              <p className="text-sm text-destructive">{errors.to_account_number.message}</p>
             )}
           </div>
 

@@ -10,8 +10,8 @@ export function AdminAccountsPage() {
   const [ownerName, setOwnerName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const { data, isLoading } = useAllAccounts({
-    owner_name: ownerName || undefined,
-    account_number: accountNumber || undefined,
+    name_filter: ownerName || undefined,
+    account_number_filter: accountNumber || undefined,
   })
   const accounts = data?.accounts ?? []
 

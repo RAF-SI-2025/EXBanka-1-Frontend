@@ -27,7 +27,7 @@ export function AccountListPage() {
   const effectiveAccount = selectedAccount ?? accounts[0] ?? null
 
   const { data: paymentsData } = usePayments(
-    effectiveAccount ? { account_number: effectiveAccount.account_number } : undefined
+    effectiveAccount ? effectiveAccount.account_number : undefined
   )
 
   const sortedTransactions = [...(paymentsData?.payments ?? [])].sort((a: Payment, b: Payment) => {
@@ -55,7 +55,7 @@ export function AccountListPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">
-              Poslednje transakcije — {effectiveAccount.name}
+              Poslednje transakcije — {effectiveAccount.account_name}
             </CardTitle>
             <Button
               variant="outline"

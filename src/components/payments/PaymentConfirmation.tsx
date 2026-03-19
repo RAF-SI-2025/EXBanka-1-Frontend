@@ -33,13 +33,15 @@ export function PaymentConfirmation({
         <CardTitle>Potvrdi uplatu</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <ConfirmRow label="Sa računa" value={formData.from_account} />
-        <ConfirmRow label="Na račun" value={formData.to_account} />
-        <ConfirmRow label="Primalac" value={formData.receiver_name} />
+        <ConfirmRow label="Sa računa" value={formData.from_account_number} />
+        <ConfirmRow label="Na račun" value={formData.to_account_number} />
+        <ConfirmRow label="Primalac" value={formData.recipient_name} />
         <ConfirmRow label="Iznos" value={formatCurrency(formData.amount, 'RSD')} />
         <ConfirmRow label="Šifra" value={formData.payment_code} />
-        {formData.reference && <ConfirmRow label="Poziv na broj" value={formData.reference} />}
-        {formData.description && <ConfirmRow label="Opis" value={formData.description} />}
+        {formData.reference_number && (
+          <ConfirmRow label="Poziv na broj" value={formData.reference_number} />
+        )}
+        {formData.payment_purpose && <ConfirmRow label="Opis" value={formData.payment_purpose} />}
         <div className="flex gap-3 pt-4">
           <Button variant="outline" className="flex-1" onClick={onBack}>
             Nazad

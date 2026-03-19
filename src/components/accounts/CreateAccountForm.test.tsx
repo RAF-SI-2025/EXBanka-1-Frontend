@@ -16,7 +16,6 @@ describe('CreateAccountForm', () => {
       preloadedState: { auth: createMockAuthState() },
     })
     expect(screen.getByLabelText(/account type/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/account name/i)).toBeInTheDocument()
   })
 
   it('has create card checkbox', () => {

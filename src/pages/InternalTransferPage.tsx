@@ -51,7 +51,7 @@ export function InternalTransferPage() {
     return (
       <div className="space-y-4 text-center">
         <h2 className="text-xl font-semibold">Prenos uspešan!</h2>
-        <p>Broj naloga: {result.order_number}</p>
+        <p>ID transakcije: {result.id}</p>
         <div className="flex justify-center gap-3">
           <Button onClick={() => navigate('/payments/history')}>Istorija</Button>
           <Button variant="outline" onClick={() => dispatch(resetPaymentFlow())}>
@@ -97,8 +97,8 @@ export function InternalTransferPage() {
 
   if (step === 'confirmation' && formData) {
     const data = formData as FormValues
-    const fromAccount = accounts.find((a) => a.account_number === data.from_account)
-    const currency = fromAccount?.currency ?? 'RSD'
+    const fromAccount = accounts.find((a) => a.account_number === data.from_account_number)
+    const currency = fromAccount?.currency_code ?? 'RSD'
     return (
       <TransferConfirmation
         formData={data}

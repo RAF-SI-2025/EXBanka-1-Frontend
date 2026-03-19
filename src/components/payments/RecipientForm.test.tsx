@@ -23,10 +23,8 @@ describe('RecipientForm', () => {
 
   it('pre-fills form when defaultValues provided', () => {
     const defaultValues = {
-      name: 'Elektro Beograd',
+      recipient_name: 'Elektro Beograd',
       account_number: '111000100000000099',
-      reference: '97 1234567890',
-      payment_code: '221',
     }
     render(<RecipientForm onSubmit={noop} submitting={false} defaultValues={defaultValues} />)
     expect(screen.getByLabelText(/ime primaoca/i)).toHaveValue('Elektro Beograd')
@@ -44,16 +42,10 @@ describe('RecipientForm', () => {
 
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: 'Test Primalac',
+        recipient_name: 'Test Primalac',
         account_number: '111000100000000099',
       }),
       expect.anything()
     )
-  })
-
-  it('renders reference and payment_code inputs', () => {
-    render(<RecipientForm onSubmit={noop} submitting={false} />)
-    expect(screen.getByLabelText(/poziv na broj/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/šifra plaćanja/i)).toBeInTheDocument()
   })
 })

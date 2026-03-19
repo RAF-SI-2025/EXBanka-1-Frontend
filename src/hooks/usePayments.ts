@@ -6,26 +6,35 @@ import {
   updatePaymentRecipient,
   deletePaymentRecipient,
 } from '@/lib/api/payments'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import type { PaymentFilters, CreatePaymentRecipientRequest } from '@/types/payment'
 
-export function usePayments(filters?: PaymentFilters) {
+export function usePayments(accountNumber: string | undefined, filters?: PaymentFilters) {
   return useQuery({
-    queryKey: ['payments', filters],
-    queryFn: () => getPayments(filters),
+    queryKey: ['payments', accountNumber, filters],
+    queryFn: () => getPayments(accountNumber!, filters),
+    enabled: !!accountNumber,
   })
 }
 
 export function usePaymentRecipients() {
+  const user = useAppSelector(selectCurrentUser)
+  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['payment-recipients'],
-    queryFn: getPaymentRecipients,
+    queryKey: ['payment-recipients', clientId],
+    queryFn: () => getPaymentRecipients(clientId),
+    enabled: clientId > 0,
   })
 }
 
 export function useCreatePaymentRecipient() {
   const queryClient = useQueryClient()
+  const user = useAppSelector(selectCurrentUser)
+  const clientId = user?.id ?? 0
   return useMutation({
-    mutationFn: (payload: CreatePaymentRecipientRequest) => createPaymentRecipient(payload),
+    mutationFn: (payload: Omit<CreatePaymentRecipientRequest, 'client_id'>) =>
+      createPaymentRecipient({ ...payload, client_id: clientId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-recipients'] })
     },
@@ -35,8 +44,12 @@ export function useCreatePaymentRecipient() {
 export function useUpdatePaymentRecipient() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, ...payload }: { id: number } & Partial<CreatePaymentRecipientRequest>) =>
-      updatePaymentRecipient(id, payload),
+    mutationFn: ({
+      id,
+      ...payload
+    }: { id: number } & Partial<
+      Pick<CreatePaymentRecipientRequest, 'recipient_name' | 'account_number'>
+    >) => updatePaymentRecipient(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-recipients'] })
     },

@@ -61,7 +61,7 @@ describe('PaymentRecipientsPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /izmeni/i }))
 
-    expect(screen.getByDisplayValue(recipient.name)).toBeInTheDocument()
+    expect(screen.getByDisplayValue(recipient.recipient_name)).toBeInTheDocument()
     expect(screen.getByDisplayValue(recipient.account_number)).toBeInTheDocument()
     expect(screen.getByText(/izmeni primaoca/i)).toBeInTheDocument()
   })

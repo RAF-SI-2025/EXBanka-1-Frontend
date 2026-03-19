@@ -15,17 +15,30 @@ import { ClientSelector } from '@/components/accounts/ClientSelector'
 import { CompanyForm } from '@/components/accounts/CompanyForm'
 import { useCreateAccount } from '@/hooks/useAccounts'
 import { createAccountSchema } from '@/lib/utils/validation'
-import {
-  CURRENT_PERSONAL_SUBTYPES,
-  CURRENT_BUSINESS_SUBTYPES,
-  FOREIGN_CURRENCIES,
-} from '@/lib/constants/banking'
+import { FOREIGN_CURRENCIES } from '@/lib/constants/banking'
 import type { Client } from '@/types/client'
 import type { CreateAccountRequest } from '@/types/account'
 
 interface CreateAccountFormProps {
   onSuccess: () => void
 }
+
+const ACCOUNT_KIND_OPTIONS = [
+  { value: 'CHECKING', label: 'Tekući (Checking)' },
+  { value: 'SAVINGS', label: 'Štedni (Savings)' },
+  { value: 'FOREIGN_CURRENCY', label: 'Devizni (Foreign Currency)' },
+  { value: 'BUSINESS', label: 'Poslovni (Business)' },
+] as const
+
+const ACCOUNT_TYPE_OPTIONS = [
+  { value: 'CURRENT', label: 'Transakcioni (Current)' },
+  { value: 'TERM', label: 'Oročeni (Term)' },
+] as const
+
+const ACCOUNT_CATEGORY_OPTIONS = [
+  { value: 'PERSONAL', label: 'Lični (Personal)' },
+  { value: 'COMPANY', label: 'Poslovni (Company)' },
+] as const
 
 export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
@@ -40,20 +53,18 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
   } = useForm({
     resolver: zodResolver(createAccountSchema),
     defaultValues: {
-      name: '',
       owner_id: 0,
+      account_kind: 'CHECKING' as const,
       account_type: 'CURRENT' as const,
-      owner_type: 'PERSONAL' as const,
-      subtype: 'STANDARD',
-      currency: 'RSD',
+      account_category: 'PERSONAL' as const,
+      currency_code: 'RSD',
       initial_balance: 0,
       create_card: false,
     },
   })
 
-  const accountType = watch('account_type')
-  const ownerType = watch('owner_type')
-  const subtypes = ownerType === 'BUSINESS' ? CURRENT_BUSINESS_SUBTYPES : CURRENT_PERSONAL_SUBTYPES
+  const accountKind = watch('account_kind')
+  const accountCategory = watch('account_category')
 
   const handleClientSelected = (client: Client) => {
     setSelectedClient(client)
@@ -66,71 +77,80 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div>
-        <Label htmlFor="name">Account Name</Label>
-        <Input id="name" {...register('name')} />
-        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="account_type">Account Type</Label>
+          <Label htmlFor="account_kind">Account Type</Label>
           <Select
-            value={accountType}
+            value={accountKind}
             onValueChange={(v) => {
-              setValue('account_type', (v ?? 'CURRENT') as 'CURRENT' | 'FOREIGN_CURRENCY')
-              setValue('currency', v === 'CURRENT' ? 'RSD' : 'EUR')
+              setValue(
+                'account_kind',
+                (v ?? 'CHECKING') as 'CHECKING' | 'SAVINGS' | 'FOREIGN_CURRENCY' | 'BUSINESS'
+              )
+              if (v !== 'FOREIGN_CURRENCY') setValue('currency_code', 'RSD')
             }}
+          >
+            <SelectTrigger id="account_kind">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ACCOUNT_KIND_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label htmlFor="account_type">Term Type</Label>
+          <Select
+            value={watch('account_type')}
+            onValueChange={(v) => setValue('account_type', (v ?? 'CURRENT') as 'CURRENT' | 'TERM')}
           >
             <SelectTrigger id="account_type">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="CURRENT">Tekući (Current)</SelectItem>
-              <SelectItem value="FOREIGN_CURRENCY">Devizni (Foreign Currency)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label htmlFor="owner_type">Owner Type</Label>
-          <Select
-            value={ownerType}
-            onValueChange={(v) =>
-              setValue('owner_type', (v ?? 'PERSONAL') as 'PERSONAL' | 'BUSINESS')
-            }
-          >
-            <SelectTrigger id="owner_type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="PERSONAL">Lični (Personal)</SelectItem>
-              <SelectItem value="BUSINESS">Poslovni (Business)</SelectItem>
+              {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
       </div>
 
       <div>
-        <Label htmlFor="subtype">Subtype</Label>
-        <Select value={watch('subtype')} onValueChange={(v) => setValue('subtype', v ?? '')}>
-          <SelectTrigger id="subtype">
+        <Label htmlFor="account_category">Owner Type</Label>
+        <Select
+          value={accountCategory}
+          onValueChange={(v) =>
+            setValue('account_category', (v ?? 'PERSONAL') as 'PERSONAL' | 'COMPANY')
+          }
+        >
+          <SelectTrigger id="account_category">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {subtypes.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
+            {ACCOUNT_CATEGORY_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {accountType === 'FOREIGN_CURRENCY' && (
+      {accountKind === 'FOREIGN_CURRENCY' && (
         <div>
-          <Label htmlFor="currency">Currency</Label>
-          <Select value={watch('currency')} onValueChange={(v) => setValue('currency', v ?? '')}>
-            <SelectTrigger id="currency">
+          <Label htmlFor="currency_code">Currency</Label>
+          <Select
+            value={watch('currency_code')}
+            onValueChange={(v) => setValue('currency_code', v ?? '')}
+          >
+            <SelectTrigger id="currency_code">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -156,7 +176,7 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
         )}
       </div>
 
-      {ownerType === 'BUSINESS' && <CompanyForm register={register} errors={errors} />}
+      {accountCategory === 'COMPANY' && <CompanyForm register={register} errors={errors} />}
 
       <div>
         <Label htmlFor="initial_balance">Initial Balance</Label>

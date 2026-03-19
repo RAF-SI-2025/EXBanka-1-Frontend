@@ -29,7 +29,7 @@ export function CardRequestPage() {
   const handleSelectAccount = (accountNumber: string) => {
     setSelectedAccount(accountNumber)
     const acc = accounts.find((a) => a.account_number === accountNumber)
-    if (acc?.owner_type === 'BUSINESS') {
+    if (acc?.account_category === 'COMPANY') {
       setStep('business-choice')
     } else {
       requestCard.mutate({ account_number: accountNumber }, { onSuccess: () => setStep('verify') })

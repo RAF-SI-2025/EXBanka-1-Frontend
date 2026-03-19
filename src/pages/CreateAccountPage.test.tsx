@@ -12,6 +12,6 @@ describe('CreateAccountPage', () => {
       preloadedState: { auth: createMockAuthState() },
     })
     expect(screen.getAllByText(/create account/i)[0]).toBeInTheDocument()
-    expect(screen.getByLabelText(/account name/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/account type/i)).toBeInTheDocument()
   })
 })

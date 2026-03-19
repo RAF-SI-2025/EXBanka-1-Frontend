@@ -11,12 +11,15 @@ export async function createTransfer(payload: CreateTransferRequest): Promise<Tr
   return response.data
 }
 
-export async function getTransfers(filters?: TransferFilters): Promise<TransferListResponse> {
+export async function getTransfers(
+  clientId: number,
+  filters?: TransferFilters
+): Promise<TransferListResponse> {
   const params = new URLSearchParams()
-  if (filters?.from_date) params.append('from_date', filters.from_date)
-  if (filters?.to_date) params.append('to_date', filters.to_date)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<TransferListResponse>('/api/transfers', { params })
+  const response = await apiClient.get<TransferListResponse>(`/api/transfers/client/${clientId}`, {
+    params,
+  })
   return response.data
 }

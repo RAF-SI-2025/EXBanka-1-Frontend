@@ -20,7 +20,8 @@ export function HomePage() {
   const selectedAccount = accounts[selectedAccountIndex] ?? null
 
   const { data: paymentsData } = usePayments(
-    selectedAccount ? { account_number: selectedAccount.account_number, page_size: 5 } : undefined
+    selectedAccount ? selectedAccount.account_number : undefined,
+    selectedAccount ? { page_size: 5 } : undefined
   )
   const recentTransactions = paymentsData?.payments ?? []
 

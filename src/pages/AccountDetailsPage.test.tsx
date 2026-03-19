@@ -13,12 +13,16 @@ describe('AccountDetailsPage', () => {
       data: createMockAccount(),
       isLoading: false,
     } as any)
-    jest.mocked(useAccountsHook.useUpdateAccount).mockReturnValue({
+    jest.mocked(useAccountsHook.useUpdateAccountName).mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as any)
+    jest.mocked(useAccountsHook.useUpdateAccountLimits).mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
     } as any)
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
-      data: { accounts: [], total_count: 0 },
+      data: { accounts: [], total: 0 },
       isLoading: false,
     } as any)
   })

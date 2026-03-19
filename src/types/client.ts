@@ -12,7 +12,7 @@ export interface Client {
 
 export interface ClientListResponse {
   clients: Client[]
-  total_count: number
+  total: number
 }
 
 export interface ClientFilters {

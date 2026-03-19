@@ -23,12 +23,12 @@ export function CreateTransferPage() {
   const { data: accountsData, isLoading } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
 
-  const fromAcc = accounts.find((a) => a.account_number === formData?.from_account)
-  const toAcc = accounts.find((a) => a.account_number === formData?.to_account)
+  const fromAcc = accounts.find((a) => a.account_number === formData?.from_account_number)
+  const toAcc = accounts.find((a) => a.account_number === formData?.to_account_number)
 
   const { data: rateData } = useTransferPreview(
-    fromAcc?.currency ?? '',
-    toAcc?.currency ?? '',
+    fromAcc?.currency_code ?? '',
+    toAcc?.currency_code ?? '',
     formData?.amount ?? 0
   )
 
@@ -40,7 +40,11 @@ export function CreateTransferPage() {
 
   if (isLoading) return <p>Učitavanje...</p>
 
-  const handleFormSubmit = (data: { from_account: string; to_account: string; amount: number }) => {
+  const handleFormSubmit = (data: {
+    from_account_number: string
+    to_account_number: string
+    amount: number
+  }) => {
     dispatch(setTransferFormData(data))
     dispatch(setTransferStep('confirmation'))
   }
@@ -49,8 +53,8 @@ export function CreateTransferPage() {
     if (!formData) return
     dispatch(
       submitTransfer({
-        from_account: formData.from_account,
-        to_account: formData.to_account,
+        from_account_number: formData.from_account_number,
+        to_account_number: formData.to_account_number,
         amount: formData.amount,
       })
     )
@@ -60,7 +64,7 @@ export function CreateTransferPage() {
     return (
       <div className="space-y-4 text-center">
         <h2 className="text-xl font-semibold">Transfer uspešan!</h2>
-        <p>Broj naloga: {result.order_number}</p>
+        <p>ID transakcije: {result.id}</p>
         <div className="flex justify-center gap-3">
           <Button onClick={() => navigate('/transfers/history')}>Istorija</Button>
           <Button variant="outline" onClick={() => dispatch(resetTransferFlow())}>
@@ -75,11 +79,11 @@ export function CreateTransferPage() {
     return (
       <TransferPreview
         clientName={user?.email ?? ''}
-        fromAccount={formData.from_account}
-        toAccount={formData.to_account}
+        fromAccount={formData.from_account_number}
+        toAccount={formData.to_account_number}
         amount={formData.amount}
-        fromCurrency={fromAcc?.currency ?? ''}
-        toCurrency={toAcc?.currency ?? ''}
+        fromCurrency={fromAcc?.currency_code ?? ''}
+        toCurrency={toAcc?.currency_code ?? ''}
         rate={rateData?.rate ?? 0}
         commission={rateData?.commission ?? 0}
         finalAmount={rateData?.to_amount ?? 0}

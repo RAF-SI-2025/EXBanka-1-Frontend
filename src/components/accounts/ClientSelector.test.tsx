@@ -25,7 +25,7 @@ describe('ClientSelector', () => {
 
   it('shows search results when typing', async () => {
     const mockClient = createMockClient()
-    mockGetClients.mockResolvedValue({ clients: [mockClient], total_count: 1 })
+    mockGetClients.mockResolvedValue({ clients: [mockClient], total: 1 })
 
     renderWithProviders(<ClientSelector {...defaultProps} />, {
       preloadedState: { auth: createMockAuthState() },

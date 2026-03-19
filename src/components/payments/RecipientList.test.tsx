@@ -7,10 +7,14 @@ describe('RecipientList', () => {
   const recipients = [
     createMockPaymentRecipient({
       id: 1,
-      name: 'Elektro Beograd',
+      recipient_name: 'Elektro Beograd',
       account_number: '111000100000000099',
     }),
-    createMockPaymentRecipient({ id: 2, name: 'Vodovod', account_number: '111000100000000088' }),
+    createMockPaymentRecipient({
+      id: 2,
+      recipient_name: 'Vodovod',
+      account_number: '111000100000000088',
+    }),
   ]
 
   it('renders recipient rows', () => {

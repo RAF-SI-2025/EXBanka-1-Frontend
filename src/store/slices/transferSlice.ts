@@ -3,8 +3,8 @@ import { createTransfer } from '@/lib/api/transfers'
 import type { Transfer, CreateTransferRequest } from '@/types/transfer'
 
 export interface TransferFormData {
-  from_account: string
-  to_account: string
+  from_account_number: string
+  to_account_number: string
   amount: number
 }
 

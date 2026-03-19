@@ -9,7 +9,7 @@ describe('InternalTransferPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
-      data: { accounts: [], total_count: 0 },
+      data: { accounts: [], total: 0 },
       isLoading: false,
     } as any)
   })

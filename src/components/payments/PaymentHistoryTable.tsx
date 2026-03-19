@@ -15,15 +15,15 @@ import { generateReceiptPdf } from '@/lib/utils/receipt-pdf'
 import type { Payment } from '@/types/payment'
 
 const STATUS_LABELS: Record<string, string> = {
-  REALIZED: 'Realizovano',
-  REJECTED: 'Odbijeno',
-  PROCESSING: 'U obradi',
+  COMPLETED: 'Realizovano',
+  PENDING: 'U obradi',
+  FAILED: 'Odbijeno',
 }
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  REALIZED: 'default',
-  REJECTED: 'destructive',
-  PROCESSING: 'secondary',
+  COMPLETED: 'default',
+  FAILED: 'destructive',
+  PENDING: 'secondary',
 }
 
 interface PaymentHistoryTableProps {
@@ -51,17 +51,24 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
             <TableRow key={p.id} className="cursor-pointer" onClick={() => setSelectedPayment(p)}>
               <TableCell>{formatDate(p.timestamp)}</TableCell>
               <TableCell className="font-mono text-sm">
-                {formatAccountNumber(p.from_account)}
+                {formatAccountNumber(p.from_account_number)}
               </TableCell>
-              <TableCell>{p.receiver_name}</TableCell>
-              <TableCell>{formatCurrency(p.amount, p.currency)}</TableCell>
+              <TableCell>{p.recipient_name}</TableCell>
+              <TableCell>{formatCurrency(p.initial_amount, 'RSD')}</TableCell>
               <TableCell>
                 <Badge variant={STATUS_VARIANT[p.status] ?? 'secondary'}>
                   {STATUS_LABELS[p.status] ?? p.status}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Button variant="outline" size="sm" onClick={() => generateReceiptPdf(p)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    generateReceiptPdf(p)
+                  }}
+                >
                   PDF
                 </Button>
               </TableCell>

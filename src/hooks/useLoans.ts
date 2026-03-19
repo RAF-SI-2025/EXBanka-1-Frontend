@@ -7,12 +7,17 @@ import {
   rejectLoanRequest,
   getAllLoans,
 } from '@/lib/api/loans'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import type { LoanFilters, LoanRequestFilters } from '@/types/loan'
 
 export function useLoans() {
+  const user = useAppSelector(selectCurrentUser)
+  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['loans'],
-    queryFn: getLoans,
+    queryKey: ['loans', 'client', clientId],
+    queryFn: () => getLoans(clientId),
+    enabled: clientId > 0,
   })
 }
 

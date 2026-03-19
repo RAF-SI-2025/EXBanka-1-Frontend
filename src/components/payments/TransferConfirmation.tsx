@@ -35,8 +35,8 @@ export function TransferConfirmation({
         <CardTitle>Potvrdi prenos</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <ConfirmRow label="Sa računa" value={formData.from_account} />
-        <ConfirmRow label="Na račun" value={formData.to_account} />
+        <ConfirmRow label="Sa računa" value={formData.from_account_number} />
+        <ConfirmRow label="Na račun" value={formData.to_account_number} />
         <ConfirmRow label="Iznos" value={formatCurrency(formData.amount, currency)} />
         {formData.description && <ConfirmRow label="Opis" value={formData.description} />}
         <div className="flex gap-3 pt-4">

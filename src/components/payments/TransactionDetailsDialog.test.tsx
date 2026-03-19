@@ -13,8 +13,8 @@ describe('TransactionDetailsDialog', () => {
     renderWithProviders(
       <TransactionDetailsDialog payment={payment} open onOpenChange={jest.fn()} />
     )
-    expect(screen.getByText(payment.order_number)).toBeInTheDocument()
-    expect(screen.getByText(payment.receiver_name)).toBeInTheDocument()
+    expect(screen.getByText(String(payment.id))).toBeInTheDocument()
+    expect(screen.getByText(payment.recipient_name)).toBeInTheDocument()
   })
 
   it('renders nothing when payment is null', () => {

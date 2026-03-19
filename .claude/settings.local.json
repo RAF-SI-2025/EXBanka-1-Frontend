@@ -1,6 +1,15 @@
 {
   "permissions": {
     "allow": [
+      "Bash(npm test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npx jest:*)",
+      "Bash(npm list:*)",
+      "Bash(npm install:*)",
+      "Bash(cd:*)"
     ]
   }
 }

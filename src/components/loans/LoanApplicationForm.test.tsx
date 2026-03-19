@@ -5,8 +5,16 @@ import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 import userEvent from '@testing-library/user-event'
 
 const mockAccounts = [
-  createMockAccount({ account_number: '111000100000000011', name: 'Tekući RSD', currency: 'RSD' }),
-  createMockAccount({ account_number: '111000100000000022', name: 'EUR štednja', currency: 'EUR' }),
+  createMockAccount({
+    account_number: '111000100000000011',
+    account_name: 'Tekući RSD',
+    currency_code: 'RSD',
+  }),
+  createMockAccount({
+    account_number: '111000100000000022',
+    account_name: 'EUR štednja',
+    currency_code: 'EUR',
+  }),
 ]
 
 const defaultProps = {

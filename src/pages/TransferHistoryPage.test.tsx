@@ -9,7 +9,7 @@ describe('TransferHistoryPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useTransfersHook.useTransfers).mockReturnValue({
-      data: { transfers: [], total_count: 0 },
+      data: { transfers: [], total: 0 },
       isLoading: false,
     } as any)
   })

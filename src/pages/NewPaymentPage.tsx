@@ -50,7 +50,7 @@ export function NewPaymentPage() {
     return (
       <div className="space-y-4 text-center">
         <h2 className="text-xl font-semibold">Uplata uspešna!</h2>
-        <p>Broj naloga: {result.order_number}</p>
+        <p>ID transakcije: {result.id}</p>
         <div className="flex justify-center gap-3">
           <Button onClick={() => navigate('/payments/history')}>Istorija</Button>
           <Button variant="outline" onClick={() => dispatch(resetPaymentFlow())}>

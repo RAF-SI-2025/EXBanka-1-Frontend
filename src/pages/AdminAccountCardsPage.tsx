@@ -20,7 +20,7 @@ export function AdminAccountCardsPage() {
         <Button variant="ghost" onClick={() => navigate('/admin/accounts')}>
           ← Nazad
         </Button>
-        <h1 className="text-2xl font-bold">Kartice — {account?.name ?? 'Račun'}</h1>
+        <h1 className="text-2xl font-bold">Kartice — {account?.account_name ?? 'Račun'}</h1>
       </div>
 
       {isLoading ? (

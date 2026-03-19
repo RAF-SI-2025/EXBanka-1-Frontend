@@ -99,7 +99,7 @@ export function LoanApplicationForm({
               <SelectContent>
                 {accounts.map((acc) => (
                   <SelectItem key={acc.account_number} value={acc.account_number}>
-                    {acc.name} ({acc.currency})
+                    {acc.account_name} ({acc.currency_code})
                   </SelectItem>
                 ))}
               </SelectContent>

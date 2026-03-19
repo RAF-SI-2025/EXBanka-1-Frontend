@@ -6,9 +6,9 @@ import { generateReceiptPdf } from '@/lib/utils/receipt-pdf'
 import type { Payment } from '@/types/payment'
 
 const STATUS_LABELS: Record<string, string> = {
-  REALIZED: 'Realizovano',
-  REJECTED: 'Odbijeno',
-  PROCESSING: 'U obradi',
+  COMPLETED: 'Realizovano',
+  PENDING: 'U obradi',
+  FAILED: 'Odbijeno',
 }
 
 interface TransactionDetailsDialogProps {
@@ -32,28 +32,28 @@ export function TransactionDetailsDialog({
         </DialogHeader>
         <div className="space-y-2 text-sm">
           <div className="grid grid-cols-2 gap-2">
-            <span className="text-muted-foreground">Broj naloga</span>
-            <span>{payment.order_number}</span>
+            <span className="text-muted-foreground">ID transakcije</span>
+            <span>{payment.id}</span>
             <span className="text-muted-foreground">Sa računa</span>
-            <span>{formatAccountNumber(payment.from_account)}</span>
+            <span>{formatAccountNumber(payment.from_account_number)}</span>
             <span className="text-muted-foreground">Na račun</span>
-            <span>{formatAccountNumber(payment.to_account)}</span>
+            <span>{formatAccountNumber(payment.to_account_number)}</span>
             <span className="text-muted-foreground">Primalac</span>
-            <span>{payment.receiver_name}</span>
+            <span>{payment.recipient_name}</span>
             <span className="text-muted-foreground">Iznos</span>
-            <span>{formatCurrency(payment.amount, payment.currency)}</span>
+            <span>{formatCurrency(payment.initial_amount, 'RSD')}</span>
             <span className="text-muted-foreground">Šifra plaćanja</span>
             <span>{payment.payment_code}</span>
-            {payment.reference && (
+            {payment.reference_number && (
               <>
                 <span className="text-muted-foreground">Poziv na broj</span>
-                <span>{payment.reference}</span>
+                <span>{payment.reference_number}</span>
               </>
             )}
-            {payment.description && (
+            {payment.payment_purpose && (
               <>
                 <span className="text-muted-foreground">Svrha</span>
-                <span>{payment.description}</span>
+                <span>{payment.payment_purpose}</span>
               </>
             )}
             <span className="text-muted-foreground">Status</span>

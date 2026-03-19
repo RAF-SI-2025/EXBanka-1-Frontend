@@ -35,7 +35,7 @@ export function CardRequestForm({ accounts, onSubmit, loading }: CardRequestForm
             <SelectContent>
               {accounts.map((acc) => (
                 <SelectItem key={acc.account_number} value={acc.account_number}>
-                  {acc.name} — {acc.account_number} ({acc.currency})
+                  {acc.account_name} — {acc.account_number} ({acc.currency_code})
                 </SelectItem>
               ))}
             </SelectContent>

@@ -10,7 +10,7 @@ describe('AdminLoansPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useLoansHook.useAllLoans).mockReturnValue({
-      data: { loans: [createMockLoan()], total_count: 1 },
+      data: { loans: [createMockLoan()], total: 1 },
       isLoading: false,
     } as any)
   })

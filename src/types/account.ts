@@ -1,6 +1,7 @@
-export type AccountType = 'CURRENT' | 'FOREIGN_CURRENCY'
-export type OwnerType = 'PERSONAL' | 'BUSINESS'
-export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED'
+export type AccountKind = 'CHECKING' | 'SAVINGS' | 'FOREIGN_CURRENCY' | 'BUSINESS'
+export type AccountType = 'CURRENT' | 'TERM'
+export type AccountCategory = 'PERSONAL' | 'COMPANY'
+export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'CLOSED'
 
 export interface Company {
   name: string
@@ -13,11 +14,11 @@ export interface Company {
 export interface Account {
   id: number
   account_number: string
-  name: string
-  currency: string
+  account_name: string
+  currency_code: string
+  account_kind: AccountKind
   account_type: AccountType
-  owner_type: OwnerType
-  subtype: string
+  account_category: AccountCategory
   balance: number
   available_balance: number
   status: AccountStatus
@@ -31,32 +32,33 @@ export interface Account {
 
 export interface AccountListResponse {
   accounts: Account[]
-  total_count: number
+  total: number
 }
 
 export interface AccountFilters {
-  owner_name?: string
-  account_number?: string
+  name_filter?: string
+  account_number_filter?: string
+  type_filter?: string
   page?: number
   page_size?: number
 }
 
 export interface CreateAccountRequest {
-  name: string
   owner_id: number
+  account_kind: AccountKind
   account_type: AccountType
-  owner_type: OwnerType
-  subtype: string
-  currency: string
+  account_category?: AccountCategory
+  currency_code: string
   initial_balance?: number
   create_card?: boolean
-  daily_limit?: number
-  monthly_limit?: number
-  company?: Company
 }
 
-export interface UpdateAccountRequest {
-  name?: string
+export interface UpdateAccountNameRequest {
+  new_name: string
+  client_id?: number
+}
+
+export interface UpdateAccountLimitsRequest {
   daily_limit?: number
   monthly_limit?: number
 }

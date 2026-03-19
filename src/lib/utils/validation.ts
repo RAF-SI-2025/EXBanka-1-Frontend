@@ -71,9 +71,10 @@ export const createEmployeeSchema = z.object({
 
 // --- Banking Schemas ---
 
-const ACCOUNT_TYPES = ['CURRENT', 'FOREIGN_CURRENCY'] as const
-const OWNER_TYPES = ['PERSONAL', 'BUSINESS'] as const
 const LOAN_TYPES_ENUM = ['CASH', 'MORTGAGE', 'AUTO', 'REFINANCING', 'STUDENT'] as const
+const ACCOUNT_KIND_ENUM = ['CHECKING', 'SAVINGS', 'FOREIGN_CURRENCY', 'BUSINESS'] as const
+const ACCOUNT_TYPE_ENUM = ['CURRENT', 'TERM'] as const
+const ACCOUNT_CATEGORY_ENUM = ['PERSONAL', 'COMPANY'] as const
 
 export const companySchema = z.object({
   name: z.string().min(1, 'Company name is required'),
@@ -84,12 +85,11 @@ export const companySchema = z.object({
 })
 
 export const createAccountSchema = z.object({
-  name: z.string().min(1, 'Account name is required'),
   owner_id: z.number().min(1, 'Owner is required'),
-  account_type: z.enum(ACCOUNT_TYPES),
-  owner_type: z.enum(OWNER_TYPES),
-  subtype: z.string().min(1, 'Subtype is required'),
-  currency: z.string().min(1, 'Currency is required'),
+  account_kind: z.enum(ACCOUNT_KIND_ENUM),
+  account_type: z.enum(ACCOUNT_TYPE_ENUM),
+  account_category: z.enum(ACCOUNT_CATEGORY_ENUM).optional(),
+  currency_code: z.string().min(1, 'Currency is required'),
   initial_balance: z.number().min(0, 'Balance cannot be negative').optional(),
   create_card: z.boolean().optional(),
   daily_limit: z.number().min(0).optional(),
@@ -98,35 +98,35 @@ export const createAccountSchema = z.object({
 
 export const createTransferSchema = z
   .object({
-    from_account: z.string().regex(/^\d{18}$/, 'Account number must be 18 digits'),
-    to_account: z.string().regex(/^\d{18}$/, 'Account number must be 18 digits'),
+    from_account_number: z.string().min(1, 'From account is required'),
+    to_account_number: z.string().min(1, 'To account is required'),
     amount: z.number().positive('Amount must be greater than 0'),
   })
-  .refine((data) => data.from_account !== data.to_account, {
+  .refine((data) => data.from_account_number !== data.to_account_number, {
     message: 'Source and destination must be different',
-    path: ['to_account'],
+    path: ['to_account_number'],
   })
 
 export const createPaymentSchema = z.object({
-  from_account: z.string().min(1, 'From account is required'),
-  to_account: z.string().min(1, 'To account is required'),
-  receiver_name: z.string().min(1, 'Receiver name is required'),
+  from_account_number: z.string().min(1, 'From account is required'),
+  to_account_number: z.string().min(1, 'To account is required'),
+  recipient_name: z.string().min(1, 'Receiver name is required'),
   amount: z.number().positive('Amount must be greater than 0'),
   payment_code: z.string().min(1, 'Payment code is required'),
-  reference: z.string().optional(),
-  description: z.string().optional(),
+  reference_number: z.string().optional(),
+  payment_purpose: z.string().optional(),
 })
 
 export const createInternalTransferSchema = z
   .object({
-    from_account: z.string().min(1, 'From account is required'),
-    to_account: z.string().min(1, 'To account is required'),
+    from_account_number: z.string().min(1, 'From account is required'),
+    to_account_number: z.string().min(1, 'To account is required'),
     amount: z.number().positive('Amount must be greater than 0'),
-    description: z.string().optional(),
+    payment_purpose: z.string().optional(),
   })
-  .refine((data) => data.from_account !== data.to_account, {
+  .refine((data) => data.from_account_number !== data.to_account_number, {
     message: 'Source and destination must be different',
-    path: ['to_account'],
+    path: ['to_account_number'],
   })
 
 export const createLoanRequestSchema = z.object({
@@ -146,10 +146,8 @@ export const createLoanRequestSchema = z.object({
 })
 
 export const paymentRecipientSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  recipient_name: z.string().min(1, 'Name is required'),
   account_number: z.string().min(1, 'Account number is required'),
-  reference: z.string().optional(),
-  payment_code: z.string().optional(),
 })
 
 export const updateAccountLimitsSchema = z.object({
@@ -158,7 +156,7 @@ export const updateAccountLimitsSchema = z.object({
 })
 
 export const updateAccountNameSchema = z.object({
-  name: z.string().min(1, 'Account name is required'),
+  new_name: z.string().min(1, 'Account name is required'),
 })
 
 export const updateClientSchema = z.object({

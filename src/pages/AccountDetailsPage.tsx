@@ -1,6 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { useAccount, useUpdateAccount, useClientAccounts } from '@/hooks/useAccounts'
+import {
+  useAccount,
+  useUpdateAccountName,
+  useUpdateAccountLimits,
+  useClientAccounts,
+} from '@/hooks/useAccounts'
 import { AccountCard } from '@/components/accounts/AccountCard'
 import { RenameAccountDialog } from '@/components/accounts/RenameAccountDialog'
 import { ChangeLimitsDialog } from '@/components/accounts/ChangeLimitsDialog'
@@ -14,11 +19,12 @@ export function AccountDetailsPage() {
   const navigate = useNavigate()
   const accountId = Number(id)
   const { data: account, isLoading } = useAccount(accountId)
-  const updateAccount = useUpdateAccount(accountId)
+  const updateAccountName = useUpdateAccountName(accountId)
+  const updateAccountLimits = useUpdateAccountLimits(accountId)
   const { data: allAccountsData } = useClientAccounts()
   const existingNames = (allAccountsData?.accounts ?? [])
     .filter((a) => a.id !== accountId)
-    .map((a) => a.name)
+    .map((a) => a.account_name)
   const [renameOpen, setRenameOpen] = useState(false)
   const [limitsOpen, setLimitsOpen] = useState(false)
 
@@ -26,11 +32,11 @@ export function AccountDetailsPage() {
   if (!account) return <p>Račun nije pronađen.</p>
 
   const handleRename = (name: string) => {
-    updateAccount.mutate({ name }, { onSuccess: () => setRenameOpen(false) })
+    updateAccountName.mutate({ new_name: name }, { onSuccess: () => setRenameOpen(false) })
   }
 
   const handleLimitsChange = (limits: { daily_limit: number; monthly_limit: number }) => {
-    updateAccount.mutate(limits, { onSuccess: () => setLimitsOpen(false) })
+    updateAccountLimits.mutate(limits, { onSuccess: () => setLimitsOpen(false) })
   }
 
   return (
@@ -39,7 +45,7 @@ export function AccountDetailsPage() {
         <Button variant="ghost" onClick={() => navigate('/accounts')}>
           ← Nazad
         </Button>
-        <h1 className="text-2xl font-bold">{account.name}</h1>
+        <h1 className="text-2xl font-bold">{account.account_name}</h1>
       </div>
 
       <AccountCard account={account} />
@@ -52,28 +58,28 @@ export function AccountDetailsPage() {
           {account.owner_name && <InfoRow label="Vlasnik" value={account.owner_name} />}
           <InfoRow
             label="Tip računa"
-            value={account.account_type === 'FOREIGN_CURRENCY' ? 'Devizni' : 'Tekući'}
+            value={account.account_kind === 'FOREIGN_CURRENCY' ? 'Devizni' : 'Tekući'}
           />
           <InfoRow
             label="Tip vlasnika"
-            value={account.owner_type === 'BUSINESS' ? 'Poslovni' : 'Lični'}
+            value={account.account_category === 'COMPANY' ? 'Poslovni' : 'Lični'}
           />
-          <InfoRow label="Stanje" value={formatCurrency(account.balance, account.currency)} />
+          <InfoRow label="Stanje" value={formatCurrency(account.balance, account.currency_code)} />
           <InfoRow
             label="Raspoloživo"
-            value={formatCurrency(account.available_balance, account.currency)}
+            value={formatCurrency(account.available_balance, account.currency_code)}
           />
-          <InfoRow label="Rezervisana sredstva" value={formatCurrency(0, account.currency)} />
+          <InfoRow label="Rezervisana sredstva" value={formatCurrency(0, account.currency_code)} />
           {account.daily_limit !== undefined && (
             <InfoRow
               label="Dnevni limit"
-              value={formatCurrency(account.daily_limit, account.currency)}
+              value={formatCurrency(account.daily_limit, account.currency_code)}
             />
           )}
           {account.monthly_limit !== undefined && (
             <InfoRow
               label="Mesečni limit"
-              value={formatCurrency(account.monthly_limit, account.currency)}
+              value={formatCurrency(account.monthly_limit, account.currency_code)}
             />
           )}
         </CardContent>
@@ -99,10 +105,10 @@ export function AccountDetailsPage() {
       <RenameAccountDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}
-        currentName={account.name}
+        currentName={account.account_name}
         existingNames={existingNames}
         onRename={handleRename}
-        loading={updateAccount.isPending}
+        loading={updateAccountName.isPending}
       />
 
       <ChangeLimitsDialog
@@ -110,9 +116,9 @@ export function AccountDetailsPage() {
         onOpenChange={setLimitsOpen}
         currentDailyLimit={account.daily_limit ?? 0}
         currentMonthlyLimit={account.monthly_limit ?? 0}
-        currency={account.currency}
+        currency={account.currency_code}
         onSubmit={handleLimitsChange}
-        loading={updateAccount.isPending}
+        loading={updateAccountLimits.isPending}
       />
     </div>
   )

@@ -16,11 +16,11 @@ describe('AccountListPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
-      data: { accounts: [mockAccount], total_count: 1 },
+      data: { accounts: [mockAccount], total: 1 },
       isLoading: false,
     } as any)
     jest.mocked(usePaymentsHook.usePayments).mockReturnValue({
-      data: { payments: [mockPayment], total_count: 1 },
+      data: { payments: [mockPayment], total: 1 },
       isLoading: false,
     } as any)
   })

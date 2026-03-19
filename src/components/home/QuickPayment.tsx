@@ -18,7 +18,7 @@ export function QuickPayment() {
         <ul className="divide-y">
           {recipients.slice(0, 5).map((r) => (
             <li key={r.id} className="py-2 flex justify-between text-sm">
-              <span>{r.name}</span>
+              <span>{r.recipient_name}</span>
               <Link to={`/payments/new?recipient=${r.id}`} className="text-primary hover:underline">
                 Uplati
               </Link>

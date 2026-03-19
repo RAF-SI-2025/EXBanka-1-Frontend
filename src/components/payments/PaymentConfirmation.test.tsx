@@ -4,13 +4,13 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PaymentConfirmation } from '@/components/payments/PaymentConfirmation'
 
 const defaultFormData = {
-  from_account: '111000100000000011',
-  to_account: '111000100000000099',
-  receiver_name: 'Elektro Beograd',
+  from_account_number: '111000100000000011',
+  to_account_number: '111000100000000099',
+  recipient_name: 'Elektro Beograd',
   amount: 5000,
   payment_code: '221',
-  reference: '97 1234567890',
-  description: 'Račun za struju',
+  reference_number: '97 1234567890',
+  payment_purpose: 'Račun za struju',
 }
 
 describe('PaymentConfirmation', () => {

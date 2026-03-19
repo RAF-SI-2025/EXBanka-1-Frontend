@@ -1,66 +1,65 @@
-import type { PaymentFilters as PaymentFiltersType, PaymentStatus } from '@/types/payment'
+import type { PaymentFilters as PaymentFiltersType } from '@/types/payment'
 
 interface PaymentFiltersProps {
   filters: PaymentFiltersType
   onFilterChange: (filters: PaymentFiltersType) => void
 }
 
-const STATUS_OPTIONS: { value: PaymentStatus | ''; label: string }[] = [
+const STATUS_OPTIONS = [
   { value: '', label: 'Svi statusi' },
-  { value: 'REALIZED', label: 'Realizovano' },
-  { value: 'REJECTED', label: 'Odbijeno' },
-  { value: 'PROCESSING', label: 'U obradi' },
+  { value: 'COMPLETED', label: 'Realizovano' },
+  { value: 'FAILED', label: 'Odbijeno' },
+  { value: 'PENDING', label: 'U obradi' },
 ]
 
 export function PaymentFilters({ filters, onFilterChange }: PaymentFiltersProps) {
   function handleFromDate(e: React.ChangeEvent<HTMLInputElement>) {
-    onFilterChange({ ...filters, from_date: e.target.value || undefined })
+    onFilterChange({ ...filters, date_from: e.target.value || undefined })
   }
 
   function handleToDate(e: React.ChangeEvent<HTMLInputElement>) {
-    onFilterChange({ ...filters, to_date: e.target.value || undefined })
+    onFilterChange({ ...filters, date_to: e.target.value || undefined })
   }
 
   function handleStatus(e: React.ChangeEvent<HTMLSelectElement>) {
-    const value = e.target.value as PaymentStatus | ''
-    onFilterChange({ ...filters, status: value || undefined })
+    onFilterChange({ ...filters, status_filter: e.target.value || undefined })
   }
 
   return (
     <div className="flex flex-wrap gap-4 items-end">
       <div className="flex flex-col gap-1">
-        <label htmlFor="from_date" className="text-sm font-medium">
+        <label htmlFor="date_from" className="text-sm font-medium">
           Od datuma
         </label>
         <input
-          id="from_date"
+          id="date_from"
           type="date"
-          value={filters.from_date ?? ''}
+          value={filters.date_from ?? ''}
           onChange={handleFromDate}
           className="border rounded px-2 py-1 text-sm"
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="to_date" className="text-sm font-medium">
+        <label htmlFor="date_to" className="text-sm font-medium">
           Do datuma
         </label>
         <input
-          id="to_date"
+          id="date_to"
           type="date"
-          value={filters.to_date ?? ''}
+          value={filters.date_to ?? ''}
           onChange={handleToDate}
           className="border rounded px-2 py-1 text-sm"
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="status" className="text-sm font-medium">
+        <label htmlFor="status_filter" className="text-sm font-medium">
           Status
         </label>
         <select
-          id="status"
-          value={filters.status ?? ''}
+          id="status_filter"
+          value={filters.status_filter ?? ''}
           onChange={handleStatus}
           className="border rounded px-2 py-1 text-sm"
         >

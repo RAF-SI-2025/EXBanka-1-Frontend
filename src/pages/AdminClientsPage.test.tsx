@@ -10,7 +10,7 @@ describe('AdminClientsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useClientsHook.useAllClients).mockReturnValue({
-      data: { clients: [createMockClient()], total_count: 1 },
+      data: { clients: [createMockClient()], total: 1 },
       isLoading: false,
     } as any)
   })

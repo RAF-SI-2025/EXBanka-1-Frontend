@@ -37,7 +37,7 @@ export interface Loan {
 
 export interface LoanListResponse {
   loans: Loan[]
-  total_count: number
+  total: number
 }
 
 export interface LoanRequest {
@@ -61,7 +61,7 @@ export interface LoanRequest {
 
 export interface LoanRequestListResponse {
   requests: LoanRequest[]
-  total_count: number
+  total: number
 }
 
 export interface LoanFilters {

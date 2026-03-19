@@ -16,11 +16,11 @@ describe('HomePage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
-      data: { accounts: [], total_count: 0 },
+      data: { accounts: [], total: 0 },
       isLoading: false,
     } as any)
     jest.mocked(usePaymentsHook.usePayments).mockReturnValue({
-      data: { payments: [], total_count: 0 },
+      data: { payments: [], total: 0 },
       isLoading: false,
     } as any)
     jest.mocked(usePaymentsHook.usePaymentRecipients).mockReturnValue({
@@ -52,11 +52,11 @@ describe('HomePage', () => {
 
   it('shows recent transactions section for the primary account', () => {
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
-      data: { accounts: [createMockAccount()], total_count: 1 },
+      data: { accounts: [createMockAccount()], total: 1 },
       isLoading: false,
     } as any)
     jest.mocked(usePaymentsHook.usePayments).mockReturnValue({
-      data: { payments: [createMockPayment()], total_count: 1 },
+      data: { payments: [createMockPayment()], total: 1 },
       isLoading: false,
     } as any)
 
@@ -70,7 +70,7 @@ describe('HomePage', () => {
   it('calls usePayments with primary account number and page_size 5', () => {
     const mockAccount = createMockAccount()
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
-      data: { accounts: [mockAccount], total_count: 1 },
+      data: { accounts: [mockAccount], total: 1 },
       isLoading: false,
     } as any)
 
@@ -78,9 +78,9 @@ describe('HomePage', () => {
       preloadedState: { auth: createMockAuthState() },
     })
 
-    expect(usePaymentsHook.usePayments).toHaveBeenCalledWith({
-      account_number: mockAccount.account_number,
-      page_size: 5,
-    })
+    expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
+      mockAccount.account_number,
+      expect.objectContaining({ page_size: 5 })
+    )
   })
 })

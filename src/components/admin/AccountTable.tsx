@@ -15,22 +15,26 @@ const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Aktivan',
   INACTIVE: 'Neaktivan',
   BLOCKED: 'Blokiran',
+  CLOSED: 'Zatvoren',
 }
 
-const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  CURRENT: 'Tekući',
+const ACCOUNT_KIND_LABELS: Record<string, string> = {
+  CHECKING: 'Tekući',
+  SAVINGS: 'Štedni',
   FOREIGN_CURRENCY: 'Devizni',
+  BUSINESS: 'Poslovni',
 }
 
-const OWNER_TYPE_LABELS: Record<string, string> = {
+const ACCOUNT_CATEGORY_LABELS: Record<string, string> = {
   PERSONAL: 'Lični',
-  BUSINESS: 'Poslovni',
+  COMPANY: 'Poslovni',
 }
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
   ACTIVE: 'default',
   INACTIVE: 'secondary',
   BLOCKED: 'destructive',
+  CLOSED: 'secondary',
 }
 
 interface AccountTableProps {
@@ -61,11 +65,13 @@ export function AccountTable({ accounts, onViewCards }: AccountTableProps) {
             <TableCell className="font-mono text-sm">
               {formatAccountNumber(acc.account_number)}
             </TableCell>
-            <TableCell>{acc.name}</TableCell>
-            <TableCell>{ACCOUNT_TYPE_LABELS[acc.account_type] ?? acc.account_type}</TableCell>
-            <TableCell>{OWNER_TYPE_LABELS[acc.owner_type] ?? acc.owner_type}</TableCell>
-            <TableCell>{acc.currency}</TableCell>
-            <TableCell>{formatCurrency(acc.available_balance, acc.currency)}</TableCell>
+            <TableCell>{acc.account_name}</TableCell>
+            <TableCell>{ACCOUNT_KIND_LABELS[acc.account_kind] ?? acc.account_kind}</TableCell>
+            <TableCell>
+              {ACCOUNT_CATEGORY_LABELS[acc.account_category] ?? acc.account_category}
+            </TableCell>
+            <TableCell>{acc.currency_code}</TableCell>
+            <TableCell>{formatCurrency(acc.available_balance, acc.currency_code)}</TableCell>
             <TableCell>
               <Badge variant={STATUS_VARIANT[acc.status] ?? 'secondary'}>
                 {STATUS_LABELS[acc.status] ?? acc.status}

@@ -12,7 +12,7 @@ describe('AccountCard', () => {
   })
 
   it('shows available balance', () => {
-    const account = createMockAccount({ available_balance: 49000, currency: 'RSD' })
+    const account = createMockAccount({ available_balance: 49000, currency_code: 'RSD' })
     renderWithProviders(<AccountCard account={account} />)
     expect(screen.getByText(/49.000/)).toBeInTheDocument()
   })

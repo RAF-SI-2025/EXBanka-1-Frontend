@@ -11,15 +11,15 @@ import { formatCurrency, formatDate } from '@/lib/utils/format'
 import type { Payment } from '@/types/payment'
 
 const STATUS_LABELS: Record<string, string> = {
-  REALIZED: 'Realizovano',
-  REJECTED: 'Odbijeno',
-  PROCESSING: 'U obradi',
+  COMPLETED: 'Realizovano',
+  PENDING: 'U obradi',
+  FAILED: 'Odbijeno',
 }
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  REALIZED: 'default',
-  REJECTED: 'destructive',
-  PROCESSING: 'secondary',
+  COMPLETED: 'default',
+  FAILED: 'destructive',
+  PENDING: 'secondary',
 }
 
 interface RecentTransactionsProps {
@@ -45,9 +45,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
         {transactions.map((tx) => (
           <TableRow key={tx.id}>
             <TableCell className="text-sm">{formatDate(tx.timestamp)}</TableCell>
-            <TableCell className="text-sm">{tx.receiver_name}</TableCell>
+            <TableCell className="text-sm">{tx.recipient_name}</TableCell>
             <TableCell className="text-sm text-right">
-              {formatCurrency(tx.amount, tx.currency)}
+              {formatCurrency(tx.initial_amount, 'RSD')}
             </TableCell>
             <TableCell>
               <Badge variant={STATUS_VARIANT[tx.status] ?? 'secondary'}>

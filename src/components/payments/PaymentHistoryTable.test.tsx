@@ -5,8 +5,8 @@ import { createMockPayment } from '@/__tests__/fixtures/payment-fixtures'
 describe('PaymentHistoryTable', () => {
   it('renders payment rows', () => {
     const payments = [
-      createMockPayment({ id: 1, receiver_name: 'Elektro Beograd', amount: 5000 }),
-      createMockPayment({ id: 2, receiver_name: 'Vodovod', amount: 1200 }),
+      createMockPayment({ id: 1, recipient_name: 'Elektro Beograd', initial_amount: 5000 }),
+      createMockPayment({ id: 2, recipient_name: 'Vodovod', initial_amount: 1200 }),
     ]
     render(<PaymentHistoryTable payments={payments} />)
 
@@ -31,8 +31,8 @@ describe('PaymentHistoryTable', () => {
 
   it('renders status badge for each payment', () => {
     const payments = [
-      createMockPayment({ id: 1, status: 'REALIZED' }),
-      createMockPayment({ id: 2, status: 'REJECTED' }),
+      createMockPayment({ id: 1, status: 'COMPLETED' }),
+      createMockPayment({ id: 2, status: 'FAILED' }),
     ]
     render(<PaymentHistoryTable payments={payments} />)
 
@@ -41,7 +41,7 @@ describe('PaymentHistoryTable', () => {
   })
 
   it('renders formatted amount for each payment', () => {
-    const payments = [createMockPayment({ id: 1, amount: 5000, currency: 'RSD' })]
+    const payments = [createMockPayment({ id: 1, initial_amount: 5000 })]
     render(<PaymentHistoryTable payments={payments} />)
 
     // Amount should appear formatted in the table

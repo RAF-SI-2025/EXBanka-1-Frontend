@@ -22,16 +22,14 @@ export function RecipientList({ recipients, onEdit, onDelete }: RecipientListPro
         <TableRow>
           <TableHead>Ime</TableHead>
           <TableHead>Broj računa</TableHead>
-          <TableHead>Poziv na broj</TableHead>
           <TableHead>Akcije</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {recipients.map((r) => (
           <TableRow key={r.id}>
-            <TableCell>{r.name}</TableCell>
+            <TableCell>{r.recipient_name}</TableCell>
             <TableCell className="font-mono text-sm">{r.account_number}</TableCell>
-            <TableCell>{r.reference ?? '—'}</TableCell>
             <TableCell className="flex gap-2">
               <Button size="sm" variant="outline" onClick={() => onEdit(r)}>
                 Izmeni
@@ -44,7 +42,7 @@ export function RecipientList({ recipients, onEdit, onDelete }: RecipientListPro
         ))}
         {recipients.length === 0 && (
           <TableRow>
-            <TableCell colSpan={4} className="text-center text-muted-foreground">
+            <TableCell colSpan={3} className="text-center text-muted-foreground">
               Nema sačuvanih primalaca.
             </TableCell>
           </TableRow>

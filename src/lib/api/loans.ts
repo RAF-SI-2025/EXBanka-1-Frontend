@@ -9,8 +9,8 @@ import type {
   CreateLoanRequest,
 } from '@/types/loan'
 
-export async function getLoans(): Promise<Loan[]> {
-  const response = await apiClient.get<Loan[]>('/api/loans')
+export async function getLoans(clientId: number): Promise<LoanListResponse> {
+  const response = await apiClient.get<LoanListResponse>(`/api/loans/client/${clientId}`)
   return response.data
 }
 
@@ -20,7 +20,7 @@ export async function getLoan(id: number): Promise<Loan> {
 }
 
 export async function createLoanRequest(payload: CreateLoanRequest): Promise<LoanRequest> {
-  const response = await apiClient.post<LoanRequest>('/api/loans/request', payload)
+  const response = await apiClient.post<LoanRequest>('/api/loans/requests', payload)
   return response.data
 }
 

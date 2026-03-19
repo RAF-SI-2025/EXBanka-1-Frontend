@@ -4,12 +4,16 @@ import { InternalTransferForm } from '@/components/payments/InternalTransferForm
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 
 const mockAccounts = [
-  createMockAccount({ account_number: '111000100000000011', name: 'Tekući RSD', currency: 'RSD' }),
+  createMockAccount({
+    account_number: '111000100000000011',
+    account_name: 'Tekući RSD',
+    currency_code: 'RSD',
+  }),
   createMockAccount({
     id: 2,
     account_number: '111000100000000022',
-    name: 'Štedni RSD',
-    currency: 'RSD',
+    account_name: 'Štedni RSD',
+    currency_code: 'RSD',
   }),
 ]
 const onSubmit = jest.fn()

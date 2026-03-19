@@ -1,30 +1,29 @@
-export type PaymentStatus = 'REALIZED' | 'REJECTED' | 'PROCESSING'
+export type PaymentStatus = string
 
 export interface Payment {
   id: number
-  order_number: string
-  from_account: string
-  to_account: string
-  receiver_name: string
-  amount: number
-  currency: string
+  from_account_number: string
+  to_account_number: string
+  initial_amount: number
+  final_amount: number
+  commission: number
+  recipient_name: string
   payment_code: string
-  reference?: string
-  description?: string
+  reference_number?: string
+  payment_purpose?: string
   status: PaymentStatus
   timestamp: string
 }
 
 export interface PaymentListResponse {
   payments: Payment[]
-  total_count: number
+  total: number
 }
 
 export interface PaymentFilters {
-  account_number?: string
-  from_date?: string
-  to_date?: string
-  status?: PaymentStatus
+  date_from?: string
+  date_to?: string
+  status_filter?: string
   amount_min?: number
   amount_max?: number
   page?: number
@@ -32,33 +31,32 @@ export interface PaymentFilters {
 }
 
 export interface CreatePaymentRequest {
-  from_account: string
-  to_account: string
-  receiver_name: string
+  from_account_number: string
+  to_account_number: string
+  recipient_name: string
   amount: number
   payment_code: string
-  reference?: string
-  description?: string
+  reference_number?: string
+  payment_purpose?: string
 }
 
 export interface CreateInternalTransferRequest {
-  from_account: string
-  to_account: string
+  from_account_number: string
+  to_account_number: string
   amount: number
   description?: string
 }
 
 export interface PaymentRecipient {
   id: number
-  name: string
+  client_id: number
+  recipient_name: string
   account_number: string
-  reference?: string
-  payment_code?: string
+  created_at: string
 }
 
 export interface CreatePaymentRecipientRequest {
-  name: string
+  client_id: number
+  recipient_name: string
   account_number: string
-  reference?: string
-  payment_code?: string
 }

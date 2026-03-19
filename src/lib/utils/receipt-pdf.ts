@@ -12,11 +12,11 @@ export function generateReceiptPdf(payment: Payment): void {
   doc.setFontSize(11)
   let y = 40
   const lines: [string, string][] = [
-    ['Broj naloga:', payment.order_number],
-    ['Sa računa:', formatAccountNumber(payment.from_account)],
-    ['Na račun:', formatAccountNumber(payment.to_account)],
-    ['Primalac:', payment.receiver_name],
-    ['Iznos:', formatCurrency(payment.amount, payment.currency)],
+    ['ID transakcije:', String(payment.id)],
+    ['Sa računa:', formatAccountNumber(payment.from_account_number)],
+    ['Na račun:', formatAccountNumber(payment.to_account_number)],
+    ['Primalac:', payment.recipient_name],
+    ['Iznos:', formatCurrency(payment.initial_amount, 'RSD')],
     ['Šifra plaćanja:', payment.payment_code],
     ['Status:', payment.status],
     ['Datum:', formatDate(payment.timestamp)],
@@ -28,5 +28,5 @@ export function generateReceiptPdf(payment: Payment): void {
     y += 10
   }
 
-  doc.save(`receipt-${payment.order_number}.pdf`)
+  doc.save(`receipt-${payment.id}.pdf`)
 }

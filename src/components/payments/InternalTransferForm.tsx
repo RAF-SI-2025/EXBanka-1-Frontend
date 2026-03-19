@@ -34,10 +34,12 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
     resolver: zodResolver(createInternalTransferSchema),
   })
 
-  const fromAccount = watch('from_account')
+  const fromAccount = watch('from_account_number')
   const toAccounts = accounts.filter((a) => {
     const fromAcc = accounts.find((acc) => acc.account_number === fromAccount)
-    return a.account_number !== fromAccount && (!fromAcc || a.currency === fromAcc.currency)
+    return (
+      a.account_number !== fromAccount && (!fromAcc || a.currency_code === fromAcc.currency_code)
+    )
   })
 
   return (
@@ -50,7 +52,7 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
           <div>
             <Label>Sa računa</Label>
             <Controller
-              name="from_account"
+              name="from_account_number"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -60,22 +62,23 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
                   <SelectContent>
                     {accounts.map((acc) => (
                       <SelectItem key={acc.account_number} value={acc.account_number}>
-                        {acc.name} — {formatCurrency(acc.available_balance, acc.currency)}
+                        {acc.account_name} —{' '}
+                        {formatCurrency(acc.available_balance, acc.currency_code)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.from_account && (
-              <p className="text-sm text-destructive">{errors.from_account.message}</p>
+            {errors.from_account_number && (
+              <p className="text-sm text-destructive">{errors.from_account_number.message}</p>
             )}
           </div>
 
           <div>
             <Label>Na račun</Label>
             <Controller
-              name="to_account"
+              name="to_account_number"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
@@ -85,15 +88,16 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
                   <SelectContent>
                     {toAccounts.map((acc) => (
                       <SelectItem key={acc.account_number} value={acc.account_number}>
-                        {acc.name} — {formatCurrency(acc.available_balance, acc.currency)}
+                        {acc.account_name} —{' '}
+                        {formatCurrency(acc.available_balance, acc.currency_code)}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.to_account && (
-              <p className="text-sm text-destructive">{errors.to_account.message}</p>
+            {errors.to_account_number && (
+              <p className="text-sm text-destructive">{errors.to_account_number.message}</p>
             )}
           </div>
 
@@ -104,8 +108,8 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
           </div>
 
           <div>
-            <Label htmlFor="description">Opis (opciono)</Label>
-            <Input id="description" {...register('description')} />
+            <Label htmlFor="payment_purpose">Opis (opciono)</Label>
+            <Input id="payment_purpose" {...register('payment_purpose')} />
           </div>
 
           <Button type="submit" className="w-full">

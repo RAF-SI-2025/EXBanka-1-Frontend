@@ -3,15 +3,26 @@ import {
   getClientAccounts,
   getAccount,
   createAccount,
-  updateAccount,
+  updateAccountName,
+  updateAccountLimits,
   getAllAccounts,
 } from '@/lib/api/accounts'
-import type { AccountFilters, CreateAccountRequest, UpdateAccountRequest } from '@/types/account'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
+import type {
+  AccountFilters,
+  CreateAccountRequest,
+  UpdateAccountNameRequest,
+  UpdateAccountLimitsRequest,
+} from '@/types/account'
 
 export function useClientAccounts() {
+  const user = useAppSelector(selectCurrentUser)
+  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['accounts', 'client'],
-    queryFn: () => getClientAccounts(),
+    queryKey: ['accounts', 'client', clientId],
+    queryFn: () => getClientAccounts(clientId),
+    enabled: clientId > 0,
   })
 }
 
@@ -33,10 +44,21 @@ export function useCreateAccount() {
   })
 }
 
-export function useUpdateAccount(id: number) {
+export function useUpdateAccountName(id: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: UpdateAccountRequest) => updateAccount(id, payload),
+    mutationFn: (payload: UpdateAccountNameRequest) => updateAccountName(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['account', id] })
+    },
+  })
+}
+
+export function useUpdateAccountLimits(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateAccountLimitsRequest) => updateAccountLimits(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
       queryClient.invalidateQueries({ queryKey: ['account', id] })

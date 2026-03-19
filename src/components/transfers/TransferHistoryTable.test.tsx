@@ -6,8 +6,8 @@ import { createMockTransfer } from '@/__tests__/fixtures/transfer-fixtures'
 describe('TransferHistoryTable', () => {
   it('renders transfer rows', () => {
     const transfers = [
-      createMockTransfer({ id: 1, initial_amount: 1300, initial_currency: 'RSD' }),
-      createMockTransfer({ id: 2, initial_amount: 500, initial_currency: 'EUR' }),
+      createMockTransfer({ id: 1, initial_amount: 1300 }),
+      createMockTransfer({ id: 2, initial_amount: 500 }),
     ]
     renderWithProviders(<TransferHistoryTable transfers={transfers} />)
     expect(screen.getByText(/1.300/)).toBeInTheDocument()

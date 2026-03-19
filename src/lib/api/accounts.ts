@@ -4,11 +4,12 @@ import type {
   AccountListResponse,
   AccountFilters,
   CreateAccountRequest,
-  UpdateAccountRequest,
+  UpdateAccountNameRequest,
+  UpdateAccountLimitsRequest,
 } from '@/types/account'
 
-export async function getClientAccounts(): Promise<AccountListResponse> {
-  const response = await apiClient.get<AccountListResponse>('/api/accounts/client')
+export async function getClientAccounts(clientId: number): Promise<AccountListResponse> {
+  const response = await apiClient.get<AccountListResponse>(`/api/accounts/client/${clientId}`)
   return response.data
 }
 
@@ -22,15 +23,28 @@ export async function createAccount(payload: CreateAccountRequest): Promise<Acco
   return response.data
 }
 
-export async function updateAccount(id: number, payload: UpdateAccountRequest): Promise<Account> {
-  const response = await apiClient.put<Account>(`/api/accounts/${id}`, payload)
+export async function updateAccountName(
+  id: number,
+  payload: UpdateAccountNameRequest
+): Promise<Account> {
+  const response = await apiClient.put<Account>(`/api/accounts/${id}/name`, payload)
+  return response.data
+}
+
+export async function updateAccountLimits(
+  id: number,
+  payload: UpdateAccountLimitsRequest
+): Promise<Account> {
+  const response = await apiClient.put<Account>(`/api/accounts/${id}/limits`, payload)
   return response.data
 }
 
 export async function getAllAccounts(filters?: AccountFilters): Promise<AccountListResponse> {
   const params = new URLSearchParams()
-  if (filters?.owner_name) params.append('owner_name', filters.owner_name)
-  if (filters?.account_number) params.append('account_number', filters.account_number)
+  if (filters?.name_filter) params.append('name_filter', filters.name_filter)
+  if (filters?.account_number_filter)
+    params.append('account_number_filter', filters.account_number_filter)
+  if (filters?.type_filter) params.append('type_filter', filters.type_filter)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
   const response = await apiClient.get<AccountListResponse>('/api/accounts', { params })

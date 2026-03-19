@@ -13,10 +13,8 @@ export function useRecipientAutofill(
     if (!id) return
     const r = recipients?.find((rec) => String(rec.id) === id)
     if (r) {
-      setValue('to_account', r.account_number)
-      setValue('receiver_name', r.name)
-      if (r.reference) setValue('reference', r.reference)
-      if (r.payment_code) setValue('payment_code', r.payment_code)
+      setValue('to_account_number', r.account_number)
+      setValue('recipient_name', r.recipient_name)
     }
   }
 

@@ -21,7 +21,7 @@ describe('PaymentFilters', () => {
     expect(screen.getByLabelText(/status/i)).toBeInTheDocument()
   })
 
-  it('calls onFilterChange with updated from_date when date input changes', async () => {
+  it('calls onFilterChange with updated date_from when date input changes', async () => {
     const user = userEvent.setup()
     const onFilterChange = jest.fn()
     render(<PaymentFilters filters={defaultFilters} onFilterChange={onFilterChange} />)
@@ -31,10 +31,10 @@ describe('PaymentFilters', () => {
 
     expect(onFilterChange).toHaveBeenCalled()
     const lastCall = onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1][0]
-    expect(lastCall).toMatchObject({ from_date: '2026-01-01' })
+    expect(lastCall).toMatchObject({ date_from: '2026-01-01' })
   })
 
-  it('calls onFilterChange with updated to_date when date input changes', async () => {
+  it('calls onFilterChange with updated date_to when date input changes', async () => {
     const user = userEvent.setup()
     const onFilterChange = jest.fn()
     render(<PaymentFilters filters={defaultFilters} onFilterChange={onFilterChange} />)
@@ -44,18 +44,20 @@ describe('PaymentFilters', () => {
 
     expect(onFilterChange).toHaveBeenCalled()
     const lastCall = onFilterChange.mock.calls[onFilterChange.mock.calls.length - 1][0]
-    expect(lastCall).toMatchObject({ to_date: '2026-03-01' })
+    expect(lastCall).toMatchObject({ date_to: '2026-03-01' })
   })
 
-  it('calls onFilterChange with updated status when select changes', async () => {
+  it('calls onFilterChange with updated status_filter when select changes', async () => {
     const user = userEvent.setup()
     const onFilterChange = jest.fn()
     render(<PaymentFilters filters={defaultFilters} onFilterChange={onFilterChange} />)
 
     const statusSelect = screen.getByLabelText(/status/i)
-    await user.selectOptions(statusSelect, 'REALIZED')
+    await user.selectOptions(statusSelect, 'COMPLETED')
 
-    expect(onFilterChange).toHaveBeenCalledWith(expect.objectContaining({ status: 'REALIZED' }))
+    expect(onFilterChange).toHaveBeenCalledWith(
+      expect.objectContaining({ status_filter: 'COMPLETED' })
+    )
   })
 
   it('renders amount min and max inputs', () => {
@@ -66,15 +68,15 @@ describe('PaymentFilters', () => {
 
   it('displays current filter values', () => {
     const filters: PaymentFiltersType = {
-      from_date: '2026-01-01',
-      to_date: '2026-03-01',
-      status: 'REJECTED',
+      date_from: '2026-01-01',
+      date_to: '2026-03-01',
+      status_filter: 'FAILED',
     }
     render(<PaymentFilters filters={filters} onFilterChange={jest.fn()} />)
 
     expect(screen.getByDisplayValue('2026-01-01')).toBeInTheDocument()
     expect(screen.getByDisplayValue('2026-03-01')).toBeInTheDocument()
     const statusSelect = screen.getByLabelText(/status/i) as HTMLSelectElement
-    expect(statusSelect.value).toBe('REJECTED')
+    expect(statusSelect.value).toBe('FAILED')
   })
 })

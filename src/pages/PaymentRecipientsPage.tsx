@@ -59,10 +59,8 @@ export function PaymentRecipientsPage() {
 
   const formDefaultValues = editingRecipient
     ? {
-        name: editingRecipient.name,
+        recipient_name: editingRecipient.recipient_name,
         account_number: editingRecipient.account_number,
-        reference: editingRecipient.reference ?? '',
-        payment_code: editingRecipient.payment_code ?? '',
       }
     : undefined
 

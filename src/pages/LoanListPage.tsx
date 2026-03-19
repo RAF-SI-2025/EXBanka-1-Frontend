@@ -5,7 +5,8 @@ import { LoanCard } from '@/components/loans/LoanCard'
 
 export function LoanListPage() {
   const navigate = useNavigate()
-  const { data: loans, isLoading } = useLoans()
+  const { data, isLoading } = useLoans()
+  const loans = data?.loans ?? []
 
   if (isLoading) return <p>Učitavanje...</p>
 
@@ -16,7 +17,7 @@ export function LoanListPage() {
         <Button onClick={() => navigate('/loans/apply')}>Podnesi zahtev</Button>
       </div>
 
-      {loans && loans.length > 0 ? (
+      {loans.length > 0 ? (
         <div className="space-y-3">
           {loans.map((loan) => (
             <LoanCard key={loan.id} loan={loan} onClick={() => navigate(`/loans/${loan.id}`)} />

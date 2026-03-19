@@ -9,8 +9,8 @@ import type {
 
 export async function getClients(filters?: ClientFilters): Promise<ClientListResponse> {
   const params = new URLSearchParams()
-  if (filters?.name) params.append('name', filters.name)
-  if (filters?.email) params.append('email', filters.email)
+  if (filters?.name) params.append('name_filter', filters.name)
+  if (filters?.email) params.append('email_filter', filters.email)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
   const response = await apiClient.get<ClientListResponse>('/api/clients', { params })

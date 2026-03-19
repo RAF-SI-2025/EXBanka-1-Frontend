@@ -1,35 +1,27 @@
-export type TransferStatus = 'REALIZED' | 'REJECTED' | 'PROCESSING'
-
 export interface Transfer {
   id: number
-  order_number: string
-  from_account: string
-  to_account: string
+  from_account_number: string
+  to_account_number: string
   initial_amount: number
-  initial_currency: string
   final_amount: number
-  final_currency: string
   exchange_rate: number
   commission: number
   timestamp: string
-  status: TransferStatus
 }
 
 export interface TransferListResponse {
   transfers: Transfer[]
-  total_count: number
+  total: number
 }
 
 export interface TransferFilters {
-  from_date?: string
-  to_date?: string
   page?: number
   page_size?: number
 }
 
 export interface CreateTransferRequest {
-  from_account: string
-  to_account: string
+  from_account_number: string
+  to_account_number: string
   amount: number
 }
 

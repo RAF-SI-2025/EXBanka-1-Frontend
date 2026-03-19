@@ -29,7 +29,7 @@ export function useLoanApplicationForm(
   function handleAccountChange(accountNumber: string | null) {
     if (!accountNumber) return
     const acc = accounts.find((a) => a.account_number === accountNumber)
-    if (acc) setValue('currency_code', acc.currency)
+    if (acc) setValue('currency_code', acc.currency_code)
   }
 
   const submitForm = handleSubmit((data) => onSubmit(data))
