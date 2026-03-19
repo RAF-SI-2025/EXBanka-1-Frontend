@@ -1,17 +1,25 @@
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useClientAccounts } from '@/hooks/useAccounts'
+import { usePayments } from '@/hooks/usePayments'
 import { AccountCard } from '@/components/accounts/AccountCard'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import { QuickPayment } from '@/components/home/QuickPayment'
 import { ExchangeCalculator } from '@/components/home/ExchangeCalculator'
+import { RecentTransactions } from '@/components/accounts/RecentTransactions'
 
 export function HomePage() {
   const navigate = useNavigate()
   const user = useAppSelector(selectCurrentUser)
   const { data: accountsData, isLoading } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
+  const primaryAccount = accounts[0]
+
+  const { data: paymentsData } = usePayments(
+    primaryAccount ? { account_number: primaryAccount.account_number, page_size: 5 } : undefined
+  )
+  const recentTransactions = paymentsData?.payments ?? []
 
   return (
     <div className="space-y-6">
@@ -54,6 +62,17 @@ export function HomePage() {
           <p className="text-muted-foreground">Nemate aktivnih računa.</p>
         )}
       </div>
+
+      {primaryAccount && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">Poslednje transakcije</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecentTransactions transactions={recentTransactions} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

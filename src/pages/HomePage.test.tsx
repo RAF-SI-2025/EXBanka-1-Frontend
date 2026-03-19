@@ -5,6 +5,8 @@ import * as useAccountsHook from '@/hooks/useAccounts'
 import * as usePaymentsHook from '@/hooks/usePayments'
 import * as useExchangeHook from '@/hooks/useExchange'
 import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
+import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
+import { createMockPayment } from '@/__tests__/fixtures/payment-fixtures'
 
 jest.mock('@/hooks/useAccounts')
 jest.mock('@/hooks/usePayments')
@@ -15,6 +17,10 @@ describe('HomePage', () => {
     jest.clearAllMocks()
     jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
       data: { accounts: [], total_count: 0 },
+      isLoading: false,
+    } as any)
+    jest.mocked(usePaymentsHook.usePayments).mockReturnValue({
+      data: { payments: [], total_count: 0 },
       isLoading: false,
     } as any)
     jest.mocked(usePaymentsHook.usePaymentRecipients).mockReturnValue({
@@ -35,5 +41,46 @@ describe('HomePage', () => {
     expect(screen.getByText(/dobrodošli/i)).toBeInTheDocument()
     expect(screen.getByText(/sačuvani primaoci/i)).toBeInTheDocument()
     expect(screen.getByText(/brza konverzija/i)).toBeInTheDocument()
+  })
+
+  it('does not show recent transactions section when no accounts exist', () => {
+    renderWithProviders(<HomePage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    expect(screen.queryByText(/poslednje transakcije/i)).not.toBeInTheDocument()
+  })
+
+  it('shows recent transactions section for the primary account', () => {
+    jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
+      data: { accounts: [createMockAccount()], total_count: 1 },
+      isLoading: false,
+    } as any)
+    jest.mocked(usePaymentsHook.usePayments).mockReturnValue({
+      data: { payments: [createMockPayment()], total_count: 1 },
+      isLoading: false,
+    } as any)
+
+    renderWithProviders(<HomePage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    expect(screen.getByText(/poslednje transakcije/i)).toBeInTheDocument()
+    expect(screen.getByText('Elektro Beograd')).toBeInTheDocument()
+  })
+
+  it('calls usePayments with primary account number and page_size 5', () => {
+    const mockAccount = createMockAccount()
+    jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
+      data: { accounts: [mockAccount], total_count: 1 },
+      isLoading: false,
+    } as any)
+
+    renderWithProviders(<HomePage />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+
+    expect(usePaymentsHook.usePayments).toHaveBeenCalledWith({
+      account_number: mockAccount.account_number,
+      page_size: 5,
+    })
   })
 })
