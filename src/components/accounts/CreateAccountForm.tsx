@@ -24,10 +24,10 @@ interface CreateAccountFormProps {
 }
 
 const ACCOUNT_KIND_OPTIONS = [
-  { value: 'CHECKING', label: 'Tekući (Checking)' },
-  { value: 'SAVINGS', label: 'Štedni (Savings)' },
-  { value: 'FOREIGN_CURRENCY', label: 'Devizni (Foreign Currency)' },
-  { value: 'BUSINESS', label: 'Poslovni (Business)' },
+  { value: 'checking', label: 'Tekući (Checking)' },
+  { value: 'savings', label: 'Štedni (Savings)' },
+  { value: 'foreign', label: 'Devizni (Foreign Currency)' },
+  { value: 'business', label: 'Poslovni (Business)' },
 ] as const
 
 const ACCOUNT_TYPE_OPTIONS = [
@@ -54,7 +54,7 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
     resolver: zodResolver(createAccountSchema),
     defaultValues: {
       owner_id: 0,
-      account_kind: 'CHECKING' as const,
+      account_kind: 'checking' as const,
       account_type: 'CURRENT' as const,
       account_category: 'PERSONAL' as const,
       currency_code: 'RSD',
@@ -85,9 +85,9 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
             onValueChange={(v) => {
               setValue(
                 'account_kind',
-                (v ?? 'CHECKING') as 'CHECKING' | 'SAVINGS' | 'FOREIGN_CURRENCY' | 'BUSINESS'
+                (v ?? 'checking') as 'checking' | 'savings' | 'foreign' | 'business'
               )
-              if (v !== 'FOREIGN_CURRENCY') setValue('currency_code', 'RSD')
+              if (v !== 'foreign') setValue('currency_code', 'RSD')
             }}
           >
             <SelectTrigger id="account_kind">
@@ -143,7 +143,7 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
         </Select>
       </div>
 
-      {accountKind === 'FOREIGN_CURRENCY' && (
+      {accountKind === 'foreign' && (
         <div>
           <Label htmlFor="currency_code">Currency</Label>
           <Select

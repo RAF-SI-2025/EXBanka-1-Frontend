@@ -6,7 +6,7 @@ export function createMockAccount(overrides: Partial<Account> = {}): Account {
     account_number: '111000100000000011',
     account_name: 'Tekući RSD',
     currency_code: 'RSD',
-    account_kind: 'CHECKING',
+    account_kind: 'checking',
     account_type: 'CURRENT',
     account_category: 'PERSONAL',
     balance: 50000,

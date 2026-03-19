@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { logoutThunk } from '@/store/slices/authSlice'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
+import { selectCurrentUser, selectIsAdmin } from '@/store/selectors/authSelectors'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navLinkClass =
@@ -68,12 +68,14 @@ function ClientNav() {
   )
 }
 
-function EmployeeNav() {
+function EmployeeNav({ isAdmin }: { isAdmin: boolean }) {
   return (
     <>
-      <Link to="/employees" className={navLinkClass}>
-        Employees
-      </Link>
+      {isAdmin && (
+        <Link to="/employees" className={navLinkClass}>
+          Employees
+        </Link>
+      )}
       <Link to="/admin/accounts" className={navLinkClass}>
         Accounts Management
       </Link>
@@ -96,6 +98,7 @@ export function Sidebar() {
   const { isDark, toggleTheme } = useTheme()
 
   const isClient = user?.role === 'Client'
+  const isAdmin = useAppSelector(selectIsAdmin)
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -105,7 +108,7 @@ export function Sidebar() {
     <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col p-4">
       <div className="text-lg font-bold mb-6 text-accent-2">EXBanka</div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
-        {isClient ? <ClientNav /> : <EmployeeNav />}
+        {isClient ? <ClientNav /> : <EmployeeNav isAdmin={isAdmin} />}
       </nav>
       <div className="border-t border-sidebar-border pt-4 mt-4">
         <div className="flex justify-between items-center mb-2">

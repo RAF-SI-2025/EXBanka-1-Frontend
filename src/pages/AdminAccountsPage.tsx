@@ -1,19 +1,33 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAllAccounts } from '@/hooks/useAccounts'
+import { useAllClients } from '@/hooks/useClients'
 import { Button } from '@/components/ui/button'
 import { AccountFilters } from '@/components/admin/AccountFilters'
 import { AccountTable } from '@/components/admin/AccountTable'
+import { filterAccountsByOwner } from '@/lib/utils/accountFilters'
+import type { Client } from '@/types/client'
 
 export function AdminAccountsPage() {
   const navigate = useNavigate()
   const [ownerName, setOwnerName] = useState('')
   const [accountNumber, setAccountNumber] = useState('')
   const { data, isLoading } = useAllAccounts({
-    name_filter: ownerName || undefined,
     account_number_filter: accountNumber || undefined,
   })
-  const accounts = data?.accounts ?? []
+  const { data: clientsData } = useAllClients()
+  const clientsById = useMemo(
+    () =>
+      (clientsData?.clients ?? []).reduce<Record<number, Client>>(
+        (acc, client) => ({ ...acc, [client.id]: client }),
+        {}
+      ),
+    [clientsData]
+  )
+  const accounts = useMemo(
+    () => filterAccountsByOwner(data?.accounts ?? [], clientsById, ownerName),
+    [data, clientsById, ownerName]
+  )
 
   return (
     <div className="space-y-4">
@@ -33,6 +47,7 @@ export function AdminAccountsPage() {
         <AccountTable
           accounts={accounts}
           onViewCards={(id) => navigate(`/admin/accounts/${id}/cards`)}
+          clientsById={clientsById}
         />
       )}
     </div>

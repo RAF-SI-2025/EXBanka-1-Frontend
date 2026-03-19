@@ -3,16 +3,18 @@ import { LoginForm } from '@/components/auth/LoginForm'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { loginThunk } from '@/store/slices/authSlice'
-import { selectIsAuthenticated } from '@/store/selectors/authSelectors'
+import { selectIsAuthenticated, selectCurrentUser } from '@/store/selectors/authSelectors'
 import type { LoginRequest } from '@/types/auth'
 
 export function LoginPage() {
   const dispatch = useAppDispatch()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const user = useAppSelector(selectCurrentUser)
   const { status, error } = useAppSelector((state) => state.auth)
 
   if (isAuthenticated) {
-    return <Navigate to="/employees" replace />
+    const isClient = user?.role === 'Client'
+    return <Navigate to={isClient ? '/home' : '/admin/accounts'} replace />
   }
 
   const handleSubmit = (data: LoginRequest) => {

@@ -36,8 +36,7 @@ export function AccountCard({ account, onClick }: AccountCardProps) {
               {formatAccountNumber(account.account_number)}
             </p>
             <p className="text-sm text-muted-foreground">
-              {account.account_kind === 'FOREIGN_CURRENCY' ? 'Devizni' : 'Tekući'} •{' '}
-              {account.currency_code}
+              {account.account_kind === 'foreign' ? 'Devizni' : 'Tekući'} • {account.currency_code}
             </p>
           </div>
           <div className="text-right space-y-1">

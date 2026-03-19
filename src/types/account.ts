@@ -1,4 +1,4 @@
-export type AccountKind = 'CHECKING' | 'SAVINGS' | 'FOREIGN_CURRENCY' | 'BUSINESS'
+export type AccountKind = 'checking' | 'savings' | 'foreign' | 'business'
 export type AccountType = 'CURRENT' | 'TERM'
 export type AccountCategory = 'PERSONAL' | 'COMPANY'
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'CLOSED'

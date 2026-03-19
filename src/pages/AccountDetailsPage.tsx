@@ -58,7 +58,7 @@ export function AccountDetailsPage() {
           {account.owner_name && <InfoRow label="Vlasnik" value={account.owner_name} />}
           <InfoRow
             label="Tip računa"
-            value={account.account_kind === 'FOREIGN_CURRENCY' ? 'Devizni' : 'Tekući'}
+            value={account.account_kind === 'foreign' ? 'Devizni' : 'Tekući'}
           />
           <InfoRow
             label="Tip vlasnika"

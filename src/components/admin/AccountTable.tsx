@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatAccountNumber } from '@/lib/utils/format'
 import type { Account } from '@/types/account'
+import type { Client } from '@/types/client'
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Aktivan',
@@ -19,10 +20,10 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const ACCOUNT_KIND_LABELS: Record<string, string> = {
-  CHECKING: 'Tekući',
-  SAVINGS: 'Štedni',
-  FOREIGN_CURRENCY: 'Devizni',
-  BUSINESS: 'Poslovni',
+  checking: 'Tekući',
+  savings: 'Štedni',
+  foreign: 'Devizni',
+  business: 'Poslovni',
 }
 
 const ACCOUNT_CATEGORY_LABELS: Record<string, string> = {
@@ -40,9 +41,10 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
 interface AccountTableProps {
   accounts: Account[]
   onViewCards: (accountId: number) => void
+  clientsById?: Record<number, Client>
 }
 
-export function AccountTable({ accounts, onViewCards }: AccountTableProps) {
+export function AccountTable({ accounts, onViewCards, clientsById }: AccountTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -61,7 +63,11 @@ export function AccountTable({ accounts, onViewCards }: AccountTableProps) {
       <TableBody>
         {accounts.map((acc) => (
           <TableRow key={acc.id}>
-            <TableCell>{acc.owner_name}</TableCell>
+            <TableCell>
+              {acc.account_category === 'PERSONAL' && clientsById?.[acc.owner_id]
+                ? `${clientsById[acc.owner_id].first_name} ${clientsById[acc.owner_id].last_name}`
+                : acc.owner_name}
+            </TableCell>
             <TableCell className="font-mono text-sm">
               {formatAccountNumber(acc.account_number)}
             </TableCell>
