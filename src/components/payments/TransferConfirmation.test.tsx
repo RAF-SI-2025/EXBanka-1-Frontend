@@ -1,0 +1,76 @@
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { renderWithProviders } from '@/__tests__/utils/test-utils'
+import { TransferConfirmation } from '@/components/payments/TransferConfirmation'
+
+const defaultFormData = {
+  from_account: '111000100000000011',
+  to_account: '111000100000000022',
+  amount: 1300,
+  description: 'Test prenos',
+}
+
+describe('TransferConfirmation', () => {
+  const onConfirm = jest.fn()
+  const onBack = jest.fn()
+
+  beforeEach(() => jest.clearAllMocks())
+
+  it('renders transfer details', () => {
+    renderWithProviders(
+      <TransferConfirmation
+        formData={defaultFormData}
+        onConfirm={onConfirm}
+        onBack={onBack}
+        submitting={false}
+        error={null}
+      />
+    )
+    expect(screen.getByText('111000100000000011')).toBeInTheDocument()
+    expect(screen.getByText('111000100000000022')).toBeInTheDocument()
+  })
+
+  it('renders Confirm and Back buttons', () => {
+    renderWithProviders(
+      <TransferConfirmation
+        formData={defaultFormData}
+        onConfirm={onConfirm}
+        onBack={onBack}
+        submitting={false}
+        error={null}
+      />
+    )
+    expect(screen.getByRole('button', { name: /potvrdi/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /nazad/i })).toBeInTheDocument()
+  })
+
+  it('calls onConfirm when Confirm clicked', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <TransferConfirmation
+        formData={defaultFormData}
+        onConfirm={onConfirm}
+        onBack={onBack}
+        submitting={false}
+        error={null}
+      />
+    )
+    await user.click(screen.getByRole('button', { name: /potvrdi/i }))
+    expect(onConfirm).toHaveBeenCalled()
+  })
+
+  it('calls onBack when Back clicked', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <TransferConfirmation
+        formData={defaultFormData}
+        onConfirm={onConfirm}
+        onBack={onBack}
+        submitting={false}
+        error={null}
+      />
+    )
+    await user.click(screen.getByRole('button', { name: /nazad/i }))
+    expect(onBack).toHaveBeenCalled()
+  })
+})
