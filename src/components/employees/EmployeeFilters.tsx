@@ -10,9 +10,7 @@ import {
 import type { FilterCategory } from '@/types/employee'
 
 const FILTER_CATEGORIES: { value: FilterCategory; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'first_name', label: 'First Name' },
-  { value: 'last_name', label: 'Last Name' },
+  { value: 'name', label: 'Name' },
   { value: 'email', label: 'Email' },
   { value: 'position', label: 'Position' },
 ]
@@ -22,7 +20,7 @@ interface EmployeeFiltersProps {
 }
 
 export function EmployeeFilters({ onFilterChange }: EmployeeFiltersProps) {
-  const [category, setCategory] = useState<FilterCategory>('all')
+  const [category, setCategory] = useState<FilterCategory>('name')
   const [value, setValue] = useState('')
 
   const handleCategoryChange = (newCategory: string | null) => {

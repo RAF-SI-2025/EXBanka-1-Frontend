@@ -12,7 +12,7 @@ beforeEach(() => jest.clearAllMocks())
 describe('EmployeeFilters', () => {
   it('renders category dropdown and text input', () => {
     renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
-    expect(screen.getByText('First Name')).toBeInTheDocument()
+    expect(screen.getByText('Name')).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/type to filter/i)).toBeInTheDocument()
   })
 
@@ -21,7 +21,7 @@ describe('EmployeeFilters', () => {
     const input = screen.getByPlaceholderText(/type to filter/i)
     fireEvent.change(input, { target: { value: 'Jane' } })
     expect(mockOnFilterChange).toHaveBeenCalledWith({
-      category: 'all',
+      category: 'name',
       value: 'Jane',
     })
   })
@@ -61,20 +61,11 @@ describe('EmployeeFilters', () => {
     expect(mockOnFilterChange).toHaveBeenCalledWith(null)
   })
 
-  it('renders "All" as a category option', () => {
+  it('renders "Name", "Email", and "Position" as category options', () => {
     renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
-    expect(screen.getByRole('option', { name: /^all$/i })).toBeInTheDocument()
-  })
-
-  it('calls onFilterChange with category "all" when All is selected and input is non-empty', () => {
-    renderWithProviders(<EmployeeFilters onFilterChange={mockOnFilterChange} />)
-    const input = screen.getByPlaceholderText(/type to filter/i)
-    fireEvent.change(input, { target: { value: 'test' } })
-    mockOnFilterChange.mockClear()
-
-    fireEvent.click(screen.getByRole('option', { name: /^all$/i }))
-
-    expect(mockOnFilterChange).toHaveBeenCalledWith({ category: 'all', value: 'test' })
+    expect(screen.getByRole('option', { name: /^name$/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /^email$/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /^position$/i })).toBeInTheDocument()
   })
 
   it('updates category and re-emits filter when category changes with non-empty input', () => {

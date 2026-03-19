@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-03-12_
+_Last updated: 2026-03-17_
 
 ---
 
@@ -83,6 +83,8 @@ src/
 │   │   ├── table.tsx
 │   │   └── tabs.tsx
 │   ├── auth/
+│   │   ├── AuthFormCard.tsx          # Shared card wrapper for all auth forms
+│   │   ├── AuthFormCard.test.tsx
 │   │   ├── LoginForm.tsx             # Email/password login form
 │   │   ├── LoginForm.test.tsx
 │   │   ├── PasswordResetRequestForm.tsx  # Email input to request reset
@@ -92,24 +94,33 @@ src/
 │   │   ├── ActivationForm.tsx        # Token + initial password form
 │   │   └── ActivationForm.test.tsx
 │   ├── employees/
+│   │   ├── EmployeeForm.tsx          # Thin wrapper: delegates to Create or Edit form
+│   │   ├── EmployeeForm.test.tsx
+│   │   ├── EmployeeCreateForm.tsx    # Create employee form (~131 lines)
+│   │   ├── EmployeeEditForm.tsx      # Edit/view employee form (~143 lines)
+│   │   ├── PhoneInput.tsx            # Country code + phone number input
+│   │   ├── PhoneInput.test.tsx
+│   │   ├── EmployeeProfileTab.tsx    # "Me" tab: current user's read-only profile
+│   │   ├── EmployeeProfileTab.test.tsx
 │   │   ├── EmployeeTable.tsx         # Employee list table
 │   │   ├── EmployeeTable.test.tsx
-│   │   ├── EmployeeForm.tsx          # Create/Edit employee form (553 lines)
-│   │   ├── EmployeeForm.test.tsx
 │   │   ├── EmployeeFilters.tsx       # Category + text filter bar
 │   │   ├── EmployeeFilters.test.tsx
 │   │   ├── EmployeeStatusBadge.tsx   # Active/Inactive badge
-│   │   └── EmployeeStatusBadge.test.tsx
+│   │   ├── EmployeeStatusBadge.test.tsx
+│   │   └── employeeConstants.ts     # Re-export shim (imports from lib/utils/constants)
 │   ├── layout/
 │   │   ├── AppLayout.tsx             # Sidebar + main content wrapper
-│   │   ├── AuthLayout.tsx            # Centered wrapper for auth pages
+│   │   ├── AuthLayout.tsx            # Full-screen GIF background + centered Outlet
 │   │   └── Sidebar.tsx               # Nav links, user email, logout
 │   │   └── Sidebar.test.tsx
 │   └── shared/
 │       ├── ProtectedRoute.tsx        # Auth + permission guard
 │       ├── ProtectedRoute.test.tsx
+│       ├── FormField.tsx             # Reusable label + input + error wrapper
+│       ├── PaginationControls.tsx    # Previous/Next + "Page X of Y" controls
 │       ├── ErrorMessage.tsx          # Styled error paragraph
-│       └── LoadingSpinner.tsx        # Animated spinner
+│       └── LoadingSpinner.tsx        # Animated spinner (data-testid="loading-spinner")
 │
 ├── pages/
 │   ├── LoginPage.tsx + .test.tsx
@@ -132,8 +143,10 @@ src/
 ├── hooks/
 │   ├── useAppDispatch.ts             # Typed Redux dispatch
 │   ├── useAppSelector.ts             # Typed Redux selector
-│   ├── useEmployees.ts + .test.ts    # React Query: fetch all employees
-│   └── useEmployee.ts + .test.ts    # React Query: fetch single employee
+│   ├── useEmployees.ts + .test.ts    # React Query: fetch employees with server-side filters
+│   ├── useEmployee.ts + .test.ts     # React Query: fetch single employee
+│   ├── useMutationWithRedirect.ts + .test.ts  # Mutation + invalidate + navigate
+│   └── usePagination.ts + .test.ts   # Client-side pagination over an array
 │
 ├── lib/
 │   ├── api/
@@ -141,6 +154,8 @@ src/
 │   │   ├── auth.ts + .test.ts        # Auth API calls
 │   │   └── employees.ts + .test.ts   # Employee CRUD API calls
 │   └── utils/
+│       ├── constants.ts              # EMPLOYEE_ROLES, GENDERS, COUNTRY_CODES, formatRoleLabel
+│       ├── dateFormatter.ts + .test.ts  # todayISO, formatDateDisplay, formatDateLocale
 │       ├── jwt.ts + .test.ts         # JWT decode utility
 │       └── validation.ts + .test.ts  # Zod schemas
 │
@@ -184,7 +199,7 @@ src/
 ## 5. Pages
 
 ### LoginPage
-- Renders `LoginForm` inside auth layout with animated GIF background.
+- Renders `LoginForm`. Background GIF is provided by `AuthLayout`.
 - Redirects to `/employees` if user is already authenticated.
 
 ### PasswordResetRequestPage
@@ -202,30 +217,37 @@ src/
 ### EmployeeListPage
 - Two tabs: **Employees** and **Me**.
 - **Employees tab:**
-  - Fetches all employees via `useEmployees()`.
-  - Client-side filtering by: All, First Name, Last Name, Email, Position.
-  - Client-side pagination: 20 employees per page using Shadcn `Pagination`.
-  - Renders `EmployeeFilters` + `EmployeeTable`.
+  - Fetches employees via `useEmployees(apiFilters)` with **server-side filtering and pagination**.
+  - Filter state (`category` + `value`) and `page` are kept in local React state.
+  - `apiFilters` is built from state: `{ page, page_size: 20, [category]: value }`.
+  - Changing filter resets page to 1.
+  - `totalPages` derived from `data.total_count / PAGE_SIZE`.
+  - Renders `EmployeeFilters` + `EmployeeTable` + `PaginationControls`.
 - **Me tab:**
-  - Fetches the current user's employee record via `useEmployee(currentUser.id)`.
-  - Displays a read-only `EmployeeForm` in view mode.
+  - Rendered by `EmployeeProfileTab` — fetches and displays the current user's read-only profile.
 
 ### CreateEmployeePage
 - Admin-only (requires `employees.create`).
 - Renders `EmployeeForm` in create mode.
-- On success, navigates to `/employees`.
+- On success, invalidates `['employees']` query and navigates to `/employees`.
 
 ### EditEmployeePage
 - Fetches employee by `:id` via `useEmployee(id)`.
 - Renders `EmployeeForm` in edit mode.
 - If the employee is an admin (`EmployeeAdmin` role), form is read-only.
-- On success, navigates to `/employees`.
+- On success, invalidates `['employees']` query and navigates to `/employees`.
 
 ---
 
 ## 6. Components
 
 ### Auth Components
+
+**AuthFormCard** (`components/auth/AuthFormCard.tsx`)
+- Shared card wrapper used by all four auth forms.
+- Renders a `Card` with `border-t-4 border-t-primary`.
+- Props: `title`, `children`, `error?`, `isSuccess?`, `successContent?`
+- When `isSuccess=true`: renders `successContent` instead of the form.
 
 **LoginForm** (`components/auth/LoginForm.tsx`, ~82 lines)
 - Fields: email, password
@@ -254,24 +276,34 @@ src/
 
 ### Employee Components
 
+**EmployeeForm** (~24 lines) — thin wrapper
+- Delegates to `EmployeeCreateForm` (when no `employee` prop) or `EmployeeEditForm` (when `employee` prop present).
+
+**EmployeeCreateForm** (~131 lines)
+- All fields, date of birth required, converts DOB string to Unix timestamp on submit.
+- Imports constants from `lib/utils/constants`, date helpers from `lib/utils/dateFormatter`.
+
+**EmployeeEditForm** (~143 lines)
+- Read-only fields: first_name, email, username, date_of_birth.
+- Editable: last_name, gender, phone (via `PhoneInput`), address, position, department, role, active, jmbg.
+- Shows admin warning banner when `readOnly=true`.
+
+**PhoneInput** (`components/employees/PhoneInput.tsx`)
+- Country code dropdown (30+ countries from `lib/utils/constants`) + phone number text input.
+
+**EmployeeProfileTab** (`components/employees/EmployeeProfileTab.tsx`)
+- "Me" tab content: fetches current user's employee record via `useEmployee(currentUser.id)`.
+- Displays a read-only `EmployeeForm` with loading/error states.
+
 **EmployeeTable** (~47 lines)
-- Renders a Shadcn `Table` with columns: Name, Email, Position, Phone, Status
-- Each row is clickable → navigates to `/employees/:id`
-- Status column uses `EmployeeStatusBadge`
+- Renders a Shadcn `Table` with columns: Name, Email, Position, Phone, Status.
+- Each row is clickable → calls `onRowClick(id)`.
+- Status column uses `EmployeeStatusBadge`.
 
-**EmployeeForm** (~553 lines) — largest component
-- Shared create/edit form with two variants:
-  - **CreateForm:** all fields, date of birth required, converts DOB to Unix timestamp
-  - **EditForm:** read-only fields (first_name, email, username, date_of_birth), editable rest
-- Fields: first_name, last_name, date_of_birth, gender, email, phone (with country code), address, username, position, department, role, active (checkbox), jmbg
-- Shows admin warning banner when `readOnly=true`
-- Country code dropdown has 30+ countries
-
-**EmployeeFilters** (~88 lines)
-- Category dropdown: All, First Name, Last Name, Email, Position
-- Text search input
-- Clear (X) button resets filter
-- Calls `onFilterChange({category, value})` or `onFilterChange(null)` to clear
+**EmployeeFilters** (~85 lines)
+- Category dropdown: **Name**, Email, Position (aligned with API `EmployeeFilters` fields).
+- Text search input with clear (X) button.
+- Calls `onFilterChange({category, value})` or `onFilterChange(null)` to clear.
 
 **EmployeeStatusBadge** (~13 lines)
 - `active: true` → green "Active" badge
@@ -283,7 +315,7 @@ src/
 
 **AppLayout** (~14 lines) — `Sidebar` on the left, `<Outlet />` on the right
 
-**AuthLayout** (~12 lines) — centered full-screen container with `<Outlet />`
+**AuthLayout** (~14 lines) — full-screen background GIF wrapper with centered `<Outlet />`; all auth pages render inside this layout without duplicating the background.
 
 **Sidebar** (~41 lines)
 - Logo: "EXBanka"
@@ -301,9 +333,17 @@ src/
 - Unauthenticated → redirect to `/login`
 - Missing permission → redirect to `/`
 
+**FormField** (`components/shared/FormField.tsx`)
+- Reusable wrapper: `Label` + children + optional error message (`text-destructive`).
+- Props: `label`, `id`, `error?`, `children`.
+
+**PaginationControls** (`components/shared/PaginationControls.tsx`)
+- Renders Previous / Next buttons and "Page X of Y" text.
+- Renders nothing when `totalPages <= 1`.
+
 **ErrorMessage** (~7 lines) — styled `<p>` with destructive text color
 
-**LoadingSpinner** (~8 lines) — animated border-spinning div
+**LoadingSpinner** (~8 lines) — animated border-spinning div; has `data-testid="loading-spinner"`
 
 ---
 
@@ -373,7 +413,7 @@ interface AuthState {
 
 | Function | Method | Endpoint |
 |---|---|---|
-| `getEmployees(filters?)` | GET | `/api/employees` |
+| `getEmployees(filters?)` | GET | `/api/employees` — supports `name`, `email`, `position`, `page`, `page_size` query params |
 | `getEmployee(id)` | GET | `/api/employees/{id}` |
 | `createEmployee(payload)` | POST | `/api/employees` |
 | `updateEmployee(id, payload)` | PUT | `/api/employees/{id}` |
@@ -386,8 +426,10 @@ interface AuthState {
 |---|---|---|
 | `useAppDispatch` | Redux | Typed `AppDispatch` hook |
 | `useAppSelector` | Redux | Typed `RootState` selector hook |
-| `useEmployees()` | React Query | Fetch all employees; cached under key `['employees']` |
-| `useEmployee(id)` | React Query | Fetch single employee; cached under key `['employee', id]`; disabled when `id <= 0` |
+| `useEmployees(filters?)` | React Query | Fetch employees with server-side filters; query key: `['employees', filters]` |
+| `useEmployee(id)` | React Query | Fetch single employee; query key: `['employee', id]`; disabled when `id <= 0` |
+| `useMutationWithRedirect(options)` | React Query | `useMutation` + query invalidation + `navigate` on success |
+| `usePagination(items, pageSize)` | Local state | Slice an array into pages; returns `{ page, setPage, totalPages, paginatedItems }` |
 
 ---
 
@@ -422,7 +464,24 @@ UpdateEmployeeRequest { last_name?, gender?, phone?, address?, position?,
 
 EmployeeListResponse  { employees: Employee[]; total_count: number }
 EmployeeFilters       { email?, name?, position?, page?, page_size? }
-FilterCategory        = 'all' | 'first_name' | 'last_name' | 'email' | 'position'
+FilterCategory        = 'name' | 'email' | 'position'
+```
+
+### Shared Constants (`lib/utils/constants.ts`)
+
+```typescript
+EMPLOYEE_ROLES   // array of { value, label } — roles selectable in forms
+GENDERS          // array of { value, label }
+COUNTRY_CODES    // array of { code, label } — 30+ countries for PhoneInput
+formatRoleLabel(role: string): string
+```
+
+### Date Utilities (`lib/utils/dateFormatter.ts`)
+
+```typescript
+todayISO(): string                     // "YYYY-MM-DD" of today
+formatDateDisplay(ts: number): string  // Unix timestamp → "dd/mm/yyyy"
+formatDateLocale(ts: number): string   // Unix timestamp → locale string, "—" if falsy
 ```
 
 ---
@@ -438,23 +497,23 @@ All defined in `lib/utils/validation.ts` using Zod.
 | `loginSchema` | LoginForm | `{email, password}` |
 | `passwordResetSchema` | PasswordResetForm | `{token, new_password, confirm_password}` — passwords must match |
 | `activationSchema` | ActivationForm | `{token, password, confirm_password}` — passwords must match |
-| `createEmployeeSchema` | EmployeeForm (create) | All required fields + JMBG 13-digit regex |
-| `updateEmployeeSchema` | EmployeeForm (edit) | All optional; JMBG `/^\d{13}$/` if provided |
+| `createEmployeeSchema` | EmployeeCreateForm | All required fields + JMBG 13-digit regex |
+| `updateEmployeeSchema` | EmployeeEditForm | All optional; JMBG `/^\d{13}$/` if provided |
 
 ---
 
 ## 12. Test Coverage
 
-_Measured: 2026-03-12 — 25 test suites, 118 tests, all passing._
+_Measured: 2026-03-17 — 36 test suites, 173 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **89.64%** |
-| **Branches** | **68.53%** |
-| **Functions** | **83.33%** |
-| **Lines** | **90.33%** |
+| **Statements** | **93.28%** |
+| **Branches** | **75.74%** |
+| **Functions** | **85.56%** |
+| **Lines** | **93.52%** |
 
 > Testing covers approximately **~87% of the project** (average across all four metrics).
 
@@ -462,15 +521,15 @@ _Measured: 2026-03-12 — 25 test suites, 118 tests, all passing._
 
 | Module | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|
-| `components/auth` | 100% | 80.55% | 100% | 100% |
-| `components/employees` | 86.06% | 69.31% | 74.35% | 87.71% |
-| `components/layout` | 91.66% | 100% | 50% | 91.66% |
+| `components/auth` | 100% | 75% | 100% | 100% |
+| `components/employees` | 93% | 76.82% | 78.94% | 94.07% |
+| `components/layout` | 94.73% | 100% | 66.66% | 94.73% |
 | `components/shared` | 100% | 100% | 100% | 100% |
-| `components/ui` | 91.11% | 100% | 75% | 90.47% |
+| `components/ui` | 88.78% | 63.15% | 69.23% | 88.11% |
 | `hooks` | 100% | 100% | 100% | 100% |
 | `lib/api` | 60% | 0% | 75% | 60% |
-| `lib/utils` | 90% | 100% | 66.66% | 90% |
-| `pages` | 88.81% | 58.73% | 87.5% | 91.11% |
+| `lib/utils` | 95.34% | 100% | 80% | 94.28% |
+| `pages` | 99.04% | 82.35% | 95.23% | 100% |
 | `store` | 100% | 100% | 100% | 100% |
 | `store/selectors` | 100% | 50% | 100% | 100% |
 | `store/slices` | 97.67% | 50% | 100% | 97.67% |
@@ -480,9 +539,9 @@ _Measured: 2026-03-12 — 25 test suites, 118 tests, all passing._
 | File | Gap |
 |---|---|
 | `lib/api/axios.ts` | 20% statements — axios interceptors (token refresh flow) untested |
-| `pages/EmployeeListPage.tsx` | 69% statements — pagination and filter interactions partially covered |
-| `components/employees/EmployeeForm.tsx` | 81% — EditForm admin read-only branches, country code path |
+| `components/employees/EmployeeEditForm.tsx` | Admin read-only branches, some field paths |
 | `store/slices/authSlice.ts` | Branch 50% — error path in `logoutThunk` uncovered |
+| `store/selectors/authSelectors.ts` | Branch 50% — null-user path in one selector |
 
 ### Test Infrastructure
 
