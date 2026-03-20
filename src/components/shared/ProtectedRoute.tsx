@@ -4,7 +4,7 @@ import { useAppSelector } from '@/hooks/useAppSelector'
 import {
   selectIsAuthenticated,
   selectHasPermission,
-  selectCurrentUser,
+  selectUserType,
 } from '@/store/selectors/authSelectors'
 
 interface ProtectedRouteProps {
@@ -19,7 +19,7 @@ export function ProtectedRoute({
   requiredRole,
 }: ProtectedRouteProps) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
-  const user = useAppSelector(selectCurrentUser)
+  const userType = useAppSelector(selectUserType)
 
   const hasPermission = useAppSelector((state) =>
     requiredPermission ? selectHasPermission(state, requiredPermission) : true
@@ -30,10 +30,8 @@ export function ProtectedRoute({
   }
 
   if (requiredRole) {
-    const isClient = user?.role === 'Client'
-    const isEmployee = !isClient
-    if (requiredRole === 'Client' && !isClient) return <Navigate to="/" replace />
-    if (requiredRole === 'Employee' && !isEmployee) return <Navigate to="/" replace />
+    if (requiredRole === 'Client' && userType !== 'client') return <Navigate to="/" replace />
+    if (requiredRole === 'Employee' && userType !== 'employee') return <Navigate to="/" replace />
   }
 
   if (!hasPermission) {

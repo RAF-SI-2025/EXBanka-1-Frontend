@@ -38,7 +38,7 @@ export function createMockLoanRequest(overrides: Partial<LoanRequest> = {}): Loa
     monthly_salary: 120000,
     employment_status: 'EMPLOYED',
     employment_period: 5,
-    period: 60,
+    repayment_period: 60,
     phone: '+381611234567',
     account_number: '111000100000000011',
     status: 'PENDING',

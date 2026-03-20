@@ -10,7 +10,7 @@ export type LoanFormValues = z.infer<typeof createLoanRequestSchema>
 
 export function useLoanApplicationForm(
   accounts: Account[],
-  onSubmit: (data: CreateLoanRequest) => void
+  onSubmit: (data: Omit<CreateLoanRequest, 'client_id'>) => void
 ) {
   const {
     register,

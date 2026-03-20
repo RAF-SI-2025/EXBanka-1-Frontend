@@ -53,7 +53,7 @@ export interface LoanRequest {
   monthly_salary?: number
   employment_status?: string
   employment_period?: number
-  period: number
+  repayment_period: number
   phone?: string
   status: LoanRequestStatus
   created_at: string
@@ -81,6 +81,7 @@ export interface LoanRequestFilters {
 }
 
 export interface CreateLoanRequest {
+  client_id: number
   loan_type: LoanType
   interest_type?: InterestType
   account_number: string
@@ -90,6 +91,6 @@ export interface CreateLoanRequest {
   monthly_salary?: number
   employment_status?: string
   employment_period?: number
-  period: number
+  repayment_period: number
   phone?: string
 }

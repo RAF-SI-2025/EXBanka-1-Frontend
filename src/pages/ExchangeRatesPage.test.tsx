@@ -10,7 +10,15 @@ describe('ExchangeRatesPage', () => {
 
   it('renders exchange rate table', () => {
     jest.mocked(useExchangeHook.useExchangeRates).mockReturnValue({
-      data: [{ currency_code: 'EUR', currency_name: 'Euro', buy_rate: 116.5, sell_rate: 117.8 }],
+      data: [
+        {
+          from_currency: 'EUR',
+          to_currency: 'RSD',
+          buy_rate: 116.5,
+          sell_rate: 117.8,
+          updated_at: '2026-03-13T08:00:00Z',
+        },
+      ],
       isLoading: false,
     } as any)
 

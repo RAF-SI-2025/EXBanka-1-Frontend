@@ -22,18 +22,16 @@ export function ExchangeRateTable({ rates }: ExchangeRateTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead>Oznaka</TableHead>
-          <TableHead>Valuta</TableHead>
           <TableHead className="text-right">Kupovni kurs</TableHead>
           <TableHead className="text-right">Prodajni kurs</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rates.map((rate) => (
-          <TableRow key={rate.currency_code}>
-            <TableCell className="font-medium">{rate.currency_code}</TableCell>
-            <TableCell>{rate.currency_name}</TableCell>
-            <TableCell className="text-right">{rate.buy_rate.toFixed(2)}</TableCell>
-            <TableCell className="text-right">{rate.sell_rate.toFixed(2)}</TableCell>
+          <TableRow key={rate.from_currency}>
+            <TableCell className="font-medium">{rate.from_currency}</TableCell>
+            <TableCell className="text-right">{Number(rate.buy_rate).toFixed(2)}</TableCell>
+            <TableCell className="text-right">{Number(rate.sell_rate).toFixed(2)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

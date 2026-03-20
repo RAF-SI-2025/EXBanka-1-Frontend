@@ -60,11 +60,13 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
       currency_code: 'RSD',
       initial_balance: 0,
       create_card: false,
+      card_brand: undefined as 'VISA' | 'MASTERCARD' | 'DINA' | undefined,
     },
   })
 
   const accountKind = watch('account_kind')
   const accountCategory = watch('account_category')
+  const createCard = watch('create_card')
 
   const handleClientSelected = (client: Client) => {
     setSelectedClient(client)
@@ -191,6 +193,27 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
         <input type="checkbox" id="create_card" {...register('create_card')} />
         <Label htmlFor="create_card">Create Card</Label>
       </div>
+
+      {createCard && (
+        <div>
+          <Label>Tip kartice</Label>
+          <Select
+            value={watch('card_brand') ?? ''}
+            onValueChange={(v) =>
+              setValue('card_brand', v as 'VISA' | 'MASTERCARD' | 'DINA' | undefined)
+            }
+          >
+            <SelectTrigger aria-label="Tip kartice">
+              <SelectValue placeholder="Izaberite tip kartice" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="VISA">Visa</SelectItem>
+              <SelectItem value="MASTERCARD">MasterCard</SelectItem>
+              <SelectItem value="DINA">DinaCard</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <Button type="submit" disabled={createAccount.isPending}>
         {createAccount.isPending ? 'Creating...' : 'Create Account'}

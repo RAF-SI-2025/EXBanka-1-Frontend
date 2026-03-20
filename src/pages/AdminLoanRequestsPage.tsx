@@ -16,9 +16,28 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { LoanRequestCard } from '@/components/loans/LoanRequestCard'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { LOAN_TYPES } from '@/lib/constants/banking'
+import { formatCurrency, formatDate } from '@/lib/utils/format'
 import type { LoanRequestFilters, LoanType, LoanRequestStatus } from '@/types/loan'
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Na čekanju',
+  APPROVED: 'Odobren',
+  REJECTED: 'Odbijen',
+}
+
+const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
+  PENDING: 'secondary',
+  APPROVED: 'default',
+  REJECTED: 'destructive',
+}
+
+const INTEREST_TYPE_LABELS: Record<string, string> = {
+  FIXED: 'Fiksna',
+  VARIABLE: 'Varijabilna',
+}
 
 export function AdminLoanRequestsPage() {
   const [filters, setFilters] = useState<LoanRequestFilters>({ page: 1, page_size: 50 })
@@ -108,22 +127,65 @@ export function AdminLoanRequestsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {requests.map((req) => (
-              <LoanRequestCard
-                key={req.id}
-                request={req}
-                onApprove={(id) => approve.mutate(id)}
-                onReject={(id) => reject.mutate(id)}
-                approving={approve.isPending}
-                rejecting={reject.isPending}
-              />
-            ))}
-            {requests.length === 0 && (
+            {requests.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={13} className="text-center text-muted-foreground">
                   Nema zahteva.
                 </TableCell>
               </TableRow>
+            ) : (
+              requests.map((req) => {
+                const currency = req.currency_code ?? 'RSD'
+                const loanTypeLabel =
+                  LOAN_TYPES.find((t) => t.value === req.loan_type)?.label ?? req.loan_type
+                const isDisabled = approve.isPending || reject.isPending
+
+                return (
+                  <TableRow key={req.id}>
+                    <TableCell>{loanTypeLabel}</TableCell>
+                    <TableCell>{formatCurrency(req.amount, currency)}</TableCell>
+                    <TableCell>{req.repayment_period} mes.</TableCell>
+                    <TableCell>{req.account_number}</TableCell>
+                    <TableCell>
+                      {req.interest_type ? (INTEREST_TYPE_LABELS[req.interest_type] ?? '—') : '—'}
+                    </TableCell>
+                    <TableCell>{req.currency_code ?? '—'}</TableCell>
+                    <TableCell>{req.purpose ?? '—'}</TableCell>
+                    <TableCell>
+                      {req.monthly_salary ? formatCurrency(req.monthly_salary, 'RSD') : '—'}
+                    </TableCell>
+                    <TableCell>{req.employment_status ?? '—'}</TableCell>
+                    <TableCell>{req.phone ?? '—'}</TableCell>
+                    <TableCell>{formatDate(req.created_at)}</TableCell>
+                    <TableCell>
+                      <Badge variant={STATUS_VARIANT[req.status] ?? 'secondary'}>
+                        {STATUS_LABELS[req.status] ?? req.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {req.status === 'PENDING' && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => approve.mutate(req.id)}
+                            disabled={isDisabled}
+                          >
+                            Odobri
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => reject.mutate(req.id)}
+                            disabled={isDisabled}
+                          >
+                            Odbij
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

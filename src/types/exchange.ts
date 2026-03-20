@@ -1,8 +1,9 @@
 export interface ExchangeRate {
-  currency_code: string
-  currency_name: string
+  from_currency: string
+  to_currency: string
   buy_rate: number
   sell_rate: number
+  updated_at: string
 }
 
 export interface ConversionResult {

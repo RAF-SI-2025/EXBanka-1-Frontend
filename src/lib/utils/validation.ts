@@ -92,6 +92,7 @@ export const createAccountSchema = z.object({
   currency_code: z.string().min(1, 'Currency is required'),
   initial_balance: z.number().min(0, 'Balance cannot be negative').optional(),
   create_card: z.boolean().optional(),
+  card_brand: z.enum(['VISA', 'MASTERCARD', 'DINA'] as const).optional(),
   daily_limit: z.number().min(0).optional(),
   monthly_limit: z.number().min(0).optional(),
 })
@@ -141,7 +142,7 @@ export const createLoanRequestSchema = z.object({
   monthly_salary: z.number().positive('Plata mora biti pozitivna').optional(),
   employment_status: z.string().optional(),
   employment_period: z.number().int().min(0).optional(),
-  period: z.number({ error: 'Izaberite period otplate' }).int().positive(),
+  repayment_period: z.number({ error: 'Izaberite period otplate' }).int().positive(),
   phone: z.string().max(15).optional().or(z.literal('')),
 })
 

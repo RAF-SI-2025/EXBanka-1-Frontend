@@ -16,7 +16,7 @@ import type { CreateLoanRequest } from '@/types/loan'
 
 interface LoanApplicationFormProps {
   accounts: Account[]
-  onSubmit: (data: CreateLoanRequest) => void
+  onSubmit: (data: Omit<CreateLoanRequest, 'client_id'>) => void
   submitting: boolean
   error: string | null
 }
@@ -122,7 +122,7 @@ export function LoanApplicationForm({
       <div>
         <Label>Period (meseci)</Label>
         <Controller
-          name="period"
+          name="repayment_period"
           control={control}
           render={({ field }) => (
             <Select
@@ -142,7 +142,9 @@ export function LoanApplicationForm({
             </Select>
           )}
         />
-        {errors.period && <p className="text-sm text-destructive">{errors.period.message}</p>}
+        {errors.repayment_period && (
+          <p className="text-sm text-destructive">{errors.repayment_period.message}</p>
+        )}
       </div>
 
       <div>

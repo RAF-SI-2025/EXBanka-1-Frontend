@@ -51,6 +51,7 @@ export interface CreateAccountRequest {
   currency_code: string
   initial_balance?: number
   create_card?: boolean
+  card_brand?: 'VISA' | 'MASTERCARD' | 'DINA'
 }
 
 export interface UpdateAccountNameRequest {

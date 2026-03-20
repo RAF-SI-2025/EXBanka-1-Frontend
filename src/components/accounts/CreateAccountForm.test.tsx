@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { CreateAccountForm } from '@/components/accounts/CreateAccountForm'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
@@ -23,5 +24,21 @@ describe('CreateAccountForm', () => {
       preloadedState: { auth: createMockAuthState() },
     })
     expect(screen.getByLabelText(/create card/i)).toBeInTheDocument()
+  })
+
+  it('does not show card brand dropdown when create card is unchecked', () => {
+    renderWithProviders(<CreateAccountForm {...defaultProps} />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    expect(screen.queryByLabelText(/tip kartice/i)).not.toBeInTheDocument()
+  })
+
+  it('shows card brand dropdown when create card checkbox is checked', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<CreateAccountForm {...defaultProps} />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await user.click(screen.getByLabelText(/create card/i))
+    expect(screen.getByLabelText(/tip kartice/i)).toBeInTheDocument()
   })
 })

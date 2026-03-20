@@ -11,6 +11,7 @@ import { AuthorizedPersonForm } from '@/components/cards/AuthorizedPersonForm'
 import { VerificationCodeInput } from '@/components/cards/VerificationCodeInput'
 import { Button } from '@/components/ui/button'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
+import type { CardBrand } from '@/types/card'
 
 type Step = 'select' | 'business-choice' | 'authorized-person' | 'verify' | 'success'
 
@@ -23,21 +24,29 @@ export function CardRequestPage() {
   const requestForAP = useRequestCardForAuthorizedPerson()
   const [step, setStep] = useState<Step>('select')
   const [selectedAccount, setSelectedAccount] = useState('')
+  const [selectedBrand, setSelectedBrand] = useState<CardBrand | undefined>()
 
   if (isLoading) return <p>Učitavanje...</p>
 
-  const handleSelectAccount = (accountNumber: string) => {
+  const handleSelectAccount = (accountNumber: string, cardBrand: CardBrand) => {
     setSelectedAccount(accountNumber)
+    setSelectedBrand(cardBrand)
     const acc = accounts.find((a) => a.account_number === accountNumber)
     if (acc?.account_category === 'COMPANY') {
       setStep('business-choice')
     } else {
-      requestCard.mutate({ account_number: accountNumber }, { onSuccess: () => setStep('verify') })
+      requestCard.mutate(
+        { account_number: accountNumber, card_brand: cardBrand },
+        { onSuccess: () => setStep('verify') }
+      )
     }
   }
 
   const handleRequestForSelf = () => {
-    requestCard.mutate({ account_number: selectedAccount }, { onSuccess: () => setStep('verify') })
+    requestCard.mutate(
+      { account_number: selectedAccount, card_brand: selectedBrand },
+      { onSuccess: () => setStep('verify') }
+    )
   }
 
   const handleRequestForAP = (data: CreateAuthorizedPersonRequest) => {

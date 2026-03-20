@@ -2,6 +2,7 @@ import {
   selectIsAuthenticated,
   selectIsAdmin,
   selectHasPermission,
+  selectUserType,
 } from '@/store/selectors/authSelectors'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 import type { RootState } from '@/store'
@@ -35,6 +36,12 @@ describe('authSelectors', () => {
       user: createMockAuthUser({ role: 'EmployeeBasic', permissions: [] }),
     })
     expect(selectIsAdmin(state)).toBe(false)
+  })
+
+  it('selectUserType returns the userType from state', () => {
+    expect(selectUserType(mockRootState({ userType: 'employee' }))).toBe('employee')
+    expect(selectUserType(mockRootState({ userType: 'client' }))).toBe('client')
+    expect(selectUserType(mockRootState({ userType: null }))).toBeNull()
   })
 
   it('selectHasPermission checks for a specific permission', () => {

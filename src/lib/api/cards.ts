@@ -12,9 +12,13 @@ export async function getAccountCards(accountId: number): Promise<Card[]> {
   return response.data
 }
 
-export async function requestCard(account_number: string): Promise<{ message: string }> {
+export async function requestCard(
+  account_number: string,
+  card_brand?: string
+): Promise<{ message: string }> {
   const response = await apiClient.post<{ message: string }>('/api/cards/request', {
     account_number,
+    ...(card_brand ? { card_brand } : {}),
   })
   return response.data
 }
