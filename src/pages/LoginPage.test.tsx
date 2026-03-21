@@ -88,7 +88,10 @@ describe('LoginPage', () => {
 
   it('redirects authenticated Client to /home', () => {
     renderLoginWithRoutes({
-      auth: createMockAuthState({ user: createMockAuthUser({ role: 'Client' }) }),
+      auth: createMockAuthState({
+        user: createMockAuthUser({ role: 'Client' }),
+        userType: 'client',
+      }),
     })
     expect(screen.getByText('client home')).toBeInTheDocument()
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument()
