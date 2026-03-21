@@ -199,14 +199,10 @@ export const createClientSchema = z.object({
     .string()
     .min(1, 'Last name is required')
     .max(20, 'Last name must be at most 20 characters'),
-  date_of_birth: z.number({ error: 'Date of birth is required' }),
+  date_of_birth: z.string().min(1, 'Datum rođenja je obavezno'),
   email: emailSchema,
   gender: z.string().optional(),
   phone: z.string().max(15, 'Phone number must be at most 15 digits').optional(),
   address: z.string().optional(),
-  jmbg: z
-    .string()
-    .regex(/^\d{13}$/, 'JMBG must be exactly 13 digits')
-    .optional()
-    .or(z.literal('')),
+  jmbg: z.string().regex(/^\d{13}$/, 'JMBG mora imati tačno 13 cifara'),
 })

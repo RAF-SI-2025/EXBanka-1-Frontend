@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { createClientSchema } from '@/lib/utils/validation'
+import { todayISO, dateToUnixTimestamp } from '@/lib/utils/dateFormatter'
 import type { z } from 'zod'
 
 type FormValues = z.infer<typeof createClientSchema>
@@ -24,7 +25,10 @@ export function CreateClientPage() {
   })
 
   const onSubmit = (data: FormValues) => {
-    createClient.mutate(data, { onSuccess: () => navigate('/admin/clients') })
+    createClient.mutate(
+      { ...data, date_of_birth: dateToUnixTimestamp(data.date_of_birth) },
+      { onSuccess: () => navigate('/admin/clients') }
+    )
   }
 
   return (
@@ -66,11 +70,12 @@ export function CreateClientPage() {
             </div>
 
             <div>
-              <Label htmlFor="date_of_birth">Datum rođenja (Unix timestamp)</Label>
+              <Label htmlFor="date_of_birth">Datum rođenja</Label>
               <Input
                 id="date_of_birth"
-                type="number"
-                {...register('date_of_birth', { valueAsNumber: true })}
+                type="date"
+                max={todayISO()}
+                {...register('date_of_birth')}
               />
               {errors.date_of_birth && (
                 <p className="text-sm text-destructive">{errors.date_of_birth.message}</p>
@@ -78,7 +83,7 @@ export function CreateClientPage() {
             </div>
 
             <div>
-              <Label htmlFor="jmbg">JMBG (opciono)</Label>
+              <Label htmlFor="jmbg">JMBG</Label>
               <Input id="jmbg" {...register('jmbg')} placeholder="1234567890123" />
               {errors.jmbg && <p className="text-sm text-destructive">{errors.jmbg.message}</p>}
             </div>

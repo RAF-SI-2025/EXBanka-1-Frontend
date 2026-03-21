@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useState } from 'react'
+import { todayISO, dateToUnixTimestamp } from '@/lib/utils/dateFormatter'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
 
 interface AuthorizedPersonFormProps {
@@ -11,10 +12,12 @@ interface AuthorizedPersonFormProps {
 }
 
 export function AuthorizedPersonForm({ onSubmit, loading }: AuthorizedPersonFormProps) {
-  const [form, setForm] = useState<CreateAuthorizedPersonRequest>({
+  const [form, setForm] = useState<
+    Omit<CreateAuthorizedPersonRequest, 'date_of_birth'> & { date_of_birth: string }
+  >({
     first_name: '',
     last_name: '',
-    date_of_birth: 0,
+    date_of_birth: '',
     gender: '',
     email: '',
     phone: '',
@@ -72,8 +75,20 @@ export function AuthorizedPersonForm({ onSubmit, loading }: AuthorizedPersonForm
             onChange={(e) => setForm({ ...form, address: e.target.value })}
           />
         </div>
+        <div>
+          <Label htmlFor="ap-dob">Datum rođenja</Label>
+          <Input
+            id="ap-dob"
+            type="date"
+            max={todayISO()}
+            value={form.date_of_birth}
+            onChange={(e) => setForm({ ...form, date_of_birth: e.target.value })}
+          />
+        </div>
         <Button
-          onClick={() => isValid && onSubmit(form)}
+          onClick={() =>
+            isValid && onSubmit({ ...form, date_of_birth: dateToUnixTimestamp(form.date_of_birth) })
+          }
           disabled={!isValid || loading}
           className="w-full"
         >

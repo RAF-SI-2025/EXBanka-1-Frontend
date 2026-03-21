@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { CreateClientPage } from '@/pages/CreateClientPage'
@@ -44,7 +44,8 @@ describe('CreateClientPage', () => {
     await userEvent.type(screen.getByLabelText('Ime'), 'Marko')
     await userEvent.type(screen.getByLabelText('Prezime'), 'Petrović')
     await userEvent.type(screen.getByLabelText('Email'), 'marko@test.com')
-    await userEvent.type(screen.getByLabelText(/datum ro/i), '1990000000')
+    fireEvent.change(screen.getByLabelText(/datum ro/i), { target: { value: '1990-01-01' } })
+    await userEvent.type(screen.getByLabelText('JMBG'), '1234567890123')
 
     await userEvent.click(screen.getByRole('button', { name: /kreiraj klijenta/i }))
 

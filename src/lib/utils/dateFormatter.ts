@@ -13,3 +13,8 @@ export const formatDateLocale = (ts: number): string => {
   if (!ts) return '—'
   return new Date(ts * 1000).toLocaleDateString()
 }
+
+export const dateToUnixTimestamp = (dateStr: string): number => {
+  if (!dateStr) return 0
+  return Math.floor(new Date(dateStr).getTime() / 1000)
+}

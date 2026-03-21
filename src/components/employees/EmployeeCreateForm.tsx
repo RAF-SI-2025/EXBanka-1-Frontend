@@ -42,11 +42,7 @@ const createFormSchema = z.object({
     })
     .optional(),
   active: z.boolean().optional(),
-  jmbg: z
-    .string()
-    .regex(/^\d{13}$/, 'JMBG must be exactly 13 digits')
-    .optional()
-    .or(z.literal('')),
+  jmbg: z.string().regex(/^\d{13}$/, 'JMBG must be exactly 13 digits'),
 })
 
 type CreateFormData = z.infer<typeof createFormSchema>
@@ -80,7 +76,7 @@ export function EmployeeCreateForm({ onSubmit, isLoading }: EmployeeCreateFormPr
     onSubmit({
       ...data,
       date_of_birth: timestamp,
-      jmbg: data.jmbg || undefined,
+      jmbg: data.jmbg,
     } as CreateEmployeeRequest)
   }
 
