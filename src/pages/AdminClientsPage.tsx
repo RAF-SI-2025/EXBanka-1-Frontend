@@ -2,14 +2,22 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAllClients } from '@/hooks/useClients'
 import { Button } from '@/components/ui/button'
-import { ClientFilters } from '@/components/admin/ClientFilters'
+import { FilterBar } from '@/components/ui/FilterBar'
 import { ClientTable } from '@/components/admin/ClientTable'
+import type { FilterFieldDef, FilterValues } from '@/types/filters'
+
+const CLIENT_FILTER_FIELDS: FilterFieldDef[] = [
+  { key: 'name', label: 'Ime', type: 'text' },
+  { key: 'email', label: 'Email', type: 'text' },
+]
 
 export function AdminClientsPage() {
   const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const { data, isLoading } = useAllClients({ name: name || undefined, email: email || undefined })
+  const [filterValues, setFilterValues] = useState<FilterValues>({})
+  const { data, isLoading } = useAllClients({
+    name: (filterValues.name as string) || undefined,
+    email: (filterValues.email as string) || undefined,
+  })
   const clients = data?.clients ?? []
 
   return (
@@ -19,7 +27,7 @@ export function AdminClientsPage() {
         <Button onClick={() => navigate('/admin/clients/new')}>Novi klijent</Button>
       </div>
 
-      <ClientFilters name={name} onNameChange={setName} email={email} onEmailChange={setEmail} />
+      <FilterBar fields={CLIENT_FILTER_FIELDS} values={filterValues} onChange={setFilterValues} />
 
       {isLoading ? (
         <p>Učitavanje...</p>
