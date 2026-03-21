@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { logoutThunk } from '@/store/slices/authSlice'
-import { selectCurrentUser, selectIsAdmin } from '@/store/selectors/authSelectors'
+import { selectCurrentUser, selectIsAdmin, selectUserType } from '@/store/selectors/authSelectors'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navLinkClass =
@@ -97,7 +97,8 @@ export function Sidebar() {
   const user = useAppSelector(selectCurrentUser)
   const { isDark, toggleTheme } = useTheme()
 
-  const isClient = user?.role === 'Client'
+  const userType = useAppSelector(selectUserType)
+  const isClient = userType === 'client'
   const isAdmin = useAppSelector(selectIsAdmin)
 
   const handleLogout = () => {

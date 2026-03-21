@@ -1,6 +1,6 @@
-export type AccountKind = 'checking' | 'savings' | 'foreign' | 'business'
-export type AccountType = 'CURRENT' | 'TERM'
-export type AccountCategory = 'PERSONAL' | 'COMPANY'
+export type AccountKind = 'current' | 'foreign'
+export type AccountType = string
+export type AccountCategory = 'personal' | 'business'
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'CLOSED'
 
 export interface Company {
@@ -46,11 +46,12 @@ export interface AccountFilters {
 export interface CreateAccountRequest {
   owner_id: number
   account_kind: AccountKind
-  account_type: AccountType
+  account_type: string
   account_category?: AccountCategory
   currency_code: string
   initial_balance?: number
   create_card?: boolean
+  card_brand?: 'visa' | 'mastercard' | 'dinacard'
 }
 
 export interface UpdateAccountNameRequest {

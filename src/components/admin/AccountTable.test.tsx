@@ -27,7 +27,7 @@ describe('AccountTable', () => {
   })
 
   it('shows client first and last name for personal accounts when clientsById provided', () => {
-    const account = createMockAccount({ account_category: 'PERSONAL', owner_id: 1 })
+    const account = createMockAccount({ account_category: 'personal', owner_id: 1 })
     const clientsById = { 1: mockClient }
     renderWithProviders(
       <AccountTable accounts={[account]} onViewCards={jest.fn()} clientsById={clientsById} />
@@ -37,7 +37,7 @@ describe('AccountTable', () => {
 
   it('falls back to owner_name for personal accounts when client not in clientsById', () => {
     const account = createMockAccount({
-      account_category: 'PERSONAL',
+      account_category: 'personal',
       owner_id: 99,
       owner_name: 'Fallback Name',
     })
@@ -49,7 +49,7 @@ describe('AccountTable', () => {
 
   it('shows owner_name for company accounts even when clientsById provided', () => {
     const account = createMockAccount({
-      account_category: 'COMPANY',
+      account_category: 'business',
       owner_id: 1,
       owner_name: 'Firma d.o.o.',
     })

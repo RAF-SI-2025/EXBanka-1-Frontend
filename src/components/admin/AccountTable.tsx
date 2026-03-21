@@ -20,15 +20,13 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const ACCOUNT_KIND_LABELS: Record<string, string> = {
-  checking: 'Tekući',
-  savings: 'Štedni',
+  current: 'Tekući',
   foreign: 'Devizni',
-  business: 'Poslovni',
 }
 
 const ACCOUNT_CATEGORY_LABELS: Record<string, string> = {
-  PERSONAL: 'Lični',
-  COMPANY: 'Poslovni',
+  personal: 'Lični',
+  business: 'Poslovni',
 }
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
@@ -64,7 +62,7 @@ export function AccountTable({ accounts, onViewCards, clientsById }: AccountTabl
         {accounts.map((acc) => (
           <TableRow key={acc.id}>
             <TableCell>
-              {acc.account_category === 'PERSONAL' && clientsById?.[acc.owner_id]
+              {acc.account_category === 'personal' && clientsById?.[acc.owner_id]
                 ? `${clientsById[acc.owner_id].first_name} ${clientsById[acc.owner_id].last_name}`
                 : acc.owner_name}
             </TableCell>

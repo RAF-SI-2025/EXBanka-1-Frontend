@@ -33,20 +33,20 @@ const clientJovana = {
 
 const personalAna = createMockAccount({
   id: 1,
-  account_category: 'PERSONAL',
+  account_category: 'personal',
   owner_id: 1,
   owner_name: 'Ana Anić',
 })
 const personalMarko = createMockAccount({
   id: 2,
-  account_category: 'PERSONAL',
+  account_category: 'personal',
   owner_id: 2,
   owner_name: 'Marko Marković',
   account_number: '222000200000000022',
 })
 const companyAccount = createMockAccount({
   id: 3,
-  account_category: 'COMPANY',
+  account_category: 'business',
   owner_id: 3,
   owner_name: 'Jovana Jović',
   account_number: '333000300000000033',

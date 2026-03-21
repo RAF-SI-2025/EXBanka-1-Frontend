@@ -9,26 +9,41 @@ import {
   deactivateCard,
   requestCardForAuthorizedPerson,
 } from '@/lib/api/cards'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
 
 export function useCards() {
+  const user = useAppSelector(selectCurrentUser)
+  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['cards'],
-    queryFn: getCards,
+    queryKey: ['cards', 'client', clientId],
+    queryFn: () => getCards(clientId),
+    enabled: clientId > 0,
   })
 }
 
-export function useAccountCards(accountId: number) {
+export function useAccountCards(accountNumber: string) {
   return useQuery({
-    queryKey: ['cards', 'account', accountId],
-    queryFn: () => getAccountCards(accountId),
-    enabled: accountId > 0,
+    queryKey: ['cards', 'account', accountNumber],
+    queryFn: () => getAccountCards(accountNumber),
+    enabled: !!accountNumber,
   })
 }
 
 export function useRequestCard() {
   return useMutation({
-    mutationFn: ({ account_number }: { account_number: string }) => requestCard(account_number),
+    mutationFn: ({
+      account_number,
+      owner_id,
+      owner_type,
+      card_brand,
+    }: {
+      account_number: string
+      owner_id: number
+      owner_type: 'CLIENT' | 'AUTHORIZED_PERSON'
+      card_brand?: string
+    }) => requestCard(account_number, owner_id, owner_type, card_brand),
   })
 }
 
@@ -75,12 +90,7 @@ export function useDeactivateCard() {
 
 export function useRequestCardForAuthorizedPerson() {
   return useMutation({
-    mutationFn: ({
-      account_number,
-      authorized_person,
-    }: {
-      account_number: string
-      authorized_person: CreateAuthorizedPersonRequest
-    }) => requestCardForAuthorizedPerson(account_number, authorized_person),
+    mutationFn: (payload: CreateAuthorizedPersonRequest & { account_id: number }) =>
+      requestCardForAuthorizedPerson(payload),
   })
 }

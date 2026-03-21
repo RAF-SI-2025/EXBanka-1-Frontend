@@ -19,3 +19,5 @@ export const selectHasPermission = (state: RootState, permission: string): boole
 }
 
 export const selectCurrentUser = createSelector(selectAuthState, (auth) => auth.user)
+
+export const selectUserType = createSelector(selectAuthState, (auth) => auth.userType)

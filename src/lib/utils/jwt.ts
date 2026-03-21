@@ -11,11 +11,12 @@ interface JwtPayload {
 export function decodeAuthToken(token: string): AuthUser | null {
   try {
     const decoded = jwtDecode<JwtPayload>(token)
+    const rawRole = typeof decoded.role === 'string' ? decoded.role : ''
     return {
       id: decoded.user_id,
       email: decoded.email,
-      role: decoded.role,
-      permissions: decoded.permissions,
+      role: rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : rawRole,
+      permissions: decoded.permissions ?? [],
     }
   } catch {
     return null

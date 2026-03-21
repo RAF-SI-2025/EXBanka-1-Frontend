@@ -47,4 +47,24 @@ describe('ProtectedRoute', () => {
     )
     expect(screen.getByText('Admin Content')).toBeInTheDocument()
   })
+
+  it('renders client content when userType is client and requiredRole is Client', () => {
+    renderWithProviders(
+      <ProtectedRoute requiredRole="Client">
+        <div>Client Content</div>
+      </ProtectedRoute>,
+      { preloadedState: { auth: createMockAuthState({ userType: 'client' }) } }
+    )
+    expect(screen.getByText('Client Content')).toBeInTheDocument()
+  })
+
+  it('blocks client content when userType is employee and requiredRole is Client', () => {
+    renderWithProviders(
+      <ProtectedRoute requiredRole="Client">
+        <div>Client Content</div>
+      </ProtectedRoute>,
+      { preloadedState: { auth: createMockAuthState({ userType: 'employee' }) } }
+    )
+    expect(screen.queryByText('Client Content')).not.toBeInTheDocument()
+  })
 })

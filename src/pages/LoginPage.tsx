@@ -13,7 +13,7 @@ export function LoginPage() {
   const { status, error } = useAppSelector((state) => state.auth)
 
   if (isAuthenticated) {
-    const isClient = user?.role === 'Client'
+    const isClient = user?.role?.toLowerCase() === 'client'
     return <Navigate to={isClient ? '/home' : '/admin/accounts'} replace />
   }
 

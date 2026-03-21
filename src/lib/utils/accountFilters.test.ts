@@ -13,8 +13,8 @@ const makeClient = (id: number, first: string, last: string): Client => ({
 describe('filterAccountsByOwner', () => {
   it('returns all accounts when search term is empty', () => {
     const accounts = [
-      createMockAccount({ account_category: 'PERSONAL', owner_id: 1 }),
-      createMockAccount({ id: 2, account_category: 'COMPANY', owner_id: 2 }),
+      createMockAccount({ account_category: 'personal', owner_id: 1 }),
+      createMockAccount({ id: 2, account_category: 'business', owner_id: 2 }),
     ]
     const clientsById = { 1: makeClient(1, 'Ana', 'Anić'), 2: makeClient(2, 'Marko', 'Marković') }
     expect(filterAccountsByOwner(accounts, clientsById, '')).toHaveLength(2)
@@ -22,8 +22,8 @@ describe('filterAccountsByOwner', () => {
 
   it('matches personal accounts by client first name', () => {
     const accounts = [
-      createMockAccount({ account_category: 'PERSONAL', owner_id: 1 }),
-      createMockAccount({ id: 2, account_category: 'PERSONAL', owner_id: 2 }),
+      createMockAccount({ account_category: 'personal', owner_id: 1 }),
+      createMockAccount({ id: 2, account_category: 'personal', owner_id: 2 }),
     ]
     const clientsById = {
       1: makeClient(1, 'Ana', 'Anić'),
@@ -36,8 +36,8 @@ describe('filterAccountsByOwner', () => {
 
   it('matches personal accounts by client last name', () => {
     const accounts = [
-      createMockAccount({ account_category: 'PERSONAL', owner_id: 1 }),
-      createMockAccount({ id: 2, account_category: 'PERSONAL', owner_id: 2 }),
+      createMockAccount({ account_category: 'personal', owner_id: 1 }),
+      createMockAccount({ id: 2, account_category: 'personal', owner_id: 2 }),
     ]
     const clientsById = {
       1: makeClient(1, 'Ana', 'Anić'),
@@ -49,7 +49,7 @@ describe('filterAccountsByOwner', () => {
   })
 
   it('matches personal accounts case-insensitively', () => {
-    const accounts = [createMockAccount({ account_category: 'PERSONAL', owner_id: 1 })]
+    const accounts = [createMockAccount({ account_category: 'personal', owner_id: 1 })]
     const clientsById = { 1: makeClient(1, 'Ana', 'Anić') }
     expect(filterAccountsByOwner(accounts, clientsById, 'ana')).toHaveLength(1)
     expect(filterAccountsByOwner(accounts, clientsById, 'ANA')).toHaveLength(1)
@@ -57,8 +57,8 @@ describe('filterAccountsByOwner', () => {
 
   it('matches company accounts by owner first name', () => {
     const accounts = [
-      createMockAccount({ id: 1, account_category: 'COMPANY', owner_id: 1 }),
-      createMockAccount({ id: 2, account_category: 'COMPANY', owner_id: 2 }),
+      createMockAccount({ id: 1, account_category: 'business', owner_id: 1 }),
+      createMockAccount({ id: 2, account_category: 'business', owner_id: 2 }),
     ]
     const clientsById = {
       1: makeClient(1, 'Jovana', 'Jović'),
@@ -71,8 +71,8 @@ describe('filterAccountsByOwner', () => {
 
   it('matches company accounts by owner last name', () => {
     const accounts = [
-      createMockAccount({ id: 1, account_category: 'COMPANY', owner_id: 1 }),
-      createMockAccount({ id: 2, account_category: 'COMPANY', owner_id: 2 }),
+      createMockAccount({ id: 1, account_category: 'business', owner_id: 1 }),
+      createMockAccount({ id: 2, account_category: 'business', owner_id: 2 }),
     ]
     const clientsById = {
       1: makeClient(1, 'Jovana', 'Jović'),
@@ -84,7 +84,7 @@ describe('filterAccountsByOwner', () => {
   })
 
   it('matches company accounts case-insensitively', () => {
-    const accounts = [createMockAccount({ account_category: 'COMPANY', owner_id: 1 })]
+    const accounts = [createMockAccount({ account_category: 'business', owner_id: 1 })]
     const clientsById = { 1: makeClient(1, 'Jovana', 'Jović') }
     expect(filterAccountsByOwner(accounts, clientsById, 'jovana')).toHaveLength(1)
     expect(filterAccountsByOwner(accounts, clientsById, 'JOVANA')).toHaveLength(1)
@@ -92,8 +92,8 @@ describe('filterAccountsByOwner', () => {
 
   it('excludes non-matching accounts', () => {
     const accounts = [
-      createMockAccount({ account_category: 'PERSONAL', owner_id: 1 }),
-      createMockAccount({ id: 2, account_category: 'COMPANY', owner_id: 2 }),
+      createMockAccount({ account_category: 'personal', owner_id: 1 }),
+      createMockAccount({ id: 2, account_category: 'business', owner_id: 2 }),
     ]
     const clientsById = {
       1: makeClient(1, 'Ana', 'Anić'),
@@ -104,8 +104,8 @@ describe('filterAccountsByOwner', () => {
 
   it('handles account with no matching client entry', () => {
     const accounts = [
-      createMockAccount({ account_category: 'PERSONAL', owner_id: 99 }),
-      createMockAccount({ id: 2, account_category: 'COMPANY', owner_id: 99 }),
+      createMockAccount({ account_category: 'personal', owner_id: 99 }),
+      createMockAccount({ id: 2, account_category: 'business', owner_id: 99 }),
     ]
     expect(filterAccountsByOwner(accounts, {}, 'anything')).toHaveLength(0)
   })
@@ -113,7 +113,7 @@ describe('filterAccountsByOwner', () => {
   it('falls back to owner_name when client not in map', () => {
     const accounts = [
       createMockAccount({
-        account_category: 'PERSONAL',
+        account_category: 'personal',
         owner_id: 99,
         owner_name: 'Petar Petrović',
       }),

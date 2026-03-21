@@ -76,7 +76,12 @@ export function NewPaymentPage() {
         }}
         onVerified={(code) => {
           validateVerification.mutate(
-            { client_id: clientId, transaction_id: transactionId, code },
+            {
+              client_id: clientId,
+              transaction_id: transactionId,
+              transaction_type: 'payment',
+              code,
+            },
             {
               onSuccess: (res) => {
                 if (res.valid) {

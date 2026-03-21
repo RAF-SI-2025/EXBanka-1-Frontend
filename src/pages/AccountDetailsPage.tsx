@@ -62,7 +62,7 @@ export function AccountDetailsPage() {
           />
           <InfoRow
             label="Tip vlasnika"
-            value={account.account_category === 'COMPANY' ? 'Poslovni' : 'Lični'}
+            value={account.account_category === 'business' ? 'Poslovni' : 'Lični'}
           />
           <InfoRow label="Stanje" value={formatCurrency(account.balance, account.currency_code)} />
           <InfoRow

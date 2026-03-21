@@ -1,6 +1,7 @@
 import type { LoanRequest } from '@/types/loan'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { TableCell, TableRow } from '@/components/ui/table'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { LOAN_TYPES } from '@/lib/constants/banking'
 
@@ -43,28 +44,28 @@ export function LoanRequestCard({
   const currency = request.currency_code ?? 'RSD'
 
   return (
-    <tr>
-      <td className="p-4">{loanTypeLabel}</td>
-      <td className="p-4">{formatCurrency(request.amount, currency)}</td>
-      <td className="p-4">{request.period} mes.</td>
-      <td className="p-4">{request.account_number}</td>
-      <td className="p-4">
+    <TableRow>
+      <TableCell>{loanTypeLabel}</TableCell>
+      <TableCell>{formatCurrency(request.amount, currency)}</TableCell>
+      <TableCell>{request.repayment_period} mes.</TableCell>
+      <TableCell>{request.account_number}</TableCell>
+      <TableCell>
         {request.interest_type ? INTEREST_TYPE_LABELS[request.interest_type] : '—'}
-      </td>
-      <td className="p-4">{request.currency_code ?? '—'}</td>
-      <td className="p-4">{request.purpose ?? '—'}</td>
-      <td className="p-4">
+      </TableCell>
+      <TableCell>{request.currency_code ?? '—'}</TableCell>
+      <TableCell>{request.purpose ?? '—'}</TableCell>
+      <TableCell>
         {request.monthly_salary ? formatCurrency(request.monthly_salary, 'RSD') : '—'}
-      </td>
-      <td className="p-4">{request.employment_status ?? '—'}</td>
-      <td className="p-4">{request.phone ?? '—'}</td>
-      <td className="p-4">{formatDate(request.created_at)}</td>
-      <td className="p-4">
+      </TableCell>
+      <TableCell>{request.employment_status ?? '—'}</TableCell>
+      <TableCell>{request.phone ?? '—'}</TableCell>
+      <TableCell>{formatDate(request.created_at)}</TableCell>
+      <TableCell>
         <Badge variant={STATUS_VARIANT[request.status] ?? 'secondary'}>
           {STATUS_LABELS[request.status] ?? request.status}
         </Badge>
-      </td>
-      <td className="p-4">
+      </TableCell>
+      <TableCell>
         {isPending && (
           <div className="flex gap-2">
             <Button size="sm" onClick={() => onApprove(request.id)} disabled={isDisabled}>
@@ -80,7 +81,7 @@ export function LoanRequestCard({
             </Button>
           </div>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   )
 }

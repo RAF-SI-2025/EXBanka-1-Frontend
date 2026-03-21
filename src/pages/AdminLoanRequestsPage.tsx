@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLoanRequests, useApproveLoanRequest, useRejectLoanRequest } from '@/hooks/useLoans'
+import { useAllClients } from '@/hooks/useClients'
 import {
   Table,
   TableBody,
@@ -8,55 +9,86 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { FilterBar } from '@/components/ui/FilterBar'
-import { LoanRequestCard } from '@/components/loans/LoanRequestCard'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { LOAN_TYPES } from '@/lib/constants/banking'
-import type { LoanRequestFilters, LoanType, LoanRequestStatus } from '@/types/loan'
-import type { FilterFieldDef, FilterValues } from '@/types/filters'
-
-const LOAN_REQUEST_FILTER_FIELDS: FilterFieldDef[] = [
-  {
-    key: 'loan_type',
-    label: 'Tip kredita',
-    type: 'multiselect',
-    options: LOAN_TYPES.map((t) => ({ label: t.label, value: t.value })),
-  },
-  {
-    key: 'status',
-    label: 'Status',
-    type: 'multiselect',
-    options: [
-      { label: 'Na čekanju', value: 'PENDING' },
-      { label: 'Odobren', value: 'APPROVED' },
-      { label: 'Odbijen', value: 'REJECTED' },
-    ],
-  },
-  { key: 'account_number', label: 'Broj računa', type: 'text' },
-]
+import { formatCurrency } from '@/lib/utils/format'
+import type { LoanType } from '@/types/loan'
 
 export function AdminLoanRequestsPage() {
-  const [filterValues, setFilterValues] = useState<FilterValues>({})
-  const apiFilters: LoanRequestFilters = {
-    loan_type: (filterValues.loan_type as string[])?.[0] as LoanType | undefined,
-    status: (filterValues.status as string[])?.[0] as LoanRequestStatus | undefined,
-    account_number: (filterValues.account_number as string) || undefined,
+  const [loanTypeFilter, setLoanTypeFilter] = useState<LoanType | undefined>()
+  const [accountFilter, setAccountFilter] = useState('')
+  const [nameFilter, setNameFilter] = useState('')
+
+  const { data, isLoading } = useLoanRequests({
+    status: 'pending',
+    loan_type: loanTypeFilter,
+    account_number: accountFilter || undefined,
     page: 1,
-    page_size: 50,
-  }
-  const { data, isLoading } = useLoanRequests(apiFilters)
+    page_size: 100,
+  })
+  const { data: clientsData } = useAllClients()
   const approve = useApproveLoanRequest()
   const reject = useRejectLoanRequest()
+
   const requests = data?.requests ?? []
+  const clientsById = Object.fromEntries((clientsData?.clients ?? []).map((c) => [c.id, c]))
+
+  const filtered = nameFilter
+    ? requests.filter((req) => {
+        const client = clientsById[req.client_id ?? -1]
+        if (!client) return false
+        return `${client.first_name} ${client.last_name}`
+          .toLowerCase()
+          .includes(nameFilter.toLowerCase())
+      })
+    : requests
+
+  const isDisabled = approve.isPending || reject.isPending
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Zahtevi za kredite</h1>
 
-      <FilterBar
-        fields={LOAN_REQUEST_FILTER_FIELDS}
-        values={filterValues}
-        onChange={setFilterValues}
-      />
+      <div className="flex gap-3 flex-wrap">
+        <Select
+          value={loanTypeFilter ?? 'all'}
+          onValueChange={(v) => setLoanTypeFilter(v && v !== 'all' ? (v as LoanType) : undefined)}
+        >
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Svi tipovi" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Svi tipovi</SelectItem>
+            {LOAN_TYPES.map((t) => (
+              <SelectItem key={t.value} value={t.value}>
+                {t.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Input
+          placeholder="Broj računa..."
+          value={accountFilter}
+          onChange={(e) => setAccountFilter(e.target.value)}
+          className="max-w-xs"
+        />
+
+        <Input
+          placeholder="Ime klijenta..."
+          value={nameFilter}
+          onChange={(e) => setNameFilter(e.target.value)}
+          className="max-w-xs"
+        />
+      </div>
 
       {isLoading ? (
         <p>Učitavanje...</p>
@@ -64,38 +96,60 @@ export function AdminLoanRequestsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Tip</TableHead>
-              <TableHead>Iznos</TableHead>
-              <TableHead>Period</TableHead>
+              <TableHead>Klijent</TableHead>
               <TableHead>Broj računa</TableHead>
-              <TableHead>Tip kamate</TableHead>
+              <TableHead>Iznos</TableHead>
               <TableHead>Valuta</TableHead>
+              <TableHead>Period otplate</TableHead>
               <TableHead>Svrha</TableHead>
-              <TableHead>Mesečna plata</TableHead>
-              <TableHead>Status zaposlenja</TableHead>
-              <TableHead>Telefon</TableHead>
-              <TableHead>Datum</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead>Akcije</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {requests.map((req) => (
-              <LoanRequestCard
-                key={req.id}
-                request={req}
-                onApprove={(id) => approve.mutate(id)}
-                onReject={(id) => reject.mutate(id)}
-                approving={approve.isPending}
-                rejecting={reject.isPending}
-              />
-            ))}
-            {requests.length === 0 && (
+            {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={13} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Nema zahteva.
                 </TableCell>
               </TableRow>
+            ) : (
+              filtered.map((req) => {
+                const client = clientsById[req.client_id ?? -1]
+                const clientName = client
+                  ? `${client.first_name} ${client.last_name}`
+                  : `Klijent #${req.client_id}`
+                const currency = req.currency_code ?? 'RSD'
+
+                return (
+                  <TableRow key={req.id}>
+                    <TableCell>{clientName}</TableCell>
+                    <TableCell className="font-mono text-sm">{req.account_number}</TableCell>
+                    <TableCell>{formatCurrency(req.amount, currency)}</TableCell>
+                    <TableCell>{currency}</TableCell>
+                    <TableCell>{req.repayment_period} mes.</TableCell>
+                    <TableCell>{req.purpose ?? '—'}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() => approve.mutate(req.id)}
+                          disabled={isDisabled}
+                        >
+                          Odobri
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => reject.mutate(req.id)}
+                          disabled={isDisabled}
+                        >
+                          Odbij
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

@@ -77,7 +77,12 @@ export function InternalTransferPage() {
         }}
         onVerified={(code) => {
           validateVerification.mutate(
-            { client_id: clientId, transaction_id: transactionId, code },
+            {
+              client_id: clientId,
+              transaction_id: transactionId,
+              transaction_type: 'transfer',
+              code,
+            },
             {
               onSuccess: (res) => {
                 if (res.valid) {

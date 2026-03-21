@@ -84,9 +84,9 @@ export function CreateTransferPage() {
         amount={formData.amount}
         fromCurrency={fromAcc?.currency_code ?? ''}
         toCurrency={toAcc?.currency_code ?? ''}
-        rate={rateData?.rate ?? 0}
-        commission={rateData?.commission ?? 0}
-        finalAmount={rateData?.to_amount ?? 0}
+        rate={Number(rateData?.buy_rate ?? 0)}
+        commission={0}
+        finalAmount={(formData?.amount ?? 0) * Number(rateData?.buy_rate ?? 0)}
         onConfirm={handleConfirm}
         onBack={() => dispatch(setTransferStep('form'))}
         submitting={submitting}

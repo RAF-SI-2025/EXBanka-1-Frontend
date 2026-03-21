@@ -3,6 +3,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
 import { LoginPage } from '@/pages/LoginPage'
+import { ClientLoginPage } from '@/pages/ClientLoginPage'
 import { PasswordResetRequestPage } from '@/pages/PasswordResetRequestPage'
 import { PasswordResetPage } from '@/pages/PasswordResetPage'
 import { ActivationPage } from '@/pages/ActivationPage'
@@ -40,6 +41,7 @@ export default function App() {
       {/* Public routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/client-login" element={<ClientLoginPage />} />
         <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
         <Route path="/password-reset" element={<PasswordResetPage />} />
         <Route path="/activate" element={<ActivationPage />} />

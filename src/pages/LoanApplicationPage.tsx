@@ -4,6 +4,7 @@ import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { useClientAccounts } from '@/hooks/useAccounts'
 import { submitLoanRequest, resetLoanFlow } from '@/store/slices/loanSlice'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LoanApplicationForm } from '@/components/loans/LoanApplicationForm'
@@ -13,6 +14,7 @@ export function LoanApplicationPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { step, submitting, error, result } = useAppSelector((s) => s.loan)
+  const currentUser = useAppSelector(selectCurrentUser)
   const { data: accountsData } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
 
@@ -37,8 +39,9 @@ export function LoanApplicationPage() {
     )
   }
 
-  const onSubmit = (data: CreateLoanRequest) => {
-    dispatch(submitLoanRequest(data))
+  const onSubmit = (data: Omit<CreateLoanRequest, 'client_id'>) => {
+    if (!currentUser) return
+    dispatch(submitLoanRequest({ ...data, client_id: currentUser.id }))
   }
 
   return (
