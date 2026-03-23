@@ -1,4 +1,4 @@
-export type LoanType = 'CASH' | 'MORTGAGE' | 'AUTO' | 'REFINANCING' | 'STUDENT'
+export type LoanType = 'CASH' | 'HOUSING' | 'AUTO' | 'REFINANCING' | 'STUDENT'
 export type LoanStatus = 'ACTIVE' | 'PAID_OFF' | 'DELINQUENT'
 export type LoanRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type InstallmentStatus = 'PAID' | 'UNPAID' | 'OVERDUE'

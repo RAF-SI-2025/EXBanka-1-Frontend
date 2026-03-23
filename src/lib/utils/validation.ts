@@ -71,7 +71,7 @@ export const createEmployeeSchema = z.object({
 
 // --- Banking Schemas ---
 
-const LOAN_TYPES_ENUM = ['CASH', 'MORTGAGE', 'AUTO', 'REFINANCING', 'STUDENT'] as const
+const LOAN_TYPES_ENUM = ['CASH', 'HOUSING', 'AUTO', 'REFINANCING', 'STUDENT'] as const
 const ACCOUNT_KIND_ENUM = ['current', 'foreign'] as const
 const ACCOUNT_CATEGORY_ENUM = ['personal', 'business'] as const
 

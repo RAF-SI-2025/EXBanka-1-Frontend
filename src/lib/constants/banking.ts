@@ -30,7 +30,7 @@ export const CURRENT_BUSINESS_SUBTYPES = [
 
 export const LOAN_TYPES = [
   { value: 'CASH', label: 'Gotovinski' },
-  { value: 'MORTGAGE', label: 'Stambeni' },
+  { value: 'HOUSING', label: 'Stambeni' },
   { value: 'AUTO', label: 'Auto' },
   { value: 'REFINANCING', label: 'Refinansiranje' },
   { value: 'STUDENT', label: 'Studentski' },
@@ -43,7 +43,7 @@ export const LOAN_PERIODS_BY_TYPE: Record<string, number[]> = {
   AUTO: [12, 24, 36, 48, 60, 72, 84],
   STUDENT: [12, 24, 36, 48, 60, 72, 84],
   REFINANCING: [12, 24, 36, 48, 60, 72, 84],
-  MORTGAGE: [60, 120, 180, 240, 300, 360],
+  HOUSING: [60, 120, 180, 240, 300, 360],
 }
 
 export const INTEREST_TYPES = [

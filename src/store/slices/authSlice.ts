@@ -13,7 +13,7 @@ interface AuthState {
   error: string | null
 }
 
-const initialState: AuthState = {
+const emptyState: AuthState = {
   user: null,
   userType: null,
   accessToken: null,
@@ -21,6 +21,25 @@ const initialState: AuthState = {
   status: 'idle',
   error: null,
 }
+
+export function buildInitialState(): AuthState {
+  const accessToken = sessionStorage.getItem('access_token')
+  const refreshToken = sessionStorage.getItem('refresh_token')
+  const user = accessToken ? decodeAuthToken(accessToken) : null
+  if (user && accessToken && refreshToken) {
+    return {
+      user,
+      userType: user.system_type,
+      accessToken,
+      refreshToken,
+      status: 'authenticated',
+      error: null,
+    }
+  }
+  return emptyState
+}
+
+const initialState: AuthState = buildInitialState()
 
 export const loginThunk = createAsyncThunk(
   'auth/login',
@@ -69,7 +88,7 @@ const authSlice = createSlice({
       }
     },
     clearAuth() {
-      return initialState
+      return emptyState
     },
   },
   extraReducers: (builder) => {
@@ -92,7 +111,7 @@ const authSlice = createSlice({
         state.error = action.payload as string
       })
       .addCase(logoutThunk.fulfilled, () => {
-        return initialState
+        return emptyState
       })
   },
 })
