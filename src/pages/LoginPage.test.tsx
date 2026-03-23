@@ -49,7 +49,13 @@ describe('LoginPage', () => {
 
   it('dispatches login on form submit', async () => {
     const tokens = { access_token: 'at', refresh_token: 'rt' }
-    const user = { id: 1, email: 'a@b.com', role: 'EmployeeAdmin', permissions: [] }
+    const user = {
+      id: 1,
+      email: 'a@b.com',
+      role: 'EmployeeAdmin',
+      permissions: [],
+      system_type: 'employee' as const,
+    }
     jest.mocked(authApi.login).mockResolvedValue(tokens)
     jest.mocked(jwt.decodeAuthToken).mockReturnValue(user)
 
@@ -82,7 +88,10 @@ describe('LoginPage', () => {
 
   it('redirects authenticated Client to /home', () => {
     renderLoginWithRoutes({
-      auth: createMockAuthState({ user: createMockAuthUser({ role: 'Client' }) }),
+      auth: createMockAuthState({
+        user: createMockAuthUser({ role: 'Client' }),
+        userType: 'client',
+      }),
     })
     expect(screen.getByText('client home')).toBeInTheDocument()
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument()

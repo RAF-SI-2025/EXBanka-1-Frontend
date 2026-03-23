@@ -6,6 +6,7 @@ export function createMockAuthUser(overrides: Partial<AuthUser> = {}): AuthUser 
     email: 'admin@test.com',
     role: 'EmployeeAdmin',
     permissions: ['employees.read', 'employees.create', 'employees.update'],
+    system_type: 'employee',
     ...overrides,
   }
 }

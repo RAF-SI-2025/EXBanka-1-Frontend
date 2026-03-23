@@ -6,6 +6,7 @@ interface JwtPayload {
   email: string
   role: string
   permissions: string[]
+  system_type?: 'employee' | 'client'
 }
 
 export function decodeAuthToken(token: string): AuthUser | null {
@@ -17,6 +18,7 @@ export function decodeAuthToken(token: string): AuthUser | null {
       email: decoded.email,
       role: rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : rawRole,
       permissions: decoded.permissions ?? [],
+      system_type: decoded.system_type ?? null,
     }
   } catch {
     return null

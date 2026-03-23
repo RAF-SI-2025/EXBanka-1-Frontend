@@ -11,11 +11,6 @@ export async function login(credentials: LoginRequest): Promise<AuthTokens> {
   return data
 }
 
-export async function clientLogin(credentials: LoginRequest): Promise<AuthTokens> {
-  const { data } = await apiClient.post<AuthTokens>('/api/auth/client-login', credentials)
-  return data
-}
-
 export async function logout(refreshToken: string): Promise<void> {
   await apiClient.post('/api/auth/logout', { refresh_token: refreshToken })
 }

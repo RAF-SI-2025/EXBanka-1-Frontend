@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-03-17_
+_Last updated: 2026-03-21_
 
 ---
 
@@ -23,12 +23,14 @@ _Last updated: 2026-03-17_
 
 ## 1. Project Overview
 
-**EXBanka** is a banking platform employee management frontend. It provides role-based access for two roles:
+**EXBanka** is a banking platform frontend. It provides role-based access for two roles:
 
-- **Admin (`EmployeeAdmin`)** — full management: list, create, edit employees
+- **Admin (`EmployeeAdmin`)** — full management: list, create, edit employees and clients, manage accounts, loans, and payments
 - **User (`EmployeeBasic`)** — view own profile only
 
 The app communicates with a backend API at `http://localhost:8080` via REST.
+
+All users (employees and clients) authenticate via a single `/login` route. The JWT `system_type` field (`"employee"` | `"client"`) determines the portal they are redirected to after login: employees are sent to `/admin/accounts`, clients are sent to `/home`.
 
 ---
 
@@ -129,7 +131,31 @@ src/
 │   ├── ActivationPage.tsx + .test.tsx
 │   ├── EmployeeListPage.tsx + .test.tsx
 │   ├── CreateEmployeePage.tsx + .test.tsx
-│   └── EditEmployeePage.tsx + .test.tsx
+│   ├── EditEmployeePage.tsx + .test.tsx
+│   ├── HomePage.tsx + .test.tsx
+│   ├── AccountListPage.tsx + .test.tsx
+│   ├── AccountDetailsPage.tsx + .test.tsx
+│   ├── AdminAccountsPage.tsx + .test.tsx
+│   ├── AdminAccountCardsPage.tsx + .test.tsx
+│   ├── AdminClientsPage.tsx + .test.tsx
+│   ├── AdminLoanRequestsPage.tsx + .test.tsx
+│   ├── AdminLoansPage.tsx + .test.tsx
+│   ├── CardListPage.tsx + .test.tsx
+│   ├── CardRequestPage.tsx + .test.tsx
+│   ├── CreateAccountPage.tsx + .test.tsx
+│   ├── CreateClientPage.tsx + .test.tsx
+│   ├── CreateTransferPage.tsx + .test.tsx
+│   ├── EditClientPage.tsx + .test.tsx
+│   ├── ExchangeCalculatorPage.tsx + .test.tsx
+│   ├── ExchangeRatesPage.tsx + .test.tsx
+│   ├── InternalTransferPage.tsx + .test.tsx
+│   ├── LoanApplicationPage.tsx + .test.tsx
+│   ├── LoanDetailsPage.tsx + .test.tsx
+│   ├── LoanListPage.tsx + .test.tsx
+│   ├── NewPaymentPage.tsx + .test.tsx
+│   ├── PaymentHistoryPage.tsx + .test.tsx
+│   ├── PaymentRecipientsPage.tsx + .test.tsx
+│   └── TransferHistoryPage.tsx + .test.tsx
 │
 ├── store/
 │   ├── index.ts                      # Redux store configuration
@@ -152,7 +178,18 @@ src/
 │   ├── api/
 │   │   ├── axios.ts                  # Axios instance + interceptors (token refresh)
 │   │   ├── auth.ts + .test.ts        # Auth API calls
-│   │   └── employees.ts + .test.ts   # Employee CRUD API calls
+│   │   ├── employees.ts + .test.ts   # Employee CRUD API calls
+│   │   ├── accounts.ts               # Account API calls
+│   │   ├── cards.ts                  # Card API calls
+│   │   ├── clients.ts                # Client CRUD API calls
+│   │   ├── exchange.ts + .test.ts    # Exchange rates API calls
+│   │   ├── loans.ts                  # Loan API calls
+│   │   ├── payments.ts               # Payment API calls
+│   │   ├── transfers.ts              # Transfer API calls
+│   │   ├── verification.ts           # Verification API calls
+│   │   ├── roles.ts + .test.ts       # Roles & permissions API calls
+│   │   ├── interestRateTiers.ts + .test.ts  # Interest rate tiers API calls
+│   │   └── bankMargins.ts + .test.ts # Bank margins API calls
 │   └── utils/
 │       ├── constants.ts              # EMPLOYEE_ROLES, GENDERS, COUNTRY_CODES, formatRoleLabel
 │       ├── dateFormatter.ts + .test.ts  # todayISO, formatDateDisplay, formatDateLocale
@@ -161,7 +198,20 @@ src/
 │
 ├── types/
 │   ├── auth.ts                       # Auth-related TypeScript interfaces
-│   └── employee.ts                   # Employee-related TypeScript interfaces
+│   ├── employee.ts                   # Employee-related TypeScript interfaces
+│   ├── account.ts                    # Account-related TypeScript interfaces
+│   ├── authorized-person.ts          # Authorized person interfaces
+│   ├── card.ts                       # Card-related TypeScript interfaces
+│   ├── client.ts                     # Client-related TypeScript interfaces
+│   ├── exchange.ts                   # Exchange rate interfaces
+│   ├── filters.ts                    # Shared filter interfaces
+│   ├── loan.ts                       # Loan-related TypeScript interfaces
+│   ├── payment.ts                    # Payment-related TypeScript interfaces
+│   ├── transfer.ts                   # Transfer-related TypeScript interfaces
+│   ├── verification.ts               # Verification interfaces
+│   ├── roles.ts                      # Role, Permission, CreateRolePayload interfaces
+│   ├── interestRateTiers.ts          # InterestRateTier, CreateTierPayload interfaces
+│   └── bankMargins.ts                # BankMargin interface
 │
 ├── contexts/                         # Reserved for theme/locale (currently empty)
 ├── assets/
@@ -179,18 +229,47 @@ src/
 
 | Route | Page | Notes |
 |---|---|---|
-| `/login` | LoginPage | Redirects to `/employees` if already authenticated |
+| `/login` | LoginPage | Unified login for employees and clients; redirects based on `userType` from Redux state |
 | `/password-reset-request` | PasswordResetRequestPage | Sends reset email |
 | `/password-reset?token=...` | PasswordResetPage | Completes reset with URL token |
 | `/activate?token=...` | ActivationPage | Sets initial password for new accounts |
 
-### Protected Routes (AppLayout + ProtectedRoute)
+### Protected Routes — Employee Portal (AppLayout + ProtectedRoute)
 
 | Route | Page | Required Permission |
 |---|---|---|
 | `/employees` | EmployeeListPage | `employees.read` |
 | `/employees/new` | CreateEmployeePage | `employees.create` |
 | `/employees/:id` | EditEmployeePage | `employees.update` |
+| `/admin/accounts` | AdminAccountsPage | admin |
+| `/admin/accounts/:id/cards` | AdminAccountCardsPage | admin |
+| `/admin/clients` | AdminClientsPage | admin |
+| `/admin/clients/new` | CreateClientPage | admin |
+| `/admin/clients/:id` | EditClientPage | admin |
+| `/admin/loan-requests` | AdminLoanRequestsPage | admin |
+| `/admin/loans` | AdminLoansPage | admin |
+| `/admin/exchange-rates` | ExchangeRatesPage | admin |
+
+### Protected Routes — Client Portal (AppLayout + ProtectedRoute)
+
+| Route | Page | Notes |
+|---|---|---|
+| `/home` | HomePage | Client dashboard |
+| `/accounts` | AccountListPage | Client account list |
+| `/accounts/:id` | AccountDetailsPage | Account details |
+| `/cards` | CardListPage | Client card list |
+| `/cards/request` | CardRequestPage | Request a new card |
+| `/create-account` | CreateAccountPage | Open a new account |
+| `/transfer` | CreateTransferPage | Initiate a transfer |
+| `/internal-transfer` | InternalTransferPage | Internal transfer between own accounts |
+| `/payment-history` | PaymentHistoryPage | Payment history |
+| `/payment-recipients` | PaymentRecipientsPage | Manage payment recipients |
+| `/new-payment` | NewPaymentPage | Create a new payment |
+| `/loans` | LoanListPage | Client loan list |
+| `/loans/:id` | LoanDetailsPage | Loan details |
+| `/loan-application` | LoanApplicationPage | Apply for a loan |
+| `/exchange-calculator` | ExchangeCalculatorPage | Currency exchange calculator |
+| `/transfer-history` | TransferHistoryPage | Transfer history |
 
 **Catch-all:** `*` redirects to `/login`.
 
@@ -200,7 +279,8 @@ src/
 
 ### LoginPage
 - Renders `LoginForm`. Background GIF is provided by `AuthLayout`.
-- Redirects to `/employees` if user is already authenticated.
+- Handles unified login for both employees and clients via a single `/login` route.
+- After successful login, reads `userType` from Redux state (derived from JWT `system_type` field): redirects employees to `/admin/accounts`, clients to `/home`.
 
 ### PasswordResetRequestPage
 - Renders `PasswordResetRequestForm`.
@@ -361,6 +441,7 @@ interface AuthState {
   user: AuthUser | null
   accessToken: string | null
   refreshToken: string | null
+  userType: 'employee' | 'client' | null
   status: 'idle' | 'loading' | 'authenticated' | 'error'
   error: string | null
 }
@@ -370,14 +451,14 @@ interface AuthState {
 
 | Thunk | Action | Side Effects |
 |---|---|---|
-| `loginThunk(LoginRequest)` | Calls `authApi.login()`, decodes JWT, sets user + tokens | Saves tokens to `sessionStorage` |
+| `loginThunk(LoginRequest)` | Calls `authApi.login()`, decodes JWT, derives `userType` from JWT `system_type` field, sets user + tokens | Saves tokens to `sessionStorage` |
 | `logoutThunk()` | Calls `authApi.logout(refreshToken)` | Clears `sessionStorage`, resets state |
 
 **Sync reducers:**
 
 | Reducer | Purpose |
 |---|---|
-| `setTokens(AuthTokens)` | Hydrates state from stored tokens (used on app init) |
+| `setTokens(AuthTokens)` | Hydrates state from stored tokens (used on app init); also sets `userType` from JWT `system_type` |
 | `clearAuth()` | Resets state to initial |
 
 **Auth Selectors (`store/selectors/authSelectors.ts`) — memoized with reselect:**
@@ -418,6 +499,35 @@ interface AuthState {
 | `createEmployee(payload)` | POST | `/api/employees` |
 | `updateEmployee(id, payload)` | PUT | `/api/employees/{id}` |
 
+### Roles API (`lib/api/roles.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getRoles()` | GET | `/api/roles` |
+| `getRole(id)` | GET | `/api/roles/{id}` |
+| `createRole(payload)` | POST | `/api/roles` |
+| `updateRolePermissions(id, permissionCodes)` | PUT | `/api/roles/{id}/permissions` |
+| `getPermissions()` | GET | `/api/permissions` |
+| `setEmployeeRoles(employeeId, roleNames)` | PUT | `/api/employees/{id}/roles` |
+| `setEmployeePermissions(employeeId, permissionCodes)` | PUT | `/api/employees/{id}/permissions` |
+
+### Interest Rate Tiers API (`lib/api/interestRateTiers.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getInterestRateTiers()` | GET | `/api/interest-rate-tiers` |
+| `createTier(payload)` | POST | `/api/interest-rate-tiers` |
+| `updateTier(id, payload)` | PUT | `/api/interest-rate-tiers/{id}` |
+| `deleteTier(id)` | DELETE | `/api/interest-rate-tiers/{id}` |
+| `applyTier(id)` | POST | `/api/interest-rate-tiers/{id}/apply` |
+
+### Bank Margins API (`lib/api/bankMargins.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getBankMargins()` | GET | `/api/bank-margins` |
+| `updateBankMargin(id, margin)` | PUT | `/api/bank-margins/{id}` |
+
 ---
 
 ## 9. Custom Hooks
@@ -442,7 +552,8 @@ LoginRequest         { email: string; password: string }
 AuthTokens           { access_token: string; refresh_token: string }
 PasswordResetPayload { token: string; new_password: string; confirm_password: string }
 AccountActivationPayload { token: string; password: string; confirm_password: string }
-AuthUser             { id: number; email: string; role: string; permissions: string[] }
+AuthUser             { id: number; email: string; role: string; permissions: string[];
+                       system_type: 'employee' | 'client' | null }
 ```
 
 ### Employee Types (`types/employee.ts`)
@@ -465,6 +576,30 @@ UpdateEmployeeRequest { last_name?, gender?, phone?, address?, position?,
 EmployeeListResponse  { employees: Employee[]; total_count: number }
 EmployeeFilters       { email?, name?, position?, page?, page_size? }
 FilterCategory        = 'name' | 'email' | 'position'
+```
+
+### Role & Permission Types (`types/roles.ts`)
+
+```typescript
+Permission           { id: number; code: string; description: string; category: string }
+Role                 { id: number; name: string; description: string; permissions: string[] }
+CreateRolePayload    { name: string; description?: string; permission_codes?: string[] }
+```
+
+### Interest Rate Tier Types (`types/interestRateTiers.ts`)
+
+```typescript
+InterestRateTier     { id: number; amount_from: number; amount_to: number;
+                       fixed_rate: number; variable_base: number }
+CreateTierPayload    { amount_from: number; amount_to: number;
+                       fixed_rate: number; variable_base: number }
+```
+
+### Bank Margin Types (`types/bankMargins.ts`)
+
+```typescript
+BankMargin           { id: number; loan_type: string; margin: number;
+                       active: boolean; created_at: string; updated_at: string }
 ```
 
 ### Shared Constants (`lib/utils/constants.ts`)
@@ -504,44 +639,53 @@ All defined in `lib/utils/validation.ts` using Zod.
 
 ## 12. Test Coverage
 
-_Measured: 2026-03-17 — 36 test suites, 173 tests, all passing._
+_Measured: 2026-03-21 — 105 test suites, 437 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **93.28%** |
-| **Branches** | **75.74%** |
-| **Functions** | **85.56%** |
-| **Lines** | **93.52%** |
+| **Statements** | **77.82%** |
+| **Branches** | **59.68%** |
+| **Functions** | **56.60%** |
+| **Lines** | **79.29%** |
 
-> Testing covers approximately **~87% of the project** (average across all four metrics).
+> Testing covers approximately **~68% of the project** (average across all four metrics). The lower coverage relative to earlier snapshots reflects the large number of new pages, hooks, and API modules added since the last measurement, many of which are not yet fully tested.
 
 ### Coverage by Module
 
 | Module | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|
 | `components/auth` | 100% | 75% | 100% | 100% |
-| `components/employees` | 93% | 76.82% | 78.94% | 94.07% |
-| `components/layout` | 94.73% | 100% | 66.66% | 94.73% |
+| `components/employees` | ~93% | ~77% | ~79% | ~94% |
+| `components/layout` | ~95% | 100% | ~67% | ~95% |
 | `components/shared` | 100% | 100% | 100% | 100% |
-| `components/ui` | 88.78% | 63.15% | 69.23% | 88.11% |
-| `hooks` | 100% | 100% | 100% | 100% |
-| `lib/api` | 60% | 0% | 75% | 60% |
-| `lib/utils` | 95.34% | 100% | 80% | 94.28% |
-| `pages` | 99.04% | 82.35% | 95.23% | 100% |
+| `hooks` | ~70% | ~40% | ~50% | ~72% |
+| `lib/api` | 46.52% | 0% | 40.62% | 51.62% |
+| `lib/api/auth.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/roles.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/interestRateTiers.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/bankMargins.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
+| `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
+| `pages` | 79.77% | 58.33% | 46.78% | 82.07% |
+| `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
 | `store` | 100% | 100% | 100% | 100% |
 | `store/selectors` | 100% | 50% | 100% | 100% |
-| `store/slices` | 97.67% | 50% | 100% | 97.67% |
+| `store/slices/authSlice.ts` | 97.82% | 50% | 100% | 97.82% |
 
 ### Notable Coverage Gaps
 
 | File | Gap |
 |---|---|
 | `lib/api/axios.ts` | 20% statements — axios interceptors (token refresh flow) untested |
-| `components/employees/EmployeeEditForm.tsx` | Admin read-only branches, some field paths |
+| `lib/api/accounts.ts` | 23.33% statements — most account API calls untested |
+| `lib/api/loans.ts` | 19.04% statements — most loan API calls untested |
+| `lib/api/payments.ts` | 21.21% statements — most payment API calls untested |
 | `store/slices/authSlice.ts` | Branch 50% — error path in `logoutThunk` uncovered |
 | `store/selectors/authSelectors.ts` | Branch 50% — null-user path in one selector |
+| `hooks/usePayments.ts` | 31.03% statements — query hooks untested |
+| `hooks/useRecipientAutofill.ts` | 30% statements — autofill hook untested |
 
 ### Test Infrastructure
 

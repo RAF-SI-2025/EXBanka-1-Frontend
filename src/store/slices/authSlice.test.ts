@@ -1,7 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import authReducer, {
   loginThunk,
-  clientLoginThunk,
   logoutThunk,
   setTokens,
   clearAuth,
@@ -29,7 +28,7 @@ describe('authSlice', () => {
   })
 
   describe('loginThunk', () => {
-    it('sets userType to employee on success', async () => {
+    it('sets userType to "employee" when JWT has system_type employee', async () => {
       const tokens = { access_token: 'at', refresh_token: 'rt' }
       jest.mocked(authApi.login).mockResolvedValue(tokens)
       jest.mocked(jwt.decodeAuthToken).mockReturnValue({
@@ -37,12 +36,34 @@ describe('authSlice', () => {
         email: 'a@b.com',
         role: 'EmployeeAdmin',
         permissions: ['employees.read'],
+        system_type: 'employee',
       })
 
       const store = createStore()
       await store.dispatch(loginThunk({ email: 'a@b.com', password: 'pass' }))
 
-      expect(store.getState().auth.userType).toBe('employee')
+      const state = store.getState().auth
+      expect(state.userType).toBe('employee')
+      expect(state.status).toBe('authenticated')
+    })
+
+    it('sets userType to "client" when JWT has system_type client', async () => {
+      const tokens = { access_token: 'tok', refresh_token: 'ref' }
+      jest.mocked(authApi.login).mockResolvedValue(tokens)
+      jest.mocked(jwt.decodeAuthToken).mockReturnValue({
+        id: 2,
+        email: 'client@b.com',
+        role: 'client',
+        permissions: [],
+        system_type: 'client',
+      })
+
+      const store = createStore()
+      await store.dispatch(loginThunk({ email: 'client@b.com', password: 'pass' }))
+
+      const state = store.getState().auth
+      expect(state.userType).toBe('client')
+      expect(state.status).toBe('authenticated')
     })
 
     it('sets authenticated state on success', async () => {
@@ -52,6 +73,7 @@ describe('authSlice', () => {
         email: 'a@b.com',
         role: 'EmployeeAdmin',
         permissions: ['employees.read'],
+        system_type: 'employee' as const,
       }
       jest.mocked(authApi.login).mockResolvedValue(tokens)
       jest.mocked(jwt.decodeAuthToken).mockReturnValue(user)
@@ -78,44 +100,22 @@ describe('authSlice', () => {
     })
   })
 
-  describe('clientLoginThunk', () => {
-    it('sets authenticated state on success', async () => {
-      const tokens = { access_token: 'at', refresh_token: 'rt' }
-      const user = { id: 2, email: 'client@b.com', role: 'Client', permissions: [] }
-      jest.mocked(authApi.clientLogin).mockResolvedValue(tokens)
-      jest.mocked(jwt.decodeAuthToken).mockReturnValue(user)
+  describe('setTokens', () => {
+    it('sets userType from system_type when setTokens is called', () => {
+      jest.mocked(jwt.decodeAuthToken).mockReturnValue({
+        id: 2,
+        email: 'client@b.com',
+        role: 'client',
+        permissions: [],
+        system_type: 'client',
+      })
 
       const store = createStore()
-      await store.dispatch(clientLoginThunk({ email: 'client@b.com', password: 'pass' }))
+      store.dispatch(setTokens({ access_token: 'tok', refresh_token: 'ref' }))
 
       const state = store.getState().auth
+      expect(state.userType).toBe('client')
       expect(state.status).toBe('authenticated')
-      expect(state.user).toEqual(user)
-      expect(state.accessToken).toBe('at')
-    })
-
-    it('sets userType to client on success', async () => {
-      const tokens = { access_token: 'at', refresh_token: 'rt' }
-      jest.mocked(authApi.clientLogin).mockResolvedValue(tokens)
-      jest
-        .mocked(jwt.decodeAuthToken)
-        .mockReturnValue({ id: 2, email: 'c@b.com', role: 'Client', permissions: [] })
-
-      const store = createStore()
-      await store.dispatch(clientLoginThunk({ email: 'c@b.com', password: 'pass' }))
-
-      expect(store.getState().auth.userType).toBe('client')
-    })
-
-    it('sets error state on failure', async () => {
-      jest.mocked(authApi.clientLogin).mockRejectedValue(new Error('fail'))
-
-      const store = createStore()
-      await store.dispatch(clientLoginThunk({ email: 'client@b.com', password: 'bad' }))
-
-      const state = store.getState().auth
-      expect(state.status).toBe('error')
-      expect(state.error).toBe('Invalid credentials')
     })
   })
 
