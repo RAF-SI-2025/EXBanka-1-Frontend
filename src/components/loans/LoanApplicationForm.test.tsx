@@ -80,15 +80,15 @@ describe('LoanApplicationForm', () => {
     expect(screen.getByLabelText(/telefon/i)).toBeInTheDocument()
   })
 
-  it('shows mortgage period options when mortgage loan type is selected', async () => {
+  it('shows housing period options when housing loan type is selected', async () => {
     const user = userEvent.setup()
     renderWithProviders(<LoanApplicationForm {...defaultProps} />)
     // Open loan type select
     const loanTypeSelect = screen.getByRole('combobox', { name: /tip kredita/i })
     await user.click(loanTypeSelect)
-    const mortgageOption = screen.getByText('Stambeni')
-    await user.click(mortgageOption)
-    // Mortgage periods include 360 months
+    const housingOption = screen.getByText('Stambeni')
+    await user.click(housingOption)
+    // Housing periods include 360 months
     const periodSelect = screen.getByRole('combobox', { name: /period/i })
     await user.click(periodSelect)
     expect(screen.getByText('360 meseci')).toBeInTheDocument()
