@@ -100,9 +100,13 @@ export function NewPaymentPage() {
   }
 
   if (step === 'confirmation' && formData) {
+    const selectedAccount = accounts.find(
+      (a) => a.account_number === (formData as CreatePaymentRequest).from_account_number
+    )
     return (
       <PaymentConfirmation
         formData={formData as CreatePaymentRequest}
+        currency={selectedAccount?.currency_code ?? 'RSD'}
         onConfirm={() => dispatch(submitPayment({ type: 'payment', data: formData! }))}
         onBack={() => dispatch(setPaymentStep('form'))}
         submitting={submitting}

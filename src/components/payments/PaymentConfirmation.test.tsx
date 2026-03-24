@@ -23,6 +23,7 @@ describe('PaymentConfirmation', () => {
     renderWithProviders(
       <PaymentConfirmation
         formData={defaultFormData}
+        currency="RSD"
         onConfirm={onConfirm}
         onBack={onBack}
         submitting={false}
@@ -38,6 +39,7 @@ describe('PaymentConfirmation', () => {
     renderWithProviders(
       <PaymentConfirmation
         formData={defaultFormData}
+        currency="RSD"
         onConfirm={onConfirm}
         onBack={onBack}
         submitting={false}
@@ -53,6 +55,7 @@ describe('PaymentConfirmation', () => {
     renderWithProviders(
       <PaymentConfirmation
         formData={defaultFormData}
+        currency="RSD"
         onConfirm={onConfirm}
         onBack={onBack}
         submitting={false}
@@ -68,6 +71,7 @@ describe('PaymentConfirmation', () => {
     renderWithProviders(
       <PaymentConfirmation
         formData={defaultFormData}
+        currency="RSD"
         onConfirm={onConfirm}
         onBack={onBack}
         submitting={false}
@@ -82,6 +86,7 @@ describe('PaymentConfirmation', () => {
     renderWithProviders(
       <PaymentConfirmation
         formData={defaultFormData}
+        currency="RSD"
         onConfirm={onConfirm}
         onBack={onBack}
         submitting={true}
@@ -89,5 +94,19 @@ describe('PaymentConfirmation', () => {
       />
     )
     expect(screen.getByText(/processing/i)).toBeInTheDocument()
+  })
+
+  it('displays amount with the provided currency', () => {
+    renderWithProviders(
+      <PaymentConfirmation
+        formData={defaultFormData}
+        currency="EUR"
+        onConfirm={jest.fn()}
+        onBack={jest.fn()}
+        submitting={false}
+        error={null}
+      />
+    )
+    expect(screen.getByText(/EUR/)).toBeInTheDocument()
   })
 })
