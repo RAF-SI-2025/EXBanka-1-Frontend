@@ -15,6 +15,7 @@ import { createPaymentSchema } from '@/lib/utils/validation'
 import { PAYMENT_CODES } from '@/lib/constants/banking'
 import { formatCurrency } from '@/lib/utils/format'
 import { useRecipientAutofill } from '@/hooks/useRecipientAutofill'
+import { SavedRecipientSelect } from '@/components/payments/SavedRecipientSelect'
 import type { Account } from '@/types/account'
 import type { PaymentRecipient } from '@/types/payment'
 import type { z } from 'zod'
@@ -75,21 +76,7 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
           </div>
 
           {recipients && recipients.length > 0 && (
-            <div>
-              <Label>Saved Recipients</Label>
-              <Select onValueChange={handleRecipientSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select recipient" />
-                </SelectTrigger>
-                <SelectContent>
-                  {recipients.map((r) => (
-                    <SelectItem key={r.id} value={String(r.id)}>
-                      {r.recipient_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <SavedRecipientSelect recipients={recipients} onSelect={handleRecipientSelect} />
           )}
 
           <div>
@@ -145,7 +132,7 @@ export function NewPaymentForm({ accounts, recipients, onSubmit }: NewPaymentFor
           </div>
 
           <div>
-            <Label htmlFor="payment_purpose">Description (optional)</Label>
+            <Label htmlFor="payment_purpose">Payment Purpose (optional)</Label>
             <Input id="payment_purpose" {...register('payment_purpose')} />
           </div>
 
