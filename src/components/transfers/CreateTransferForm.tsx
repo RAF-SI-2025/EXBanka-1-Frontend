@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { Account } from '@/types/account'
-import { useState } from 'react'
 import type { z } from 'zod'
 
 type FormValues = z.infer<typeof createTransferSchema>
@@ -24,8 +23,6 @@ interface CreateTransferFormProps {
 }
 
 export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormProps) {
-  const [fromCurrency, setFromCurrency] = useState<string>('')
-
   const {
     register,
     handleSubmit,
@@ -35,9 +32,7 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
     resolver: zodResolver(createTransferSchema),
   })
 
-  const toAccounts = accounts.filter((acc) =>
-    fromCurrency ? acc.currency_code !== fromCurrency : true
-  )
+  const toAccounts = accounts
 
   return (
     <Card>
@@ -55,8 +50,6 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
                 <Select
                   onValueChange={(val) => {
                     field.onChange(val)
-                    const acc = accounts.find((a) => a.account_number === val)
-                    setFromCurrency(acc?.currency_code ?? '')
                   }}
                   value={field.value}
                 >
