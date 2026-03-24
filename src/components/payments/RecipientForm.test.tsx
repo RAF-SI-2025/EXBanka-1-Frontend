@@ -48,4 +48,19 @@ describe('RecipientForm', () => {
       expect.anything()
     )
   })
+
+  it('renders Cancel button when onCancel is provided', () => {
+    render(<RecipientForm onSubmit={noop} onCancel={noop} submitting={false} />)
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
+  })
+
+  it('shows "Save" label when in edit mode', () => {
+    render(<RecipientForm onSubmit={noop} submitting={false} isEditing />)
+    expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument()
+  })
+
+  it('shows "Add" label when not in edit mode', () => {
+    render(<RecipientForm onSubmit={noop} submitting={false} />)
+    expect(screen.getByRole('button', { name: /add/i })).toBeInTheDocument()
+  })
 })

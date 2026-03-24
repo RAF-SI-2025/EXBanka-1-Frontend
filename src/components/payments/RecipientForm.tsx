@@ -10,14 +10,22 @@ type FormValues = z.infer<typeof paymentRecipientSchema>
 
 interface RecipientFormProps {
   onSubmit: (data: FormValues) => void
+  onCancel?: () => void
   submitting: boolean
+  isEditing?: boolean
   defaultValues?: {
     recipient_name: string
     account_number: string
   }
 }
 
-export function RecipientForm({ onSubmit, submitting, defaultValues }: RecipientFormProps) {
+export function RecipientForm({
+  onSubmit,
+  onCancel,
+  submitting,
+  isEditing,
+  defaultValues,
+}: RecipientFormProps) {
   const {
     register,
     handleSubmit,
@@ -47,9 +55,16 @@ export function RecipientForm({ onSubmit, submitting, defaultValues }: Recipient
             <p className="text-sm text-destructive">{errors.account_number.message}</p>
           )}
         </div>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Saving...' : 'Add'}
-        </Button>
+        <div className="flex gap-3">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={submitting}>
+            {submitting ? 'Saving...' : isEditing ? 'Save' : 'Add'}
+          </Button>
+        </div>
       </form>
     </div>
   )

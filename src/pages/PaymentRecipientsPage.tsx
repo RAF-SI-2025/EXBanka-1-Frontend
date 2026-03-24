@@ -80,7 +80,9 @@ export function PaymentRecipientsPage() {
             <RecipientForm
               key={editingRecipient?.id ?? 'new'}
               onSubmit={handleSubmit}
+              onCancel={handleToggleForm}
               submitting={createRecipient.isPending || updateRecipient.isPending}
+              isEditing={!!editingRecipient}
               defaultValues={formDefaultValues}
             />
           </CardContent>
