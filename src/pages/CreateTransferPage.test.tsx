@@ -65,6 +65,20 @@ describe('CreateTransferPage', () => {
   it('renders verification step after transfer submission', () => {
     renderWithProviders(<CreateTransferPage />, {
       preloadedState: {
+        auth: {
+          user: {
+            id: 1,
+            email: 'test@test.com',
+            role: 'USER',
+            permissions: [],
+            system_type: 'client',
+          },
+          userType: 'client',
+          accessToken: 'token',
+          refreshToken: 'refresh',
+          status: 'authenticated',
+          error: null,
+        },
         transfer: {
           step: 'verification',
           formData: {

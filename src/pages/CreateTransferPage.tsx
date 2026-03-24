@@ -84,8 +84,8 @@ export function CreateTransferPage() {
     )
   }
 
-  if (step === 'verification' && transactionId !== null) {
-    const clientId = user?.id ?? 0
+  if (step === 'verification' && transactionId !== null && user !== null) {
+    const clientId = user.id
     return (
       <VerificationStep
         codeRequested={codeRequested}
