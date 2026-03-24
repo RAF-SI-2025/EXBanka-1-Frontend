@@ -16,6 +16,6 @@ describe('CardGrid', () => {
 
   it('shows empty state', () => {
     renderWithProviders(<CardGrid cards={[]} onBlock={jest.fn()} />)
-    expect(screen.getByText(/nemate kartice/i)).toBeInTheDocument()
+    expect(screen.getByText(/you have no cards/i)).toBeInTheDocument()
   })
 })
