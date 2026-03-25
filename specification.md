@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-03-21_
+_Last updated: 2026-03-25_
 
 ---
 
@@ -60,6 +60,7 @@ src/
 ├── __tests__/
 │   ├── fixtures/
 │   │   ├── auth-fixtures.ts          # Mock auth data factories
+│   │   ├── card-fixtures.ts          # Mock card request data factories
 │   │   └── employee-fixtures.ts      # Mock employee data factories
 │   ├── mocks/
 │   │   └── select-mock.tsx           # Shadcn Select mock for tests
@@ -83,7 +84,8 @@ src/
 │   │   ├── skeleton.tsx
 │   │   ├── sonner.tsx
 │   │   ├── table.tsx
-│   │   └── tabs.tsx
+│   │   ├── tabs.tsx
+│   │   └── textarea.tsx
 │   ├── auth/
 │   │   ├── AuthFormCard.tsx          # Shared card wrapper for all auth forms
 │   │   ├── AuthFormCard.test.tsx
@@ -111,6 +113,9 @@ src/
 │   │   ├── EmployeeStatusBadge.tsx   # Active/Inactive badge
 │   │   ├── EmployeeStatusBadge.test.tsx
 │   │   └── employeeConstants.ts     # Re-export shim (imports from lib/utils/constants)
+│   ├── cards/
+│   │   ├── CardRequestDenyDialog.tsx     # Deny confirmation dialog with optional reason textarea
+│   │   └── CardRequestDenyDialog.test.tsx
 │   ├── layout/
 │   │   ├── AppLayout.tsx             # Sidebar + main content wrapper
 │   │   ├── AuthLayout.tsx            # Full-screen GIF background + centered Outlet
@@ -138,6 +143,7 @@ src/
 │   ├── AdminAccountsPage.tsx + .test.tsx
 │   ├── AdminAccountCardsPage.tsx + .test.tsx
 │   ├── AdminClientsPage.tsx + .test.tsx
+│   ├── AdminCardRequestsPage.tsx + .test.tsx
 │   ├── AdminLoanRequestsPage.tsx + .test.tsx
 │   ├── AdminLoansPage.tsx + .test.tsx
 │   ├── CardListPage.tsx + .test.tsx
@@ -202,6 +208,7 @@ src/
 │   ├── account.ts                    # Account-related TypeScript interfaces
 │   ├── authorized-person.ts          # Authorized person interfaces
 │   ├── card.ts                       # Card-related TypeScript interfaces
+│   ├── cardRequest.ts                # CardRequest, CardRequestListResponse, CardRequestFilters types
 │   ├── client.ts                     # Client-related TypeScript interfaces
 │   ├── exchange.ts                   # Exchange rate interfaces
 │   ├── filters.ts                    # Shared filter interfaces
@@ -246,6 +253,7 @@ src/
 | `/admin/clients` | AdminClientsPage | admin |
 | `/admin/clients/new` | CreateClientPage | admin |
 | `/admin/clients/:id` | EditClientPage | admin |
+| `/admin/cards/requests` | AdminCardRequestsPage | Employee |
 | `/admin/loan-requests` | AdminLoanRequestsPage | admin |
 | `/admin/loans` | AdminLoansPage | admin |
 | `/admin/exchange-rates` | ExchangeRatesPage | admin |
@@ -316,6 +324,16 @@ src/
 - Renders `EmployeeForm` in edit mode.
 - If the employee is an admin (`EmployeeAdmin` role), form is read-only.
 - On success, invalidates `['employees']` query and navigates to `/employees`.
+
+### AdminCardRequestsPage
+- Employee-only (`requiredRole="Employee"`).
+- Fetches pending card requests via `useCardRequests({ status: 'pending', page, page_size: 10 })`.
+- Resolves client names via `useAllClients()` lookup map (`clientsById`).
+- Table columns: First Name | Last Name | Account Number | Card Type | Actions.
+- **Approve** button: fires `useApproveCardRequest` mutation immediately.
+- **Deny** button: sets `selectedRequestId` state to open `CardRequestDenyDialog`.
+- Deny dialog rendered once outside the table; controlled by `selectedRequestId: number | null`.
+- Pagination: `PAGE_SIZE = 10`, `PaginationControls`.
 
 ---
 
@@ -391,15 +409,26 @@ src/
 
 ---
 
+### Cards Components
+
+**CardRequestDenyDialog** (`components/cards/CardRequestDenyDialog.tsx`)
+- Shadcn `Dialog` with title "Deny Card Request".
+- `Textarea` with placeholder "Reason (optional)".
+- Footer: Cancel (`ghost` variant) + "Confirm Deny" (`destructive` variant).
+- Props: `open: boolean`, `onClose: () => void`, `onConfirm: (reason: string) => void`
+- Uses inner component pattern (`CardRequestDenyDialogInner`) to reset textarea state on close via natural unmount.
+
+---
+
 ### Layout Components
 
 **AppLayout** (~14 lines) — `Sidebar` on the left, `<Outlet />` on the right
 
 **AuthLayout** (~14 lines) — full-screen background GIF wrapper with centered `<Outlet />`; all auth pages render inside this layout without duplicating the background.
 
-**Sidebar** (~41 lines)
+**Sidebar**
 - Logo: "EXBanka"
-- Nav link: Employees → `/employees`
+- Nav links (employee portal): Employees, Card Requests (`/admin/cards/requests`), Loan Requests, etc.
 - Displays current user's email
 - Logout button → dispatches `logoutThunk` → redirects to `/login`
 
@@ -499,6 +528,14 @@ interface AuthState {
 | `createEmployee(payload)` | POST | `/api/employees` |
 | `updateEmployee(id, payload)` | PUT | `/api/employees/{id}` |
 
+### Cards API (`lib/api/cards.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getCardRequests(filters?)` | GET | `/api/cards/requests` — supports `status`, `page`, `page_size` query params |
+| `approveCardRequest(id)` | PUT | `/api/cards/requests/{id}/approve` |
+| `rejectCardRequest(id, reason)` | PUT | `/api/cards/requests/{id}/reject` — body `{ reason: string }` |
+
 ### Roles API (`lib/api/roles.ts`)
 
 | Function | Method | Endpoint |
@@ -540,6 +577,9 @@ interface AuthState {
 | `useEmployee(id)` | React Query | Fetch single employee; query key: `['employee', id]`; disabled when `id <= 0` |
 | `useMutationWithRedirect(options)` | React Query | `useMutation` + query invalidation + `navigate` on success |
 | `usePagination(items, pageSize)` | Local state | Slice an array into pages; returns `{ page, setPage, totalPages, paginatedItems }` |
+| `useCardRequests(filters?)` | React Query | Fetch card requests; query key: `['card-requests', filters]` |
+| `useApproveCardRequest()` | React Query | Mutation: PUT approve; invalidates `['card-requests']` on success |
+| `useRejectCardRequest()` | React Query | Mutation: PUT reject with reason; invalidates `['card-requests']` on success |
 
 ---
 
@@ -595,6 +635,22 @@ CreateTierPayload    { amount_from: number; amount_to: number;
                        fixed_rate: number; variable_base: number }
 ```
 
+### Card Request Types (`types/cardRequest.ts`)
+
+```typescript
+CardRequestStatus    = 'pending' | 'approved' | 'rejected'   // lowercase — matches REST API
+
+CardRequest {
+  id: number; client_id: number; account_number: string
+  card_brand: string; card_type: string; card_name: string
+  status: CardRequestStatus; reason: string; approved_by: number
+  created_at: string; updated_at: string
+}
+
+CardRequestListResponse  { requests: CardRequest[]; total: number }
+CardRequestFilters       { status?: CardRequestStatus; page?: number; page_size?: number }
+```
+
 ### Bank Margin Types (`types/bankMargins.ts`)
 
 ```typescript
@@ -639,16 +695,16 @@ All defined in `lib/utils/validation.ts` using Zod.
 
 ## 12. Test Coverage
 
-_Measured: 2026-03-21 — 105 test suites, 437 tests, all passing._
+_Measured: 2026-03-25 — 107 test suites, 485 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **77.82%** |
-| **Branches** | **59.68%** |
-| **Functions** | **56.60%** |
-| **Lines** | **79.29%** |
+| **Statements** | **78.22%** |
+| **Branches** | **60.23%** |
+| **Functions** | **57.06%** |
+| **Lines** | **79.68%** |
 
 > Testing covers approximately **~68% of the project** (average across all four metrics). The lower coverage relative to earlier snapshots reflects the large number of new pages, hooks, and API modules added since the last measurement, many of which are not yet fully tested.
 
@@ -657,6 +713,7 @@ _Measured: 2026-03-21 — 105 test suites, 437 tests, all passing._
 | Module | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|
 | `components/auth` | 100% | 75% | 100% | 100% |
+| `components/cards` | ~87% | ~67% | ~69% | ~88% |
 | `components/employees` | ~93% | ~77% | ~79% | ~94% |
 | `components/layout` | ~95% | 100% | ~67% | ~95% |
 | `components/shared` | 100% | 100% | 100% | 100% |
@@ -668,11 +725,12 @@ _Measured: 2026-03-21 — 105 test suites, 437 tests, all passing._
 | `lib/api/bankMargins.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
 | `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
-| `pages` | 79.77% | 58.33% | 46.78% | 82.07% |
+| `pages` | 81.50% | 58.45% | 50.27% | 83.64% |
+| `pages/AdminCardRequestsPage.tsx` | 96.66% | 61.11% | 85.71% | 96.55% |
 | `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
 | `store` | 100% | 100% | 100% | 100% |
 | `store/selectors` | 100% | 50% | 100% | 100% |
-| `store/slices/authSlice.ts` | 97.82% | 50% | 100% | 97.82% |
+| `store/slices/authSlice.ts` | 98.14% | 76.92% | 100% | 98.14% |
 
 ### Notable Coverage Gaps
 
@@ -694,3 +752,4 @@ _Measured: 2026-03-21 — 105 test suites, 437 tests, all passing._
 - **`createMockAuthUser(overrides?)`** — generates mock `AuthUser` objects
 - **`createMockAuthState(overrides?)`** — generates mock `AuthState` objects
 - **`createMockEmployee(overrides?)`** — generates mock `Employee` objects
+- **`createMockCardRequest(overrides?)`** — generates mock `CardRequest` objects
