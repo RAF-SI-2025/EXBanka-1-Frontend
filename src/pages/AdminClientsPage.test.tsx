@@ -38,7 +38,10 @@ describe('AdminClientsPage', () => {
 
   it('shows page 1 of 2 when total > PAGE_SIZE', () => {
     jest.mocked(useClientsHook.useAllClients).mockReturnValue({
-      data: { clients: Array(10).fill(createMockClient()), total: 11 },
+      data: {
+        clients: Array.from({ length: 10 }, (_, i) => createMockClient({ id: i + 1 })),
+        total: 11,
+      },
       isLoading: false,
     } as any)
     renderWithProviders(<AdminClientsPage />)
@@ -47,7 +50,10 @@ describe('AdminClientsPage', () => {
 
   it('calls hook with page 2 when next arrow is clicked', async () => {
     jest.mocked(useClientsHook.useAllClients).mockReturnValue({
-      data: { clients: Array(10).fill(createMockClient()), total: 11 },
+      data: {
+        clients: Array.from({ length: 10 }, (_, i) => createMockClient({ id: i + 1 })),
+        total: 11,
+      },
       isLoading: false,
     } as any)
     renderWithProviders(<AdminClientsPage />)
@@ -61,7 +67,10 @@ describe('AdminClientsPage', () => {
 
   it('resets to page 1 when filter changes', async () => {
     jest.mocked(useClientsHook.useAllClients).mockReturnValue({
-      data: { clients: Array(10).fill(createMockClient()), total: 11 },
+      data: {
+        clients: Array.from({ length: 10 }, (_, i) => createMockClient({ id: i + 1 })),
+        total: 11,
+      },
       isLoading: false,
     } as any)
     renderWithProviders(<AdminClientsPage />)
