@@ -175,7 +175,7 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
       cy.get('@renameAccount')
         .its('request.body')
         .should('have.property', 'new_name', 'Glavni račun')
-      cy.get('[role="dialog"]').should('not.exist')
+      cy.contains('button', 'Rename Account').should('be.visible')
     })
   })
 })
