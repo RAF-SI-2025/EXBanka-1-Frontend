@@ -1,4 +1,5 @@
 import type { Card } from '@/types/card'
+import type { CardRequest } from '@/types/cardRequest'
 
 export function createMockCard(overrides: Partial<Card> = {}): Card {
   return {
@@ -14,6 +15,23 @@ export function createMockCard(overrides: Partial<Card> = {}): Card {
     limit: 1000000,
     status: 'ACTIVE',
     owner_name: 'Petar Petrović',
+    ...overrides,
+  }
+}
+
+export function createMockCardRequest(overrides: Partial<CardRequest> = {}): CardRequest {
+  return {
+    id: 1,
+    client_id: 1,
+    account_number: '111000100000000011',
+    card_brand: 'visa',
+    card_type: 'debit',
+    card_name: 'My Main Card',
+    status: 'pending',
+    reason: '',
+    approved_by: 0,
+    created_at: '2026-03-25T10:00:00Z',
+    updated_at: '2026-03-25T10:00:00Z',
     ...overrides,
   }
 }
