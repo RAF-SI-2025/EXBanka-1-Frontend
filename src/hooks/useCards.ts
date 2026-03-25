@@ -37,17 +37,8 @@ export function useAccountCards(accountNumber: string) {
 
 export function useRequestCard() {
   return useMutation({
-    mutationFn: ({
-      account_number,
-      owner_id,
-      owner_type,
-      card_brand,
-    }: {
-      account_number: string
-      owner_id: number
-      owner_type: 'CLIENT' | 'AUTHORIZED_PERSON'
-      card_brand?: string
-    }) => requestCard(account_number, owner_id, owner_type, card_brand),
+    mutationFn: ({ account_number, card_brand }: { account_number: string; card_brand?: string }) =>
+      requestCard(account_number, card_brand),
   })
 }
 
