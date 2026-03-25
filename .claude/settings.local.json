@@ -16,7 +16,18 @@
       "Bash(npx shadcn@latest add popover)",
       "Bash(git:*)",
       "Bash(node:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier:*)",
+      "Bash(ls -la /c/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/*.md)",
+      "Bash(npx shadcn@latest add textarea --yes)",
+      "Bash(grep -n \"import.*apiClient\" /c/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/src/lib/api/*.ts)",
+      "Bash(grep:*)",
+      "Bash(cat .eslintrc*)",
+      "Bash(cat eslint.config*)",
+      "Bash(npx cypress:*)",
+      "Bash(find /c/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/cypress -type f -name *.cy.ts)",
+      "Bash(find C:/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/src/__tests__ -name *.ts -o -name *.tsx)",
+      "Bash(find C:/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/src -name *.test.ts -o -name *.test.tsx)"
     ]
   }
 }
