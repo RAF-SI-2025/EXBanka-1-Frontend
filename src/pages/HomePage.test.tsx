@@ -79,7 +79,6 @@ describe('HomePage', () => {
     })
 
     expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-      mockAccount.account_number,
       expect.objectContaining({ page_size: 5 })
     )
   })

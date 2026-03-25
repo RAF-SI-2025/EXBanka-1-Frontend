@@ -5,36 +5,30 @@ import {
   createPaymentRecipient,
   updatePaymentRecipient,
   deletePaymentRecipient,
+  executePayment,
 } from '@/lib/api/payments'
-import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import type { PaymentFilters, CreatePaymentRecipientRequest } from '@/types/payment'
 
-export function usePayments(accountNumber: string | undefined, filters?: PaymentFilters) {
+export function usePayments(filters?: PaymentFilters) {
   return useQuery({
-    queryKey: ['payments', accountNumber, filters],
-    queryFn: () => getPayments(accountNumber!, filters),
-    enabled: !!accountNumber,
+    queryKey: ['payments', filters],
+    queryFn: () => getPayments(filters),
   })
 }
 
 export function usePaymentRecipients() {
-  const user = useAppSelector(selectCurrentUser)
-  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['payment-recipients', clientId],
-    queryFn: () => getPaymentRecipients(clientId),
-    enabled: clientId > 0,
+    queryKey: ['payment-recipients'],
+    queryFn: () => getPaymentRecipients(),
   })
 }
 
 export function useCreatePaymentRecipient() {
   const queryClient = useQueryClient()
-  const user = useAppSelector(selectCurrentUser)
-  const clientId = user?.id ?? 0
   return useMutation({
-    mutationFn: (payload: Omit<CreatePaymentRecipientRequest, 'client_id'>) =>
-      createPaymentRecipient({ ...payload, client_id: clientId }),
+    mutationFn: (
+      payload: Pick<CreatePaymentRecipientRequest, 'recipient_name' | 'account_number'>
+    ) => createPaymentRecipient(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-recipients'] })
     },
@@ -63,5 +57,12 @@ export function useDeletePaymentRecipient() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment-recipients'] })
     },
+  })
+}
+
+export function useExecutePayment() {
+  return useMutation({
+    mutationFn: ({ id, verificationCode }: { id: number; verificationCode: string }) =>
+      executePayment(id, verificationCode),
   })
 }

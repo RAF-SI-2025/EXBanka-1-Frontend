@@ -61,8 +61,7 @@ export function PaymentHistoryPage() {
     page_size: PAGE_SIZE,
   }
 
-  const effectiveAccount = selectedAccountNumber || accounts[0]?.account_number
-  const { data, isLoading } = usePayments(effectiveAccount, apiFilters)
+  const { data, isLoading } = usePayments(apiFilters)
   const payments = data?.payments ?? []
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
 

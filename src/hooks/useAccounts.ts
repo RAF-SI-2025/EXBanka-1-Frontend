@@ -7,8 +7,6 @@ import {
   updateAccountLimits,
   getAllAccounts,
 } from '@/lib/api/accounts'
-import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import type {
   AccountFilters,
   CreateAccountRequest,
@@ -17,12 +15,9 @@ import type {
 } from '@/types/account'
 
 export function useClientAccounts() {
-  const user = useAppSelector(selectCurrentUser)
-  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['accounts', 'client', clientId],
-    queryFn: () => getClientAccounts(clientId),
-    enabled: clientId > 0,
+    queryKey: ['accounts', 'me'],
+    queryFn: () => getClientAccounts(),
   })
 }
 

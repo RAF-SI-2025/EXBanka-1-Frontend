@@ -29,7 +29,6 @@ describe('PaymentHistoryPage', () => {
   it('calls usePayments with page 1 and page_size 10 on initial load', () => {
     renderWithProviders(<PaymentHistoryPage />)
     expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-      undefined,
       expect.objectContaining({ page: 1, page_size: 10 })
     )
   })
@@ -58,7 +57,6 @@ describe('PaymentHistoryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /next page/i }))
     await waitFor(() =>
       expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-        undefined,
         expect.objectContaining({ page: 2, page_size: 10 })
       )
     )
@@ -79,20 +77,14 @@ describe('PaymentHistoryPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /next page/i }))
     await waitFor(() =>
-      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ page: 2 })
-      )
+      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }))
     )
 
     const accountSelect = screen.getByRole('combobox')
     fireEvent.change(accountSelect, { target: { value: 'ACC-002' } })
 
     await waitFor(() =>
-      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ page: 1 })
-      )
+      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }))
     )
   })
 
@@ -105,10 +97,7 @@ describe('PaymentHistoryPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /next page/i }))
     await waitFor(() =>
-      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-        undefined,
-        expect.objectContaining({ page: 2 })
-      )
+      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(expect.objectContaining({ page: 2 }))
     )
 
     const dateInput = screen.getByPlaceholderText(/from date/i)
@@ -116,7 +105,6 @@ describe('PaymentHistoryPage', () => {
 
     await waitFor(() =>
       expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-        undefined,
         expect.objectContaining({ page: 1, date_from: '2024-01-01' })
       )
     )
