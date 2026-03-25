@@ -3,6 +3,7 @@ import { usePayments } from '@/hooks/usePayments'
 import { useClientAccounts } from '@/hooks/useAccounts'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { PaymentHistoryTable } from '@/components/payments/PaymentHistoryTable'
+import { PaginationControls } from '@/components/shared/PaginationControls'
 import {
   Select,
   SelectContent,
@@ -13,6 +14,8 @@ import {
 import { Label } from '@/components/ui/label'
 import type { PaymentFilters as PaymentFiltersType } from '@/types/payment'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
+
+const PAGE_SIZE = 10
 
 const PAYMENT_FILTER_FIELDS: FilterFieldDef[] = [
   { key: 'date_from', label: 'From Date', type: 'date' },
@@ -36,6 +39,17 @@ export function PaymentHistoryPage() {
   const accounts = accountsData?.accounts ?? []
   const [selectedAccountNumber, setSelectedAccountNumber] = useState<string>('')
   const [filterValues, setFilterValues] = useState<FilterValues>({})
+  const [page, setPage] = useState(1)
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters)
+    setPage(1)
+  }
+
+  const handleAccountChange = (value: string | null) => {
+    setSelectedAccountNumber(value ?? '')
+    setPage(1)
+  }
 
   const apiFilters: PaymentFiltersType = {
     date_from: (filterValues.date_from as string) || undefined,
@@ -43,11 +57,14 @@ export function PaymentHistoryPage() {
     status_filter: (filterValues.status_filter as string[])?.[0] || undefined,
     amount_min: filterValues.amount_min ? Number(filterValues.amount_min) : undefined,
     amount_max: filterValues.amount_max ? Number(filterValues.amount_max) : undefined,
+    page,
+    page_size: PAGE_SIZE,
   }
 
   const effectiveAccount = selectedAccountNumber || accounts[0]?.account_number
   const { data, isLoading } = usePayments(effectiveAccount, apiFilters)
   const payments = data?.payments ?? []
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
 
   return (
     <div className="space-y-4">
@@ -55,10 +72,7 @@ export function PaymentHistoryPage() {
       {accounts.length > 1 && (
         <div className="flex items-center gap-2">
           <Label>Account:</Label>
-          <Select
-            value={selectedAccountNumber}
-            onValueChange={(v) => setSelectedAccountNumber(v ?? '')}
-          >
+          <Select value={selectedAccountNumber} onValueChange={handleAccountChange}>
             <SelectTrigger className="w-64">
               <SelectValue placeholder="All Accounts" />
             </SelectTrigger>
@@ -72,8 +86,13 @@ export function PaymentHistoryPage() {
           </Select>
         </div>
       )}
-      <FilterBar fields={PAYMENT_FILTER_FIELDS} values={filterValues} onChange={setFilterValues} />
+      <FilterBar
+        fields={PAYMENT_FILTER_FIELDS}
+        values={filterValues}
+        onChange={handleFilterChange}
+      />
       {isLoading ? <p>Loading...</p> : <PaymentHistoryTable payments={payments} />}
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }
