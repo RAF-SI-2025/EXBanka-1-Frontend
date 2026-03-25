@@ -95,4 +95,30 @@ describe('PaymentHistoryPage', () => {
       )
     )
   })
+
+  it('resets to page 1 when filter changes', async () => {
+    jest.mocked(usePaymentsHook.usePayments).mockReturnValue({
+      data: { payments: [], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<PaymentHistoryPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() =>
+      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
+        undefined,
+        expect.objectContaining({ page: 2 })
+      )
+    )
+
+    const dateInput = screen.getByPlaceholderText(/from date/i)
+    fireEvent.change(dateInput, { target: { value: '2024-01-01' } })
+
+    await waitFor(() =>
+      expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
+        undefined,
+        expect.objectContaining({ page: 1, date_from: '2024-01-01' })
+      )
+    )
+  })
 })
