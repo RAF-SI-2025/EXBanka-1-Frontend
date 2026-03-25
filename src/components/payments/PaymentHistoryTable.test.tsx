@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { PaymentHistoryTable } from './PaymentHistoryTable'
 import { createMockPayment } from '@/__tests__/fixtures/payment-fixtures'
+
+jest.mock('@/lib/utils/receipt-pdf', () => ({
+  generateReceiptPdf: jest.fn(),
+}))
 
 describe('PaymentHistoryTable', () => {
   it('renders payment rows', () => {
@@ -48,5 +53,17 @@ describe('PaymentHistoryTable', () => {
     const cells = screen.getAllByRole('cell')
     const amountCell = cells.find((cell) => cell.textContent?.includes('5'))
     expect(amountCell).toBeInTheDocument()
+  })
+
+  it('clicking PDF button does not open the transaction detail dialog', async () => {
+    const user = userEvent.setup()
+    const payment = createMockPayment()
+    render(<PaymentHistoryTable payments={[payment]} />)
+
+    const pdfButton = screen.getByText('PDF')
+    await user.click(pdfButton)
+
+    // The detail dialog should NOT be open
+    expect(screen.queryByText('Transaction Details')).not.toBeInTheDocument()
   })
 })

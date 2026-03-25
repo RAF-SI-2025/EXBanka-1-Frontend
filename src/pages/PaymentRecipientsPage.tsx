@@ -7,6 +7,13 @@ import {
 } from '@/hooks/usePayments'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { RecipientForm } from '@/components/payments/RecipientForm'
 import { RecipientList } from '@/components/payments/RecipientList'
 import { paymentRecipientSchema } from '@/lib/utils/validation'
@@ -18,6 +25,7 @@ type FormValues = z.infer<typeof paymentRecipientSchema>
 export function PaymentRecipientsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingRecipient, setEditingRecipient] = useState<PaymentRecipient | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
   const { data: recipients, isLoading } = usePaymentRecipients()
   const createRecipient = useCreatePaymentRecipient()
   const updateRecipient = useUpdatePaymentRecipient()
@@ -48,9 +56,7 @@ export function PaymentRecipientsPage() {
     setShowForm(true)
   }
 
-  const handleDelete = (id: number) => {
-    deleteRecipient.mutate(id)
-  }
+  const handleDelete = (id: number) => setDeletingId(id)
 
   const handleToggleForm = () => {
     setShowForm(!showForm)
@@ -80,7 +86,9 @@ export function PaymentRecipientsPage() {
             <RecipientForm
               key={editingRecipient?.id ?? 'new'}
               onSubmit={handleSubmit}
+              onCancel={handleToggleForm}
               submitting={createRecipient.isPending || updateRecipient.isPending}
+              isEditing={!!editingRecipient}
               defaultValues={formDefaultValues}
             />
           </CardContent>
@@ -92,6 +100,31 @@ export function PaymentRecipientsPage() {
       ) : (
         <RecipientList recipients={recipients ?? []} onEdit={handleEdit} onDelete={handleDelete} />
       )}
+
+      <Dialog open={deletingId !== null} onOpenChange={() => setDeletingId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Recipient?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure?</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletingId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteRecipient.isPending}
+              onClick={() => {
+                if (deletingId !== null) {
+                  deleteRecipient.mutate(deletingId, { onSuccess: () => setDeletingId(null) })
+                }
+              }}
+            >
+              {deleteRecipient.isPending ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

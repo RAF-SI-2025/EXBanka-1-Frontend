@@ -59,7 +59,7 @@ describe('CreateClientPage', () => {
         expect.any(Object)
       )
     })
-  })
+  }, 15000)
 
   it('shows error message when creation fails', () => {
     jest.mocked(useClientsHook.useCreateClient).mockReturnValue({

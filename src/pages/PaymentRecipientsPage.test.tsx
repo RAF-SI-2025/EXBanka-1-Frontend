@@ -46,6 +46,18 @@ describe('PaymentRecipientsPage', () => {
     expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument()
   })
 
+  it('shows confirmation dialog before deleting a recipient', async () => {
+    jest.mocked(usePaymentsHook.usePaymentRecipients).mockReturnValue({
+      data: [createMockPaymentRecipient()],
+      isLoading: false,
+    } as any)
+    renderWithProviders(<PaymentRecipientsPage />)
+
+    await userEvent.click(screen.getByRole('button', { name: /delete/i }))
+
+    expect(screen.getByText('Delete Recipient?')).toBeInTheDocument()
+  })
+
   it('pre-fills form when edit button is clicked', async () => {
     const recipient = createMockPaymentRecipient()
     jest.mocked(usePaymentsHook.usePaymentRecipients).mockReturnValue({

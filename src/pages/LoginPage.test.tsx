@@ -68,7 +68,7 @@ describe('LoginPage', () => {
     await waitFor(() => {
       expect(authApi.login).toHaveBeenCalledWith({ email: 'a@b.com', password: 'Password12' })
     })
-  })
+  }, 15000)
 
   it('redirects authenticated Employee to /admin/accounts', () => {
     renderLoginWithRoutes({

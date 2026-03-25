@@ -15,7 +15,7 @@ import type { CardBrand } from '@/types/card'
 const CARD_BRAND_OPTIONS: { value: CardBrand; label: string }[] = [
   { value: 'VISA', label: 'Visa' },
   { value: 'MASTERCARD', label: 'MasterCard' },
-  { value: 'DINA', label: 'DinaCard' },
+  { value: 'DINACARD', label: 'DinaCard' },
 ]
 
 interface CardRequestFormProps {

@@ -2,7 +2,9 @@ export function maskCardNumber(cardNumber: string): string {
   if (cardNumber.length < 8) return cardNumber
   const first = cardNumber.slice(0, 4)
   const last = cardNumber.slice(-4)
-  return `${first}********${last}`
+  const middleLen = cardNumber.length - 8
+  const middleGroups = '*'.repeat(middleLen).match(/.{1,4}/g) ?? []
+  return [first, ...middleGroups, last].join(' ')
 }
 
 export function formatAccountNumber(accountNumber: string): string {

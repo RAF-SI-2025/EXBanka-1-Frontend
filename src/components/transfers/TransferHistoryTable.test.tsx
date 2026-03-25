@@ -17,4 +17,15 @@ describe('TransferHistoryTable', () => {
     renderWithProviders(<TransferHistoryTable transfers={[]} />)
     expect(screen.getByText(/no transfers/i)).toBeInTheDocument()
   })
+
+  it('displays commission column header', () => {
+    renderWithProviders(<TransferHistoryTable transfers={[createMockTransfer()]} />)
+    expect(screen.getByText('Commission')).toBeInTheDocument()
+  })
+
+  it('displays formatted commission value', () => {
+    const transfer = createMockTransfer({ commission: 0.7 })
+    renderWithProviders(<TransferHistoryTable transfers={[transfer]} />)
+    expect(screen.getByText('0.70')).toBeInTheDocument()
+  })
 })

@@ -3,9 +3,11 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { CreateTransferPage } from '@/pages/CreateTransferPage'
 import * as useAccountsHook from '@/hooks/useAccounts'
 import * as useTransfersHook from '@/hooks/useTransfers'
+import * as useVerificationHook from '@/hooks/useVerification'
 
 jest.mock('@/hooks/useAccounts')
 jest.mock('@/hooks/useTransfers')
+jest.mock('@/hooks/useVerification')
 
 describe('CreateTransferPage', () => {
   beforeEach(() => {
@@ -36,6 +38,14 @@ describe('CreateTransferPage', () => {
       data: undefined,
       isSuccess: false,
     } as any)
+    jest.mocked(useVerificationHook.useGenerateVerification).mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as any)
+    jest.mocked(useVerificationHook.useValidateVerification).mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as any)
   })
 
   it('renders transfer form initially', () => {
@@ -50,5 +60,42 @@ describe('CreateTransferPage', () => {
     } as any)
     renderWithProviders(<CreateTransferPage />)
     expect(screen.getByText(/loading/i)).toBeInTheDocument()
+  })
+
+  it('renders verification step after transfer submission', () => {
+    renderWithProviders(<CreateTransferPage />, {
+      preloadedState: {
+        auth: {
+          user: {
+            id: 1,
+            email: 'test@test.com',
+            role: 'USER',
+            permissions: [],
+            system_type: 'client',
+          },
+          userType: 'client',
+          accessToken: 'token',
+          refreshToken: 'refresh',
+          status: 'authenticated',
+          error: null,
+        },
+        transfer: {
+          step: 'verification',
+          formData: {
+            from_account_number: '111000100000000011',
+            to_account_number: '111000100000000022',
+            amount: 100,
+          },
+          preview: null,
+          submitting: false,
+          error: null,
+          result: null,
+          transactionId: 42,
+          codeRequested: false,
+          verificationError: null,
+        },
+      },
+    })
+    expect(screen.getAllByText(/verification/i).length).toBeGreaterThan(0)
   })
 })

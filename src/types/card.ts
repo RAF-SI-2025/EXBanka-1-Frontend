@@ -1,6 +1,6 @@
 export type CardStatus = 'ACTIVE' | 'BLOCKED' | 'DEACTIVATED'
 export type CardType = 'DEBIT' | 'CREDIT'
-export type CardBrand = 'VISA' | 'MASTERCARD' | 'DINA'
+export type CardBrand = 'VISA' | 'MASTERCARD' | 'DINACARD' | 'AMEX'
 
 export interface Card {
   id: number

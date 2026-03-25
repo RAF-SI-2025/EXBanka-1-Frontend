@@ -12,7 +12,7 @@ describe('CardItem', () => {
   it('renders masked card number', () => {
     const card = createMockCard({ card_number: '4111111111111111' })
     renderWithProviders(<CardItem card={card} onBlock={onBlock} />)
-    expect(screen.getByText('4111********1111')).toBeInTheDocument()
+    expect(screen.getByText('4111 **** **** 1111')).toBeInTheDocument()
   })
 
   it('shows account info', () => {
@@ -24,26 +24,26 @@ describe('CardItem', () => {
   it('shows status badge', () => {
     const card = createMockCard({ status: 'ACTIVE' })
     renderWithProviders(<CardItem card={card} onBlock={onBlock} />)
-    expect(screen.getByText(/aktivna/i)).toBeInTheDocument()
+    expect(screen.getByText(/active/i)).toBeInTheDocument()
   })
 
   it('shows block button for active cards', () => {
     const card = createMockCard({ status: 'ACTIVE' })
     renderWithProviders(<CardItem card={card} onBlock={onBlock} />)
-    expect(screen.getByText(/blokiraj/i)).toBeInTheDocument()
+    expect(screen.getByText(/^block$/i)).toBeInTheDocument()
   })
 
   it('hides block button for blocked cards', () => {
     const card = createMockCard({ status: 'BLOCKED' })
     renderWithProviders(<CardItem card={card} onBlock={onBlock} />)
-    expect(screen.queryByText(/blokiraj/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^block$/i)).not.toBeInTheDocument()
   })
 
   it('calls onBlock', async () => {
     const user = userEvent.setup()
     const card = createMockCard({ id: 5, status: 'ACTIVE' })
     renderWithProviders(<CardItem card={card} onBlock={onBlock} />)
-    await user.click(screen.getByText(/blokiraj/i))
+    await user.click(screen.getByText(/^block$/i))
     expect(onBlock).toHaveBeenCalledWith(5)
   })
 })

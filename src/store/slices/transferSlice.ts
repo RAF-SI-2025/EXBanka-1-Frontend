@@ -15,12 +15,15 @@ export interface TransferPreviewData {
 }
 
 export interface TransferFlowState {
-  step: 'form' | 'confirmation' | 'success'
+  step: 'form' | 'confirmation' | 'verification' | 'success'
   formData: TransferFormData | null
   preview: TransferPreviewData | null
   submitting: boolean
   error: string | null
   result: Transfer | null
+  transactionId: number | null
+  codeRequested: boolean
+  verificationError: string | null
 }
 
 const initialState: TransferFlowState = {
@@ -30,6 +33,9 @@ const initialState: TransferFlowState = {
   submitting: false,
   error: null,
   result: null,
+  transactionId: null,
+  codeRequested: false,
+  verificationError: null,
 }
 
 export const submitTransfer = createAsyncThunk(
@@ -60,6 +66,12 @@ const transferSlice = createSlice({
     resetTransferFlow() {
       return initialState
     },
+    setCodeRequested(state, action: PayloadAction<boolean>) {
+      state.codeRequested = action.payload
+    },
+    setVerificationError(state, action: PayloadAction<string | null>) {
+      state.verificationError = action.payload
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -70,7 +82,8 @@ const transferSlice = createSlice({
       .addCase(submitTransfer.fulfilled, (state, action) => {
         state.submitting = false
         state.result = action.payload
-        state.step = 'success'
+        state.transactionId = action.payload.id
+        state.step = 'verification'
       })
       .addCase(submitTransfer.rejected, (state, action) => {
         state.submitting = false
@@ -79,6 +92,12 @@ const transferSlice = createSlice({
   },
 })
 
-export const { setTransferStep, setTransferFormData, setTransferPreview, resetTransferFlow } =
-  transferSlice.actions
+export const {
+  setTransferStep,
+  setTransferFormData,
+  setTransferPreview,
+  resetTransferFlow,
+  setCodeRequested,
+  setVerificationError,
+} = transferSlice.actions
 export default transferSlice.reducer

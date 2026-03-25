@@ -1,36 +1,45 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { useClientAccounts } from '@/hooks/useAccounts'
 import { useTransferPreview } from '@/hooks/useTransfers'
+import { useGenerateVerification, useValidateVerification } from '@/hooks/useVerification'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import {
   setTransferStep,
   setTransferFormData,
   resetTransferFlow,
   submitTransfer,
+  setCodeRequested,
+  setVerificationError,
 } from '@/store/slices/transferSlice'
 import { CreateTransferForm } from '@/components/transfers/CreateTransferForm'
 import { TransferPreview } from '@/components/transfers/TransferPreview'
+import { VerificationStep } from '@/components/verification/VerificationStep'
 import { Button } from '@/components/ui/button'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
-import { useNavigate } from 'react-router-dom'
 
 export function CreateTransferPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const user = useAppSelector(selectCurrentUser)
-  const { step, formData, submitting, result } = useAppSelector((s) => s.transfer)
+  const { step, formData, submitting, result, transactionId, codeRequested, verificationError } =
+    useAppSelector((s) => s.transfer)
   const { data: accountsData, isLoading } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
 
   const fromAcc = accounts.find((a) => a.account_number === formData?.from_account_number)
   const toAcc = accounts.find((a) => a.account_number === formData?.to_account_number)
+  const sameCurrency = fromAcc?.currency_code === toAcc?.currency_code
 
   const { data: rateData } = useTransferPreview(
     fromAcc?.currency_code ?? '',
     toAcc?.currency_code ?? '',
     formData?.amount ?? 0
   )
+
+  const generateVerification = useGenerateVerification()
+  const validateVerification = useValidateVerification()
 
   useEffect(() => {
     return () => {
@@ -75,6 +84,41 @@ export function CreateTransferPage() {
     )
   }
 
+  if (step === 'verification' && transactionId !== null && user !== null) {
+    const clientId = user.id
+    return (
+      <VerificationStep
+        codeRequested={codeRequested}
+        loading={generateVerification.isPending || validateVerification.isPending}
+        error={verificationError}
+        onRequestCode={() => {
+          generateVerification.mutate(
+            { client_id: clientId, transaction_id: transactionId, transaction_type: 'TRANSFER' },
+            { onSuccess: () => dispatch(setCodeRequested(true)) }
+          )
+        }}
+        onVerified={(code) => {
+          validateVerification.mutate(
+            {
+              client_id: clientId,
+              transaction_id: transactionId,
+              transaction_type: 'transfer',
+              code,
+            },
+            {
+              onSuccess: (res) => {
+                if (res.valid) dispatch(setTransferStep('success'))
+                else dispatch(setVerificationError('Invalid verification code'))
+              },
+              onError: () => dispatch(setVerificationError('Verification failed')),
+            }
+          )
+        }}
+        onBack={() => dispatch(setTransferStep('confirmation'))}
+      />
+    )
+  }
+
   if (step === 'confirmation' && formData) {
     return (
       <TransferPreview
@@ -84,9 +128,11 @@ export function CreateTransferPage() {
         amount={formData.amount}
         fromCurrency={fromAcc?.currency_code ?? ''}
         toCurrency={toAcc?.currency_code ?? ''}
-        rate={Number(rateData?.buy_rate ?? 0)}
+        rate={sameCurrency ? 1 : Number(rateData?.buy_rate ?? 0)}
         commission={0}
-        finalAmount={(formData?.amount ?? 0) * Number(rateData?.buy_rate ?? 0)}
+        finalAmount={
+          sameCurrency ? formData.amount : (formData.amount ?? 0) * Number(rateData?.buy_rate ?? 0)
+        }
         onConfirm={handleConfirm}
         onBack={() => dispatch(setTransferStep('form'))}
         submitting={submitting}

@@ -12,6 +12,7 @@ export interface GenerateVerificationResponse {
 export interface ValidateVerificationRequest {
   client_id: number
   transaction_id: number
+  // NOTE: API requires lowercase here, unlike GenerateVerificationRequest which uses uppercase ('PAYMENT' | 'TRANSFER')
   transaction_type: 'payment' | 'transfer'
   code: string
 }

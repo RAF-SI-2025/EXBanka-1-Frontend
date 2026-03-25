@@ -14,9 +14,47 @@ export function createMockCard(overrides: Partial<Card> = {}): Card {
     cvv: '123',
     limit: 1000000,
     status: 'ACTIVE',
-    owner_name: 'Petar Petrović',
+    owner_name: 'Petar Petrovic',
     ...overrides,
   }
+}
+
+export function createMockMastercardCard(overrides: Partial<Card> = {}): Card {
+  return createMockCard({
+    id: 2,
+    card_number: '5211111111111117',
+    card_name: 'Mastercard Standard',
+    brand: 'MASTERCARD',
+    ...overrides,
+  })
+}
+
+export function createMockDinaCard(overrides: Partial<Card> = {}): Card {
+  return createMockCard({
+    id: 3,
+    card_number: '9891111111111115',
+    card_name: 'DinaCard',
+    brand: 'DINACARD',
+    ...overrides,
+  })
+}
+
+export function createMockAmexCard(overrides: Partial<Card> = {}): Card {
+  return createMockCard({
+    id: 6,
+    card_number: '341111111111111',
+    card_name: 'American Express',
+    brand: 'AMEX',
+    ...overrides,
+  })
+}
+
+export function createMockBlockedCard(overrides: Partial<Card> = {}): Card {
+  return createMockCard({ id: 4, status: 'BLOCKED', ...overrides })
+}
+
+export function createMockDeactivatedCard(overrides: Partial<Card> = {}): Card {
+  return createMockCard({ id: 5, status: 'DEACTIVATED', ...overrides })
 }
 
 export function createMockCardRequest(overrides: Partial<CardRequest> = {}): CardRequest {

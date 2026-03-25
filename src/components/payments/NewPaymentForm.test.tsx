@@ -38,4 +38,11 @@ describe('NewPaymentForm', () => {
     )
     expect(screen.getByRole('button', { name: /continue/i })).toBeInTheDocument()
   })
+
+  it('renders "Payment Purpose" label for description field', () => {
+    renderWithProviders(
+      <NewPaymentForm accounts={mockAccounts} recipients={mockRecipients} onSubmit={onSubmit} />
+    )
+    expect(screen.getByText(/payment purpose/i)).toBeInTheDocument()
+  })
 })

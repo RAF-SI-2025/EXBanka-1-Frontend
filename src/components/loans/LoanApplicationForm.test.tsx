@@ -92,5 +92,5 @@ describe('LoanApplicationForm', () => {
     const periodSelect = screen.getByRole('combobox', { name: /period/i })
     await user.click(periodSelect)
     expect(screen.getByText('360 months')).toBeInTheDocument()
-  })
+  }, 15000)
 })

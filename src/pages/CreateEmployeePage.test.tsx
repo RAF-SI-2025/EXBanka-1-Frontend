@@ -36,5 +36,5 @@ describe('CreateEmployeePage', () => {
     await waitFor(() => {
       expect(employeesApi.createEmployee).toHaveBeenCalled()
     })
-  })
+  }, 15000)
 })

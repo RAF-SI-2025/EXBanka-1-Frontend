@@ -26,7 +26,7 @@ describe('AdminCardItem', () => {
     expect(screen.getByText(maskCardNumber('4111111111111111'))).toBeInTheDocument()
   })
 
-  it('ACTIVE status: shows Blokiraj button, no Odblokiraj or Deaktiviraj', () => {
+  it('ACTIVE status: shows Block button, no Unblock or Deactivate', () => {
     const card = createMockCard({ status: 'ACTIVE' })
     renderWithProviders(
       <AdminCardItem
@@ -36,12 +36,12 @@ describe('AdminCardItem', () => {
         onDeactivate={onDeactivate}
       />
     )
-    expect(screen.getByRole('button', { name: /blokiraj/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /odblokiraj/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /deaktiviraj/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^block$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /unblock/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /deactivate/i })).not.toBeInTheDocument()
   })
 
-  it('BLOCKED status: shows Odblokiraj and Deaktiviraj buttons, no Blokiraj', () => {
+  it('BLOCKED status: shows Unblock and Deactivate buttons, no Block', () => {
     const card = createMockCard({ status: 'BLOCKED' })
     renderWithProviders(
       <AdminCardItem
@@ -51,9 +51,9 @@ describe('AdminCardItem', () => {
         onDeactivate={onDeactivate}
       />
     )
-    expect(screen.getByRole('button', { name: /odblokiraj/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /deaktiviraj/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^blokiraj$/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /unblock/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /deactivate/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^block$/i })).not.toBeInTheDocument()
   })
 
   it('DEACTIVATED status: no action buttons', () => {
@@ -66,12 +66,12 @@ describe('AdminCardItem', () => {
         onDeactivate={onDeactivate}
       />
     )
-    expect(screen.queryByRole('button', { name: /blokiraj/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /odblokiraj/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /deaktiviraj/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^block$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /unblock/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /deactivate/i })).not.toBeInTheDocument()
   })
 
-  it('calls onBlock when Blokiraj is clicked', () => {
+  it('calls onBlock when Block is clicked', () => {
     const card = createMockCard({ status: 'ACTIVE', id: 42 })
     renderWithProviders(
       <AdminCardItem
@@ -81,7 +81,7 @@ describe('AdminCardItem', () => {
         onDeactivate={onDeactivate}
       />
     )
-    fireEvent.click(screen.getByRole('button', { name: /blokiraj/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^block$/i }))
     expect(onBlock).toHaveBeenCalledWith(42)
   })
 })

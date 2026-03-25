@@ -5,6 +5,7 @@ import type { CreatePaymentRequest } from '@/types/payment'
 
 interface PaymentConfirmationProps {
   formData: CreatePaymentRequest
+  currency: string
   onConfirm: () => void
   onBack: () => void
   submitting: boolean
@@ -22,6 +23,7 @@ function ConfirmRow({ label, value }: { label: string; value: string }) {
 
 export function PaymentConfirmation({
   formData,
+  currency,
   onConfirm,
   onBack,
   submitting,
@@ -36,7 +38,7 @@ export function PaymentConfirmation({
         <ConfirmRow label="From Account" value={formData.from_account_number} />
         <ConfirmRow label="To Account" value={formData.to_account_number} />
         <ConfirmRow label="Recipient" value={formData.recipient_name} />
-        <ConfirmRow label="Amount" value={formatCurrency(formData.amount, 'RSD')} />
+        <ConfirmRow label="Amount" value={formatCurrency(formData.amount, currency)} />
         <ConfirmRow label="Code" value={formData.payment_code} />
         {formData.reference_number && (
           <ConfirmRow label="Reference Number" value={formData.reference_number} />

@@ -63,3 +63,33 @@ export const PAYMENT_CODES = [
   { value: '253', label: '253 - Utilities' },
   { value: '289', label: '289 - Other' },
 ] as const
+
+export const CARD_BRANDS = [
+  { value: 'VISA', label: 'Visa' },
+  { value: 'MASTERCARD', label: 'Mastercard' },
+  { value: 'DINACARD', label: 'DinaCard' },
+  { value: 'AMEX', label: 'American Express' },
+] as const
+
+export const CARD_STATUSES = [
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'BLOCKED', label: 'Blocked' },
+  { value: 'DEACTIVATED', label: 'Deactivated' },
+] as const
+
+export const CARD_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'Active',
+  BLOCKED: 'Blocked',
+  DEACTIVATED: 'Deactivated',
+}
+
+export const CARD_STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
+  ACTIVE: 'default',
+  BLOCKED: 'secondary',
+  DEACTIVATED: 'destructive',
+}
+
+export const CARD_LIMITS = {
+  PERSONAL: 2,
+  BUSINESS_PER_PERSON: 1,
+} as const

@@ -9,11 +9,11 @@ interface CardGridProps {
 
 export function CardGrid({ cards, onBlock, accountNames }: CardGridProps) {
   if (cards.length === 0) {
-    return <p className="text-muted-foreground">Nemate kartice.</p>
+    return <p className="text-muted-foreground">You have no cards.</p>
   }
 
   return (
-    <div className="space-y-3">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
       {cards.map((card) => (
         <CardItem
           key={card.id}
