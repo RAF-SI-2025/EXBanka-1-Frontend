@@ -153,4 +153,28 @@ describe('AdminAccountsPage', () => {
       )
     )
   })
+
+  it('resets to page 1 when filter changes', async () => {
+    jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
+      data: { accounts: [], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminAccountsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() =>
+      expect(useAccountsHook.useAllAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2 })
+      )
+    )
+
+    const accountInput = screen.getByPlaceholderText(/account number/i)
+    fireEvent.change(accountInput, { target: { value: '111' } })
+
+    await waitFor(() =>
+      expect(useAccountsHook.useAllAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, account_number_filter: '111' })
+      )
+    )
+  })
 })
