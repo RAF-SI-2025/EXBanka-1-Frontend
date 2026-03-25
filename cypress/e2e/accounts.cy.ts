@@ -43,11 +43,11 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
 
       // Select foreign account type
       cy.get('[aria-label="Account Type"]').click()
-      cy.contains('[role="option"]', 'Foreign').click({ force: true })
+      cy.contains('[role="option"]', 'Foreign').realClick()
 
       // Currency selector appears — wait for it then select EUR
       cy.get('[aria-label="Currency"]').should('be.visible').click()
-      cy.contains('[role="option"]', 'EUR').click({ force: true })
+      cy.contains('[role="option"]', 'EUR').realClick()
 
       cy.contains('button', 'Create Account').click()
       cy.wait('@createAccount')
@@ -73,10 +73,10 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
 
       // Select card brand
       cy.get('[aria-label="Card Brand"]').click()
-      cy.contains('[role="option"]', 'Visa').click({ force: true })
+      cy.contains('[role="option"]', 'Visa').realClick()
       cy.get('[aria-label="Card Brand"]').should('contain.text', 'visa')
 
-      cy.contains('button', 'Create Account').click({ force: true })
+      cy.contains('button', 'Create Account').click()
       cy.wait('@createAccount')
 
       cy.get('@createAccount').its('request.body').should('include', {
@@ -95,7 +95,7 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
 
       // Select business category
       cy.get('[aria-label="Account Category"]').click()
-      cy.contains('[role="option"]', 'Company').click({ force: true })
+      cy.contains('[role="option"]', 'Company').realClick()
 
       // Fill company fields — wait for CompanyForm to render first
       cy.get('#company\\.name').should('be.visible').type('Tech DOO')
