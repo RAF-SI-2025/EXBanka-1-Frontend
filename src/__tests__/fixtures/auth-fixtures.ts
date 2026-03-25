@@ -6,7 +6,6 @@ export function createMockAuthUser(overrides: Partial<AuthUser> = {}): AuthUser 
     email: 'admin@test.com',
     role: 'EmployeeAdmin',
     permissions: ['employees.read', 'employees.create', 'employees.update'],
-    system_type: 'employee',
     ...overrides,
   }
 }
@@ -14,7 +13,6 @@ export function createMockAuthUser(overrides: Partial<AuthUser> = {}): AuthUser 
 export function createMockAuthState(
   overrides: Partial<{
     user: AuthUser | null
-    userType: 'client' | 'employee' | null
     accessToken: string | null
     refreshToken: string | null
     status: 'idle' | 'loading' | 'authenticated' | 'error'
@@ -23,7 +21,6 @@ export function createMockAuthState(
 ) {
   return {
     user: createMockAuthUser(),
-    userType: 'employee' as const,
     accessToken: 'mock-access-token',
     refreshToken: 'mock-refresh-token',
     status: 'authenticated' as const,

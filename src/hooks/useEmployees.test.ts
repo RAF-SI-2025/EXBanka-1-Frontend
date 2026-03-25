@@ -9,7 +9,7 @@ jest.mock('@/lib/api/employees')
 beforeEach(() => jest.clearAllMocks())
 
 describe('useEmployees', () => {
-  it('fetches employees with no filters by default', async () => {
+  it('fetches all employees without filter params', async () => {
     const response = { employees: [createMockEmployee()], total_count: 1 }
     jest.mocked(employeesApi.getEmployees).mockResolvedValue(response)
 
@@ -20,30 +20,5 @@ describe('useEmployees', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(response)
     expect(employeesApi.getEmployees).toHaveBeenCalledWith({})
-  })
-
-  it('passes filters to the API and uses them as part of the query key', async () => {
-    const response = { employees: [createMockEmployee()], total_count: 1 }
-    jest.mocked(employeesApi.getEmployees).mockResolvedValue(response)
-
-    const filters = { name: 'Jane', page: 1, page_size: 20 }
-    const { result } = renderHook(() => useEmployees(filters), {
-      wrapper: createQueryWrapper(),
-    })
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(employeesApi.getEmployees).toHaveBeenCalledWith(filters)
-  })
-
-  it('returns total_count from the response', async () => {
-    const response = { employees: [createMockEmployee()], total_count: 42 }
-    jest.mocked(employeesApi.getEmployees).mockResolvedValue(response)
-
-    const { result } = renderHook(() => useEmployees(), {
-      wrapper: createQueryWrapper(),
-    })
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data?.total_count).toBe(42)
   })
 })

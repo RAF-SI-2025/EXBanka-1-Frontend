@@ -1,7 +1,0 @@
-services:
-  frontend:
-    build: .
-    image: ghcr.io/raf-si-2025/exbanka-1-frontend:latest
-    ports:
-      - "5173:80"
-    restart: unless-stopped

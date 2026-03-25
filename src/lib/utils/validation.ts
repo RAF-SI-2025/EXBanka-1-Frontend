@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { EMPLOYEE_ROLES } from '@/lib/utils/constants'
 
 export const passwordSchema = z
   .string()
@@ -44,6 +43,13 @@ export const activationSchema = z
     path: ['confirm_password'],
   })
 
+const EMPLOYEE_ROLES = [
+  'EmployeeBasic',
+  'EmployeeAgent',
+  'EmployeeSupervisor',
+  'EmployeeAdmin',
+] as const
+
 export const createEmployeeSchema = z.object({
   first_name: z
     .string()
@@ -69,117 +75,6 @@ export const createEmployeeSchema = z.object({
     .optional(),
 })
 
-// --- Banking Schemas ---
-
-const LOAN_TYPES_ENUM = ['CASH', 'HOUSING', 'AUTO', 'REFINANCING', 'STUDENT'] as const
-const ACCOUNT_KIND_ENUM = ['current', 'foreign'] as const
-const ACCOUNT_CATEGORY_ENUM = ['personal', 'business'] as const
-
-export const companySchema = z.object({
-  name: z.string().min(1, 'Company name is required'),
-  registration_number: z.string().regex(/^\d{8}$/, 'Must be exactly 8 digits'),
-  tax_number: z.string().regex(/^\d{9}$/, 'Must be exactly 9 digits'),
-  activity_code: z.string().regex(/^\d{2}\.\d{1,2}$/, 'Format: XX.XX'),
-  address: z.string().min(1, 'Address is required'),
-})
-
-export const createAccountSchema = z.object({
-  owner_id: z.number().min(1, 'Owner is required'),
-  account_kind: z.enum(ACCOUNT_KIND_ENUM),
-  account_type: z.string().min(1, 'Account type is required'),
-  account_category: z.enum(ACCOUNT_CATEGORY_ENUM).optional(),
-  currency_code: z.string().min(1, 'Currency is required'),
-  initial_balance: z.number().min(0, 'Balance cannot be negative').optional(),
-  create_card: z.boolean().optional(),
-  card_brand: z.enum(['visa', 'mastercard', 'dinacard'] as const).optional(),
-  daily_limit: z.number().min(0).optional(),
-  monthly_limit: z.number().min(0).optional(),
-})
-
-export const createTransferSchema = z
-  .object({
-    from_account_number: z.string().min(1, 'From account is required'),
-    to_account_number: z.string().min(1, 'To account is required'),
-    amount: z.number().positive('Amount must be greater than 0'),
-  })
-  .refine((data) => data.from_account_number !== data.to_account_number, {
-    message: 'Source and destination must be different',
-    path: ['to_account_number'],
-  })
-
-export const createPaymentSchema = z.object({
-  from_account_number: z.string().min(1, 'From account is required'),
-  to_account_number: z.string().min(1, 'To account is required'),
-  recipient_name: z.string().min(1, 'Receiver name is required'),
-  amount: z.number().positive('Amount must be greater than 0'),
-  payment_code: z.string().min(1, 'Payment code is required'),
-  reference_number: z.string().optional(),
-  payment_purpose: z.string().optional(),
-})
-
-export const createInternalTransferSchema = z
-  .object({
-    from_account_number: z.string().min(1, 'From account is required'),
-    to_account_number: z.string().min(1, 'To account is required'),
-    amount: z.number().positive('Amount must be greater than 0'),
-    payment_purpose: z.string().optional(),
-  })
-  .refine((data) => data.from_account_number !== data.to_account_number, {
-    message: 'Source and destination must be different',
-    path: ['to_account_number'],
-  })
-
-export const createLoanRequestSchema = z.object({
-  loan_type: z.enum(LOAN_TYPES_ENUM, { message: 'Please select a loan type' }),
-  interest_type: z.enum(['FIXED', 'VARIABLE'] as const, {
-    message: 'Please select an interest rate type',
-  }),
-  account_number: z.string().min(1, 'Please select an account'),
-  amount: z.number({ error: 'Please enter an amount' }).positive('Amount must be positive'),
-  currency_code: z.string().min(1, 'Please select a currency'),
-  purpose: z.string().optional(),
-  monthly_salary: z.number().positive('Salary must be positive').optional(),
-  employment_status: z.string().optional(),
-  employment_period: z.number().int().min(0).optional(),
-  repayment_period: z.number({ error: 'Please select a repayment period' }).int().positive(),
-  phone: z.string().max(15).optional().or(z.literal('')),
-})
-
-export const paymentRecipientSchema = z.object({
-  recipient_name: z.string().min(1, 'Name is required'),
-  account_number: z.string().min(1, 'Account number is required'),
-})
-
-export const updateAccountLimitsSchema = z.object({
-  daily_limit: z.number().min(0, 'Daily limit cannot be negative').optional(),
-  monthly_limit: z.number().min(0, 'Monthly limit cannot be negative').optional(),
-})
-
-export const updateAccountNameSchema = z.object({
-  new_name: z.string().min(1, 'Account name is required'),
-})
-
-export const updateClientSchema = z.object({
-  first_name: z.string().min(1).optional(),
-  last_name: z.string().min(1).optional(),
-  email: emailSchema.optional(),
-  phone: z.string().optional(),
-  address: z.string().optional(),
-  gender: z.string().optional(),
-})
-
-export const authorizedPersonSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
-  gender: z.string().optional(),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().max(15).optional().or(z.literal('')),
-  address: z.string().optional(),
-})
-
-// --- End Banking Schemas ---
-
 export const updateEmployeeSchema = z.object({
   last_name: z
     .string()
@@ -198,21 +93,4 @@ export const updateEmployeeSchema = z.object({
     .regex(/^\d{13}$/, 'JMBG must be exactly 13 digits')
     .optional()
     .or(z.literal('')),
-})
-
-export const createClientSchema = z.object({
-  first_name: z
-    .string()
-    .min(1, 'First name is required')
-    .max(20, 'First name must be at most 20 characters'),
-  last_name: z
-    .string()
-    .min(1, 'Last name is required')
-    .max(20, 'Last name must be at most 20 characters'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
-  email: emailSchema,
-  gender: z.string().optional(),
-  phone: z.string().max(15, 'Phone number must be at most 15 digits').optional(),
-  address: z.string().optional(),
-  jmbg: z.string().regex(/^\d{13}$/, 'JMBG must have exactly 13 digits'),
 })

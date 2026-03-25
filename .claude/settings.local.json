@@ -1,22 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm test:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npm run:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(npx jest:*)",
-      "Bash(npm list:*)",
-      "Bash(npm install:*)",
-      "Bash(cd:*)",
-      "Bash(grep -r \"Filter\\\\|filter\\\\|search\\\\|Search\" /Users/marija/banka-frontend/src/pages/*.tsx --files-with-matches)",
-      "Bash(ls /Users/marija/banka-frontend/src/components/loans/LoanFilters* /Users/marija/banka-frontend/src/components/payments/PaymentFilters*)",
-      "Bash(find /Users/marija/banka-frontend/src -name *.test.*)",
-      "Bash(npx shadcn@latest add popover)",
-      "Bash(git:*)",
-      "Bash(node:*)",
-      "Bash(npx eslint:*)"
+      "Bash(cd \"C:\\\\Users\\\\Nevena\\\\Desktop\\\\si\\\\EXBanka-1-Frontend\" && npx shadcn@latest add tabs --yes 2>&1)"
     ]
   }
 }

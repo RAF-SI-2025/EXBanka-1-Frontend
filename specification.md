@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-03-25_
+_Last updated: 2026-03-12_
 
 ---
 
@@ -23,14 +23,12 @@ _Last updated: 2026-03-25_
 
 ## 1. Project Overview
 
-**EXBanka** is a banking platform frontend. It provides role-based access for two roles:
+**EXBanka** is a banking platform employee management frontend. It provides role-based access for two roles:
 
-- **Admin (`EmployeeAdmin`)** — full management: list, create, edit employees and clients, manage accounts, loans, and payments
+- **Admin (`EmployeeAdmin`)** — full management: list, create, edit employees
 - **User (`EmployeeBasic`)** — view own profile only
 
 The app communicates with a backend API at `http://localhost:8080` via REST.
-
-All users (employees and clients) authenticate via a single `/login` route. The JWT `system_type` field (`"employee"` | `"client"`) determines the portal they are redirected to after login: employees are sent to `/admin/accounts`, clients are sent to `/home`.
 
 ---
 
@@ -60,7 +58,6 @@ src/
 ├── __tests__/
 │   ├── fixtures/
 │   │   ├── auth-fixtures.ts          # Mock auth data factories
-│   │   ├── card-fixtures.ts          # Mock card request data factories
 │   │   └── employee-fixtures.ts      # Mock employee data factories
 │   ├── mocks/
 │   │   └── select-mock.tsx           # Shadcn Select mock for tests
@@ -84,11 +81,8 @@ src/
 │   │   ├── skeleton.tsx
 │   │   ├── sonner.tsx
 │   │   ├── table.tsx
-│   │   ├── tabs.tsx
-│   │   └── textarea.tsx
+│   │   └── tabs.tsx
 │   ├── auth/
-│   │   ├── AuthFormCard.tsx          # Shared card wrapper for all auth forms
-│   │   ├── AuthFormCard.test.tsx
 │   │   ├── LoginForm.tsx             # Email/password login form
 │   │   ├── LoginForm.test.tsx
 │   │   ├── PasswordResetRequestForm.tsx  # Email input to request reset
@@ -98,63 +92,24 @@ src/
 │   │   ├── ActivationForm.tsx        # Token + initial password form
 │   │   └── ActivationForm.test.tsx
 │   ├── employees/
-│   │   ├── EmployeeForm.tsx          # Thin wrapper: delegates to Create or Edit form
-│   │   ├── EmployeeForm.test.tsx
-│   │   ├── EmployeeCreateForm.tsx    # Create employee form (~131 lines)
-│   │   ├── EmployeeEditForm.tsx      # Edit/view employee form (~143 lines)
-│   │   ├── PhoneInput.tsx            # Country code + phone number input
-│   │   ├── PhoneInput.test.tsx
-│   │   ├── EmployeeProfileTab.tsx    # "Me" tab: current user's read-only profile
-│   │   ├── EmployeeProfileTab.test.tsx
 │   │   ├── EmployeeTable.tsx         # Employee list table
 │   │   ├── EmployeeTable.test.tsx
+│   │   ├── EmployeeForm.tsx          # Create/Edit employee form (553 lines)
+│   │   ├── EmployeeForm.test.tsx
 │   │   ├── EmployeeFilters.tsx       # Category + text filter bar
 │   │   ├── EmployeeFilters.test.tsx
 │   │   ├── EmployeeStatusBadge.tsx   # Active/Inactive badge
-│   │   ├── EmployeeStatusBadge.test.tsx
-│   │   └── employeeConstants.ts     # Re-export shim (imports from lib/utils/constants)
-│   ├── cards/
-│   │   ├── CardRequestDenyDialog.tsx     # Deny confirmation dialog with optional reason textarea
-│   │   └── CardRequestDenyDialog.test.tsx
+│   │   └── EmployeeStatusBadge.test.tsx
 │   ├── layout/
 │   │   ├── AppLayout.tsx             # Sidebar + main content wrapper
-│   │   ├── AuthLayout.tsx            # Full-screen GIF background + centered Outlet
+│   │   ├── AuthLayout.tsx            # Centered wrapper for auth pages
 │   │   └── Sidebar.tsx               # Nav links, user email, logout
 │   │   └── Sidebar.test.tsx
-│   ├── cards/
-│   │   ├── CardVisual.tsx + .test.tsx    # Credit-card-shaped visual: gradient, chip, brand logo, status overlay
-│   │   ├── CardBrandLogo.tsx + .test.tsx # SVG brand logos: Visa, Mastercard, DinaCard, Amex
-│   │   ├── CardItem.tsx + .test.tsx      # User-facing card tile using CardVisual
-│   │   ├── CardGrid.tsx + .test.tsx      # Responsive grid of CardItem components
-│   │   ├── CardRequestForm.tsx + .test.tsx  # Account selector for card request
-│   │   ├── AuthorizedPersonForm.tsx + .test.tsx  # Authorized person form (all fields incl. date_of_birth, gender)
-│   │   └── VerificationCodeInput.tsx + .test.tsx  # SMS/OTP code input for card confirmation
-│   ├── payments/
-│   │   ├── NewPaymentForm.tsx + .test.tsx       # Payment form; "Payment Purpose" label; uses SavedRecipientSelect (~146 lines)
-│   │   ├── SavedRecipientSelect.tsx              # Extracted select for saved recipients (onSelect: string => void)
-│   │   ├── PaymentConfirmation.tsx + .test.tsx  # Confirmation step; props: {formData, currency, onConfirm, onBack, submitting, error}
-│   │   ├── PaymentHistoryTable.tsx + .test.tsx  # Payment history table; PDF button uses e.stopPropagation()
-│   │   ├── RecipientForm.tsx + .test.tsx        # Props: {onSubmit, onCancel?, submitting, isEditing?, defaultValues?}; button label: "Save"/"Add"
-│   │   ├── RecipientList.tsx                    # Table of recipients with Edit/Delete buttons
-│   │   └── AddRecipientPrompt.tsx               # Prompt to save new recipient after payment success
-│   ├── transfers/
-│   │   ├── CreateTransferForm.tsx + .test.tsx   # Transfer form; same-currency transfers allowed
-│   │   ├── TransferPreview.tsx                  # Confirmation/preview step for transfers
-│   │   └── TransferHistoryTable.tsx + .test.tsx # Transfer history; columns: Date, From, To, Amount, Final, Rate, Commission
-│   ├── verification/
-│   │   └── VerificationStep.tsx + .test.tsx     # OTP/SMS verification step (used by payments and transfers)
-│   ├── admin/
-│   │   ├── AdminCardItem.tsx + .test.tsx  # Admin card tile using CardVisual + block/unblock/deactivate buttons
-│   │   ├── AccountTable.tsx + .test.tsx   # Admin account list table
-│   │   ├── ClientTable.tsx + .test.tsx    # Admin client list table
-│   │   ├── EditClientForm.tsx + .test.tsx # Admin edit client form
 │   └── shared/
 │       ├── ProtectedRoute.tsx        # Auth + permission guard
 │       ├── ProtectedRoute.test.tsx
-│       ├── FormField.tsx             # Reusable label + input + error wrapper
-│       ├── PaginationControls.tsx    # Previous/Next + "Page X of Y" controls
 │       ├── ErrorMessage.tsx          # Styled error paragraph
-│       └── LoadingSpinner.tsx        # Animated spinner (data-testid="loading-spinner")
+│       └── LoadingSpinner.tsx        # Animated spinner
 │
 ├── pages/
 │   ├── LoginPage.tsx + .test.tsx
@@ -163,32 +118,7 @@ src/
 │   ├── ActivationPage.tsx + .test.tsx
 │   ├── EmployeeListPage.tsx + .test.tsx
 │   ├── CreateEmployeePage.tsx + .test.tsx
-│   ├── EditEmployeePage.tsx + .test.tsx
-│   ├── HomePage.tsx + .test.tsx
-│   ├── AccountListPage.tsx + .test.tsx
-│   ├── AccountDetailsPage.tsx + .test.tsx
-│   ├── AdminAccountsPage.tsx + .test.tsx
-│   ├── AdminAccountCardsPage.tsx + .test.tsx
-│   ├── AdminClientsPage.tsx + .test.tsx
-│   ├── AdminCardRequestsPage.tsx + .test.tsx
-│   ├── AdminLoanRequestsPage.tsx + .test.tsx
-│   ├── AdminLoansPage.tsx + .test.tsx
-│   ├── CardListPage.tsx + .test.tsx
-│   ├── CardRequestPage.tsx + .test.tsx
-│   ├── CreateAccountPage.tsx + .test.tsx
-│   ├── CreateClientPage.tsx + .test.tsx
-│   ├── CreateTransferPage.tsx + .test.tsx
-│   ├── EditClientPage.tsx + .test.tsx
-│   ├── ExchangeCalculatorPage.tsx + .test.tsx
-│   ├── ExchangeRatesPage.tsx + .test.tsx
-│   ├── InternalTransferPage.tsx + .test.tsx
-│   ├── LoanApplicationPage.tsx + .test.tsx
-│   ├── LoanDetailsPage.tsx + .test.tsx
-│   ├── LoanListPage.tsx + .test.tsx
-│   ├── NewPaymentPage.tsx + .test.tsx
-│   ├── PaymentHistoryPage.tsx + .test.tsx
-│   ├── PaymentRecipientsPage.tsx + .test.tsx
-│   └── TransferHistoryPage.tsx + .test.tsx
+│   └── EditEmployeePage.tsx + .test.tsx
 │
 ├── store/
 │   ├── index.ts                      # Redux store configuration
@@ -202,52 +132,21 @@ src/
 ├── hooks/
 │   ├── useAppDispatch.ts             # Typed Redux dispatch
 │   ├── useAppSelector.ts             # Typed Redux selector
-│   ├── useEmployees.ts + .test.ts    # React Query: fetch employees with server-side filters
-│   ├── useEmployee.ts + .test.ts     # React Query: fetch single employee
-│   ├── useMutationWithRedirect.ts + .test.ts  # Mutation + invalidate + navigate
-│   └── usePagination.ts + .test.ts   # Client-side pagination over an array
+│   ├── useEmployees.ts + .test.ts    # React Query: fetch all employees
+│   └── useEmployee.ts + .test.ts    # React Query: fetch single employee
 │
 ├── lib/
 │   ├── api/
 │   │   ├── axios.ts                  # Axios instance + interceptors (token refresh)
 │   │   ├── auth.ts + .test.ts        # Auth API calls
-│   │   ├── employees.ts + .test.ts   # Employee CRUD API calls
-│   │   ├── accounts.ts               # Account API calls
-│   │   ├── cards.ts                  # Card API calls
-│   │   ├── clients.ts                # Client CRUD API calls
-│   │   ├── exchange.ts + .test.ts    # Exchange rates API calls
-│   │   ├── loans.ts                  # Loan API calls
-│   │   ├── payments.ts               # Payment API calls
-│   │   ├── transfers.ts              # Transfer API calls
-│   │   ├── verification.ts           # Verification API calls
-│   │   ├── roles.ts + .test.ts       # Roles & permissions API calls
-│   │   ├── interestRateTiers.ts + .test.ts  # Interest rate tiers API calls
-│   │   └── bankMargins.ts + .test.ts # Bank margins API calls
+│   │   └── employees.ts + .test.ts   # Employee CRUD API calls
 │   └── utils/
-│       ├── constants.ts              # EMPLOYEE_ROLES, GENDERS, COUNTRY_CODES, formatRoleLabel
-│       ├── banking.ts                # CARD_BRANDS, CARD_STATUSES, CARD_STATUS_LABELS, CARD_STATUS_VARIANT, CARD_LIMITS
-│       ├── format.ts + .test.ts      # maskCardNumber (spaced format), formatAccountNumber, formatCurrency
-│       ├── dateFormatter.ts + .test.ts  # todayISO, formatDateDisplay, formatDateLocale
 │       ├── jwt.ts + .test.ts         # JWT decode utility
 │       └── validation.ts + .test.ts  # Zod schemas
 │
 ├── types/
 │   ├── auth.ts                       # Auth-related TypeScript interfaces
-│   ├── employee.ts                   # Employee-related TypeScript interfaces
-│   ├── account.ts                    # Account-related TypeScript interfaces
-│   ├── authorized-person.ts          # Authorized person interfaces
-│   ├── card.ts                       # CardStatus ('ACTIVE'|'BLOCKED'|'DEACTIVATED'), CardType, CardBrand ('VISA'|'MASTERCARD'|'DINACARD'|'AMEX'), Card interface
-│   ├── cardRequest.ts                # CardRequest, CardRequestListResponse, CardRequestFilters types
-│   ├── client.ts                     # Client-related TypeScript interfaces
-│   ├── exchange.ts                   # Exchange rate interfaces
-│   ├── filters.ts                    # Shared filter interfaces
-│   ├── loan.ts                       # Loan-related TypeScript interfaces
-│   ├── payment.ts                    # Payment-related TypeScript interfaces
-│   ├── transfer.ts                   # Transfer-related TypeScript interfaces
-│   ├── verification.ts               # Verification interfaces
-│   ├── roles.ts                      # Role, Permission, CreateRolePayload interfaces
-│   ├── interestRateTiers.ts          # InterestRateTier, CreateTierPayload interfaces
-│   └── bankMargins.ts                # BankMargin interface
+│   └── employee.ts                   # Employee-related TypeScript interfaces
 │
 ├── contexts/                         # Reserved for theme/locale (currently empty)
 ├── assets/
@@ -265,48 +164,18 @@ src/
 
 | Route | Page | Notes |
 |---|---|---|
-| `/login` | LoginPage | Unified login for employees and clients; redirects based on `userType` from Redux state |
+| `/login` | LoginPage | Redirects to `/employees` if already authenticated |
 | `/password-reset-request` | PasswordResetRequestPage | Sends reset email |
 | `/password-reset?token=...` | PasswordResetPage | Completes reset with URL token |
 | `/activate?token=...` | ActivationPage | Sets initial password for new accounts |
 
-### Protected Routes — Employee Portal (AppLayout + ProtectedRoute)
+### Protected Routes (AppLayout + ProtectedRoute)
 
 | Route | Page | Required Permission |
 |---|---|---|
 | `/employees` | EmployeeListPage | `employees.read` |
 | `/employees/new` | CreateEmployeePage | `employees.create` |
 | `/employees/:id` | EditEmployeePage | `employees.update` |
-| `/admin/accounts` | AdminAccountsPage | admin |
-| `/admin/accounts/:id/cards` | AdminAccountCardsPage | admin |
-| `/admin/clients` | AdminClientsPage | admin |
-| `/admin/clients/new` | CreateClientPage | admin |
-| `/admin/clients/:id` | EditClientPage | admin |
-| `/admin/cards/requests` | AdminCardRequestsPage | Employee |
-| `/admin/loan-requests` | AdminLoanRequestsPage | admin |
-| `/admin/loans` | AdminLoansPage | admin |
-| `/admin/exchange-rates` | ExchangeRatesPage | admin |
-
-### Protected Routes — Client Portal (AppLayout + ProtectedRoute)
-
-| Route | Page | Notes |
-|---|---|---|
-| `/home` | HomePage | Client dashboard |
-| `/accounts` | AccountListPage | Client account list |
-| `/accounts/:id` | AccountDetailsPage | Account details |
-| `/cards` | CardListPage | Client card list |
-| `/cards/request` | CardRequestPage | Request a new card |
-| `/create-account` | CreateAccountPage | Open a new account |
-| `/transfer` | CreateTransferPage | Initiate a transfer |
-| `/internal-transfer` | InternalTransferPage | Internal transfer between own accounts |
-| `/payment-history` | PaymentHistoryPage | Payment history |
-| `/payment-recipients` | PaymentRecipientsPage | Manage payment recipients |
-| `/new-payment` | NewPaymentPage | Create a new payment |
-| `/loans` | LoanListPage | Client loan list |
-| `/loans/:id` | LoanDetailsPage | Loan details |
-| `/loan-application` | LoanApplicationPage | Apply for a loan |
-| `/exchange-calculator` | ExchangeCalculatorPage | Currency exchange calculator |
-| `/transfer-history` | TransferHistoryPage | Transfer history |
 
 **Catch-all:** `*` redirects to `/login`.
 
@@ -315,9 +184,8 @@ src/
 ## 5. Pages
 
 ### LoginPage
-- Renders `LoginForm`. Background GIF is provided by `AuthLayout`.
-- Handles unified login for both employees and clients via a single `/login` route.
-- After successful login, reads `userType` from Redux state (derived from JWT `system_type` field): redirects employees to `/admin/accounts`, clients to `/home`.
+- Renders `LoginForm` inside auth layout with animated GIF background.
+- Redirects to `/employees` if user is already authenticated.
 
 ### PasswordResetRequestPage
 - Renders `PasswordResetRequestForm`.
@@ -334,47 +202,30 @@ src/
 ### EmployeeListPage
 - Two tabs: **Employees** and **Me**.
 - **Employees tab:**
-  - Fetches employees via `useEmployees(apiFilters)` with **server-side filtering and pagination**.
-  - Filter state (`category` + `value`) and `page` are kept in local React state.
-  - `apiFilters` is built from state: `{ page, page_size: 20, [category]: value }`.
-  - Changing filter resets page to 1.
-  - `totalPages` derived from `data.total_count / PAGE_SIZE`.
-  - Renders `EmployeeFilters` + `EmployeeTable` + `PaginationControls`.
+  - Fetches all employees via `useEmployees()`.
+  - Client-side filtering by: All, First Name, Last Name, Email, Position.
+  - Client-side pagination: 20 employees per page using Shadcn `Pagination`.
+  - Renders `EmployeeFilters` + `EmployeeTable`.
 - **Me tab:**
-  - Rendered by `EmployeeProfileTab` — fetches and displays the current user's read-only profile.
+  - Fetches the current user's employee record via `useEmployee(currentUser.id)`.
+  - Displays a read-only `EmployeeForm` in view mode.
 
 ### CreateEmployeePage
 - Admin-only (requires `employees.create`).
 - Renders `EmployeeForm` in create mode.
-- On success, invalidates `['employees']` query and navigates to `/employees`.
+- On success, navigates to `/employees`.
 
 ### EditEmployeePage
 - Fetches employee by `:id` via `useEmployee(id)`.
 - Renders `EmployeeForm` in edit mode.
 - If the employee is an admin (`EmployeeAdmin` role), form is read-only.
-- On success, invalidates `['employees']` query and navigates to `/employees`.
-
-### AdminCardRequestsPage
-- Employee-only (`requiredRole="Employee"`).
-- Fetches pending card requests via `useCardRequests({ status: 'pending', page, page_size: 10 })`.
-- Resolves client names via `useAllClients()` lookup map (`clientsById`).
-- Table columns: First Name | Last Name | Account Number | Card Type | Actions.
-- **Approve** button: fires `useApproveCardRequest` mutation immediately.
-- **Deny** button: sets `selectedRequestId` state to open `CardRequestDenyDialog`.
-- Deny dialog rendered once outside the table; controlled by `selectedRequestId: number | null`.
-- Pagination: `PAGE_SIZE = 10`, `PaginationControls`.
+- On success, navigates to `/employees`.
 
 ---
 
 ## 6. Components
 
 ### Auth Components
-
-**AuthFormCard** (`components/auth/AuthFormCard.tsx`)
-- Shared card wrapper used by all four auth forms.
-- Renders a `Card` with `border-t-4 border-t-primary`.
-- Props: `title`, `children`, `error?`, `isSuccess?`, `successContent?`
-- When `isSuccess=true`: renders `successContent` instead of the form.
 
 **LoginForm** (`components/auth/LoginForm.tsx`, ~82 lines)
 - Fields: email, password
@@ -403,34 +254,24 @@ src/
 
 ### Employee Components
 
-**EmployeeForm** (~24 lines) — thin wrapper
-- Delegates to `EmployeeCreateForm` (when no `employee` prop) or `EmployeeEditForm` (when `employee` prop present).
-
-**EmployeeCreateForm** (~131 lines)
-- All fields, date of birth required, converts DOB string to Unix timestamp on submit.
-- Imports constants from `lib/utils/constants`, date helpers from `lib/utils/dateFormatter`.
-
-**EmployeeEditForm** (~143 lines)
-- Read-only fields: first_name, email, username, date_of_birth.
-- Editable: last_name, gender, phone (via `PhoneInput`), address, position, department, role, active, jmbg.
-- Shows admin warning banner when `readOnly=true`.
-
-**PhoneInput** (`components/employees/PhoneInput.tsx`)
-- Country code dropdown (30+ countries from `lib/utils/constants`) + phone number text input.
-
-**EmployeeProfileTab** (`components/employees/EmployeeProfileTab.tsx`)
-- "Me" tab content: fetches current user's employee record via `useEmployee(currentUser.id)`.
-- Displays a read-only `EmployeeForm` with loading/error states.
-
 **EmployeeTable** (~47 lines)
-- Renders a Shadcn `Table` with columns: Name, Email, Position, Phone, Status.
-- Each row is clickable → calls `onRowClick(id)`.
-- Status column uses `EmployeeStatusBadge`.
+- Renders a Shadcn `Table` with columns: Name, Email, Position, Phone, Status
+- Each row is clickable → navigates to `/employees/:id`
+- Status column uses `EmployeeStatusBadge`
 
-**EmployeeFilters** (~85 lines)
-- Category dropdown: **Name**, Email, Position (aligned with API `EmployeeFilters` fields).
-- Text search input with clear (X) button.
-- Calls `onFilterChange({category, value})` or `onFilterChange(null)` to clear.
+**EmployeeForm** (~553 lines) — largest component
+- Shared create/edit form with two variants:
+  - **CreateForm:** all fields, date of birth required, converts DOB to Unix timestamp
+  - **EditForm:** read-only fields (first_name, email, username, date_of_birth), editable rest
+- Fields: first_name, last_name, date_of_birth, gender, email, phone (with country code), address, username, position, department, role, active (checkbox), jmbg
+- Shows admin warning banner when `readOnly=true`
+- Country code dropdown has 30+ countries
+
+**EmployeeFilters** (~88 lines)
+- Category dropdown: All, First Name, Last Name, Email, Position
+- Text search input
+- Clear (X) button resets filter
+- Calls `onFilterChange({category, value})` or `onFilterChange(null)` to clear
 
 **EmployeeStatusBadge** (~13 lines)
 - `active: true` → green "Active" badge
@@ -438,26 +279,15 @@ src/
 
 ---
 
-### Cards Components
-
-**CardRequestDenyDialog** (`components/cards/CardRequestDenyDialog.tsx`)
-- Shadcn `Dialog` with title "Deny Card Request".
-- `Textarea` with placeholder "Reason (optional)".
-- Footer: Cancel (`ghost` variant) + "Confirm Deny" (`destructive` variant).
-- Props: `open: boolean`, `onClose: () => void`, `onConfirm: (reason: string) => void`
-- Uses inner component pattern (`CardRequestDenyDialogInner`) to reset textarea state on close via natural unmount.
-
----
-
 ### Layout Components
 
 **AppLayout** (~14 lines) — `Sidebar` on the left, `<Outlet />` on the right
 
-**AuthLayout** (~14 lines) — full-screen background GIF wrapper with centered `<Outlet />`; all auth pages render inside this layout without duplicating the background.
+**AuthLayout** (~12 lines) — centered full-screen container with `<Outlet />`
 
-**Sidebar**
+**Sidebar** (~41 lines)
 - Logo: "EXBanka"
-- Nav links (employee portal): Employees, Card Requests (`/admin/cards/requests`), Loan Requests, etc.
+- Nav link: Employees → `/employees`
 - Displays current user's email
 - Logout button → dispatches `logoutThunk` → redirects to `/login`
 
@@ -471,17 +301,9 @@ src/
 - Unauthenticated → redirect to `/login`
 - Missing permission → redirect to `/`
 
-**FormField** (`components/shared/FormField.tsx`)
-- Reusable wrapper: `Label` + children + optional error message (`text-destructive`).
-- Props: `label`, `id`, `error?`, `children`.
-
-**PaginationControls** (`components/shared/PaginationControls.tsx`)
-- Renders Previous / Next buttons and "Page X of Y" text.
-- Renders nothing when `totalPages <= 1`.
-
 **ErrorMessage** (~7 lines) — styled `<p>` with destructive text color
 
-**LoadingSpinner** (~8 lines) — animated border-spinning div; has `data-testid="loading-spinner"`
+**LoadingSpinner** (~8 lines) — animated border-spinning div
 
 ---
 
@@ -499,7 +321,6 @@ interface AuthState {
   user: AuthUser | null
   accessToken: string | null
   refreshToken: string | null
-  userType: 'employee' | 'client' | null
   status: 'idle' | 'loading' | 'authenticated' | 'error'
   error: string | null
 }
@@ -509,14 +330,14 @@ interface AuthState {
 
 | Thunk | Action | Side Effects |
 |---|---|---|
-| `loginThunk(LoginRequest)` | Calls `authApi.login()`, decodes JWT, derives `userType` from JWT `system_type` field, sets user + tokens | Saves tokens to `sessionStorage` |
+| `loginThunk(LoginRequest)` | Calls `authApi.login()`, decodes JWT, sets user + tokens | Saves tokens to `sessionStorage` |
 | `logoutThunk()` | Calls `authApi.logout(refreshToken)` | Clears `sessionStorage`, resets state |
 
 **Sync reducers:**
 
 | Reducer | Purpose |
 |---|---|
-| `setTokens(AuthTokens)` | Hydrates state from stored tokens (used on app init); also sets `userType` from JWT `system_type` |
+| `setTokens(AuthTokens)` | Hydrates state from stored tokens (used on app init) |
 | `clearAuth()` | Resets state to initial |
 
 **Auth Selectors (`store/selectors/authSelectors.ts`) — memoized with reselect:**
@@ -552,47 +373,10 @@ interface AuthState {
 
 | Function | Method | Endpoint |
 |---|---|---|
-| `getEmployees(filters?)` | GET | `/api/employees` — supports `name`, `email`, `position`, `page`, `page_size` query params |
+| `getEmployees(filters?)` | GET | `/api/employees` |
 | `getEmployee(id)` | GET | `/api/employees/{id}` |
 | `createEmployee(payload)` | POST | `/api/employees` |
 | `updateEmployee(id, payload)` | PUT | `/api/employees/{id}` |
-
-### Cards API (`lib/api/cards.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `getCardRequests(filters?)` | GET | `/api/cards/requests` — supports `status`, `page`, `page_size` query params |
-| `approveCardRequest(id)` | PUT | `/api/cards/requests/{id}/approve` |
-| `rejectCardRequest(id, reason)` | PUT | `/api/cards/requests/{id}/reject` — body `{ reason: string }` |
-
-### Roles API (`lib/api/roles.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `getRoles()` | GET | `/api/roles` |
-| `getRole(id)` | GET | `/api/roles/{id}` |
-| `createRole(payload)` | POST | `/api/roles` |
-| `updateRolePermissions(id, permissionCodes)` | PUT | `/api/roles/{id}/permissions` |
-| `getPermissions()` | GET | `/api/permissions` |
-| `setEmployeeRoles(employeeId, roleNames)` | PUT | `/api/employees/{id}/roles` |
-| `setEmployeePermissions(employeeId, permissionCodes)` | PUT | `/api/employees/{id}/permissions` |
-
-### Interest Rate Tiers API (`lib/api/interestRateTiers.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `getInterestRateTiers()` | GET | `/api/interest-rate-tiers` |
-| `createTier(payload)` | POST | `/api/interest-rate-tiers` |
-| `updateTier(id, payload)` | PUT | `/api/interest-rate-tiers/{id}` |
-| `deleteTier(id)` | DELETE | `/api/interest-rate-tiers/{id}` |
-| `applyTier(id)` | POST | `/api/interest-rate-tiers/{id}/apply` |
-
-### Bank Margins API (`lib/api/bankMargins.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `getBankMargins()` | GET | `/api/bank-margins` |
-| `updateBankMargin(id, margin)` | PUT | `/api/bank-margins/{id}` |
 
 ---
 
@@ -602,13 +386,8 @@ interface AuthState {
 |---|---|---|
 | `useAppDispatch` | Redux | Typed `AppDispatch` hook |
 | `useAppSelector` | Redux | Typed `RootState` selector hook |
-| `useEmployees(filters?)` | React Query | Fetch employees with server-side filters; query key: `['employees', filters]` |
-| `useEmployee(id)` | React Query | Fetch single employee; query key: `['employee', id]`; disabled when `id <= 0` |
-| `useMutationWithRedirect(options)` | React Query | `useMutation` + query invalidation + `navigate` on success |
-| `usePagination(items, pageSize)` | Local state | Slice an array into pages; returns `{ page, setPage, totalPages, paginatedItems }` |
-| `useCardRequests(filters?)` | React Query | Fetch card requests; query key: `['card-requests', filters]` |
-| `useApproveCardRequest()` | React Query | Mutation: PUT approve; invalidates `['card-requests']` on success |
-| `useRejectCardRequest()` | React Query | Mutation: PUT reject with reason; invalidates `['card-requests']` on success |
+| `useEmployees()` | React Query | Fetch all employees; cached under key `['employees']` |
+| `useEmployee(id)` | React Query | Fetch single employee; cached under key `['employee', id]`; disabled when `id <= 0` |
 
 ---
 
@@ -621,8 +400,7 @@ LoginRequest         { email: string; password: string }
 AuthTokens           { access_token: string; refresh_token: string }
 PasswordResetPayload { token: string; new_password: string; confirm_password: string }
 AccountActivationPayload { token: string; password: string; confirm_password: string }
-AuthUser             { id: number; email: string; role: string; permissions: string[];
-                       system_type: 'employee' | 'client' | null }
+AuthUser             { id: number; email: string; role: string; permissions: string[] }
 ```
 
 ### Employee Types (`types/employee.ts`)
@@ -644,82 +422,7 @@ UpdateEmployeeRequest { last_name?, gender?, phone?, address?, position?,
 
 EmployeeListResponse  { employees: Employee[]; total_count: number }
 EmployeeFilters       { email?, name?, position?, page?, page_size? }
-FilterCategory        = 'name' | 'email' | 'position'
-```
-
-### Role & Permission Types (`types/roles.ts`)
-
-```typescript
-Permission           { id: number; code: string; description: string; category: string }
-Role                 { id: number; name: string; description: string; permissions: string[] }
-CreateRolePayload    { name: string; description?: string; permission_codes?: string[] }
-```
-
-### Interest Rate Tier Types (`types/interestRateTiers.ts`)
-
-```typescript
-InterestRateTier     { id: number; amount_from: number; amount_to: number;
-                       fixed_rate: number; variable_base: number }
-CreateTierPayload    { amount_from: number; amount_to: number;
-                       fixed_rate: number; variable_base: number }
-```
-
-### Card Request Types (`types/cardRequest.ts`)
-
-```typescript
-CardRequestStatus    = 'pending' | 'approved' | 'rejected'   // lowercase — matches REST API
-
-CardRequest {
-  id: number; client_id: number; account_number: string
-  card_brand: string; card_type: string; card_name: string
-  status: CardRequestStatus; reason: string; approved_by: number
-  created_at: string; updated_at: string
-}
-
-CardRequestListResponse  { requests: CardRequest[]; total: number }
-CardRequestFilters       { status?: CardRequestStatus; page?: number; page_size?: number }
-```
-
-### Bank Margin Types (`types/bankMargins.ts`)
-
-```typescript
-BankMargin           { id: number; loan_type: string; margin: number;
-                       active: boolean; created_at: string; updated_at: string }
-```
-
-### Shared Constants (`lib/utils/constants.ts`)
-
-```typescript
-EMPLOYEE_ROLES   // array of { value, label } — roles selectable in forms
-GENDERS          // flat string array — ['Male', 'Female', 'Other', 'Misha']
-COUNTRY_CODES    // array of { code, label } — 30+ countries for PhoneInput
-formatRoleLabel(role: string): string
-```
-
-### Banking Constants (`lib/constants/banking.ts`)
-
-```typescript
-CARD_BRANDS          // [{ value: 'VISA'|'MASTERCARD'|'DINACARD'|'AMEX', label }]
-CARD_STATUSES        // [{ value: 'ACTIVE'|'BLOCKED'|'DEACTIVATED', label }]
-CARD_STATUS_LABELS   // Record<string, string> — display label per status
-CARD_STATUS_VARIANT  // Record<string, 'default'|'secondary'|'destructive'> — badge variant per status
-CARD_LIMITS          // { PERSONAL: 2, BUSINESS_PER_PERSON: 1 }
-```
-
-### Format Utilities (`lib/utils/format.ts`)
-
-```typescript
-maskCardNumber(cardNumber: string): string  // '4111111111111111' → '4111 **** **** 1111'
-formatAccountNumber(accountNumber: string): string  // 18-digit → 'XXX-XXXXXXXXXX-XX'
-formatCurrency(amount: number, currency: string): string
-```
-
-### Date Utilities (`lib/utils/dateFormatter.ts`)
-
-```typescript
-todayISO(): string                     // "YYYY-MM-DD" of today
-formatDateDisplay(ts: number): string  // Unix timestamp → "dd/mm/yyyy"
-formatDateLocale(ts: number): string   // Unix timestamp → locale string, "—" if falsy
+FilterCategory        = 'all' | 'first_name' | 'last_name' | 'email' | 'position'
 ```
 
 ---
@@ -735,63 +438,51 @@ All defined in `lib/utils/validation.ts` using Zod.
 | `loginSchema` | LoginForm | `{email, password}` |
 | `passwordResetSchema` | PasswordResetForm | `{token, new_password, confirm_password}` — passwords must match |
 | `activationSchema` | ActivationForm | `{token, password, confirm_password}` — passwords must match |
-| `createEmployeeSchema` | EmployeeCreateForm | All required fields + JMBG 13-digit regex |
-| `updateEmployeeSchema` | EmployeeEditForm | All optional; JMBG `/^\d{13}$/` if provided |
-| `authorizedPersonSchema` | AuthorizedPersonForm | first_name, last_name, date_of_birth (required), gender (optional), email, phone, address |
+| `createEmployeeSchema` | EmployeeForm (create) | All required fields + JMBG 13-digit regex |
+| `updateEmployeeSchema` | EmployeeForm (edit) | All optional; JMBG `/^\d{13}$/` if provided |
 
 ---
 
 ## 12. Test Coverage
 
-_Measured: 2026-03-25 — 107 test suites, 485 tests, all passing._
+_Measured: 2026-03-12 — 25 test suites, 118 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **78.22%** |
-| **Branches** | **60.23%** |
-| **Functions** | **57.06%** |
-| **Lines** | **79.68%** |
+| **Statements** | **89.64%** |
+| **Branches** | **68.53%** |
+| **Functions** | **83.33%** |
+| **Lines** | **90.33%** |
 
-> Testing covers approximately **~68% of the project** (average across all four metrics). The lower coverage relative to earlier snapshots reflects the large number of new pages, hooks, and API modules added since the last measurement, many of which are not yet fully tested.
+> Testing covers approximately **~87% of the project** (average across all four metrics).
 
 ### Coverage by Module
 
 | Module | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|
-| `components/auth` | 100% | 75% | 100% | 100% |
-| `components/cards` | ~87% | ~67% | ~69% | ~88% |
-| `components/employees` | ~93% | ~77% | ~79% | ~94% |
-| `components/layout` | ~95% | 100% | ~67% | ~95% |
+| `components/auth` | 100% | 80.55% | 100% | 100% |
+| `components/employees` | 86.06% | 69.31% | 74.35% | 87.71% |
+| `components/layout` | 91.66% | 100% | 50% | 91.66% |
 | `components/shared` | 100% | 100% | 100% | 100% |
-| `hooks` | ~70% | ~40% | ~50% | ~72% |
-| `lib/api` | 46.52% | 0% | 40.62% | 51.62% |
-| `lib/api/auth.ts` | 100% | 100% | 100% | 100% |
-| `lib/api/roles.ts` | 100% | 100% | 100% | 100% |
-| `lib/api/interestRateTiers.ts` | 100% | 100% | 100% | 100% |
-| `lib/api/bankMargins.ts` | 100% | 100% | 100% | 100% |
-| `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
-| `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
-| `pages` | 81.50% | 58.45% | 50.27% | 83.64% |
-| `pages/AdminCardRequestsPage.tsx` | 96.66% | 61.11% | 85.71% | 96.55% |
-| `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
+| `components/ui` | 91.11% | 100% | 75% | 90.47% |
+| `hooks` | 100% | 100% | 100% | 100% |
+| `lib/api` | 60% | 0% | 75% | 60% |
+| `lib/utils` | 90% | 100% | 66.66% | 90% |
+| `pages` | 88.81% | 58.73% | 87.5% | 91.11% |
 | `store` | 100% | 100% | 100% | 100% |
 | `store/selectors` | 100% | 50% | 100% | 100% |
-| `store/slices/authSlice.ts` | 98.14% | 76.92% | 100% | 98.14% |
+| `store/slices` | 97.67% | 50% | 100% | 97.67% |
 
 ### Notable Coverage Gaps
 
 | File | Gap |
 |---|---|
 | `lib/api/axios.ts` | 20% statements — axios interceptors (token refresh flow) untested |
-| `lib/api/accounts.ts` | 23.33% statements — most account API calls untested |
-| `lib/api/loans.ts` | 19.04% statements — most loan API calls untested |
-| `lib/api/payments.ts` | 21.21% statements — most payment API calls untested |
+| `pages/EmployeeListPage.tsx` | 69% statements — pagination and filter interactions partially covered |
+| `components/employees/EmployeeForm.tsx` | 81% — EditForm admin read-only branches, country code path |
 | `store/slices/authSlice.ts` | Branch 50% — error path in `logoutThunk` uncovered |
-| `store/selectors/authSelectors.ts` | Branch 50% — null-user path in one selector |
-| `hooks/usePayments.ts` | 31.03% statements — query hooks untested |
-| `hooks/useRecipientAutofill.ts` | 30% statements — autofill hook untested |
 
 ### Test Infrastructure
 
@@ -800,4 +491,3 @@ _Measured: 2026-03-25 — 107 test suites, 485 tests, all passing._
 - **`createMockAuthUser(overrides?)`** — generates mock `AuthUser` objects
 - **`createMockAuthState(overrides?)`** — generates mock `AuthState` objects
 - **`createMockEmployee(overrides?)`** — generates mock `Employee` objects
-- **`createMockCardRequest(overrides?)`** — generates mock `CardRequest` objects

@@ -24,12 +24,11 @@ export default defineConfig([
       '@typescript-eslint/no-explicit-any': 'error',
     },
   },
-  // Allow require() and `as any` in test files (common mocking patterns)
+  // Allow require() in jest.mock() factory callbacks inside test files
   {
     files: ['**/*.test.{ts,tsx}', 'src/__tests__/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   prettier,
