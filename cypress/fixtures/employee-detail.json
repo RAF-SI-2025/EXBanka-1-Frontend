@@ -1,0 +1,17 @@
+{
+  "id": 7,
+  "first_name": "Marko",
+  "last_name": "Marković",
+  "email": "marko.markovic@banka.rs",
+  "phone": "+381641234567",
+  "address": "Knez Mihailova 10, Beograd",
+  "username": "mmarkovic",
+  "date_of_birth": 631152000,
+  "gender": "MALE",
+  "jmbg": "0101990710123",
+  "position": "Analyst",
+  "department": "Retail",
+  "role": "EmployeeBasic",
+  "active": true,
+  "permissions": []
+}

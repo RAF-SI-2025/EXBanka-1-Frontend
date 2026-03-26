@@ -1,0 +1,39 @@
+{
+  "employees": [
+    {
+      "id": 7,
+      "first_name": "Marko",
+      "last_name": "Marković",
+      "email": "marko.markovic@banka.rs",
+      "phone": "+381641234567",
+      "address": "Knez Mihailova 10, Beograd",
+      "username": "mmarkovic",
+      "date_of_birth": 631152000,
+      "gender": "MALE",
+      "jmbg": "0101990710123",
+      "position": "Analyst",
+      "department": "Retail",
+      "role": "EmployeeBasic",
+      "active": true,
+      "permissions": []
+    },
+    {
+      "id": 8,
+      "first_name": "Ana",
+      "last_name": "Petrović",
+      "email": "ana.petrovic@banka.rs",
+      "phone": "+381659876543",
+      "address": "Bulevar Kralja Aleksandra 50, Niš",
+      "username": "apetrovic",
+      "date_of_birth": 594086400,
+      "gender": "FEMALE",
+      "jmbg": "2011988715321",
+      "position": "Agent",
+      "department": "Operations",
+      "role": "EmployeeAgent",
+      "active": true,
+      "permissions": ["clients.read"]
+    }
+  ],
+  "total_count": 2
+}
