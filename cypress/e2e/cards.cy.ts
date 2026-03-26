@@ -221,5 +221,79 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
 
       cy.url().should('include', '/admin/accounts')
     })
+
+    // Scenario 31: Odblokiranje kartice od strane zaposlenog
+    it('should unblock a blocked card from admin panel (Scenario 31)', () => {
+      cy.intercept('GET', '/api/accounts/1', { fixture: 'admin-account.json' }).as('getAccount')
+      cy.intercept('GET', '/api/cards?account_number=265000000000000011', {
+        fixture: 'admin-cards.json',
+      }).as('getAccountCards')
+      cy.intercept('POST', '/api/cards/11/unblock', {
+        statusCode: 200,
+        body: {},
+      }).as('unblockCard')
+
+      cy.loginAsEmployee('/admin/accounts/1/cards')
+      cy.wait('@getAccount')
+      cy.wait('@getAccountCards')
+
+      // Register the updated cards intercept AFTER initial load to avoid LIFO conflict
+      cy.intercept('GET', '/api/cards?account_number=265000000000000011', {
+        body: {
+          cards: [
+            {
+              id: 10,
+              card_number: '4111111111111111',
+              card_type: 'DEBIT',
+              card_name: 'Visa Debit',
+              brand: 'VISA',
+              created_at: '2026-01-20T10:00:00Z',
+              expires_at: '2029-01-20T10:00:00Z',
+              account_number: '265000000000000011',
+              cvv: '123',
+              limit: 100000,
+              status: 'ACTIVE',
+              owner_name: 'MARKO JOVANOVIĆ',
+            },
+            {
+              id: 11,
+              card_number: '5500000000000004',
+              card_type: 'DEBIT',
+              card_name: 'MasterCard Debit',
+              brand: 'MASTERCARD',
+              created_at: '2026-02-15T10:00:00Z',
+              expires_at: '2029-02-15T10:00:00Z',
+              account_number: '265000000000000011',
+              cvv: '456',
+              limit: 100000,
+              status: 'ACTIVE',
+              owner_name: 'MARKO JOVANOVIĆ',
+            },
+          ],
+        },
+      }).as('getAccountCardsUpdated')
+
+      // Page title shows account name
+      cy.contains('h1', 'Cards').should('be.visible')
+
+      // The BLOCKED MasterCard (id=11) should show "Unblock" button
+      cy.contains('button', 'Unblock').should('be.visible')
+
+      // Click "Unblock"
+      cy.contains('button', 'Unblock').click()
+
+      // Confirmation dialog
+      cy.contains('Unblock Card?').should('be.visible')
+      cy.contains('Are you sure you want to unblock this card?').should('be.visible')
+
+      // Confirm
+      cy.get('[role="dialog"]').within(() => {
+        cy.contains('button', 'Unblock').click()
+      })
+      cy.wait('@unblockCard')
+
+      // After unblock, card list refreshes — both cards now ACTIVE
+      cy.wait('@getAccountCardsUpdated')
+    })
   })
 })
