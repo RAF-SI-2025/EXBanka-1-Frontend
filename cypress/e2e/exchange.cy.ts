@@ -161,4 +161,108 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
       cy.contains('Cannot convert to same currency').should('be.visible')
     })
   })
+
+  describe('Currency Conversion During Transfer (Scenario 26)', () => {
+    beforeEach(() => {
+      cy.intercept('GET', '/api/me/accounts', { fixture: 'transfer-accounts.json' }).as(
+        'getAccounts'
+      )
+      cy.intercept('GET', '/api/me', {
+        body: {
+          id: 42,
+          first_name: 'Marko',
+          last_name: 'Jovanović',
+          email: 'marko@example.com',
+        },
+      }).as('getMe')
+      cy.intercept('GET', '/api/me/payments*', {
+        body: { payments: [], total: 0 },
+      }).as('getPayments')
+      // Stub exchange rate lookup for RSD→EUR
+      cy.intercept('GET', '/api/exchange/rates/RSD/EUR', {
+        body: {
+          from_currency: 'RSD',
+          to_currency: 'EUR',
+          buy_rate: 116.5,
+          sell_rate: 117.8,
+          updated_at: '2026-03-26T08:00:00Z',
+        },
+      }).as('getExchangeRate')
+      cy.loginAsClient('/transfers/new')
+    })
+
+    // Scenario 26: Konverzija valute tokom transfera
+    it('should display exchange rate and commission on cross-currency transfer (Scenario 26)', () => {
+      cy.intercept('POST', '/api/me/transfers', {
+        statusCode: 201,
+        body: {
+          id: 205,
+          from_account_number: '265000000000000011',
+          to_account_number: '265000000000000022',
+          initial_amount: 11650,
+          final_amount: 100,
+          exchange_rate: 116.5,
+          commission: 0,
+          timestamp: '2026-03-26T12:00:00Z',
+        },
+      }).as('createTransfer')
+      cy.intercept('POST', '/api/me/transfers/205/execute', {
+        statusCode: 200,
+        body: {
+          id: 205,
+          from_account_number: '265000000000000011',
+          to_account_number: '265000000000000022',
+          initial_amount: 11650,
+          final_amount: 100,
+          exchange_rate: 116.5,
+          commission: 0,
+          timestamp: '2026-03-26T12:00:00Z',
+        },
+      }).as('executeTransfer')
+
+      cy.wait('@getAccounts')
+
+      // Select RSD source account
+      cy.contains('Select account').click()
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Tekući RSD')
+        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
+        .trigger('click', { bubbles: true })
+      cy.get('[data-base-ui-inert]').should('not.exist')
+
+      // Select EUR destination account (different currency)
+      cy.contains('Select account').click()
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Devizni EUR')
+        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
+        .trigger('click', { bubbles: true })
+      cy.get('[data-base-ui-inert]').should('not.exist')
+
+      cy.get('#amount').clear().type('11650')
+      cy.contains('button', 'Make Transfer').click()
+
+      // Wait for exchange rate query to resolve
+      cy.wait('@getExchangeRate')
+
+      // Confirmation step — verify exchange rate details
+      cy.contains('Confirm Transfer').should('be.visible')
+
+      // Rate should show the exchange rate (116.5)
+      cy.contains('.text-muted-foreground', 'Rate').parent().should('contain.text', '116.5')
+
+      // Commission should be displayed
+      cy.contains('Commission').should('be.visible')
+
+      // Final Amount should be displayed (converted amount in target currency)
+      cy.contains('Final Amount').should('be.visible')
+
+      // Complete the transfer
+      cy.contains('button', 'Confirm').click()
+      cy.wait('@createTransfer')
+
+      cy.get('#verification-code').type('123456')
+      cy.contains('button', 'Confirm').click()
+      cy.wait('@executeTransfer')
+
+      cy.contains('Transfer successful!').should('be.visible')
+    })
+  })
 })
