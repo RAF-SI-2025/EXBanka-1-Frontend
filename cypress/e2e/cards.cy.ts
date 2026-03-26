@@ -182,4 +182,44 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
       cy.contains('button', 'Activate').should('not.exist')
     })
   })
+
+  describe('Employee: Card Management (Scenarios 27, 31)', () => {
+    // Scenario 27: Automatsko kreiranje kartice prilikom otvaranja računa
+    it('should create a card automatically when account is created with card option (Scenario 27)', () => {
+      cy.intercept('GET', '/api/clients?*', { fixture: 'clients.json' }).as('searchClients')
+      cy.intercept('POST', '/api/accounts', {
+        statusCode: 201,
+        fixture: 'create-account-response.json',
+      }).as('createAccount')
+      cy.intercept('GET', '/api/accounts?*', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', '/api/clients', { fixture: 'clients.json' }).as('getAllClients')
+      cy.loginAsEmployee('/accounts/new')
+
+      // Search and select client
+      cy.get('input[placeholder="Search client by name..."]').type('Marko')
+      cy.wait('@searchClients')
+      cy.contains('li', 'Marko Jovanović').should('be.visible').click()
+
+      // Check "Create Card" checkbox
+      cy.get('#create_card').check()
+
+      // Select card brand
+      cy.get('[aria-label="Card Brand"]').click()
+      cy.contains('[role="option"]', 'Visa').realClick()
+
+      // Submit account creation
+      cy.contains('button', 'Create Account').click()
+      cy.wait('@createAccount')
+
+      // Verify request includes card creation fields
+      cy.get('@createAccount')
+        .its('request.body')
+        .should((body) => {
+          expect(body.create_card).to.equal(true)
+          expect(body.card_brand).to.equal('visa')
+        })
+
+      cy.url().should('include', '/admin/accounts')
+    })
+  })
 })
