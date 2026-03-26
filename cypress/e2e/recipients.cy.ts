@@ -12,6 +12,7 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
       },
     }).as('getMe')
     cy.loginAsClient('/payments/recipients')
+    cy.wait('@getRecipients')
   })
 
   // Scenario 21: Dodavanje novog primaoca plaćanja
@@ -55,8 +56,6 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
         ],
       },
     }).as('getRecipientsUpdated')
-
-    cy.wait('@getRecipients')
 
     // Verify page title and existing recipients
     cy.contains('h1', 'Saved Recipients').should('be.visible')
@@ -124,8 +123,6 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
       },
     }).as('getRecipientsUpdated')
 
-    cy.wait('@getRecipients')
-
     // Click "Edit" on the first recipient (Jelena Marković)
     cy.contains('tr', 'Jelena Marković').within(() => {
       cy.contains('button', 'Edit').click()
@@ -178,8 +175,6 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
         ],
       },
     }).as('getRecipientsUpdated')
-
-    cy.wait('@getRecipients')
 
     // Both recipients visible
     cy.contains('Jelena Marković').should('be.visible')
