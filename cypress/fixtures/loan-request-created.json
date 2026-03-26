@@ -1,0 +1,18 @@
+{
+  "id": 10,
+  "client_id": 42,
+  "loan_type": "CASH",
+  "interest_type": "FIXED",
+  "account_number": "265000000000000011",
+  "amount": 300000,
+  "interest_rate": 0,
+  "currency_code": "RSD",
+  "purpose": "Home renovation",
+  "monthly_salary": 120000,
+  "employment_status": "EMPLOYED",
+  "employment_period": 5,
+  "repayment_period": 36,
+  "phone": "+381641234567",
+  "status": "PENDING",
+  "created_at": "2026-03-26T10:00:00Z"
+}
