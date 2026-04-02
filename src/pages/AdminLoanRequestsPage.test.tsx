@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { AdminLoanRequestsPage } from '@/pages/AdminLoanRequestsPage'
@@ -132,5 +132,65 @@ describe('AdminLoanRequestsPage', () => {
     } as any)
     renderWithProviders(<AdminLoanRequestsPage />)
     expect(screen.getByText(/no requests/i)).toBeInTheDocument()
+  })
+
+  it('calls useLoanRequests with page 1 and page_size 10 on initial load', () => {
+    renderWithProviders(<AdminLoanRequestsPage />)
+    expect(useLoansHook.useLoanRequests).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, page_size: 10 })
+    )
+  })
+
+  it('shows pagination controls', () => {
+    renderWithProviders(<AdminLoanRequestsPage />)
+    expect(screen.getByRole('button', { name: /previous page/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next page/i })).toBeInTheDocument()
+  })
+
+  it('shows page 1 of 2 when total > PAGE_SIZE', () => {
+    jest.mocked(useLoansHook.useLoanRequests).mockReturnValue({
+      data: { requests: [mockRequest], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminLoanRequestsPage />)
+    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument()
+  })
+
+  it('calls useLoanRequests with page 2 when next arrow is clicked', async () => {
+    jest.mocked(useLoansHook.useLoanRequests).mockReturnValue({
+      data: { requests: [mockRequest], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminLoanRequestsPage />)
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() =>
+      expect(useLoansHook.useLoanRequests).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2, page_size: 10 })
+      )
+    )
+  })
+
+  it('resets to page 1 when filter changes', async () => {
+    jest.mocked(useLoansHook.useLoanRequests).mockReturnValue({
+      data: { requests: [mockRequest], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminLoanRequestsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() =>
+      expect(useLoansHook.useLoanRequests).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2 })
+      )
+    )
+
+    const accountInput = screen.getByPlaceholderText(/account number/i)
+    fireEvent.change(accountInput, { target: { value: 'ACC-001' } })
+
+    await waitFor(() =>
+      expect(useLoansHook.useLoanRequests).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, account_number: 'ACC-001' })
+      )
+    )
   })
 })

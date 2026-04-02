@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination'
 
@@ -8,34 +9,34 @@ interface PaginationControlsProps {
 }
 
 export function PaginationControls({ page, totalPages, onPageChange }: PaginationControlsProps) {
-  if (totalPages <= 1) return null
-
   return (
-    <Pagination className="mt-4 justify-center">
+    <Pagination className="mt-6">
       <PaginationContent>
         <PaginationItem>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
+            aria-label="Previous page"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
           >
-            Previous
+            <ChevronLeft className="h-4 w-4" />
           </Button>
         </PaginationItem>
         <PaginationItem>
-          <span className="text-sm text-muted-foreground px-2">
+          <span className="text-sm text-muted-foreground px-4">
             Page {page} of {totalPages}
           </span>
         </PaginationItem>
         <PaginationItem>
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="icon"
+            aria-label="Next page"
             disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}
           >
-            Next
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </PaginationItem>
       </PaginationContent>

@@ -70,7 +70,7 @@ describe('EmployeeListPage', () => {
 
     await waitFor(() =>
       expect(employeesApi.getEmployees).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'Jane', page: 1, page_size: 20 })
+        expect.objectContaining({ name: 'Jane', page: 1, page_size: 10 })
       )
     )
     await screen.findByText('Jane Doe')
@@ -98,7 +98,7 @@ describe('EmployeeListPage', () => {
 
     await waitFor(() =>
       expect(employeesApi.getEmployees).toHaveBeenLastCalledWith(
-        expect.objectContaining({ page: 1, page_size: 20 })
+        expect.objectContaining({ page: 1, page_size: 10 })
       )
     )
     await screen.findByText('John Smith')
@@ -126,7 +126,7 @@ describe('EmployeeListPage', () => {
       preloadedState: { auth: createMockAuthState() },
     })
     await screen.findByText('Jane Doe')
-    expect(employeesApi.getEmployees).toHaveBeenCalledWith({ page: 1, page_size: 20 })
+    expect(employeesApi.getEmployees).toHaveBeenCalledWith({ page: 1, page_size: 10 })
   })
 
   it('calls API with email filter when typing in email field', async () => {
@@ -147,7 +147,7 @@ describe('EmployeeListPage', () => {
 
     await waitFor(() =>
       expect(employeesApi.getEmployees).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'john@test.com', page: 1, page_size: 20 })
+        expect.objectContaining({ email: 'john@test.com', page: 1, page_size: 10 })
       )
     )
   })
@@ -170,7 +170,7 @@ describe('EmployeeListPage', () => {
 
     await waitFor(() =>
       expect(employeesApi.getEmployees).toHaveBeenCalledWith(
-        expect.objectContaining({ position: 'Manager', page: 1, page_size: 20 })
+        expect.objectContaining({ position: 'Manager', page: 1, page_size: 10 })
       )
     )
     await screen.findByText('John Smith')
@@ -199,11 +199,11 @@ describe('EmployeeListPage', () => {
 })
 
 describe('EmployeeListPage — pagination', () => {
-  const employees25 = Array.from({ length: 25 }, (_, i) =>
+  const employees15 = Array.from({ length: 15 }, (_, i) =>
     createMockEmployee({
       id: i + 1,
-      first_name: `Employee`,
-      last_name: i < 20 ? `PageOne${i + 1}` : `PageTwo${i - 19}`,
+      first_name: 'Employee',
+      last_name: i < 10 ? `PageOne${i + 1}` : `PageTwo${i - 9}`,
       email: `emp${i + 1}@test.com`,
     })
   )
@@ -212,9 +212,9 @@ describe('EmployeeListPage — pagination', () => {
     jest.clearAllMocks()
     jest.mocked(employeesApi.getEmployees).mockImplementation(async (filters = {}) => {
       if (filters.page === 2) {
-        return { employees: employees25.slice(20), total_count: 25 }
+        return { employees: employees15.slice(10), total_count: 15 }
       }
-      return { employees: employees25.slice(0, 20), total_count: 25 }
+      return { employees: employees15.slice(0, 10), total_count: 15 }
     })
   })
 
@@ -223,27 +223,27 @@ describe('EmployeeListPage — pagination', () => {
       preloadedState: { auth: createMockAuthState() },
     })
     await screen.findByText('Employee PageOne1')
-    expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /previous page/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next page/i })).toBeInTheDocument()
     expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument()
   })
 
-  it('shows the first 20 employees on page 1', async () => {
+  it('shows the first 10 employees on page 1', async () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
     await screen.findByText('Employee PageOne1')
-    expect(screen.getByText('Employee PageOne20')).toBeInTheDocument()
+    expect(screen.getByText('Employee PageOne10')).toBeInTheDocument()
     expect(screen.queryByText('Employee PageTwo1')).not.toBeInTheDocument()
   })
 
-  it('navigates to page 2 showing the remaining 5 employees when Next is clicked', async () => {
+  it('navigates to page 2 showing the remaining 5 employees when next is clicked', async () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
     await screen.findByText('Employee PageOne1')
 
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
 
     await screen.findByText('Employee PageTwo1')
     expect(screen.getByText('Employee PageTwo5')).toBeInTheDocument()
@@ -251,16 +251,16 @@ describe('EmployeeListPage — pagination', () => {
     expect(screen.getByText(/page 2 of 2/i)).toBeInTheDocument()
   })
 
-  it('navigates back to page 1 when Previous is clicked from page 2', async () => {
+  it('navigates back to page 1 when previous is clicked from page 2', async () => {
     renderWithProviders(<EmployeeListPage />, {
       preloadedState: { auth: createMockAuthState() },
     })
     await screen.findByText('Employee PageOne1')
 
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
     await screen.findByText(/page 2 of 2/i)
 
-    fireEvent.click(screen.getByRole('button', { name: /previous/i }))
+    fireEvent.click(screen.getByRole('button', { name: /previous page/i }))
 
     await screen.findByText('Employee PageOne1')
     expect(screen.queryByText('Employee PageTwo1')).not.toBeInTheDocument()

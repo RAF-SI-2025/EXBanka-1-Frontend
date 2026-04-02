@@ -1,79 +1,51 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PortfolioPage } from '@/pages/PortfolioPage'
-import * as usePortfolioHook from '@/hooks/usePortfolio'
-import * as useOrdersHook from '@/hooks/useOrders'
-import * as useAccountsHook from '@/hooks/useAccounts'
-import { createMockHolding } from '@/__tests__/fixtures/portfolio-fixtures'
-import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
+import * as portfolioApi from '@/lib/api/portfolio'
+import {
+  createMockHolding,
+  createMockPortfolioSummary,
+} from '@/__tests__/fixtures/portfolio-fixtures'
 
-jest.mock('@/hooks/usePortfolio')
-jest.mock('@/hooks/useOrders')
-jest.mock('@/hooks/useAccounts')
+jest.mock('@/lib/api/portfolio')
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  jest.mocked(portfolioApi.getPortfolio).mockResolvedValue({
+    holdings: [createMockHolding({ id: 1, ticker: 'AAPL' })],
+    total_count: 1,
+  })
+  jest.mocked(portfolioApi.getPortfolioSummary).mockResolvedValue(createMockPortfolioSummary())
+  jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue(createMockHolding())
+  jest.mocked(portfolioApi.exerciseOption).mockResolvedValue(createMockHolding())
+})
 
 describe('PortfolioPage', () => {
-  const stockHolding = createMockHolding({
-    id: 1,
-    ticker: 'AAPL',
-    quantity: 10,
-    security_type: 'stock',
-  })
-  const accounts = [createMockAccount({ id: 1 })]
-  const mutateFn = jest.fn()
-  const makePublicMutateFn = jest.fn()
-  const exerciseMutateFn = jest.fn()
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-    jest.mocked(usePortfolioHook.usePortfolio).mockReturnValue({
-      data: { holdings: [stockHolding], total_count: 1 },
-      isLoading: false,
-    } as any)
-    jest.mocked(usePortfolioHook.usePortfolioSummary).mockReturnValue({
-      data: { total_value: '1750.00', total_profit_loss: '250.00' },
-      isLoading: false,
-    } as any)
-    jest
-      .mocked(usePortfolioHook.useMakePublic)
-      .mockReturnValue({ mutate: makePublicMutateFn, isPending: false } as any)
-    jest
-      .mocked(usePortfolioHook.useExerciseOption)
-      .mockReturnValue({ mutate: exerciseMutateFn, isPending: false } as any)
-    jest
-      .mocked(useOrdersHook.useCreateOrder)
-      .mockReturnValue({ mutate: mutateFn, isPending: false } as any)
-    jest
-      .mocked(useAccountsHook.useTradingAccounts)
-      .mockReturnValue({ data: { accounts, total: 1 }, isLoading: false } as any)
-  })
-
-  it('renders page heading', () => {
+  it('renders page title', () => {
     renderWithProviders(<PortfolioPage />)
-    expect(screen.getByText(/portfolio/i)).toBeInTheDocument()
+    expect(screen.getByText('Portfolio')).toBeInTheDocument()
   })
 
-  it('renders holdings in the table', () => {
+  it('displays holdings on load', async () => {
     renderWithProviders(<PortfolioPage />)
-    expect(screen.getByText('AAPL')).toBeInTheDocument()
+    await screen.findByText('AAPL')
+  })
+
+  it('displays summary card', async () => {
+    renderWithProviders(<PortfolioPage />)
+    await screen.findByText('25000.00')
+    expect(screen.getByText('Total Value')).toBeInTheDocument()
   })
 
   it('shows loading state', () => {
-    jest
-      .mocked(usePortfolioHook.usePortfolio)
-      .mockReturnValue({ data: undefined, isLoading: true } as any)
+    jest.mocked(portfolioApi.getPortfolio).mockReturnValue(new Promise(() => {}))
     renderWithProviders(<PortfolioPage />)
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
   })
 
-  it('opens sell dialog when Sell is clicked', () => {
+  it('shows empty state', async () => {
+    jest.mocked(portfolioApi.getPortfolio).mockResolvedValue({ holdings: [], total_count: 0 })
     renderWithProviders(<PortfolioPage />)
-    fireEvent.click(screen.getByRole('button', { name: /sell/i }))
-    expect(screen.getByText(/sell aapl/i)).toBeInTheDocument()
-  })
-
-  it('opens make-public dialog when Make Public is clicked', () => {
-    renderWithProviders(<PortfolioPage />)
-    fireEvent.click(screen.getByRole('button', { name: /make public/i }))
-    expect(screen.getByText(/make shares public.*aapl/i)).toBeInTheDocument()
+    await screen.findByText('No holdings found.')
   })
 })

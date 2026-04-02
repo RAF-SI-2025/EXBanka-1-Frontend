@@ -20,14 +20,14 @@ import {
 import { inferOrderType, calculateApproxPrice } from '@/lib/utils/trading'
 import type { Holding } from '@/types/portfolio'
 import type { Account } from '@/types/account'
-import type { CreateOrderRequest } from '@/types/order'
+import type { CreateOrderPayload } from '@/types/order'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   holding: Holding
   accounts: Account[]
-  onSubmit: (payload: CreateOrderRequest) => void
+  onSubmit: (payload: CreateOrderPayload) => void
   loading: boolean
 }
 

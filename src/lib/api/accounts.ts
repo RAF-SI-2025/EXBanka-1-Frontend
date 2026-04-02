@@ -8,13 +8,18 @@ import type {
   UpdateAccountLimitsRequest,
 } from '@/types/account'
 
-export async function getClientAccounts(clientId: number): Promise<AccountListResponse> {
-  const response = await apiClient.get<AccountListResponse>(`/api/accounts/client/${clientId}`)
+export async function getClientAccounts(): Promise<AccountListResponse> {
+  const response = await apiClient.get<AccountListResponse>('/api/me/accounts')
   return response.data
 }
 
 export async function getAccount(id: number): Promise<Account> {
   const response = await apiClient.get<Account>(`/api/accounts/${id}`)
+  return response.data
+}
+
+export async function getClientAccount(id: number): Promise<Account> {
+  const response = await apiClient.get<Account>(`/api/me/accounts/${id}`)
   return response.data
 }
 

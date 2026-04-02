@@ -15,7 +15,7 @@ describe('CardListPage', () => {
       isLoading: false,
       error: null,
     } as any)
-    jest.mocked(useCardsHook.useBlockCard).mockReturnValue({
+    jest.mocked(useCardsHook.useTemporaryBlockCard).mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
     } as any)
@@ -46,6 +46,6 @@ describe('CardListPage', () => {
     renderWithProviders(<CardListPage />)
     const blockButton = screen.getByText('Block')
     await userEvent.click(blockButton)
-    expect(screen.getByText('Block Card?')).toBeInTheDocument()
+    expect(screen.getByText('Temporarily Block Card?')).toBeInTheDocument()
   })
 })

@@ -9,13 +9,13 @@ import type {
 export async function generateVerificationCode(
   payload: GenerateVerificationRequest
 ): Promise<GenerateVerificationResponse> {
-  const { data } = await apiClient.post('/api/verification', payload)
+  const { data } = await apiClient.post('/api/me/verification', payload)
   return data
 }
 
 export async function validateVerificationCode(
   payload: ValidateVerificationRequest
 ): Promise<ValidateVerificationResponse> {
-  const { data } = await apiClient.post('/api/verification/validate', payload)
+  const { data } = await apiClient.post('/api/me/verification/validate', payload)
   return data
 }

@@ -22,6 +22,10 @@ describe('NewPaymentPage', () => {
       mutate: jest.fn(),
       isPending: false,
     } as any)
+    jest.mocked(usePaymentsHook.useExecutePayment).mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as any)
   })
 
   it('renders payment form', () => {

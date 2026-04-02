@@ -23,7 +23,7 @@ describe('OtcPortalPage', () => {
       .mocked(useOtcHook.useBuyOtcOffer)
       .mockReturnValue({ mutate: buyMutateFn, isPending: false } as any)
     jest
-      .mocked(useAccountsHook.useTradingAccounts)
+      .mocked(useAccountsHook.useClientAccounts)
       .mockReturnValue({ data: { accounts, total: 1 }, isLoading: false } as any)
   })
 

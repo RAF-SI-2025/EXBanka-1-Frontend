@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useOtcOffers, useBuyOtcOffer } from '@/hooks/useOtc'
-import { useTradingAccounts } from '@/hooks/useAccounts'
+import { useClientAccounts } from '@/hooks/useAccounts'
 import { OtcOffersTable } from '@/components/otc/OtcOffersTable'
 import { BuyOtcDialog } from '@/components/otc/BuyOtcDialog'
 import type { OtcOffer } from '@/types/otc'
 
 export function OtcPortalPage() {
   const { data, isLoading } = useOtcOffers()
-  const { data: accountsData } = useTradingAccounts()
+  const { data: accountsData } = useClientAccounts()
   const { mutate: buyOffer, isPending } = useBuyOtcOffer()
   const [selectedOffer, setSelectedOffer] = useState<OtcOffer | null>(null)
 

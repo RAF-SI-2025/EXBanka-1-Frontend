@@ -18,9 +18,6 @@ describe('CardRequestPage', () => {
       .mocked(useCardsHook.useRequestCard)
       .mockReturnValue({ mutate: jest.fn(), isPending: false } as any)
     jest
-      .mocked(useCardsHook.useConfirmCardRequest)
-      .mockReturnValue({ mutate: jest.fn(), isPending: false } as any)
-    jest
       .mocked(useCardsHook.useRequestCardForAuthorizedPerson)
       .mockReturnValue({ mutate: jest.fn(), isPending: false } as any)
   })

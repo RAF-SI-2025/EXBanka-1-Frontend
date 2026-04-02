@@ -3,11 +3,9 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { CreateTransferPage } from '@/pages/CreateTransferPage'
 import * as useAccountsHook from '@/hooks/useAccounts'
 import * as useTransfersHook from '@/hooks/useTransfers'
-import * as useVerificationHook from '@/hooks/useVerification'
 
 jest.mock('@/hooks/useAccounts')
 jest.mock('@/hooks/useTransfers')
-jest.mock('@/hooks/useVerification')
 
 describe('CreateTransferPage', () => {
   beforeEach(() => {
@@ -38,11 +36,7 @@ describe('CreateTransferPage', () => {
       data: undefined,
       isSuccess: false,
     } as any)
-    jest.mocked(useVerificationHook.useGenerateVerification).mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-    } as any)
-    jest.mocked(useVerificationHook.useValidateVerification).mockReturnValue({
+    jest.mocked(useTransfersHook.useExecuteTransfer).mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
     } as any)

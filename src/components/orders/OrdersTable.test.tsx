@@ -4,8 +4,8 @@ import { createMockOrder } from '@/__tests__/fixtures/order-fixtures'
 
 describe('OrdersTable', () => {
   const orders = [
-    createMockOrder({ id: 1, asset_ticker: 'AAPL', direction: 'buy', status: 'pending' }),
-    createMockOrder({ id: 2, asset_ticker: 'MSFT', direction: 'sell', status: 'approved' }),
+    createMockOrder({ id: 1, ticker: 'AAPL', direction: 'buy', status: 'pending' }),
+    createMockOrder({ id: 2, ticker: 'MSFT', direction: 'sell', status: 'approved' }),
   ]
 
   it('renders table headers', () => {

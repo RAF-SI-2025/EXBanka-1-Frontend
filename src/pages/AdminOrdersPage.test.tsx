@@ -1,60 +1,55 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { AdminOrdersPage } from '@/pages/AdminOrdersPage'
-import * as useOrdersHook from '@/hooks/useOrders'
+import * as ordersApi from '@/lib/api/orders'
 import { createMockOrder } from '@/__tests__/fixtures/order-fixtures'
 
-jest.mock('@/hooks/useOrders')
+jest.mock('@/lib/api/orders')
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  jest.mocked(ordersApi.getAllOrders).mockResolvedValue({
+    orders: [createMockOrder({ id: 1, ticker: 'AAPL', status: 'pending' })],
+    total_count: 1,
+  })
+  jest.mocked(ordersApi.approveOrder).mockResolvedValue(createMockOrder({ status: 'approved' }))
+  jest.mocked(ordersApi.declineOrder).mockResolvedValue(createMockOrder({ status: 'declined' }))
+})
 
 describe('AdminOrdersPage', () => {
-  const orders = [
-    createMockOrder({ id: 1, asset_ticker: 'AAPL', status: 'pending' }),
-    createMockOrder({ id: 2, asset_ticker: 'MSFT', status: 'approved' }),
-  ]
-  const approveFn = jest.fn()
-  const declineFn = jest.fn()
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-    jest
-      .mocked(useOrdersHook.useAllOrders)
-      .mockReturnValue({ data: { orders, total_count: 2 }, isLoading: false } as any)
-    jest
-      .mocked(useOrdersHook.useApproveOrder)
-      .mockReturnValue({ mutate: approveFn, isPending: false } as any)
-    jest
-      .mocked(useOrdersHook.useDeclineOrder)
-      .mockReturnValue({ mutate: declineFn, isPending: false } as any)
+  it('renders page title', () => {
+    renderWithProviders(<AdminOrdersPage />)
+    expect(screen.getByText('Order Approval')).toBeInTheDocument()
   })
 
-  it('renders page heading', () => {
+  it('displays orders on load', async () => {
     renderWithProviders(<AdminOrdersPage />)
-    expect(screen.getByText(/order review/i)).toBeInTheDocument()
-  })
-
-  it('renders orders in the table', () => {
-    renderWithProviders(<AdminOrdersPage />)
-    expect(screen.getByText('AAPL')).toBeInTheDocument()
-    expect(screen.getByText('MSFT')).toBeInTheDocument()
+    await screen.findByText('AAPL')
   })
 
   it('shows loading state', () => {
-    jest
-      .mocked(useOrdersHook.useAllOrders)
-      .mockReturnValue({ data: undefined, isLoading: true } as any)
+    jest.mocked(ordersApi.getAllOrders).mockReturnValue(new Promise(() => {}))
     renderWithProviders(<AdminOrdersPage />)
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
   })
 
-  it('calls approve when Approve is clicked', () => {
+  it('shows empty state', async () => {
+    jest.mocked(ordersApi.getAllOrders).mockResolvedValue({ orders: [], total_count: 0 })
     renderWithProviders(<AdminOrdersPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: /approve/i })[0])
-    expect(approveFn).toHaveBeenCalledWith(1)
+    await screen.findByText('No orders found.')
   })
 
-  it('calls decline when Decline is clicked', () => {
+  it('calls approveOrder when Approve is clicked', async () => {
     renderWithProviders(<AdminOrdersPage />)
-    fireEvent.click(screen.getAllByRole('button', { name: /decline/i })[0])
-    expect(declineFn).toHaveBeenCalledWith(1)
+    await screen.findByText('AAPL')
+    fireEvent.click(screen.getByRole('button', { name: /approve/i }))
+    await waitFor(() => expect(ordersApi.approveOrder).toHaveBeenCalledWith(1))
+  })
+
+  it('calls declineOrder when Decline is clicked', async () => {
+    renderWithProviders(<AdminOrdersPage />)
+    await screen.findByText('AAPL')
+    fireEvent.click(screen.getByRole('button', { name: /decline/i }))
+    await waitFor(() => expect(ordersApi.declineOrder).toHaveBeenCalledWith(1))
   })
 })

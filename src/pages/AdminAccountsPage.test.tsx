@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { AdminAccountsPage } from '@/pages/AdminAccountsPage'
@@ -116,5 +116,65 @@ describe('AdminAccountsPage', () => {
     expect(screen.getByText('Ana Anić')).toBeInTheDocument()
     expect(screen.getByText('Marko Marković')).toBeInTheDocument()
     expect(screen.getByText('Jovana Jović')).toBeInTheDocument()
+  })
+
+  it('calls useAllAccounts with page 1 and page_size 10 on initial load', () => {
+    renderWithProviders(<AdminAccountsPage />)
+    expect(useAccountsHook.useAllAccounts).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 1, page_size: 10 })
+    )
+  })
+
+  it('shows pagination controls', () => {
+    renderWithProviders(<AdminAccountsPage />)
+    expect(screen.getByRole('button', { name: /previous page/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next page/i })).toBeInTheDocument()
+  })
+
+  it('shows page 1 of 2 when total > PAGE_SIZE', () => {
+    jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
+      data: { accounts: [], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminAccountsPage />)
+    expect(screen.getByText(/page 1 of 2/i)).toBeInTheDocument()
+  })
+
+  it('calls useAllAccounts with page 2 when next arrow is clicked', async () => {
+    jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
+      data: { accounts: [], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminAccountsPage />)
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() =>
+      expect(useAccountsHook.useAllAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2, page_size: 10 })
+      )
+    )
+  })
+
+  it('resets to page 1 when filter changes', async () => {
+    jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
+      data: { accounts: [], total: 11 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminAccountsPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
+    await waitFor(() =>
+      expect(useAccountsHook.useAllAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 2 })
+      )
+    )
+
+    const accountInput = screen.getByPlaceholderText(/account number/i)
+    fireEvent.change(accountInput, { target: { value: '111' } })
+
+    await waitFor(() =>
+      expect(useAccountsHook.useAllAccounts).toHaveBeenCalledWith(
+        expect.objectContaining({ page: 1, account_number_filter: '111' })
+      )
+    )
   })
 })

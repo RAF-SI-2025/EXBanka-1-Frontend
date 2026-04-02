@@ -1,0 +1,15 @@
+{
+  "clients": [
+    {
+      "id": 42,
+      "first_name": "Marko",
+      "last_name": "Jovanović",
+      "email": "marko@example.com",
+      "phone": "+381601234567",
+      "address": "Bulevar Kralja Aleksandra 100",
+      "date_of_birth": 631152000,
+      "gender": "M"
+    }
+  ],
+  "total": 1
+}

@@ -33,8 +33,8 @@ describe('SellOrderDialog', () => {
     render(<SellOrderDialog {...defaultProps} />)
     const quantityInput = screen.getByLabelText(/quantity/i)
     fireEvent.change(quantityInput, { target: { value: '2' } })
-    // 2 * 1 * 175.00 (current_price) = 350.00
-    expect(screen.getByText(/350/)).toBeInTheDocument()
+    // 2 * 1 * 178.50 (current_price) = 357.00
+    expect(screen.getByText(/357/)).toBeInTheDocument()
   })
 
   it('calls onSubmit with correct payload', async () => {

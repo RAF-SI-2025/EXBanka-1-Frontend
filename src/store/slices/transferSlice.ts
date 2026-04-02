@@ -44,8 +44,8 @@ export const submitTransfer = createAsyncThunk(
     try {
       return await createTransfer(payload)
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message ?? 'Transfer failed')
+      const error = err as { response?: { data?: { error?: { message?: string } } } }
+      return rejectWithValue(error.response?.data?.error?.message ?? 'Transfer failed')
     }
   }
 )
@@ -84,6 +84,7 @@ const transferSlice = createSlice({
         state.result = action.payload
         state.transactionId = action.payload.id
         state.step = 'verification'
+        state.codeRequested = true
       })
       .addCase(submitTransfer.rejected, (state, action) => {
         state.submitting = false

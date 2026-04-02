@@ -1,38 +1,27 @@
-export type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit'
 export type OrderDirection = 'buy' | 'sell'
-export type OrderStatus = 'pending' | 'approved' | 'declined'
+export type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit'
+export type OrderStatus = 'pending' | 'approved' | 'declined' | 'cancelled' | 'filled' | 'partial'
 
 export interface Order {
   id: number
-  user_email?: string
-  listing_id?: number
-  holding_id?: number
-  asset_ticker?: string
-  asset_name?: string
-  order_type: OrderType
+  listing_id: number
+  holding_id: number | null
   direction: OrderDirection
+  order_type: OrderType
+  status: OrderStatus
   quantity: number
-  contract_size: number
-  price_per_unit?: string
-  limit_value?: string
-  stop_value?: string
+  limit_value: string | null
+  stop_value: string | null
   all_or_none: boolean
   margin: boolean
-  status: OrderStatus
-  approved_by?: string
-  is_done: boolean
-  remaining_portions: number
-  after_hours: boolean
-  last_modification: string
-  account_id?: number
+  account_id: number
+  ticker: string
+  security_name: string
+  created_at: string
+  updated_at: string
 }
 
-export interface OrderListResponse {
-  orders: Order[]
-  total_count: number
-}
-
-export interface CreateOrderRequest {
+export interface CreateOrderPayload {
   listing_id?: number
   holding_id?: number
   direction: OrderDirection
@@ -45,11 +34,19 @@ export interface CreateOrderRequest {
   account_id?: number
 }
 
-export interface OrderFilters {
+export interface OrderListResponse {
+  orders: Order[]
+  total_count: number
+}
+
+export interface MyOrderFilters {
   page?: number
   page_size?: number
-  status?: string
-  direction?: string
-  order_type?: string
+  status?: OrderStatus
+  direction?: OrderDirection
+  order_type?: OrderType
+}
+
+export interface AdminOrderFilters extends MyOrderFilters {
   agent_email?: string
 }

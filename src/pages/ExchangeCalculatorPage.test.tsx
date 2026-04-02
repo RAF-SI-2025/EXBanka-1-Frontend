@@ -12,6 +12,11 @@ describe('ExchangeCalculatorPage', () => {
       mutate: jest.fn(),
       data: null,
       isPending: false,
+      isError: false,
+      variables: undefined,
+    } as any)
+    jest.mocked(useExchangeHook.useExchangeRates).mockReturnValue({
+      data: [],
     } as any)
   })
 

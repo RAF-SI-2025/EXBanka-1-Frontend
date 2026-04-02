@@ -25,9 +25,11 @@ export function EquivalenceCalculator({ onConvert, result, loading }: Equivalenc
   const [fromCurrency, setFromCurrency] = useState('RSD')
   const [toCurrency, setToCurrency] = useState('EUR')
 
+  const isSameCurrency = fromCurrency === toCurrency
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (amount > 0) {
+    if (amount > 0 && !isSameCurrency) {
       onConvert({ from_currency: fromCurrency, to_currency: toCurrency, amount })
     }
   }
@@ -84,7 +86,17 @@ export function EquivalenceCalculator({ onConvert, result, loading }: Equivalenc
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading || amount <= 0}>
+          {isSameCurrency && (
+            <p className="text-sm text-destructive text-center">
+              Cannot convert to same currency, idiot
+            </p>
+          )}
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || amount <= 0 || isSameCurrency}
+          >
             {loading ? 'Calculating...' : 'Calculate'}
           </Button>
         </form>

@@ -4,7 +4,7 @@ import { createMockStock } from '@/__tests__/fixtures/security-fixtures'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 
 describe('BuyOrderDialog', () => {
-  const stock = createMockStock({ ask: '185.00', bid: '184.90', contract_size: 1 })
+  const stock = createMockStock({ ask: '185.00', bid: '184.90' })
   const accounts = [
     createMockAccount({ id: 1, account_name: 'Main Account', currency_code: 'USD' }),
   ]

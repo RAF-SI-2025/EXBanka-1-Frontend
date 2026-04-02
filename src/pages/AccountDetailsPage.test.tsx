@@ -9,7 +9,7 @@ jest.mock('@/hooks/useAccounts')
 describe('AccountDetailsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    jest.mocked(useAccountsHook.useAccount).mockReturnValue({
+    jest.mocked(useAccountsHook.useClientAccount).mockReturnValue({
       data: createMockAccount(),
       isLoading: false,
     } as any)

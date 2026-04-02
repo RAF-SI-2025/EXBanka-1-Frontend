@@ -20,14 +20,14 @@ import {
 import { inferOrderType, calculateApproxPrice } from '@/lib/utils/trading'
 import type { Stock } from '@/types/security'
 import type { Account } from '@/types/account'
-import type { CreateOrderRequest } from '@/types/order'
+import type { CreateOrderPayload } from '@/types/order'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   security: Stock
   accounts: Account[]
-  onSubmit: (payload: CreateOrderRequest) => void
+  onSubmit: (payload: CreateOrderPayload) => void
   loading: boolean
 }
 
@@ -53,7 +53,7 @@ export function BuyOrderDialog({
     'buy',
     security.ask,
     security.bid,
-    security.contract_size,
+    1,
     quantity,
     limitValue || undefined,
     stopValue || undefined

@@ -16,23 +16,23 @@ const mockRate = {
 beforeEach(() => jest.clearAllMocks())
 
 describe('getExchangeRates', () => {
-  it('calls /api/exchange-rates and unwraps the rates array', async () => {
+  it('calls /api/exchange/rates and unwraps the rates array', async () => {
     jest.mocked(apiClient.get).mockResolvedValue({ data: { rates: [mockRate] } })
 
     const result = await getExchangeRates()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/exchange-rates')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/exchange/rates')
     expect(result).toEqual([mockRate])
   })
 })
 
 describe('getExchangeRate', () => {
-  it('calls /api/exchange-rates/:from/:to with path parameters', async () => {
+  it('calls /api/exchange/rates/:from/:to with path parameters', async () => {
     jest.mocked(apiClient.get).mockResolvedValue({ data: mockRate })
 
     const result = await getExchangeRate('EUR', 'RSD')
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/exchange-rates/EUR/RSD')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/exchange/rates/EUR/RSD')
     expect(result).toEqual(mockRate)
   })
 })
@@ -51,7 +51,7 @@ describe('convertCurrency', () => {
 
     const result = await convertCurrency({ from_currency: 'EUR', to_currency: 'RSD', amount: 100 })
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/exchange-rates/EUR/RSD')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/exchange/rates/EUR/RSD')
     expect(result).toEqual({
       from_amount: 100,
       from_currency: 'EUR',

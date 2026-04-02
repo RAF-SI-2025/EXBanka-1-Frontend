@@ -24,8 +24,8 @@ export const submitLoanRequest = createAsyncThunk(
     try {
       return await createLoanRequest(payload)
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message ?? 'Loan request failed')
+      const error = err as { response?: { data?: { error?: { message?: string } } } }
+      return rejectWithValue(error.response?.data?.error?.message ?? 'Loan request failed')
     }
   }
 )

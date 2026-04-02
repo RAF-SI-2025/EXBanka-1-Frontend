@@ -1,29 +1,20 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useClientAccounts } from '@/hooks/useAccounts'
-import {
-  useRequestCard,
-  useConfirmCardRequest,
-  useRequestCardForAuthorizedPerson,
-} from '@/hooks/useCards'
-import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
+import { useRequestCard, useRequestCardForAuthorizedPerson } from '@/hooks/useCards'
 import { CardRequestForm } from '@/components/cards/CardRequestForm'
 import { AuthorizedPersonForm } from '@/components/cards/AuthorizedPersonForm'
-import { VerificationCodeInput } from '@/components/cards/VerificationCodeInput'
 import { Button } from '@/components/ui/button'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
 import type { CardBrand } from '@/types/card'
 
-type Step = 'select' | 'business-choice' | 'authorized-person' | 'verify' | 'success'
+type Step = 'select' | 'business-choice' | 'authorized-person' | 'success'
 
 export function CardRequestPage() {
   const navigate = useNavigate()
-  const user = useAppSelector(selectCurrentUser)
   const { data: accountsData, isLoading } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
   const requestCard = useRequestCard()
-  const confirmCard = useConfirmCardRequest()
   const requestForAP = useRequestCardForAuthorizedPerson()
   const [step, setStep] = useState<Step>('select')
   const [selectedAccount, setSelectedAccount] = useState('')
@@ -45,11 +36,9 @@ export function CardRequestPage() {
       requestCard.mutate(
         {
           account_number: accountNumber,
-          owner_id: user?.id ?? 0,
-          owner_type: 'CLIENT',
           card_brand: cardBrand,
         },
-        { onSuccess: () => setStep('verify'), onError: onMutationError }
+        { onSuccess: () => setStep('success'), onError: onMutationError }
       )
     }
   }
@@ -59,11 +48,9 @@ export function CardRequestPage() {
     requestCard.mutate(
       {
         account_number: selectedAccount,
-        owner_id: user?.id ?? 0,
-        owner_type: 'CLIENT',
         card_brand: selectedBrand,
       },
-      { onSuccess: () => setStep('verify'), onError: onMutationError }
+      { onSuccess: () => setStep('success'), onError: onMutationError }
     )
   }
 
@@ -73,27 +60,17 @@ export function CardRequestPage() {
     requestForAP.mutate(
       { ...data, account_id: acc?.id ?? 0 },
       {
-        onSuccess: (ap) => {
+        onSuccess: () => {
           requestCard.mutate(
             {
               account_number: selectedAccount,
-              owner_id: ap.id,
-              owner_type: 'AUTHORIZED_PERSON',
               card_brand: selectedBrand,
             },
-            { onSuccess: () => setStep('verify'), onError: onMutationError }
+            { onSuccess: () => setStep('success'), onError: onMutationError }
           )
         },
         onError: onMutationError,
       }
-    )
-  }
-
-  const handleConfirm = (code: string) => {
-    setError(null)
-    confirmCard.mutate(
-      { account_number: selectedAccount, code },
-      { onSuccess: () => setStep('success'), onError: onMutationError }
     )
   }
 
@@ -104,17 +81,11 @@ export function CardRequestPage() {
   if (step === 'success') {
     return (
       <div className="space-y-4 text-center">
-        <h2 className="text-xl font-semibold">Card successfully created!</h2>
+        <h2 className="text-xl font-semibold">Card request submitted!</h2>
+        <p className="text-muted-foreground">
+          Your card request has been received and is pending approval.
+        </p>
         <Button onClick={() => navigate('/cards')}>Back to Cards</Button>
-      </div>
-    )
-  }
-
-  if (step === 'verify') {
-    return (
-      <div className="space-y-4">
-        {errorBanner}
-        <VerificationCodeInput onSubmit={handleConfirm} loading={confirmCard.isPending} />
       </div>
     )
   }

@@ -5,9 +5,10 @@ interface CardGridProps {
   cards: Card[]
   onBlock: (cardId: number) => void
   accountNames?: Record<string, string>
+  holderName?: string
 }
 
-export function CardGrid({ cards, onBlock, accountNames }: CardGridProps) {
+export function CardGrid({ cards, onBlock, accountNames, holderName }: CardGridProps) {
   if (cards.length === 0) {
     return <p className="text-muted-foreground">You have no cards.</p>
   }
@@ -20,6 +21,7 @@ export function CardGrid({ cards, onBlock, accountNames }: CardGridProps) {
           card={card}
           onBlock={onBlock}
           accountName={accountNames?.[card.account_number]}
+          holderName={holderName}
         />
       ))}
     </div>

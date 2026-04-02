@@ -2,14 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getClientAccounts,
   getAccount,
+  getClientAccount,
   createAccount,
   updateAccountName,
   updateAccountLimits,
   getAllAccounts,
-  getBankAccounts,
 } from '@/lib/api/accounts'
-import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectCurrentUser, selectUserType } from '@/store/selectors/authSelectors'
 import type {
   AccountFilters,
   CreateAccountRequest,
@@ -18,12 +16,9 @@ import type {
 } from '@/types/account'
 
 export function useClientAccounts() {
-  const user = useAppSelector(selectCurrentUser)
-  const clientId = user?.id ?? 0
   return useQuery({
-    queryKey: ['accounts', 'client', clientId],
-    queryFn: () => getClientAccounts(clientId),
-    enabled: clientId > 0,
+    queryKey: ['accounts', 'me'],
+    queryFn: () => getClientAccounts(),
   })
 }
 
@@ -31,6 +26,14 @@ export function useAccount(id: number) {
   return useQuery({
     queryKey: ['account', id],
     queryFn: () => getAccount(id),
+    enabled: id > 0,
+  })
+}
+
+export function useClientAccount(id: number) {
+  return useQuery({
+    queryKey: ['account', 'me', id],
+    queryFn: () => getClientAccount(id),
     enabled: id > 0,
   })
 }
@@ -72,25 +75,4 @@ export function useAllAccounts(filters?: AccountFilters) {
     queryKey: ['accounts', 'all', filters],
     queryFn: () => getAllAccounts(filters),
   })
-}
-
-export function useTradingAccounts() {
-  const userType = useAppSelector(selectUserType)
-  const user = useAppSelector(selectCurrentUser)
-  const clientId = user?.id ?? 0
-  const isClient = userType === 'client'
-
-  const clientAccountsQuery = useQuery({
-    queryKey: ['accounts', 'client', clientId],
-    queryFn: () => getClientAccounts(clientId),
-    enabled: isClient && clientId > 0,
-  })
-
-  const bankAccountsQuery = useQuery({
-    queryKey: ['bank-accounts'],
-    queryFn: getBankAccounts,
-    enabled: !isClient,
-  })
-
-  return isClient ? clientAccountsQuery : bankAccountsQuery
 }

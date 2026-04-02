@@ -2,42 +2,35 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getPortfolio,
   getPortfolioSummary,
-  makePublicHolding,
+  makeHoldingPublic,
   exerciseOption,
 } from '@/lib/api/portfolio'
-import type { HoldingType } from '@/types/portfolio'
+import type { PortfolioFilters, MakePublicPayload } from '@/types/portfolio'
 
-export function usePortfolio(securityType?: HoldingType, page?: number) {
-  return useQuery({
-    queryKey: ['portfolio', securityType, page],
-    queryFn: () => getPortfolio(securityType, page),
-  })
+export function usePortfolio(filters: PortfolioFilters = {}) {
+  return useQuery({ queryKey: ['portfolio', filters], queryFn: () => getPortfolio(filters) })
 }
 
 export function usePortfolioSummary() {
   return useQuery({
     queryKey: ['portfolio', 'summary'],
-    queryFn: getPortfolioSummary,
+    queryFn: () => getPortfolioSummary(),
   })
 }
 
 export function useMakePublic() {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, quantity }: { id: number; quantity: number }) =>
-      makePublicHolding(id, quantity),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['portfolio'] })
-    },
+    mutationFn: ({ id, payload }: { id: number; payload: MakePublicPayload }) =>
+      makeHoldingPublic(id, payload),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['portfolio'] }),
   })
 }
 
 export function useExerciseOption() {
-  const queryClient = useQueryClient()
+  const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: number) => exerciseOption(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['portfolio'] })
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['portfolio'] }),
   })
 }

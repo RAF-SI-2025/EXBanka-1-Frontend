@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getClients, getClient, createClient, updateClient } from '@/lib/api/clients'
+import { getClients, getClient, getClientMe, createClient, updateClient } from '@/lib/api/clients'
 import type { ClientFilters, CreateClientRequest, UpdateClientRequest } from '@/types/client'
 
 export function useSearchClients(query: string) {
@@ -22,6 +22,13 @@ export function useClient(id: number) {
     queryKey: ['client', id],
     queryFn: () => getClient(id),
     enabled: id > 0,
+  })
+}
+
+export function useClientMe() {
+  return useQuery({
+    queryKey: ['client', 'me'],
+    queryFn: () => getClientMe(),
   })
 }
 

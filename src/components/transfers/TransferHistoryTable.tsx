@@ -40,7 +40,7 @@ export function TransferHistoryTable({ transfers }: TransferHistoryTableProps) {
             <TableCell>{formatCurrency(t.initial_amount, 'RSD')}</TableCell>
             <TableCell>{t.final_amount}</TableCell>
             <TableCell>{t.exchange_rate}</TableCell>
-            <TableCell>{t.commission.toFixed(2)}</TableCell>
+            <TableCell>{Number(t.commission).toFixed(2)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

@@ -1,0 +1,18 @@
+{
+  "recipients": [
+    {
+      "id": 1,
+      "client_id": 42,
+      "recipient_name": "Jelena Marković",
+      "account_number": "265000000000000088",
+      "created_at": "2026-02-10T12:00:00Z"
+    },
+    {
+      "id": 2,
+      "client_id": 42,
+      "recipient_name": "Petar Nikolić",
+      "account_number": "265000000000000077",
+      "created_at": "2026-03-01T09:00:00Z"
+    }
+  ]
+}

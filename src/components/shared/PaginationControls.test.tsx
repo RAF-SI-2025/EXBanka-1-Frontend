@@ -6,17 +6,18 @@ const mockOnPageChange = jest.fn()
 beforeEach(() => jest.clearAllMocks())
 
 describe('PaginationControls', () => {
-  it('renders nothing when totalPages is 1', () => {
+  it('always renders, even on a single page', () => {
     const { container } = render(
       <PaginationControls page={1} totalPages={1} onPageChange={mockOnPageChange} />
     )
-    expect(container).toBeEmptyDOMElement()
+    expect(container).not.toBeEmptyDOMElement()
+    expect(screen.getByText(/page 1 of 1/i)).toBeInTheDocument()
   })
 
-  it('renders Previous and Next buttons when totalPages > 1', () => {
+  it('renders previous and next arrow buttons', () => {
     render(<PaginationControls page={1} totalPages={3} onPageChange={mockOnPageChange} />)
-    expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /previous page/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /next page/i })).toBeInTheDocument()
   })
 
   it('shows current page and total pages', () => {
@@ -24,25 +25,25 @@ describe('PaginationControls', () => {
     expect(screen.getByText(/page 2 of 5/i)).toBeInTheDocument()
   })
 
-  it('disables Previous on the first page', () => {
+  it('disables previous arrow on the first page', () => {
     render(<PaginationControls page={1} totalPages={3} onPageChange={mockOnPageChange} />)
-    expect(screen.getByRole('button', { name: /previous/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /previous page/i })).toBeDisabled()
   })
 
-  it('disables Next on the last page', () => {
+  it('disables next arrow on the last page', () => {
     render(<PaginationControls page={3} totalPages={3} onPageChange={mockOnPageChange} />)
-    expect(screen.getByRole('button', { name: /next/i })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /next page/i })).toBeDisabled()
   })
 
-  it('calls onPageChange with page - 1 when Previous is clicked', () => {
+  it('calls onPageChange with page - 1 when previous is clicked', () => {
     render(<PaginationControls page={3} totalPages={5} onPageChange={mockOnPageChange} />)
-    fireEvent.click(screen.getByRole('button', { name: /previous/i }))
+    fireEvent.click(screen.getByRole('button', { name: /previous page/i }))
     expect(mockOnPageChange).toHaveBeenCalledWith(2)
   })
 
-  it('calls onPageChange with page + 1 when Next is clicked', () => {
+  it('calls onPageChange with page + 1 when next is clicked', () => {
     render(<PaginationControls page={2} totalPages={5} onPageChange={mockOnPageChange} />)
-    fireEvent.click(screen.getByRole('button', { name: /next/i }))
+    fireEvent.click(screen.getByRole('button', { name: /next page/i }))
     expect(mockOnPageChange).toHaveBeenCalledWith(3)
   })
 })

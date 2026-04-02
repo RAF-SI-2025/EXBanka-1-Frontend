@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api/axios'
 import { getTaxRecords, collectTaxes } from '@/lib/api/tax'
-import type { TaxListResponse, TaxCollectResponse } from '@/types/tax'
+import { createMockTaxRecord } from '@/__tests__/fixtures/tax-fixtures'
 
 jest.mock('@/lib/api/axios', () => ({
   apiClient: { get: jest.fn(), post: jest.fn() },
@@ -8,42 +8,34 @@ jest.mock('@/lib/api/axios', () => ({
 
 const mockGet = jest.mocked(apiClient.get)
 const mockPost = jest.mocked(apiClient.post)
-
 beforeEach(() => jest.clearAllMocks())
 
 describe('getTaxRecords', () => {
-  it('GET /api/tax returns tax records', async () => {
-    const mockData: TaxListResponse = { tax_records: [], total_count: 0 }
-    mockGet.mockResolvedValue({ data: mockData })
-
-    const result = await getTaxRecords()
-
-    expect(mockGet).toHaveBeenCalledWith('/api/tax', { params: expect.any(URLSearchParams) })
-    expect(result).toEqual(mockData)
+  it('fetches with filters', async () => {
+    const response = { tax_records: [createMockTaxRecord()], total_count: 1 }
+    mockGet.mockResolvedValue({ data: response })
+    const result = await getTaxRecords({ user_type: 'client', page: 1, page_size: 10 })
+    expect(mockGet).toHaveBeenCalledWith('/api/tax', {
+      params: { user_type: 'client', page: 1, page_size: 10 },
+    })
+    expect(result).toEqual(response)
   })
 
-  it('passes user_type, search, page as query params', async () => {
-    mockGet.mockResolvedValue({ data: { tax_records: [], total_count: 0 } })
-    await getTaxRecords({ user_type: 'client', search: 'Marko', page: 2 })
-    const params: URLSearchParams = mockGet.mock.calls[0]![1]!.params
-    expect(params.get('user_type')).toBe('client')
-    expect(params.get('search')).toBe('Marko')
-    expect(params.get('page')).toBe('2')
+  it('fetches with no filters', async () => {
+    const response = { tax_records: [], total_count: 0 }
+    mockGet.mockResolvedValue({ data: response })
+    const result = await getTaxRecords()
+    expect(mockGet).toHaveBeenCalledWith('/api/tax', { params: {} })
+    expect(result).toEqual(response)
   })
 })
 
 describe('collectTaxes', () => {
-  it('POST /api/tax/collect returns collection result', async () => {
-    const mockData: TaxCollectResponse = {
-      collected_count: 5,
-      total_collected_rsd: '25000.00',
-      failed_count: 0,
-    }
-    mockPost.mockResolvedValue({ data: mockData })
-
+  it('posts collect', async () => {
+    const response = { collected_count: 5, total_collected_rsd: '3750.00', failed_count: 0 }
+    mockPost.mockResolvedValue({ data: response })
     const result = await collectTaxes()
-
     expect(mockPost).toHaveBeenCalledWith('/api/tax/collect')
-    expect(result).toEqual(mockData)
+    expect(result).toEqual(response)
   })
 })

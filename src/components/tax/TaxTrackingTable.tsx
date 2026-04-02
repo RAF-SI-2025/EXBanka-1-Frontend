@@ -25,24 +25,22 @@ export function TaxTrackingTable({ records }: Props) {
           <TableHead>Name</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Type</TableHead>
-          <TableHead className="text-right">Unpaid Tax (RSD)</TableHead>
-          <TableHead className="text-right">Paid YTD (RSD)</TableHead>
+          <TableHead className="text-right">Tax Amount (RSD)</TableHead>
+          <TableHead>Status</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {records.map((r) => (
           <TableRow key={r.id}>
-            <TableCell className="font-medium">
-              {r.first_name} {r.last_name}
-            </TableCell>
-            <TableCell>{r.email}</TableCell>
+            <TableCell className="font-medium">{r.user_name}</TableCell>
+            <TableCell>{r.user_email}</TableCell>
             <TableCell>
               <Badge variant={r.user_type === 'actuary' ? 'default' : 'secondary'}>
                 {r.user_type}
               </Badge>
             </TableCell>
-            <TableCell className="text-right">{r.unpaid_tax}</TableCell>
-            <TableCell className="text-right">{r.paid_tax_ytd}</TableCell>
+            <TableCell className="text-right">{r.tax_amount}</TableCell>
+            <TableCell>{r.status}</TableCell>
           </TableRow>
         ))}
       </TableBody>

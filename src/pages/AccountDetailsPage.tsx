@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import {
-  useAccount,
+  useClientAccount,
   useUpdateAccountName,
   useUpdateAccountLimits,
   useClientAccounts,
@@ -18,7 +18,7 @@ export function AccountDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const accountId = Number(id)
-  const { data: account, isLoading } = useAccount(accountId)
+  const { data: account, isLoading } = useClientAccount(accountId)
   const updateAccountName = useUpdateAccountName(accountId)
   const updateAccountLimits = useUpdateAccountLimits(accountId)
   const { data: allAccountsData } = useClientAccounts()

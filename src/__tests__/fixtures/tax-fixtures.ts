@@ -3,13 +3,13 @@ import type { TaxRecord } from '@/types/tax'
 export function createMockTaxRecord(overrides: Partial<TaxRecord> = {}): TaxRecord {
   return {
     id: 1,
-    user_id: 101,
-    first_name: 'Marko',
-    last_name: 'Marković',
-    email: 'marko.markovic@example.com',
     user_type: 'client',
-    unpaid_tax: '1500.00',
-    paid_tax_ytd: '4500.00',
+    user_name: 'John Doe',
+    user_email: 'john@test.com',
+    taxable_amount: '5000.00',
+    tax_amount: '750.00',
+    status: 'pending',
+    created_at: '2026-04-01T10:00:00Z',
     ...overrides,
   }
 }

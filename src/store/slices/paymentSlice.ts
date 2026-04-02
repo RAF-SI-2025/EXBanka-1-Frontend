@@ -46,8 +46,8 @@ export const submitPayment = createAsyncThunk(
       }
       return await createPayment(payload.data as CreatePaymentRequest)
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } }
-      return rejectWithValue(error.response?.data?.message ?? 'Payment failed')
+      const error = err as { response?: { data?: { error?: { message?: string } } } }
+      return rejectWithValue(error.response?.data?.error?.message ?? 'Payment failed')
     }
   }
 )
@@ -83,15 +83,17 @@ const paymentSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(submitPayment.pending, (state) => {
+      .addCase(submitPayment.pending, (state, action) => {
         state.submitting = true
         state.error = null
+        state.flowType = action.meta.arg.type
       })
       .addCase(submitPayment.fulfilled, (state, action) => {
         state.submitting = false
         state.result = action.payload
         state.transactionId = action.payload.id
         state.step = 'verification'
+        state.codeRequested = true
       })
       .addCase(submitPayment.rejected, (state, action) => {
         state.submitting = false

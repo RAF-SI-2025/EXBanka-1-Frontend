@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { useClientAccounts } from '@/hooks/useAccounts'
-import { usePaymentRecipients, useCreatePaymentRecipient } from '@/hooks/usePayments'
-import { useGenerateVerification, useValidateVerification } from '@/hooks/useVerification'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
+import {
+  usePaymentRecipients,
+  useCreatePaymentRecipient,
+  useExecutePayment,
+} from '@/hooks/usePayments'
 import {
   submitPayment,
   setPaymentStep,
   setPaymentFormData,
-  setCodeRequested,
   setVerificationError,
   resetPaymentFlow,
 } from '@/store/slices/paymentSlice'
@@ -69,12 +70,10 @@ export function NewPaymentPage() {
     codeRequested,
     verificationError,
   } = useAppSelector((s) => s.payment)
-  const currentUser = useAppSelector(selectCurrentUser)
   const { data: accountsData } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
   const { data: recipients } = usePaymentRecipients()
-  const generateVerification = useGenerateVerification()
-  const validateVerification = useValidateVerification()
+  const executePayment = useExecutePayment()
 
   useEffect(() => {
     return () => {
@@ -111,35 +110,19 @@ export function NewPaymentPage() {
   }
 
   if (step === 'verification' && transactionId !== null) {
-    const clientId = currentUser?.id ?? 0
     return (
       <VerificationStep
         codeRequested={codeRequested}
-        loading={generateVerification.isPending || validateVerification.isPending}
+        loading={executePayment.isPending}
         error={verificationError}
-        onRequestCode={() => {
-          generateVerification.mutate(
-            { client_id: clientId, transaction_id: transactionId, transaction_type: 'PAYMENT' },
-            { onSuccess: () => dispatch(setCodeRequested(true)) }
-          )
-        }}
+        onRequestCode={() => {}}
         onVerified={(code) => {
-          validateVerification.mutate(
+          executePayment.mutate(
+            { id: transactionId, verificationCode: code },
             {
-              client_id: clientId,
-              transaction_id: transactionId,
-              transaction_type: 'payment',
-              code,
-            },
-            {
-              onSuccess: (res) => {
-                if (res.valid) {
-                  dispatch(setPaymentStep('success'))
-                } else {
-                  dispatch(setVerificationError('Invalid code'))
-                }
-              },
-              onError: () => dispatch(setVerificationError('Verification error')),
+              onSuccess: () => dispatch(setPaymentStep('success')),
+              onError: () =>
+                dispatch(setVerificationError('Payment execution failed. Please try again.')),
             }
           )
         }}

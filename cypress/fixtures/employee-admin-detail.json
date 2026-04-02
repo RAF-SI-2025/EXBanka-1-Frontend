@@ -1,0 +1,21 @@
+{
+  "id": 10,
+  "first_name": "Nikola",
+  "last_name": "Nikolić",
+  "email": "nikola.nikolic@banka.rs",
+  "phone": "+381611111111",
+  "address": "Terazije 1, Beograd",
+  "username": "nnikolic",
+  "date_of_birth": 599616000,
+  "gender": "MALE",
+  "jmbg": "1901989710005",
+  "position": "Director",
+  "department": "Management",
+  "role": "EmployeeAdmin",
+  "active": true,
+  "permissions": [
+    "employees.read", "employees.create", "employees.update",
+    "accounts.read", "accounts.create", "accounts.update",
+    "clients.read", "clients.create", "clients.update"
+  ]
+}

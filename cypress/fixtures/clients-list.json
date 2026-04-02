@@ -1,0 +1,25 @@
+{
+  "clients": [
+    {
+      "id": 42,
+      "first_name": "Marko",
+      "last_name": "Jovanović",
+      "email": "marko@example.com",
+      "phone": "+381641234567",
+      "address": "Knez Mihailova 10, Beograd",
+      "gender": "MALE",
+      "date_of_birth": "1990-05-15"
+    },
+    {
+      "id": 43,
+      "first_name": "Ana",
+      "last_name": "Petrović",
+      "email": "ana@example.com",
+      "phone": "+381659876543",
+      "address": "Bulevar Kralja Aleksandra 50, Niš",
+      "gender": "FEMALE",
+      "date_of_birth": "1988-11-20"
+    }
+  ],
+  "total": 2
+}

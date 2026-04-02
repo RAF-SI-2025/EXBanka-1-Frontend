@@ -1,0 +1,14 @@
+{
+  "id": 104,
+  "from_account_number": "265000000000000022",
+  "to_account_number": "265000000000000099",
+  "initial_amount": 100,
+  "final_amount": 11650,
+  "commission": 50,
+  "recipient_name": "Ana Petrović",
+  "payment_code": "289",
+  "reference_number": "",
+  "payment_purpose": "Cross-currency test",
+  "status": "PENDING",
+  "timestamp": "2026-03-26T10:00:00Z"
+}

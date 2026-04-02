@@ -1,31 +1,37 @@
-export type HoldingType = 'stock' | 'futures' | 'option'
-
 export interface Holding {
   id: number
-  security_type: HoldingType
+  security_type: 'stock' | 'futures' | 'option'
   ticker: string
-  name: string
+  security_name: string
   quantity: number
   average_price: string
   current_price: string
-  profit: string
+  total_value: string
+  profit_loss: string
+  profit_loss_percent: string
+  is_public: boolean
   public_quantity: number
-  account_id: number
-  last_modified: string
-  settlement_date?: string // options only
-  is_in_the_money?: boolean // options only
-}
-
-export interface PortfolioListResponse {
-  holdings: Holding[]
-  total_count: number
 }
 
 export interface PortfolioSummary {
   total_value: string
+  total_cost: string
   total_profit_loss: string
+  total_profit_loss_percent: string
+  holdings_count: number
 }
 
-export interface MakePublicRequest {
+export interface HoldingListResponse {
+  holdings: Holding[]
+  total_count: number
+}
+
+export interface PortfolioFilters {
+  page?: number
+  page_size?: number
+  security_type?: 'stock' | 'futures' | 'option'
+}
+
+export interface MakePublicPayload {
   quantity: number
 }

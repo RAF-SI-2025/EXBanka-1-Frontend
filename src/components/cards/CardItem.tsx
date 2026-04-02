@@ -9,16 +9,18 @@ interface CardItemProps {
   card: CardType
   onBlock: (cardId: number) => void
   accountName?: string
+  holderName?: string
 }
 
-export function CardItem({ card, onBlock, accountName }: CardItemProps) {
+export function CardItem({ card, onBlock, accountName, holderName }: CardItemProps) {
+  const status = card.status?.toUpperCase() as CardType['status']
   return (
     <div className="flex flex-col items-center gap-3">
-      <CardVisual card={card} />
+      <CardVisual card={card} holderName={holderName} />
       <div className="flex items-center gap-3 w-full max-w-sm justify-between">
         <div className="flex items-center gap-2">
-          <Badge variant={CARD_STATUS_VARIANT[card.status] ?? 'secondary'}>
-            {CARD_STATUS_LABELS[card.status] ?? card.status}
+          <Badge variant={CARD_STATUS_VARIANT[status] ?? 'secondary'}>
+            {CARD_STATUS_LABELS[status] ?? card.status}
           </Badge>
           {accountName && (
             <span className="text-xs text-muted-foreground">
@@ -26,7 +28,7 @@ export function CardItem({ card, onBlock, accountName }: CardItemProps) {
             </span>
           )}
         </div>
-        {card.status === 'ACTIVE' && (
+        {status === 'ACTIVE' && (
           <Button variant="destructive" size="sm" onClick={() => onBlock(card.id)}>
             Block
           </Button>

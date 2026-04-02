@@ -11,10 +11,13 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { FilterBar } from '@/components/ui/FilterBar'
+import { PaginationControls } from '@/components/shared/PaginationControls'
 import { LOAN_TYPES } from '@/lib/constants/banking'
 import { formatCurrency } from '@/lib/utils/format'
 import type { LoanType } from '@/types/loan'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
+
+const PAGE_SIZE = 10
 
 const LOAN_REQUEST_FILTER_FIELDS: FilterFieldDef[] = [
   {
@@ -29,19 +32,26 @@ const LOAN_REQUEST_FILTER_FIELDS: FilterFieldDef[] = [
 
 export function AdminLoanRequestsPage() {
   const [filterValues, setFilterValues] = useState<FilterValues>({})
+  const [page, setPage] = useState(1)
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters)
+    setPage(1)
+  }
 
   const { data, isLoading } = useLoanRequests({
     status: 'pending',
     loan_type: (filterValues.loan_type as string[])?.[0] as LoanType | undefined,
     account_number: (filterValues.account_number as string) || undefined,
-    page: 1,
-    page_size: 100,
+    page,
+    page_size: PAGE_SIZE,
   })
   const { data: clientsData } = useAllClients()
   const approve = useApproveLoanRequest()
   const reject = useRejectLoanRequest()
 
   const requests = data?.requests ?? []
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
   const clientsById = Object.fromEntries((clientsData?.clients ?? []).map((c) => [c.id, c]))
 
   const nameFilter = (filterValues.name as string) ?? ''
@@ -64,7 +74,7 @@ export function AdminLoanRequestsPage() {
       <FilterBar
         fields={LOAN_REQUEST_FILTER_FIELDS}
         values={filterValues}
-        onChange={setFilterValues}
+        onChange={handleFilterChange}
       />
 
       {isLoading ? (
@@ -131,6 +141,7 @@ export function AdminLoanRequestsPage() {
           </TableBody>
         </Table>
       )}
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

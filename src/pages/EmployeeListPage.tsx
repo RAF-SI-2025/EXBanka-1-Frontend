@@ -10,7 +10,7 @@ import { useEmployees } from '@/hooks/useEmployees'
 import type { EmployeeFilters as EmployeeFiltersType } from '@/types/employee'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 const EMPLOYEE_FILTER_FIELDS: FilterFieldDef[] = [
   { key: 'name', label: 'Name', type: 'text' },

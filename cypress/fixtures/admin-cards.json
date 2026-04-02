@@ -1,0 +1,32 @@
+{
+  "cards": [
+    {
+      "id": 10,
+      "card_number": "4111111111111111",
+      "card_type": "DEBIT",
+      "card_name": "Visa Debit",
+      "brand": "VISA",
+      "created_at": "2026-01-20T10:00:00Z",
+      "expires_at": "2029-01-20T10:00:00Z",
+      "account_number": "265000000000000011",
+      "cvv": "123",
+      "limit": 100000,
+      "status": "ACTIVE",
+      "owner_name": "MARKO JOVANOVIĆ"
+    },
+    {
+      "id": 11,
+      "card_number": "5500000000000004",
+      "card_type": "DEBIT",
+      "card_name": "MasterCard Debit",
+      "brand": "MASTERCARD",
+      "created_at": "2026-02-15T10:00:00Z",
+      "expires_at": "2029-02-15T10:00:00Z",
+      "account_number": "265000000000000011",
+      "cvv": "456",
+      "limit": 100000,
+      "status": "BLOCKED",
+      "owner_name": "MARKO JOVANOVIĆ"
+    }
+  ]
+}

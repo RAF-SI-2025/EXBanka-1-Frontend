@@ -1,17 +1,12 @@
 import { apiClient } from '@/lib/api/axios'
-import type { TaxListResponse, TaxFilters, TaxCollectResponse } from '@/types/tax'
+import type { TaxListResponse, TaxFilters, CollectTaxResponse } from '@/types/tax'
 
-export async function getTaxRecords(filters?: TaxFilters): Promise<TaxListResponse> {
-  const params = new URLSearchParams()
-  if (filters?.page) params.append('page', String(filters.page))
-  if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  if (filters?.user_type) params.append('user_type', filters.user_type)
-  if (filters?.search) params.append('search', filters.search)
-  const response = await apiClient.get<TaxListResponse>('/api/tax', { params })
-  return response.data
+export async function getTaxRecords(filters: TaxFilters = {}): Promise<TaxListResponse> {
+  const { data } = await apiClient.get<TaxListResponse>('/api/tax', { params: filters })
+  return data
 }
 
-export async function collectTaxes(): Promise<TaxCollectResponse> {
-  const response = await apiClient.post<TaxCollectResponse>('/api/tax/collect')
-  return response.data
+export async function collectTaxes(): Promise<CollectTaxResponse> {
+  const { data } = await apiClient.post<CollectTaxResponse>('/api/tax/collect')
+  return data
 }

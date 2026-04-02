@@ -78,9 +78,6 @@ describe('HomePage', () => {
       preloadedState: { auth: createMockAuthState() },
     })
 
-    expect(usePaymentsHook.usePayments).toHaveBeenCalledWith(
-      mockAccount.account_number,
-      expect.objectContaining({ page_size: 5 })
-    )
+    expect(usePaymentsHook.usePayments).toHaveBeenCalledWith({ page_size: 5 })
   })
 })

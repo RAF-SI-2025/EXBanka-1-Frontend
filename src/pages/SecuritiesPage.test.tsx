@@ -1,55 +1,125 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { SecuritiesPage } from '@/pages/SecuritiesPage'
-import * as useSecuritiesHook from '@/hooks/useSecurities'
-import * as useOrdersHook from '@/hooks/useOrders'
-import * as useAccountsHook from '@/hooks/useAccounts'
-import { createMockStock } from '@/__tests__/fixtures/security-fixtures'
-import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
+import * as securitiesApi from '@/lib/api/securities'
+import {
+  createMockStock,
+  createMockFutures,
+  createMockForex,
+} from '@/__tests__/fixtures/security-fixtures'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
-jest.mock('@/hooks/useSecurities')
-jest.mock('@/hooks/useOrders')
-jest.mock('@/hooks/useAccounts')
+jest.mock('@/lib/api/securities')
+
+// Mock recharts
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Line: () => <div />,
+  XAxis: () => <div />,
+  YAxis: () => <div />,
+  CartesianGrid: () => <div />,
+  Tooltip: () => <div />,
+}))
+
+const employeeAuth = createMockAuthState({
+  user: createMockAuthUser({ permissions: ['employees.read'] }),
+})
+
+const clientAuth = createMockAuthState({
+  user: createMockAuthUser(),
+  userType: 'client',
+})
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  jest.mocked(securitiesApi.getStocks).mockResolvedValue({
+    stocks: [createMockStock()],
+    total_count: 1,
+  })
+  jest.mocked(securitiesApi.getFutures).mockResolvedValue({
+    futures: [createMockFutures()],
+    total_count: 1,
+  })
+  jest.mocked(securitiesApi.getForexPairs).mockResolvedValue({
+    forex_pairs: [createMockForex()],
+    total_count: 1,
+  })
+})
 
 describe('SecuritiesPage', () => {
-  const stocks = [createMockStock({ id: 1, ticker: 'AAPL' })]
-  const accounts = [createMockAccount({ id: 1 })]
-  const mutateFn = jest.fn()
-
-  beforeEach(() => {
-    jest.clearAllMocks()
-    jest
-      .mocked(useSecuritiesHook.useStocks)
-      .mockReturnValue({ data: { stocks, total_count: 1 }, isLoading: false } as any)
-    jest
-      .mocked(useOrdersHook.useCreateOrder)
-      .mockReturnValue({ mutate: mutateFn, isPending: false } as any)
-    jest
-      .mocked(useAccountsHook.useTradingAccounts)
-      .mockReturnValue({ data: { accounts, total: 1 }, isLoading: false } as any)
+  it('renders page title', () => {
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    expect(screen.getByText('Securities')).toBeInTheDocument()
   })
 
-  it('renders page heading', () => {
-    renderWithProviders(<SecuritiesPage />)
-    expect(screen.getByText(/securities/i)).toBeInTheDocument()
+  it('renders Stocks, Futures, and Forex tabs for employees', () => {
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    expect(screen.getByText('Stocks')).toBeInTheDocument()
+    expect(screen.getByText('Futures')).toBeInTheDocument()
+    expect(screen.getByText('Forex')).toBeInTheDocument()
   })
 
-  it('renders stocks in the table', () => {
-    renderWithProviders(<SecuritiesPage />)
-    expect(screen.getByText('AAPL')).toBeInTheDocument()
+  it('renders only Stocks and Futures tabs for clients', () => {
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: clientAuth },
+    })
+    expect(screen.getByText('Stocks')).toBeInTheDocument()
+    expect(screen.getByText('Futures')).toBeInTheDocument()
+    expect(screen.queryByText('Forex')).not.toBeInTheDocument()
+  })
+
+  it('displays stocks on load', async () => {
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    await screen.findByText('AAPL')
+    expect(screen.getByText('Apple Inc.')).toBeInTheDocument()
   })
 
   it('shows loading state', () => {
-    jest
-      .mocked(useSecuritiesHook.useStocks)
-      .mockReturnValue({ data: undefined, isLoading: true } as any)
-    renderWithProviders(<SecuritiesPage />)
-    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    jest.mocked(securitiesApi.getStocks).mockReturnValue(new Promise(() => {}))
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
   })
 
-  it('opens buy dialog when Buy is clicked', () => {
-    renderWithProviders(<SecuritiesPage />)
-    fireEvent.click(screen.getByRole('button', { name: /buy/i }))
-    expect(screen.getByText(/buy aapl/i)).toBeInTheDocument()
+  it('shows "No stocks found." when empty', async () => {
+    jest.mocked(securitiesApi.getStocks).mockResolvedValue({
+      stocks: [],
+      total_count: 0,
+    })
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    await screen.findByText('No stocks found.')
+  })
+
+  it('calls API with search filter when typing', async () => {
+    jest.mocked(securitiesApi.getStocks).mockImplementation(async (filters = {}) => {
+      if (filters.search === 'AAPL') {
+        return { stocks: [createMockStock()], total_count: 1 }
+      }
+      return { stocks: [createMockStock()], total_count: 1 }
+    })
+
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    await screen.findByText('AAPL')
+
+    const searchInput = screen.getByPlaceholderText(/^search$/i)
+    fireEvent.change(searchInput, { target: { value: 'AAPL' } })
+
+    await waitFor(() =>
+      expect(securitiesApi.getStocks).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'AAPL', page: 1, page_size: 10 })
+      )
+    )
   })
 })

@@ -9,8 +9,8 @@ import type {
   CreateLoanRequest,
 } from '@/types/loan'
 
-export async function getLoans(clientId: number): Promise<LoanListResponse> {
-  const response = await apiClient.get<LoanListResponse>(`/api/loans/client/${clientId}`)
+export async function getLoans(): Promise<LoanListResponse> {
+  const response = await apiClient.get<LoanListResponse>('/api/me/loans')
   return response.data
 }
 
@@ -20,7 +20,7 @@ export async function getLoan(id: number): Promise<Loan> {
 }
 
 export async function createLoanRequest(payload: CreateLoanRequest): Promise<LoanRequest> {
-  const response = await apiClient.post<LoanRequest>('/api/loans/requests', payload)
+  const response = await apiClient.post<LoanRequest>('/api/me/loan-requests', payload)
   return response.data
 }
 
@@ -33,16 +33,16 @@ export async function getLoanRequests(
   if (filters?.status) params.append('status_filter', filters.status)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<LoanRequestListResponse>('/api/loans/requests', { params })
+  const response = await apiClient.get<LoanRequestListResponse>('/api/loan-requests', { params })
   return response.data
 }
 
 export async function approveLoanRequest(id: number): Promise<void> {
-  await apiClient.put(`/api/loans/requests/${id}/approve`)
+  await apiClient.post(`/api/loan-requests/${id}/approve`)
 }
 
 export async function rejectLoanRequest(id: number): Promise<void> {
-  await apiClient.put(`/api/loans/requests/${id}/reject`)
+  await apiClient.post(`/api/loan-requests/${id}/reject`)
 }
 
 export async function getAllLoans(filters?: LoanFilters): Promise<LoanListResponse> {

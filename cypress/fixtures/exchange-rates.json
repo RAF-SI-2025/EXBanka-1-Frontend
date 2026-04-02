@@ -1,0 +1,67 @@
+{
+  "rates": [
+    {
+      "from_currency": "EUR",
+      "to_currency": "RSD",
+      "buy_rate": 116.50,
+      "sell_rate": 117.80,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "USD",
+      "to_currency": "RSD",
+      "buy_rate": 105.20,
+      "sell_rate": 106.50,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "CHF",
+      "to_currency": "RSD",
+      "buy_rate": 118.90,
+      "sell_rate": 120.30,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "GBP",
+      "to_currency": "RSD",
+      "buy_rate": 136.40,
+      "sell_rate": 138.20,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "JPY",
+      "to_currency": "RSD",
+      "buy_rate": 0.70,
+      "sell_rate": 0.72,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "CAD",
+      "to_currency": "RSD",
+      "buy_rate": 76.30,
+      "sell_rate": 77.50,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "AUD",
+      "to_currency": "RSD",
+      "buy_rate": 68.10,
+      "sell_rate": 69.20,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "RSD",
+      "to_currency": "EUR",
+      "buy_rate": 0.0086,
+      "sell_rate": 0.0085,
+      "updated_at": "2026-03-26T08:00:00Z"
+    },
+    {
+      "from_currency": "RSD",
+      "to_currency": "USD",
+      "buy_rate": 0.0095,
+      "sell_rate": 0.0094,
+      "updated_at": "2026-03-26T08:00:00Z"
+    }
+  ]
+}

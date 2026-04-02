@@ -22,6 +22,11 @@ export async function getClient(id: number): Promise<Client> {
   return response.data
 }
 
+export async function getClientMe(): Promise<Client> {
+  const response = await apiClient.get<Client>('/api/me')
+  return response.data
+}
+
 export async function createClient(payload: CreateClientRequest): Promise<Client> {
   const response = await apiClient.post<Client>('/api/clients', payload)
   return response.data

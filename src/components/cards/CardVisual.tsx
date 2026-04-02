@@ -18,12 +18,14 @@ function formatExpiry(expiresAt: string): string {
 
 interface CardVisualProps {
   card: CardType
+  holderName?: string
   className?: string
 }
 
-export function CardVisual({ card, className = '' }: CardVisualProps) {
+export function CardVisual({ card, holderName, className = '' }: CardVisualProps) {
   const gradient = BRAND_GRADIENTS[card.brand] ?? 'from-gray-800 to-gray-600'
-  const isInactive = card.status !== 'ACTIVE'
+  const status = card.status?.toUpperCase()
+  const isInactive = status !== 'ACTIVE'
 
   return (
     <div
@@ -67,7 +69,9 @@ export function CardVisual({ card, className = '' }: CardVisualProps) {
       <div className="absolute bottom-5 left-6 right-6 flex justify-between items-end">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-white/60 mb-0.5">Card Holder</p>
-          <p className="text-sm font-medium tracking-wide uppercase">{card.owner_name}</p>
+          <p className="text-sm font-medium tracking-wide uppercase">
+            {holderName ?? card.owner_name}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-[10px] uppercase tracking-wider text-white/60 mb-0.5">Expires</p>
@@ -79,7 +83,7 @@ export function CardVisual({ card, className = '' }: CardVisualProps) {
       {isInactive && (
         <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center backdrop-blur-[2px]">
           <span className="text-lg font-bold tracking-widest uppercase text-white/90 border-2 border-white/30 px-4 py-1.5 rounded-lg">
-            {card.status === 'BLOCKED' ? 'BLOCKED' : 'DEACTIVATED'}
+            {status === 'BLOCKED' ? 'BLOCKED' : 'DEACTIVATED'}
           </span>
         </div>
       )}

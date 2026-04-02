@@ -16,15 +16,6 @@ interface Props {
   onExercise: (holding: Holding) => void
 }
 
-function canExercise(h: Holding): boolean {
-  return (
-    h.security_type === 'option' &&
-    h.is_in_the_money === true &&
-    h.settlement_date != null &&
-    new Date(h.settlement_date) > new Date()
-  )
-}
-
 export function HoldingsTable({ holdings, onSell, onMakePublic, onExercise }: Props) {
   if (holdings.length === 0) {
     return <p className="text-muted-foreground">No holdings found.</p>
@@ -40,9 +31,8 @@ export function HoldingsTable({ holdings, onSell, onMakePublic, onExercise }: Pr
           <TableHead className="text-right">Quantity</TableHead>
           <TableHead className="text-right">Avg. Price</TableHead>
           <TableHead className="text-right">Current Price</TableHead>
-          <TableHead className="text-right">Profit</TableHead>
+          <TableHead className="text-right">P&amp;L</TableHead>
           <TableHead className="text-right">Public Qty</TableHead>
-          <TableHead>Last Modified</TableHead>
           <TableHead />
         </TableRow>
       </TableHeader>
@@ -50,16 +40,15 @@ export function HoldingsTable({ holdings, onSell, onMakePublic, onExercise }: Pr
         {holdings.map((h) => (
           <TableRow key={h.id}>
             <TableCell className="font-medium">{h.ticker}</TableCell>
-            <TableCell>{h.name}</TableCell>
+            <TableCell>{h.security_name}</TableCell>
             <TableCell>{h.security_type}</TableCell>
             <TableCell className="text-right">{h.quantity}</TableCell>
             <TableCell className="text-right">{h.average_price}</TableCell>
             <TableCell className="text-right">{h.current_price}</TableCell>
-            <TableCell className="text-right">{h.profit}</TableCell>
+            <TableCell className="text-right">{h.profit_loss}</TableCell>
             <TableCell className="text-right">
               {h.security_type === 'stock' ? h.public_quantity : '—'}
             </TableCell>
-            <TableCell>{new Date(h.last_modified).toLocaleDateString()}</TableCell>
             <TableCell className="text-right space-x-1">
               <Button size="sm" variant="outline" onClick={() => onSell(h)}>
                 Sell
@@ -69,7 +58,7 @@ export function HoldingsTable({ holdings, onSell, onMakePublic, onExercise }: Pr
                   Make Public
                 </Button>
               )}
-              {canExercise(h) && (
+              {h.security_type === 'option' && (
                 <Button size="sm" variant="outline" onClick={() => onExercise(h)}>
                   Exercise
                 </Button>

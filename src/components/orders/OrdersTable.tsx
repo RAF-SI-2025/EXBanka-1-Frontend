@@ -39,14 +39,14 @@ export function OrdersTable({ orders, onApprove, onDecline }: Props) {
       <TableBody>
         {orders.map((order) => (
           <TableRow key={order.id}>
-            <TableCell className="font-medium">{order.asset_ticker ?? '—'}</TableCell>
+            <TableCell className="font-medium">{order.ticker}</TableCell>
             <TableCell className="capitalize">{order.direction}</TableCell>
             <TableCell className="capitalize">{order.order_type.replace('_', ' ')}</TableCell>
             <TableCell className="text-right">{order.quantity}</TableCell>
             <TableCell>
               <OrderStatusBadge status={order.status} />
             </TableCell>
-            <TableCell>{order.user_email ?? '—'}</TableCell>
+            <TableCell>{order.security_name}</TableCell>
             {showActions && (
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

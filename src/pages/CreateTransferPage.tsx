@@ -3,15 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { useClientAccounts } from '@/hooks/useAccounts'
-import { useTransferPreview } from '@/hooks/useTransfers'
-import { useGenerateVerification, useValidateVerification } from '@/hooks/useVerification'
+import { useTransferPreview, useExecuteTransfer } from '@/hooks/useTransfers'
 import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import {
   setTransferStep,
   setTransferFormData,
   resetTransferFlow,
   submitTransfer,
-  setCodeRequested,
   setVerificationError,
 } from '@/store/slices/transferSlice'
 import { CreateTransferForm } from '@/components/transfers/CreateTransferForm'
@@ -38,8 +36,7 @@ export function CreateTransferPage() {
     formData?.amount ?? 0
   )
 
-  const generateVerification = useGenerateVerification()
-  const validateVerification = useValidateVerification()
+  const executeTransfer = useExecuteTransfer()
 
   useEffect(() => {
     return () => {
@@ -84,33 +81,20 @@ export function CreateTransferPage() {
     )
   }
 
-  if (step === 'verification' && transactionId !== null && user !== null) {
-    const clientId = user.id
+  if (step === 'verification' && transactionId !== null) {
     return (
       <VerificationStep
         codeRequested={codeRequested}
-        loading={generateVerification.isPending || validateVerification.isPending}
+        loading={executeTransfer.isPending}
         error={verificationError}
-        onRequestCode={() => {
-          generateVerification.mutate(
-            { client_id: clientId, transaction_id: transactionId, transaction_type: 'TRANSFER' },
-            { onSuccess: () => dispatch(setCodeRequested(true)) }
-          )
-        }}
+        onRequestCode={() => {}}
         onVerified={(code) => {
-          validateVerification.mutate(
+          executeTransfer.mutate(
+            { id: transactionId, verificationCode: code },
             {
-              client_id: clientId,
-              transaction_id: transactionId,
-              transaction_type: 'transfer',
-              code,
-            },
-            {
-              onSuccess: (res) => {
-                if (res.valid) dispatch(setTransferStep('success'))
-                else dispatch(setVerificationError('Invalid verification code'))
-              },
-              onError: () => dispatch(setVerificationError('Verification failed')),
+              onSuccess: () => dispatch(setTransferStep('success')),
+              onError: () =>
+                dispatch(setVerificationError('Transfer execution failed. Please try again.')),
             }
           )
         }}

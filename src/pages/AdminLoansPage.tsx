@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAllLoans } from '@/hooks/useLoans'
 import { Badge } from '@/components/ui/badge'
 import { FilterBar } from '@/components/ui/FilterBar'
+import { PaginationControls } from '@/components/shared/PaginationControls'
 import {
   Table,
   TableBody,
@@ -14,6 +15,8 @@ import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { LOAN_TYPES } from '@/lib/constants/banking'
 import type { LoanFilters as LoanFiltersType, LoanType, LoanStatus } from '@/types/loan'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
+
+const PAGE_SIZE = 10
 
 const STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Active',
@@ -52,20 +55,30 @@ const LOAN_FILTER_FIELDS: FilterFieldDef[] = [
 
 export function AdminLoansPage() {
   const [filterValues, setFilterValues] = useState<FilterValues>({})
+  const [page, setPage] = useState(1)
+
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters)
+    setPage(1)
+  }
+
   const apiFilters: LoanFiltersType = {
     loan_type: (filterValues.loan_type as string[])?.[0] as LoanType | undefined,
     status: (filterValues.status as string[])?.[0] as LoanStatus | undefined,
     account_number: (filterValues.account_number as string) || undefined,
+    page,
+    page_size: PAGE_SIZE,
   }
   const { data, isLoading } = useAllLoans(apiFilters)
   const loans = data?.loans ?? []
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE))
   const loanTypeLabel = (type: string) => LOAN_TYPES.find((t) => t.value === type)?.label ?? type
 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">All Loans</h1>
 
-      <FilterBar fields={LOAN_FILTER_FIELDS} values={filterValues} onChange={setFilterValues} />
+      <FilterBar fields={LOAN_FILTER_FIELDS} values={filterValues} onChange={handleFilterChange} />
 
       {isLoading ? (
         <p>Loading...</p>
@@ -123,6 +136,7 @@ export function AdminLoansPage() {
           </TableBody>
         </Table>
       )}
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   )
 }

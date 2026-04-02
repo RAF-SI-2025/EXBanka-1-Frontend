@@ -1,0 +1,10 @@
+{
+  "id": 42,
+  "first_name": "Marko",
+  "last_name": "Jovanović",
+  "email": "marko@example.com",
+  "phone": "+381641234567",
+  "address": "Knez Mihailova 10, Beograd",
+  "gender": "MALE",
+  "date_of_birth": "1990-05-15"
+}

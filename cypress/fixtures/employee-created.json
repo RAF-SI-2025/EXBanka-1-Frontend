@@ -1,0 +1,17 @@
+{
+  "id": 99,
+  "first_name": "Nikola",
+  "last_name": "Petrović",
+  "email": "nikola.petrovic@example.com",
+  "phone": "",
+  "address": "",
+  "username": "npetrovic",
+  "date_of_birth": 631152000,
+  "gender": "",
+  "jmbg": "1234567890123",
+  "position": "",
+  "department": "",
+  "role": "EmployeeBasic",
+  "active": true,
+  "permissions": []
+}

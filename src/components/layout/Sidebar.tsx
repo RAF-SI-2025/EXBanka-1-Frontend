@@ -76,11 +76,11 @@ function ClientNav() {
         <Link to="/securities" className={navLinkClass}>
           Securities
         </Link>
-        <Link to="/portfolio" className={navLinkClass}>
-          My Portfolio
+        <Link to="/orders" className={navLinkClass}>
+          My Orders
         </Link>
-        <Link to="/otc" className={navLinkClass}>
-          OTC Trading
+        <Link to="/portfolio" className={navLinkClass}>
+          Portfolio
         </Link>
       </div>
     </>
@@ -89,12 +89,14 @@ function ClientNav() {
 
 function EmployeeNav({
   isAdmin,
-  hasOrdersApprove,
-  hasTaxManage,
+  canManageAgents,
+  canApproveOrders,
+  canManageTax,
 }: {
   isAdmin: boolean
-  hasOrdersApprove: boolean
-  hasTaxManage: boolean
+  canManageAgents: boolean
+  canApproveOrders: boolean
+  canManageTax: boolean
 }) {
   return (
     <>
@@ -112,33 +114,39 @@ function EmployeeNav({
       <Link to="/admin/loans/requests" className={navLinkClass}>
         Loan Requests
       </Link>
+      <Link to="/admin/cards/requests" className={navLinkClass}>
+        Card Requests
+      </Link>
       <Link to="/admin/loans" className={navLinkClass}>
         All Loans
       </Link>
-      <div className="mt-2">
-        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-          Trading
-        </p>
-        <Link to="/securities" className={navLinkClass}>
-          Securities
+      {canManageAgents && (
+        <Link to="/admin/actuaries" className={navLinkClass}>
+          Actuaries
         </Link>
-        <Link to="/portfolio" className={navLinkClass}>
-          My Portfolio
+      )}
+      <Link to="/admin/stock-exchanges" className={navLinkClass}>
+        Stock Exchanges
+      </Link>
+      <Link to="/securities" className={navLinkClass}>
+        Securities
+      </Link>
+      <Link to="/orders" className={navLinkClass}>
+        My Orders
+      </Link>
+      <Link to="/portfolio" className={navLinkClass}>
+        Portfolio
+      </Link>
+      {canApproveOrders && (
+        <Link to="/admin/orders" className={navLinkClass}>
+          Order Approval
         </Link>
-        {hasOrdersApprove && (
-          <Link to="/admin/orders" className={navLinkClass}>
-            Order Review
-          </Link>
-        )}
-        <Link to="/otc" className={navLinkClass}>
-          OTC Trading
+      )}
+      {canManageTax && (
+        <Link to="/admin/tax" className={navLinkClass}>
+          Tax
         </Link>
-        {hasTaxManage && (
-          <Link to="/admin/tax" className={navLinkClass}>
-            Tax Management
-          </Link>
-        )}
-      </div>
+      )}
     </>
   )
 }
@@ -151,8 +159,9 @@ export function Sidebar() {
   const userType = useAppSelector(selectUserType)
   const isClient = userType === 'client'
   const isAdmin = useAppSelector(selectIsAdmin)
-  const hasOrdersApprove = useAppSelector((state) => selectHasPermission(state, 'orders.approve'))
-  const hasTaxManage = useAppSelector((state) => selectHasPermission(state, 'tax.manage'))
+  const canManageAgents = useAppSelector((state) => selectHasPermission(state, 'agents.manage'))
+  const canApproveOrders = useAppSelector((state) => selectHasPermission(state, 'orders.approve'))
+  const canManageTax = useAppSelector((state) => selectHasPermission(state, 'tax.manage'))
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -167,8 +176,9 @@ export function Sidebar() {
         ) : (
           <EmployeeNav
             isAdmin={isAdmin}
-            hasOrdersApprove={hasOrdersApprove}
-            hasTaxManage={hasTaxManage}
+            canManageAgents={canManageAgents}
+            canApproveOrders={canApproveOrders}
+            canManageTax={canManageTax}
           />
         )}
       </nav>

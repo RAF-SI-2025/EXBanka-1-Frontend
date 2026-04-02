@@ -1,80 +1,83 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { FilterBar } from '@/components/ui/FilterBar'
+import { HoldingTable } from '@/components/portfolio/HoldingTable'
+import { PortfolioSummaryCard } from '@/components/portfolio/PortfolioSummaryCard'
+import { PaginationControls } from '@/components/shared/PaginationControls'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import {
   usePortfolio,
   usePortfolioSummary,
   useMakePublic,
   useExerciseOption,
 } from '@/hooks/usePortfolio'
-import { useCreateOrder } from '@/hooks/useOrders'
-import { useTradingAccounts } from '@/hooks/useAccounts'
-import { HoldingsTable } from '@/components/portfolio/HoldingsTable'
-import { SellOrderDialog } from '@/components/portfolio/SellOrderDialog'
-import { MakePublicDialog } from '@/components/portfolio/MakePublicDialog'
-import type { Holding } from '@/types/portfolio'
+import type { PortfolioFilters } from '@/types/portfolio'
+import type { FilterFieldDef, FilterValues } from '@/types/filters'
+
+const PAGE_SIZE = 10
+
+const PORTFOLIO_FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
 export function PortfolioPage() {
-  const { data, isLoading } = usePortfolio()
+  const [filterValues, setFilterValues] = useState<FilterValues>({})
+  const [page, setPage] = useState(1)
+
+  const apiFilters: PortfolioFilters = {
+    page,
+    page_size: PAGE_SIZE,
+    security_type: (filterValues.security_type as PortfolioFilters['security_type']) || undefined,
+  }
+
+  const { data, isLoading } = usePortfolio(apiFilters)
   const { data: summary } = usePortfolioSummary()
-  const { data: accountsData } = useTradingAccounts()
-  const { mutate: createOrder, isPending: isOrderPending } = useCreateOrder()
-  const { mutate: makePublic, isPending: isMakePublicPending } = useMakePublic()
-  const { mutate: exerciseOption } = useExerciseOption()
-  const [selectedHolding, setSelectedHolding] = useState<Holding | null>(null)
-  const [makePublicHolding, setMakePublicHolding] = useState<Holding | null>(null)
+  const totalPages = Math.max(1, Math.ceil((data?.total_count ?? 0) / PAGE_SIZE))
+  const makePublicMutation = useMakePublic()
+  const exerciseMutation = useExerciseOption()
 
-  if (isLoading) return <p>Loading...</p>
+  const handleFilterChange = (newFilters: FilterValues) => {
+    setFilterValues(newFilters)
+    setPage(1)
+  }
 
-  const holdings = data?.holdings ?? []
-  const accounts = accountsData?.accounts ?? []
+  const handleMakePublic = useCallback(
+    (id: number) => {
+      makePublicMutation.mutate({ id, payload: { quantity: 1 } })
+    },
+    [makePublicMutation]
+  )
+
+  const handleExercise = useCallback(
+    (id: number) => {
+      exerciseMutation.mutate(id)
+    },
+    [exerciseMutation]
+  )
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">My Portfolio</h1>
-      {summary && (
-        <div className="flex gap-6 text-sm">
-          <span>
-            Total Value: <strong>{summary.total_value}</strong>
-          </span>
-          <span>
-            P&amp;L: <strong>{summary.total_profit_loss}</strong>
-          </span>
-        </div>
-      )}
-      <HoldingsTable
-        holdings={holdings}
-        onSell={setSelectedHolding}
-        onMakePublic={setMakePublicHolding}
-        onExercise={(h) => exerciseOption(h.id)}
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Portfolio</h1>
+
+      {summary && <PortfolioSummaryCard summary={summary} />}
+
+      <FilterBar
+        fields={PORTFOLIO_FILTER_FIELDS}
+        values={filterValues}
+        onChange={handleFilterChange}
       />
-      {selectedHolding && (
-        <SellOrderDialog
-          open={!!selectedHolding}
-          onOpenChange={(open) => {
-            if (!open) setSelectedHolding(null)
-          }}
-          holding={selectedHolding}
-          accounts={accounts}
-          onSubmit={(payload) => {
-            createOrder(payload, { onSuccess: () => setSelectedHolding(null) })
-          }}
-          loading={isOrderPending}
-        />
-      )}
-      {makePublicHolding && (
-        <MakePublicDialog
-          open={!!makePublicHolding}
-          onOpenChange={(open) => {
-            if (!open) setMakePublicHolding(null)
-          }}
-          holding={makePublicHolding}
-          onSubmit={(quantity) => {
-            makePublic(
-              { id: makePublicHolding.id, quantity },
-              { onSuccess: () => setMakePublicHolding(null) }
-            )
-          }}
-          loading={isMakePublicPending}
-        />
+
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : data?.holdings.length ? (
+        <>
+          <HoldingTable
+            holdings={data.holdings}
+            onMakePublic={handleMakePublic}
+            onExercise={handleExercise}
+          />
+          <p className="text-sm text-muted-foreground mt-2">{data.total_count} holdings</p>
+          <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      ) : (
+        <p>No holdings found.</p>
       )}
     </div>
   )

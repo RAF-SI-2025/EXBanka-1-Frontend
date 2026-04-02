@@ -8,8 +8,8 @@ jest.mock('@/hooks/useTax')
 
 describe('TaxTrackingPage', () => {
   const records = [
-    createMockTaxRecord({ id: 1, first_name: 'Marko', last_name: 'Marković' }),
-    createMockTaxRecord({ id: 2, first_name: 'Ana', last_name: 'Anić', user_type: 'actuary' }),
+    createMockTaxRecord({ id: 1, user_name: 'Marko Marković' }),
+    createMockTaxRecord({ id: 2, user_name: 'Ana Anić', user_type: 'actuary' }),
   ]
   const mutateFn = jest.fn()
 

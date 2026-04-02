@@ -1,0 +1,17 @@
+{
+  "id": 99,
+  "account_number": "265000000000099001",
+  "account_name": "standard",
+  "currency_code": "RSD",
+  "account_kind": "current",
+  "account_type": "standard",
+  "account_category": "personal",
+  "balance": 10000,
+  "available_balance": 10000,
+  "status": "ACTIVE",
+  "owner_id": 42,
+  "owner_name": "Marko Jovanović",
+  "daily_limit": 1000000,
+  "monthly_limit": 10000000,
+  "created_at": "2026-03-25T12:00:00Z"
+}

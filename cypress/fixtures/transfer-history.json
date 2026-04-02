@@ -1,0 +1,35 @@
+{
+  "transfers": [
+    {
+      "id": 203,
+      "from_account_number": "265000000000000011",
+      "to_account_number": "265000000000000022",
+      "initial_amount": 23300,
+      "final_amount": 200,
+      "exchange_rate": 116.5,
+      "commission": 0,
+      "timestamp": "2026-03-26T09:00:00Z"
+    },
+    {
+      "id": 202,
+      "from_account_number": "265000000000000011",
+      "to_account_number": "265000000000000033",
+      "initial_amount": 10000,
+      "final_amount": 10000,
+      "exchange_rate": 1,
+      "commission": 0,
+      "timestamp": "2026-03-25T15:00:00Z"
+    },
+    {
+      "id": 201,
+      "from_account_number": "265000000000000022",
+      "to_account_number": "265000000000000011",
+      "initial_amount": 50,
+      "final_amount": 5825,
+      "exchange_rate": 116.5,
+      "commission": 0,
+      "timestamp": "2026-03-24T08:00:00Z"
+    }
+  ],
+  "total": 3
+}
