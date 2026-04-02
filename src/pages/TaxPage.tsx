@@ -45,7 +45,7 @@ export function TaxPage() {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : data?.tax_records?.length ? (
+      ) : data?.tax_records.length ? (
         <>
           <TaxTable records={data.tax_records} />
           <p className="text-sm text-muted-foreground mt-2">{data.total_count} records</p>

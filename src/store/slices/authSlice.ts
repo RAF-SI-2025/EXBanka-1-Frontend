@@ -6,19 +6,40 @@ import type { AuthUser, LoginRequest, AuthTokens } from '@/types/auth'
 
 interface AuthState {
   user: AuthUser | null
+  userType: 'client' | 'employee' | null
   accessToken: string | null
   refreshToken: string | null
   status: 'idle' | 'loading' | 'authenticated' | 'error'
   error: string | null
 }
 
-const initialState: AuthState = {
+const emptyState: AuthState = {
   user: null,
+  userType: null,
   accessToken: null,
   refreshToken: null,
   status: 'idle',
   error: null,
 }
+
+export function buildInitialState(): AuthState {
+  const accessToken = sessionStorage.getItem('access_token')
+  const refreshToken = sessionStorage.getItem('refresh_token')
+  const user = accessToken ? decodeAuthToken(accessToken) : null
+  if (user && accessToken && refreshToken) {
+    return {
+      user,
+      userType: user.system_type,
+      accessToken,
+      refreshToken,
+      status: 'authenticated',
+      error: null,
+    }
+  }
+  return emptyState
+}
+
+const initialState: AuthState = buildInitialState()
 
 export const loginThunk = createAsyncThunk(
   'auth/login',
@@ -62,11 +83,12 @@ const authSlice = createSlice({
       const user = decodeAuthToken(action.payload.access_token)
       if (user) {
         state.user = user
+        state.userType = user.system_type
         state.status = 'authenticated'
       }
     },
     clearAuth() {
-      return initialState
+      return emptyState
     },
   },
   extraReducers: (builder) => {
@@ -76,10 +98,12 @@ const authSlice = createSlice({
         state.error = null
       })
       .addCase(loginThunk.fulfilled, (state, action) => {
+        const { tokens, user } = action.payload
+        state.user = user
+        state.userType = user.system_type
+        state.accessToken = tokens.access_token
+        state.refreshToken = tokens.refresh_token
         state.status = 'authenticated'
-        state.user = action.payload.user
-        state.accessToken = action.payload.tokens.access_token
-        state.refreshToken = action.payload.tokens.refresh_token
         state.error = null
       })
       .addCase(loginThunk.rejected, (state, action) => {
@@ -87,7 +111,7 @@ const authSlice = createSlice({
         state.error = action.payload as string
       })
       .addCase(logoutThunk.fulfilled, () => {
-        return initialState
+        return emptyState
       })
   },
 })

@@ -5,8 +5,8 @@ import { z } from 'zod'
 import { passwordSchema } from '@/lib/utils/validation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FormField } from '@/components/shared/FormField'
+import { AuthFormCard } from './AuthFormCard'
 
 const schema = z
   .object({
@@ -36,46 +36,35 @@ export function ActivationForm({ onSubmit, isLoading, isSuccess, error }: Activa
     resolver: zodResolver(schema),
   })
 
-  if (isSuccess) {
-    return (
-      <Card className="border-t-4 border-t-primary">
-        <CardContent className="pt-6 text-center space-y-4">
+  return (
+    <AuthFormCard
+      title="Activate Account"
+      isSuccess={isSuccess}
+      error={error}
+      successContent={
+        <>
           <p className="text-sm">Account activated successfully.</p>
           <Link to="/login" className="text-primary underline text-sm">
             Log in
           </Link>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  return (
-    <Card className="border-t-4 border-t-primary">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">Activate Account</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-4">
-          {error && <div className="text-sm text-destructive text-center">{error}</div>}
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" {...register('password')} />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirm_password">Confirm Password</Label>
-            <Input id="confirm_password" type="password" {...register('confirm_password')} />
-            {errors.confirm_password && (
-              <p className="text-sm text-destructive">{errors.confirm_password.message}</p>
-            )}
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Activating...' : 'Activate Account'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-4">
+        <FormField label="Password" id="password" error={errors.password?.message}>
+          <Input id="password" type="password" {...register('password')} />
+        </FormField>
+        <FormField
+          label="Confirm Password"
+          id="confirm_password"
+          error={errors.confirm_password?.message}
+        >
+          <Input id="confirm_password" type="password" {...register('confirm_password')} />
+        </FormField>
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? 'Activating...' : 'Activate Account'}
+        </Button>
+      </form>
+    </AuthFormCard>
   )
 }

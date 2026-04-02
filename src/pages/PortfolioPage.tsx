@@ -66,7 +66,7 @@ export function PortfolioPage() {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : data?.holdings?.length ? (
+      ) : data?.holdings.length ? (
         <>
           <HoldingTable
             holdings={data.holdings}

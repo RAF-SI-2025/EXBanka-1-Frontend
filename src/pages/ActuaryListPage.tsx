@@ -88,7 +88,7 @@ export function ActuaryListPage() {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : data?.actuaries?.length ? (
+      ) : data?.actuaries.length ? (
         <>
           <ActuaryTable
             actuaries={data.actuaries}

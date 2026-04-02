@@ -1,17 +1,17 @@
-import { useParams, useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams } from 'react-router-dom'
 import { EmployeeForm } from '@/components/employees/EmployeeForm'
 import { BackButton } from '@/components/shared/BackButton'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import { useEmployee } from '@/hooks/useEmployee'
 import { useAppSelector } from '@/hooks/useAppSelector'
+import { useMutationWithRedirect } from '@/hooks/useMutationWithRedirect'
 import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import { updateEmployee } from '@/lib/api/employees'
 import type { UpdateEmployeeRequest } from '@/types/employee'
 
 export function EditEmployeePage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const employeeId = Number(id)
   const currentUser = useAppSelector(selectCurrentUser)
   const { data: employee, isLoading } = useEmployee(employeeId)
@@ -19,17 +19,14 @@ export function EditEmployeePage() {
   const isOwnProfile = currentUser?.id === employeeId
   const isOtherAdmin = employee?.role === 'EmployeeAdmin' && !isOwnProfile
 
-  const mutation = useMutation({
+  const mutation = useMutationWithRedirect({
     mutationFn: (data: UpdateEmployeeRequest) => updateEmployee(employeeId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] })
-      queryClient.invalidateQueries({ queryKey: ['employee', employeeId] })
-      navigate('/employees')
-    },
+    invalidateKeys: [['employees']],
+    redirectTo: '/employees',
   })
 
-  if (isLoading) return <p>Loading...</p>
-  if (!employee) return <p>Employee not found.</p>
+  if (isLoading) return <LoadingSpinner />
+  if (!employee) return <ErrorMessage message="Employee not found." />
 
   const title = isOtherAdmin
     ? 'Administrator Details'
@@ -49,7 +46,7 @@ export function EditEmployeePage() {
         isLoading={mutation.isPending}
         readOnly={isOtherAdmin}
       />
-      {mutation.isError && <p className="text-destructive mt-2">Failed to update employee.</p>}
+      {mutation.isError && <ErrorMessage message="Failed to update employee." />}
     </div>
   )
 }

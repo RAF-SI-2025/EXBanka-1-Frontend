@@ -68,7 +68,7 @@ export function StockExchangesPage() {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : data?.exchanges?.length ? (
+      ) : data?.exchanges.length ? (
         <>
           <StockExchangeTable exchanges={data.exchanges} />
           <p className="text-sm text-muted-foreground mt-2">{data.total_count} exchanges</p>

@@ -2,14 +2,40 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { Sidebar } from '@/components/layout/Sidebar'
-import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
 describe('Sidebar', () => {
-  it('shows employee management link', () => {
+  it('shows Employees link when user has employees.read permission', () => {
     renderWithProviders(<Sidebar />, {
-      preloadedState: { auth: createMockAuthState() },
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ permissions: ['employees.read'] }),
+        }),
+      },
     })
     expect(screen.getByRole('link', { name: /employees/i })).toHaveAttribute('href', '/employees')
+  })
+
+  it('shows Employees link regardless of role when employees.read permission is present', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeBasic', permissions: ['employees.read'] }),
+        }),
+      },
+    })
+    expect(screen.getByRole('link', { name: /employees/i })).toHaveAttribute('href', '/employees')
+  })
+
+  it('hides Employees link when user lacks employees.read permission', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeBasic', permissions: [] }),
+        }),
+      },
+    })
+    expect(screen.queryByRole('link', { name: /employees/i })).not.toBeInTheDocument()
   })
 
   it('shows logout button', () => {
@@ -49,7 +75,6 @@ describe('Sidebar', () => {
     })
     const toggleBtn = screen.getByRole('button', { name: /switch to dark mode/i })
     await user.click(toggleBtn)
-    // waitFor ensures the useEffect in ThemeContext has flushed before asserting the DOM
     await waitFor(() => {
       expect(document.documentElement.classList.contains('dark')).toBe(true)
     })
