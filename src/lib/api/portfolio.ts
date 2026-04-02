@@ -18,3 +18,11 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
   const response = await apiClient.get<PortfolioSummary>('/api/me/portfolio/summary')
   return response.data
 }
+
+export async function makePublicHolding(id: number, quantity: number): Promise<void> {
+  await apiClient.post(`/api/me/portfolio/${id}/make-public`, { quantity })
+}
+
+export async function exerciseOption(id: number): Promise<void> {
+  await apiClient.post(`/api/me/portfolio/${id}/exercise`)
+}
