@@ -10,13 +10,13 @@ jest.mock('@/lib/api/stockExchanges')
 const mockExchanges = [
   createMockStockExchange({
     id: 1,
-    exchange_name: 'New York Stock Exchange',
-    exchange_acronym: 'NYSE',
+    name: 'New York Stock Exchange',
+    acronym: 'NYSE',
   }),
   createMockStockExchange({
     id: 2,
-    exchange_name: 'London Stock Exchange',
-    exchange_acronym: 'LSE',
+    name: 'London Stock Exchange',
+    acronym: 'LSE',
   }),
 ]
 
