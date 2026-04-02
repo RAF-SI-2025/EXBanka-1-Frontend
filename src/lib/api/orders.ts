@@ -14,7 +14,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
 
 export async function getMyOrders(filters: MyOrderFilters = {}): Promise<OrderListResponse> {
   const { data } = await apiClient.get<OrderListResponse>('/api/me/orders', { params: filters })
-  return data
+  return { ...data, orders: data.orders ?? [] }
 }
 
 export async function getMyOrder(id: number): Promise<Order> {
@@ -29,7 +29,7 @@ export async function cancelOrder(id: number): Promise<Order> {
 
 export async function getAllOrders(filters: AdminOrderFilters = {}): Promise<OrderListResponse> {
   const { data } = await apiClient.get<OrderListResponse>('/api/orders', { params: filters })
-  return data
+  return { ...data, orders: data.orders ?? [] }
 }
 
 export async function approveOrder(id: number): Promise<Order> {

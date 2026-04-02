@@ -20,7 +20,7 @@ export async function getStocks(filters: StockFilters = {}): Promise<StockListRe
   const { data } = await apiClient.get<StockListResponse>('/api/securities/stocks', {
     params: filters,
   })
-  return data
+  return { ...data, stocks: data.stocks ?? [] }
 }
 
 export async function getStock(id: number): Promise<Stock> {
@@ -36,14 +36,14 @@ export async function getStockHistory(
     `/api/securities/stocks/${id}/history`,
     { params: filters }
   )
-  return data
+  return { ...data, history: data.history ?? [] }
 }
 
 export async function getFutures(filters: FuturesFilters = {}): Promise<FuturesListResponse> {
   const { data } = await apiClient.get<FuturesListResponse>('/api/securities/futures', {
     params: filters,
   })
-  return data
+  return { ...data, futures: data.futures ?? [] }
 }
 
 export async function getFuture(id: number): Promise<FuturesContract> {
@@ -59,14 +59,14 @@ export async function getFutureHistory(
     `/api/securities/futures/${id}/history`,
     { params: filters }
   )
-  return data
+  return { ...data, history: data.history ?? [] }
 }
 
 export async function getForexPairs(filters: ForexFilters = {}): Promise<ForexListResponse> {
   const { data } = await apiClient.get<ForexListResponse>('/api/securities/forex', {
     params: filters,
   })
-  return data
+  return { ...data, forex_pairs: data.forex_pairs ?? [] }
 }
 
 export async function getForexPair(id: number): Promise<ForexPair> {
@@ -82,14 +82,14 @@ export async function getForexHistory(
     `/api/securities/forex/${id}/history`,
     { params: filters }
   )
-  return data
+  return { ...data, history: data.history ?? [] }
 }
 
 export async function getOptions(filters: OptionsFilters): Promise<OptionsListResponse> {
   const { data } = await apiClient.get<OptionsListResponse>('/api/securities/options', {
     params: filters,
   })
-  return data
+  return { ...data, options: data.options ?? [] }
 }
 
 export async function getOption(id: number): Promise<Option> {
