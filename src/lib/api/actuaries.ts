@@ -11,7 +11,7 @@ export async function getActuaries(filters: ActuaryFilters = {}): Promise<Actuar
   const { data } = await apiClient.get<ActuaryListResponse>('/api/actuaries', {
     params: filters,
   })
-  return data
+  return { ...data, actuaries: data.actuaries ?? [] }
 }
 
 export async function setActuaryLimit(id: number, payload: SetLimitPayload): Promise<Actuary> {

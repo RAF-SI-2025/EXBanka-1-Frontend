@@ -3,7 +3,7 @@ import type { TaxListResponse, TaxFilters, CollectTaxResponse } from '@/types/ta
 
 export async function getTaxRecords(filters: TaxFilters = {}): Promise<TaxListResponse> {
   const { data } = await apiClient.get<TaxListResponse>('/api/tax', { params: filters })
-  return data
+  return { ...data, tax_records: data.tax_records ?? [] }
 }
 
 export async function collectTaxes(): Promise<CollectTaxResponse> {

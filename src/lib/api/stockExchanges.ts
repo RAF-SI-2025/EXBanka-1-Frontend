@@ -11,7 +11,7 @@ export async function getStockExchanges(
   const { data } = await apiClient.get<StockExchangeListResponse>('/api/stock-exchanges', {
     params: filters,
   })
-  return data
+  return { ...data, exchanges: data.exchanges ?? [] }
 }
 
 export async function getTestingMode(): Promise<TestingModeResponse> {

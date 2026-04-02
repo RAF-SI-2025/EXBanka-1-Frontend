@@ -11,7 +11,7 @@ export async function getPortfolio(filters: PortfolioFilters = {}): Promise<Hold
   const { data } = await apiClient.get<HoldingListResponse>('/api/me/portfolio', {
     params: filters,
   })
-  return data
+  return { ...data, holdings: data.holdings ?? [] }
 }
 
 export async function getPortfolioSummary(): Promise<PortfolioSummary> {
