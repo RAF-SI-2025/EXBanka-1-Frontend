@@ -40,7 +40,7 @@ export function ForexTable({ pairs, onRowClick, onBuy }: ForexTableProps) {
               {Number(pair.change) >= 0 ? '+' : ''}
               {pair.change}
             </TableCell>
-            <TableCell>{pair.volume.toLocaleString()}</TableCell>
+            <TableCell>{(pair.volume ?? 0).toLocaleString()}</TableCell>
             <TableCell>{pair.liquidity}</TableCell>
             <TableCell>{pair.initial_margin_cost}</TableCell>
             <TableCell>

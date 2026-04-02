@@ -24,7 +24,7 @@ export function FuturesDetailPage() {
     { label: 'Name', value: future.name },
     { label: 'Price', value: future.price },
     { label: 'Change', value: future.change },
-    { label: 'Volume', value: future.volume.toLocaleString() },
+    { label: 'Volume', value: (future.volume ?? 0).toLocaleString() },
     { label: 'Exchange', value: future.exchange_acronym },
     { label: 'Contract Size', value: `${future.contract_size} ${future.contract_unit}` },
     { label: 'Settlement Date', value: future.settlement_date },

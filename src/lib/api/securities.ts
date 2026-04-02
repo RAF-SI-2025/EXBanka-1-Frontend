@@ -1,31 +1,41 @@
 import { apiClient } from '@/lib/api/axios'
 import type {
-  Stock,
-  StockListResponse,
-  StockFilters,
-  FuturesContract,
-  FuturesListResponse,
-  FuturesFilters,
-  ForexPair,
-  ForexListResponse,
   ForexFilters,
+  ForexListResponse,
+  ForexPair,
+  FuturesContract,
+  FuturesFilters,
+  FuturesListResponse,
   Option,
-  OptionsListResponse,
   OptionsFilters,
-  PriceHistoryResponse,
+  OptionsListResponse,
   PriceHistoryFilters,
+  PriceHistoryResponse,
+  Stock,
+  StockFilters,
+  StockListResponse,
 } from '@/types/security'
+
+function flattenListing<T>(item: T): T {
+  const raw = item as any
+  if (raw && typeof raw === 'object' && 'listing' in raw && raw.listing) {
+    const { listing, ...rest } = raw
+    return { ...rest, ...listing } as T
+    return { ...rest, ...(listing as Record<string, unknown>) } as T
+  }
+  return item
+}
 
 export async function getStocks(filters: StockFilters = {}): Promise<StockListResponse> {
   const { data } = await apiClient.get<StockListResponse>('/api/securities/stocks', {
     params: filters,
   })
-  return { ...data, stocks: data.stocks ?? [] }
+  return { ...data, stocks: (data.stocks ?? []).map(flattenListing) }
 }
 
 export async function getStock(id: number): Promise<Stock> {
   const { data } = await apiClient.get<Stock>(`/api/securities/stocks/${id}`)
-  return data
+  return flattenListing(data)
 }
 
 export async function getStockHistory(
@@ -43,12 +53,12 @@ export async function getFutures(filters: FuturesFilters = {}): Promise<FuturesL
   const { data } = await apiClient.get<FuturesListResponse>('/api/securities/futures', {
     params: filters,
   })
-  return { ...data, futures: data.futures ?? [] }
+  return { ...data, futures: (data.futures ?? []).map(flattenListing) }
 }
 
 export async function getFuture(id: number): Promise<FuturesContract> {
   const { data } = await apiClient.get<FuturesContract>(`/api/securities/futures/${id}`)
-  return data
+  return flattenListing(data)
 }
 
 export async function getFutureHistory(
@@ -66,12 +76,12 @@ export async function getForexPairs(filters: ForexFilters = {}): Promise<ForexLi
   const { data } = await apiClient.get<ForexListResponse>('/api/securities/forex', {
     params: filters,
   })
-  return { ...data, forex_pairs: data.forex_pairs ?? [] }
+  return { ...data, forex_pairs: (data.forex_pairs ?? []).map(flattenListing) }
 }
 
 export async function getForexPair(id: number): Promise<ForexPair> {
   const { data } = await apiClient.get<ForexPair>(`/api/securities/forex/${id}`)
-  return data
+  return flattenListing(data)
 }
 
 export async function getForexHistory(
@@ -89,10 +99,10 @@ export async function getOptions(filters: OptionsFilters): Promise<OptionsListRe
   const { data } = await apiClient.get<OptionsListResponse>('/api/securities/options', {
     params: filters,
   })
-  return { ...data, options: data.options ?? [] }
+  return { ...data, options: (data.options ?? []).map(flattenListing) }
 }
 
 export async function getOption(id: number): Promise<Option> {
   const { data } = await apiClient.get<Option>(`/api/securities/options/${id}`)
-  return data
+  return flattenListing(data)
 }

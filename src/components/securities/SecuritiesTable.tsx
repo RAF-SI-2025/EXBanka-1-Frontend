@@ -42,7 +42,7 @@ export function SecuritiesTable({ securities, onBuy }: Props) {
             <TableCell className="text-right">{s.ask}</TableCell>
             <TableCell className="text-right">{s.bid}</TableCell>
             <TableCell className="text-right">{s.price}</TableCell>
-            <TableCell className="text-right">{s.volume.toLocaleString()}</TableCell>
+            <TableCell className="text-right">{(s.volume ?? 0).toLocaleString()}</TableCell>
             <TableCell className="text-right">
               <Button size="sm" onClick={() => onBuy(s)}>
                 Buy

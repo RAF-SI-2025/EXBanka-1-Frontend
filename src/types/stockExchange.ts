@@ -1,8 +1,8 @@
 export interface StockExchange {
   id: number
-  exchange_name: string
-  exchange_acronym: string
-  exchange_mic_code: string
+  name: string
+  acronym: string
+  mic_code: string
   polity: string
   currency: string
   time_zone: string

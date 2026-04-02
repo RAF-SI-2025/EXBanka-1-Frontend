@@ -30,10 +30,10 @@ export function StockDetailPage() {
     { label: 'Name', value: stock.name },
     { label: 'Price', value: stock.price },
     { label: 'Change', value: stock.change },
-    { label: 'Volume', value: stock.volume.toLocaleString() },
+    { label: 'Volume', value: (stock.volume ?? 0).toLocaleString() },
     { label: 'Exchange', value: stock.exchange_acronym },
     { label: 'Market Cap', value: stock.market_cap },
-    { label: 'Dividend Yield', value: `${(stock.dividend_yield * 100).toFixed(2)}%` },
+    { label: 'Dividend Yield', value: `${((stock.dividend_yield ?? 0) * 100).toFixed(2)}%` },
     { label: 'Maintenance Margin', value: stock.maintenance_margin },
     { label: 'Initial Margin Cost', value: stock.initial_margin_cost },
   ]

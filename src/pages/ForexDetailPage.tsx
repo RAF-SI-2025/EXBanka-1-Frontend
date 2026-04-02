@@ -24,7 +24,7 @@ export function ForexDetailPage() {
     { label: 'Name', value: pair.name },
     { label: 'Exchange Rate', value: pair.exchange_rate },
     { label: 'Change', value: pair.change },
-    { label: 'Volume', value: pair.volume.toLocaleString() },
+    { label: 'Volume', value: (pair.volume ?? 0).toLocaleString() },
     { label: 'Base Currency', value: pair.base_currency },
     { label: 'Quote Currency', value: pair.quote_currency },
     { label: 'Liquidity', value: pair.liquidity },

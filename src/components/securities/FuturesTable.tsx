@@ -45,7 +45,7 @@ export function FuturesTable({ futures, onRowClick, onBuy }: FuturesTableProps) 
               {Number(future.change) >= 0 ? '+' : ''}
               {future.change}
             </TableCell>
-            <TableCell>{future.volume.toLocaleString()}</TableCell>
+            <TableCell>{(future.volume ?? 0).toLocaleString()}</TableCell>
             <TableCell>{future.settlement_date}</TableCell>
             <TableCell>{future.exchange_acronym}</TableCell>
             <TableCell>{future.initial_margin_cost}</TableCell>

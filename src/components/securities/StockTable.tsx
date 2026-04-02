@@ -40,7 +40,7 @@ export function StockTable({ stocks, onRowClick, onBuy }: StockTableProps) {
               {Number(stock.change) >= 0 ? '+' : ''}
               {stock.change}
             </TableCell>
-            <TableCell>{stock.volume.toLocaleString()}</TableCell>
+            <TableCell>{(stock.volume ?? 0).toLocaleString()}</TableCell>
             <TableCell>{stock.exchange_acronym}</TableCell>
             <TableCell>{stock.initial_margin_cost}</TableCell>
             <TableCell>
