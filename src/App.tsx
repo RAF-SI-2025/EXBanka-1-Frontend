@@ -33,6 +33,9 @@ import { EditClientPage } from '@/pages/EditClientPage'
 import { AdminLoanRequestsPage } from '@/pages/AdminLoanRequestsPage'
 import { AdminLoansPage } from '@/pages/AdminLoansPage'
 import { CreateClientPage } from '@/pages/CreateClientPage'
+import { SecuritiesPage } from '@/pages/SecuritiesPage'
+import { PortfolioPage } from '@/pages/PortfolioPage'
+import { AdminOrdersPage } from '@/pages/AdminOrdersPage'
 
 export default function App() {
   return (
@@ -269,6 +272,20 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="Client">
               <LoanDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Securities & Portfolio (all authenticated users) */}
+        <Route path="/securities" element={<SecuritiesPage />} />
+        <Route path="/portfolio" element={<PortfolioPage />} />
+
+        {/* Admin Orders */}
+        <Route
+          path="/admin/orders"
+          element={
+            <ProtectedRoute requiredPermission="orders.approve">
+              <AdminOrdersPage />
             </ProtectedRoute>
           }
         />

@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { logoutThunk } from '@/store/slices/authSlice'
-import { selectCurrentUser, selectIsAdmin, selectUserType } from '@/store/selectors/authSelectors'
+import {
+  selectCurrentUser,
+  selectIsAdmin,
+  selectUserType,
+  selectHasPermission,
+} from '@/store/selectors/authSelectors'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navLinkClass =
@@ -64,11 +69,28 @@ function ClientNav() {
       <Link to="/loans" className={navLinkClass}>
         Loans
       </Link>
+      <div className="mt-2">
+        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
+          Trading
+        </p>
+        <Link to="/securities" className={navLinkClass}>
+          Securities
+        </Link>
+        <Link to="/portfolio" className={navLinkClass}>
+          My Portfolio
+        </Link>
+      </div>
     </>
   )
 }
 
-function EmployeeNav({ isAdmin }: { isAdmin: boolean }) {
+function EmployeeNav({
+  isAdmin,
+  hasOrdersApprove,
+}: {
+  isAdmin: boolean
+  hasOrdersApprove: boolean
+}) {
   return (
     <>
       {isAdmin && (
@@ -88,6 +110,22 @@ function EmployeeNav({ isAdmin }: { isAdmin: boolean }) {
       <Link to="/admin/loans" className={navLinkClass}>
         All Loans
       </Link>
+      <div className="mt-2">
+        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
+          Trading
+        </p>
+        <Link to="/securities" className={navLinkClass}>
+          Securities
+        </Link>
+        <Link to="/portfolio" className={navLinkClass}>
+          My Portfolio
+        </Link>
+        {hasOrdersApprove && (
+          <Link to="/admin/orders" className={navLinkClass}>
+            Order Review
+          </Link>
+        )}
+      </div>
     </>
   )
 }
@@ -100,6 +138,7 @@ export function Sidebar() {
   const userType = useAppSelector(selectUserType)
   const isClient = userType === 'client'
   const isAdmin = useAppSelector(selectIsAdmin)
+  const hasOrdersApprove = useAppSelector((state) => selectHasPermission(state, 'orders.approve'))
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -109,7 +148,11 @@ export function Sidebar() {
     <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col p-4">
       <div className="text-lg font-bold mb-6 text-accent-2">EXBanka</div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
-        {isClient ? <ClientNav /> : <EmployeeNav isAdmin={isAdmin} />}
+        {isClient ? (
+          <ClientNav />
+        ) : (
+          <EmployeeNav isAdmin={isAdmin} hasOrdersApprove={hasOrdersApprove} />
+        )}
       </nav>
       <div className="border-t border-sidebar-border pt-4 mt-4">
         <div className="flex justify-between items-center mb-2">
