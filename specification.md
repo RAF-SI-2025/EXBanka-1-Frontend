@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-03-25_
+_Last updated: 2026-04-02 (securities portal update)_
 
 ---
 
@@ -61,7 +61,13 @@ src/
 │   ├── fixtures/
 │   │   ├── auth-fixtures.ts          # Mock auth data factories
 │   │   ├── card-fixtures.ts          # Mock card request data factories
-│   │   └── employee-fixtures.ts      # Mock employee data factories
+│   │   ├── employee-fixtures.ts      # Mock employee data factories
+│   │   ├── actuary-fixtures.ts       # Mock actuary data factories
+│   │   ├── stockExchange-fixtures.ts # Mock stock exchange data factories
+│   │   ├── security-fixtures.ts     # Mock stock, futures, forex, option, price history factories
+│   │   ├── order-fixtures.ts        # Mock order factory
+│   │   ├── portfolio-fixtures.ts    # Mock holding, portfolio summary factories
+│   │   └── tax-fixtures.ts          # Mock tax record factory
 │   ├── mocks/
 │   │   └── select-mock.tsx           # Shadcn Select mock for tests
 │   └── utils/
@@ -113,6 +119,26 @@ src/
 │   │   ├── EmployeeStatusBadge.tsx   # Active/Inactive badge
 │   │   ├── EmployeeStatusBadge.test.tsx
 │   │   └── employeeConstants.ts     # Re-export shim (imports from lib/utils/constants)
+│   ├── actuaries/
+│   │   ├── ActuaryTable.tsx + .test.tsx       # Table displaying actuaries with actions
+│   │   └── EditLimitDialog.tsx + .test.tsx    # Dialog for editing agent's limit
+│   ├── stockExchanges/
+│   │   └── StockExchangeTable.tsx + .test.tsx # Table displaying stock exchanges
+│   ├── securities/
+│   │   ├── StockTable.tsx + .test.tsx         # Stocks list table
+│   │   ├── FuturesTable.tsx + .test.tsx       # Futures contracts list table
+│   │   ├── ForexTable.tsx + .test.tsx         # Forex pairs list table
+│   │   ├── PriceChart.tsx + .test.tsx         # Recharts line chart with period selector
+│   │   ├── SecurityInfoPanel.tsx + .test.tsx  # Key-value detail info panel
+│   │   └── OptionsChain.tsx + .test.tsx       # Calls/Puts options chain table
+│   ├── orders/
+│   │   ├── CreateOrderForm.tsx + .test.tsx    # Order creation form
+│   │   └── OrderTable.tsx + .test.tsx         # Reusable orders table with actions
+│   ├── portfolio/
+│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Make Public/Exercise
+│   │   └── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
+│   ├── tax/
+│   │   └── TaxTable.tsx + .test.tsx           # Tax records table
 │   ├── cards/
 │   │   ├── CardRequestDenyDialog.tsx     # Deny confirmation dialog with optional reason textarea
 │   │   └── CardRequestDenyDialog.test.tsx
@@ -173,6 +199,17 @@ src/
 │   ├── AdminCardRequestsPage.tsx + .test.tsx
 │   ├── AdminLoanRequestsPage.tsx + .test.tsx
 │   ├── AdminLoansPage.tsx + .test.tsx
+│   ├── ActuaryListPage.tsx + .test.tsx
+│   ├── StockExchangesPage.tsx + .test.tsx
+│   ├── SecuritiesPage.tsx + .test.tsx
+│   ├── StockDetailPage.tsx + .test.tsx
+│   ├── FuturesDetailPage.tsx + .test.tsx
+│   ├── ForexDetailPage.tsx + .test.tsx
+│   ├── CreateOrderPage.tsx + .test.tsx
+│   ├── MyOrdersPage.tsx + .test.tsx
+│   ├── PortfolioPage.tsx + .test.tsx
+│   ├── AdminOrdersPage.tsx + .test.tsx
+│   ├── TaxPage.tsx + .test.tsx
 │   ├── CardListPage.tsx + .test.tsx
 │   ├── CardRequestPage.tsx + .test.tsx
 │   ├── CreateAccountPage.tsx + .test.tsx
@@ -205,7 +242,13 @@ src/
 │   ├── useEmployees.ts + .test.ts    # React Query: fetch employees with server-side filters
 │   ├── useEmployee.ts + .test.ts     # React Query: fetch single employee
 │   ├── useMutationWithRedirect.ts + .test.ts  # Mutation + invalidate + navigate
-│   └── usePagination.ts + .test.ts   # Client-side pagination over an array
+│   ├── usePagination.ts + .test.ts   # Client-side pagination over an array
+│   ├── useActuaries.ts + .test.ts   # React Query: actuaries CRUD hooks
+│   ├── useStockExchanges.ts + .test.ts # React Query: stock exchanges + testing mode hooks
+│   ├── useSecurities.ts + .test.ts   # React Query: stocks, futures, forex, options hooks
+│   ├── useOrders.ts + .test.ts       # React Query: orders CRUD hooks (my + admin)
+│   ├── usePortfolio.ts + .test.ts    # React Query: portfolio, holdings, exercise hooks
+│   └── useTax.ts + .test.ts          # React Query: tax records + collect hooks
 │
 ├── lib/
 │   ├── api/
@@ -222,7 +265,13 @@ src/
 │   │   ├── verification.ts           # Verification API calls
 │   │   ├── roles.ts + .test.ts       # Roles & permissions API calls
 │   │   ├── interestRateTiers.ts + .test.ts  # Interest rate tiers API calls
-│   │   └── bankMargins.ts + .test.ts # Bank margins API calls
+│   │   ├── bankMargins.ts + .test.ts # Bank margins API calls
+│   │   ├── actuaries.ts + .test.ts   # Actuary API calls
+│   │   ├── stockExchanges.ts + .test.ts # Stock exchange API calls
+│   │   ├── securities.ts + .test.ts # Securities API calls (stocks, futures, forex, options)
+│   │   ├── orders.ts + .test.ts     # Orders API calls (create, cancel, approve, decline)
+│   │   ├── portfolio.ts + .test.ts  # Portfolio API calls (holdings, make public, exercise)
+│   │   └── tax.ts + .test.ts        # Tax API calls (records, collect)
 │   └── utils/
 │       ├── constants.ts              # EMPLOYEE_ROLES, GENDERS, COUNTRY_CODES, formatRoleLabel
 │       ├── banking.ts                # CARD_BRANDS, CARD_STATUSES, CARD_STATUS_LABELS, CARD_STATUS_VARIANT, CARD_LIMITS
@@ -247,7 +296,13 @@ src/
 │   ├── verification.ts               # Verification interfaces
 │   ├── roles.ts                      # Role, Permission, CreateRolePayload interfaces
 │   ├── interestRateTiers.ts          # InterestRateTier, CreateTierPayload interfaces
-│   └── bankMargins.ts                # BankMargin interface
+│   ├── bankMargins.ts                # BankMargin interface
+│   ├── actuary.ts                    # Actuary, ActuaryListResponse, ActuaryFilters, SetLimitPayload, SetApprovalPayload
+│   ├── stockExchange.ts             # StockExchange, StockExchangeListResponse, StockExchangeFilters, TestingModeResponse
+│   ├── security.ts                  # Stock, FuturesContract, ForexPair, Option, PriceHistory types + filters
+│   ├── order.ts                     # Order, CreateOrderPayload, OrderFilters types
+│   ├── portfolio.ts                 # Holding, PortfolioSummary, PortfolioFilters types
+│   └── tax.ts                       # TaxRecord, TaxFilters, CollectTaxResponse types
 │
 ├── contexts/                         # Reserved for theme/locale (currently empty)
 ├── assets/
@@ -285,7 +340,23 @@ src/
 | `/admin/cards/requests` | AdminCardRequestsPage | Employee |
 | `/admin/loan-requests` | AdminLoanRequestsPage | admin |
 | `/admin/loans` | AdminLoansPage | admin |
+| `/admin/actuaries` | ActuaryListPage | `agents.manage` |
+| `/admin/stock-exchanges` | StockExchangesPage | Employee |
 | `/admin/exchange-rates` | ExchangeRatesPage | admin |
+| `/admin/orders` | AdminOrdersPage | `orders.approve` |
+| `/admin/tax` | TaxPage | `tax.manage` |
+
+### Protected Routes — Shared Trading (AppLayout + ProtectedRoute)
+
+| Route | Page | Notes |
+|---|---|---|
+| `/securities` | SecuritiesPage | Any authenticated — tabbed (Stocks/Futures/Forex) |
+| `/securities/stocks/:id` | StockDetailPage | Chart + info + options chain |
+| `/securities/futures/:id` | FuturesDetailPage | Chart + info |
+| `/securities/forex/:id` | ForexDetailPage | Chart + info |
+| `/securities/order/new` | CreateOrderPage | `?listingId=X&direction=buy` query params |
+| `/orders` | MyOrdersPage | User's own orders |
+| `/portfolio` | PortfolioPage | Holdings + summary |
 
 ### Protected Routes — Client Portal (AppLayout + ProtectedRoute)
 
@@ -363,6 +434,65 @@ src/
 - **Deny** button: sets `selectedRequestId` state to open `CardRequestDenyDialog`.
 - Deny dialog rendered once outside the table; controlled by `selectedRequestId: number | null`.
 - Pagination: `PAGE_SIZE = 10`, `PaginationControls`.
+
+### ActuaryListPage
+- Supervisor portal page for managing trading agents (actuaries).
+- Requires `agents.manage` permission.
+- Fetches actuaries via `useActuaries(apiFilters)` with server-side filtering (search, position) and pagination.
+- Filter state and `page` kept in local React state; changing filter resets page to 1.
+- Actions: Edit Limit (opens `EditLimitDialog`), Reset Used Limit, Toggle Approval.
+- Mutations: `useSetActuaryLimit`, `useResetActuaryLimit`, `useSetActuaryApproval`.
+
+### StockExchangesPage
+- Displays list of stock exchanges with search filter and pagination.
+- Accessible to all employees (`requiredRole="Employee"`).
+- Testing mode toggle button visible only to users with `exchanges.manage` permission (checked via `selectHasPermission`).
+- Fetches exchanges via `useStockExchanges(apiFilters)` and testing mode via `useTestingMode()`.
+- Toggle calls `useSetTestingMode` mutation.
+
+### SecuritiesPage
+- Tabbed interface: Stocks, Futures, Forex tabs (clients see Stocks + Futures only).
+- Each tab has FilterBar with search + pagination.
+- Fetches via `useStocks`, `useFutures`, `useForexPairs` hooks.
+- Rows link to detail pages (`/securities/stocks/:id`, etc.).
+
+### StockDetailPage
+- Fetches stock via `useStock(id)` and price history via `useStockHistory(id, period)`.
+- Renders `SecurityInfoPanel` + `PriceChart` + `OptionsChain` for the stock's options.
+- Buy/Sell buttons link to `CreateOrderPage`.
+
+### FuturesDetailPage
+- Fetches futures contract via `useFuture(id)` and price history.
+- Renders `SecurityInfoPanel` + `PriceChart`. Buy/Sell buttons.
+
+### ForexDetailPage
+- Fetches forex pair via `useForexPair(id)` and price history.
+- Renders `SecurityInfoPanel` + `PriceChart`. Buy/Sell buttons.
+
+### CreateOrderPage
+- Reads `listingId` and `direction` from URL query params.
+- Renders `CreateOrderForm` with fields: direction, order type, quantity, limit/stop values, account.
+- Submits via `useCreateOrder` mutation.
+
+### MyOrdersPage
+- Fetches user's orders via `useMyOrders(filters)`.
+- FilterBar (status, direction, type) + `OrderTable` with Cancel action + pagination.
+
+### PortfolioPage
+- Fetches holdings via `usePortfolio(filters)` and summary via `usePortfolioSummary()`.
+- Renders `PortfolioSummaryCard` + security_type filter + `HoldingTable` + pagination.
+- Actions: Make Public, Exercise (for options).
+
+### AdminOrdersPage
+- Supervisor view for order approval. Requires `orders.approve` permission.
+- Fetches all orders via `useAllOrders(filters)`.
+- FilterBar (status, direction, type) + `OrderTable` with Approve/Decline actions + pagination.
+
+### TaxPage
+- Tax management page. Requires `tax.manage` permission.
+- Fetches tax records via `useTaxRecords(filters)`.
+- FilterBar (user_type, search) + `TaxTable` + pagination.
+- "Collect Taxes" button triggers `useCollectTaxes` mutation.
 
 ---
 
@@ -446,6 +576,91 @@ src/
 - Footer: Cancel (`ghost` variant) + "Confirm Deny" (`destructive` variant).
 - Props: `open: boolean`, `onClose: () => void`, `onConfirm: (reason: string) => void`
 - Uses inner component pattern (`CardRequestDenyDialogInner`) to reset textarea state on close via natural unmount.
+
+---
+
+### Actuary Components
+
+**ActuaryTable** (`components/actuaries/ActuaryTable.tsx`)
+- Displays actuaries in a Shadcn `Table` with columns: Name, Email, Position, Limit, Used Limit, Approval, Actions.
+- Props: `actuaries: Actuary[]`, `onEditLimit`, `onResetLimit`, `onToggleApproval`.
+- Action buttons per row: Edit Limit, Reset, Toggle Approval.
+
+**EditLimitDialog** (`components/actuaries/EditLimitDialog.tsx`)
+- Shadcn `Dialog` for editing an agent's trading limit.
+- Props: `open`, `actuary`, `onClose`, `onConfirm(limit: string)`.
+- Uses inner component pattern (`EditLimitDialogInner`) to reset input state on close.
+- Input pre-filled with current limit value.
+
+---
+
+### Stock Exchange Components
+
+**StockExchangeTable** (`components/stockExchanges/StockExchangeTable.tsx`)
+- Displays stock exchanges in a Shadcn `Table` with columns: Name, Acronym, MIC Code, Country, Currency, Time Zone.
+- Props: `exchanges: StockExchange[]`.
+- Time zone displayed as `UTC+/-X` format.
+
+---
+
+### Securities Components
+
+**StockTable** (`components/securities/StockTable.tsx`)
+- Displays stocks in a Shadcn `Table` with columns: Ticker, Name, Exchange, Price, Change, Volume.
+- Props: `stocks: Stock[]`, `onRowClick`.
+
+**FuturesTable** (`components/securities/FuturesTable.tsx`)
+- Displays futures contracts. Columns: Ticker, Name, Exchange, Price, Change, Settlement Date.
+- Props: `futures: FuturesContract[]`, `onRowClick`.
+
+**ForexTable** (`components/securities/ForexTable.tsx`)
+- Displays forex pairs. Columns: Ticker, Name, Rate, Liquidity, Change, Volume.
+- Props: `pairs: ForexPair[]`, `onRowClick`.
+
+**PriceChart** (`components/securities/PriceChart.tsx`)
+- Recharts `LineChart` showing price history with period selector (day/week/month/year/5y/all).
+- Props: `history: PriceHistoryEntry[]`, `period`, `onPeriodChange`.
+
+**SecurityInfoPanel** (`components/securities/SecurityInfoPanel.tsx`)
+- Key-value display panel for security details (price, bid, ask, volume, margins, etc.).
+- Props: `entries: { label: string; value: string }[]`.
+
+**OptionsChain** (`components/securities/OptionsChain.tsx`)
+- Calls/Puts options chain table with ITM/OTM coloring.
+- Props: `options: Option[]`, `currentPrice: string`.
+
+---
+
+### Order Components
+
+**CreateOrderForm** (`components/orders/CreateOrderForm.tsx`)
+- Order form: direction (buy/sell), order type, quantity, conditional limit/stop values, account selector.
+- Props: `onSubmit`, `defaultDirection?`, `defaultListingId?`.
+
+**OrderTable** (`components/orders/OrderTable.tsx`)
+- Reusable orders table. Columns: Ticker, Security, Direction, Type, Quantity, Status, Actions.
+- Props: `orders: Order[]`, `onCancel?`, `onApprove?`, `onDecline?`. Actions shown conditionally for pending orders.
+
+---
+
+### Portfolio Components
+
+**HoldingTable** (`components/portfolio/HoldingTable.tsx`)
+- Holdings table. Columns: Ticker, Name, Type, Qty, Avg Price, Current, P&L, P&L%, Public, Actions.
+- Props: `holdings: Holding[]`, `onMakePublic`, `onExercise`.
+- "Make Public" shown for non-public holdings. "Exercise" shown for option holdings.
+
+**PortfolioSummaryCard** (`components/portfolio/PortfolioSummaryCard.tsx`)
+- Grid of summary stats: Total Value, Total Cost, Profit/Loss (color-coded), Holdings count.
+- Props: `summary: PortfolioSummary`.
+
+---
+
+### Tax Components
+
+**TaxTable** (`components/tax/TaxTable.tsx`)
+- Tax records table. Columns: User, Email, Type, Taxable Amount, Tax Amount, Status, Date.
+- Props: `records: TaxRecord[]`.
 
 ---
 
@@ -594,6 +809,67 @@ interface AuthState {
 | `getBankMargins()` | GET | `/api/bank-margins` |
 | `updateBankMargin(id, margin)` | PUT | `/api/bank-margins/{id}` |
 
+### Actuaries API (`lib/api/actuaries.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getActuaries(filters?)` | GET | `/api/actuaries` — supports `search`, `position`, `page`, `page_size` query params |
+| `setActuaryLimit(id, payload)` | PUT | `/api/actuaries/{id}/limit` — body `{ limit: string }` |
+| `resetActuaryLimit(id)` | POST | `/api/actuaries/{id}/reset-limit` |
+| `setActuaryApproval(id, payload)` | PUT | `/api/actuaries/{id}/approval` — body `{ need_approval: boolean }` |
+
+### Stock Exchanges API (`lib/api/stockExchanges.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getStockExchanges(filters?)` | GET | `/api/stock-exchanges` — supports `search`, `page`, `page_size` query params |
+| `getTestingMode()` | GET | `/api/stock-exchanges/testing-mode` |
+| `setTestingMode(enabled)` | POST | `/api/stock-exchanges/testing-mode` — body `{ enabled: boolean }` |
+
+### Securities API (`lib/api/securities.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getStocks(filters?)` | GET | `/api/listings/stocks` |
+| `getStock(id)` | GET | `/api/listings/stocks/{id}` |
+| `getStockHistory(id, filters?)` | GET | `/api/listings/stocks/{id}/history` |
+| `getFutures(filters?)` | GET | `/api/listings/futures` |
+| `getFuture(id)` | GET | `/api/listings/futures/{id}` |
+| `getFutureHistory(id, filters?)` | GET | `/api/listings/futures/{id}/history` |
+| `getForexPairs(filters?)` | GET | `/api/listings/forex` |
+| `getForexPair(id)` | GET | `/api/listings/forex/{id}` |
+| `getForexHistory(id, filters?)` | GET | `/api/listings/forex/{id}/history` |
+| `getOptions(filters)` | GET | `/api/listings/options` |
+| `getOption(id)` | GET | `/api/listings/options/{id}` |
+
+### Orders API (`lib/api/orders.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `createOrder(payload)` | POST | `/api/me/orders` |
+| `getMyOrders(filters?)` | GET | `/api/me/orders` |
+| `getMyOrder(id)` | GET | `/api/me/orders/{id}` |
+| `cancelOrder(id)` | POST | `/api/me/orders/{id}/cancel` |
+| `getAllOrders(filters?)` | GET | `/api/orders` |
+| `approveOrder(id)` | POST | `/api/orders/{id}/approve` |
+| `declineOrder(id)` | POST | `/api/orders/{id}/decline` |
+
+### Portfolio API (`lib/api/portfolio.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getPortfolio(filters?)` | GET | `/api/me/portfolio` |
+| `getPortfolioSummary()` | GET | `/api/me/portfolio/summary` |
+| `makeHoldingPublic(id, payload)` | POST | `/api/me/portfolio/{id}/public` |
+| `exerciseOption(id)` | POST | `/api/me/portfolio/{id}/exercise` |
+
+### Tax API (`lib/api/tax.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getTaxRecords(filters?)` | GET | `/api/tax` |
+| `collectTaxes()` | POST | `/api/tax/collect` |
+
 ---
 
 ## 9. Custom Hooks
@@ -609,6 +885,35 @@ interface AuthState {
 | `useCardRequests(filters?)` | React Query | Fetch card requests; query key: `['card-requests', filters]` |
 | `useApproveCardRequest()` | React Query | Mutation: PUT approve; invalidates `['card-requests']` on success |
 | `useRejectCardRequest()` | React Query | Mutation: PUT reject with reason; invalidates `['card-requests']` on success |
+| `useActuaries(filters?)` | React Query | Fetch actuaries with server-side filters; query key: `['actuaries', filters]` |
+| `useSetActuaryLimit()` | React Query | Mutation: PUT limit; invalidates `['actuaries']` on success |
+| `useResetActuaryLimit()` | React Query | Mutation: POST reset limit; invalidates `['actuaries']` on success |
+| `useSetActuaryApproval()` | React Query | Mutation: PUT approval; invalidates `['actuaries']` on success |
+| `useStockExchanges(filters?)` | React Query | Fetch stock exchanges; query key: `['stock-exchanges', filters]` |
+| `useTestingMode()` | React Query | Fetch testing mode status; query key: `['stock-exchanges', 'testing-mode']` |
+| `useSetTestingMode()` | React Query | Mutation: POST testing mode; invalidates `['stock-exchanges', 'testing-mode']` on success |
+| `useStocks(filters?)` | React Query | Fetch stocks; query key: `['stocks', filters]` |
+| `useStock(id)` | React Query | Fetch single stock; query key: `['stock', id]` |
+| `useStockHistory(id, filters?)` | React Query | Fetch stock price history; query key: `['stock-history', id, filters]` |
+| `useFutures(filters?)` | React Query | Fetch futures; query key: `['futures', filters]` |
+| `useFuture(id)` | React Query | Fetch single future; query key: `['future', id]` |
+| `useFutureHistory(id, filters?)` | React Query | Fetch future price history; query key: `['future-history', id, filters]` |
+| `useForexPairs(filters?)` | React Query | Fetch forex pairs; query key: `['forex', filters]` |
+| `useForexPair(id)` | React Query | Fetch single forex pair; query key: `['forex-pair', id]` |
+| `useForexHistory(id, filters?)` | React Query | Fetch forex price history; query key: `['forex-history', id, filters]` |
+| `useOptions(filters)` | React Query | Fetch options for a stock; query key: `['options', filters]` |
+| `useMyOrders(filters?)` | React Query | Fetch user's orders; query key: `['my-orders', filters]` |
+| `useCreateOrder()` | React Query | Mutation: create order; invalidates `['my-orders']` + `['portfolio']` |
+| `useCancelOrder()` | React Query | Mutation: cancel order; invalidates `['my-orders']` |
+| `useAllOrders(filters?)` | React Query | Fetch all orders (admin); query key: `['all-orders', filters]` |
+| `useApproveOrder()` | React Query | Mutation: approve order; invalidates `['all-orders']` |
+| `useDeclineOrder()` | React Query | Mutation: decline order; invalidates `['all-orders']` |
+| `usePortfolio(filters?)` | React Query | Fetch portfolio holdings; query key: `['portfolio', filters]` |
+| `usePortfolioSummary()` | React Query | Fetch portfolio summary; query key: `['portfolio-summary']` |
+| `useMakePublic()` | React Query | Mutation: make holding public; invalidates `['portfolio']` |
+| `useExerciseOption()` | React Query | Mutation: exercise option; invalidates `['portfolio']` |
+| `useTaxRecords(filters?)` | React Query | Fetch tax records; query key: `['tax', filters]` |
+| `useCollectTaxes()` | React Query | Mutation: collect taxes; invalidates `['tax']` |
 
 ---
 
@@ -687,6 +992,96 @@ BankMargin           { id: number; loan_type: string; margin: number;
                        active: boolean; created_at: string; updated_at: string }
 ```
 
+### Actuary Types (`types/actuary.ts`)
+
+```typescript
+Actuary              { id: number; first_name: string; last_name: string; email: string;
+                       phone: string; position: string; department: string; active: boolean;
+                       limit: string; used_limit: string; need_approval: boolean }
+ActuaryListResponse  { actuaries: Actuary[]; total_count: number }
+ActuaryFilters       { page?: number; page_size?: number; search?: string; position?: string }
+SetLimitPayload      { limit: string }
+SetApprovalPayload   { need_approval: boolean }
+```
+
+### Stock Exchange Types (`types/stockExchange.ts`)
+
+```typescript
+StockExchange        { id: number; exchange_name: string; exchange_acronym: string;
+                       exchange_mic_code: string; polity: string; currency: string; time_zone: string }
+StockExchangeListResponse  { exchanges: StockExchange[]; total_count: number }
+StockExchangeFilters       { page?: number; page_size?: number; search?: string }
+TestingModeResponse        { testing_mode: boolean }
+```
+
+### Security Types (`types/security.ts`)
+
+```typescript
+Stock                { id, ticker, name, outstanding_shares, dividend_yield, exchange_acronym,
+                       price, ask, bid, change, volume, last_refresh, market_cap,
+                       maintenance_margin, initial_margin_cost }
+FuturesContract      { id, ticker, name, contract_size, contract_unit, settlement_date,
+                       exchange_acronym, price, ask, bid, change, volume, last_refresh,
+                       maintenance_margin, initial_margin_cost }
+ForexPair            { id, ticker, name, base_currency, quote_currency, exchange_rate,
+                       liquidity: 'high'|'medium'|'low', price, ask, bid, change, volume,
+                       last_refresh, maintenance_margin, initial_margin_cost }
+Option               { id, ticker, name, stock_listing_id, option_type: 'call'|'put',
+                       strike_price, implied_volatility, premium, open_interest,
+                       settlement_date, price, ask, bid, volume }
+PriceHistoryEntry    { date, price, high, low, change, volume }
+PriceHistoryResponse { history: PriceHistoryEntry[]; total_count: number }
+SecurityType         = 'stock' | 'futures' | 'forex'
+PriceHistoryPeriod   = 'day' | 'week' | 'month' | 'year' | '5y' | 'all'
+StockListResponse    { stocks: Stock[]; total_count: number }
+FuturesListResponse  { futures: FuturesContract[]; total_count: number }
+ForexListResponse    { forex_pairs: ForexPair[]; total_count: number }
+OptionsListResponse  { options: Option[]; total_count: number }
+StockFilters         { page?, page_size?, search?, exchange_acronym?, min_price?, max_price?, sort_by?, sort_order? }
+FuturesFilters       { page?, page_size?, search?, exchange_acronym?, settlement_date_from?, settlement_date_to?, sort_by?, sort_order? }
+ForexFilters         { page?, page_size?, search?, base_currency?, quote_currency?, liquidity?, sort_by?, sort_order? }
+OptionsFilters       { stock_id, page?, page_size?, option_type?, settlement_date?, min_strike?, max_strike? }
+```
+
+### Order Types (`types/order.ts`)
+
+```typescript
+OrderDirection       = 'buy' | 'sell'
+OrderType            = 'market' | 'limit' | 'stop' | 'stop_limit'
+OrderStatus          = 'pending' | 'approved' | 'declined' | 'cancelled' | 'filled' | 'partial'
+Order                { id, listing_id, holding_id, direction, order_type, status, quantity,
+                       limit_value, stop_value, all_or_none, margin, account_id, ticker,
+                       security_name, created_at, updated_at }
+CreateOrderPayload   { listing_id?, holding_id?, direction, order_type, quantity,
+                       limit_value?, stop_value?, all_or_none?, margin?, account_id? }
+OrderListResponse    { orders: Order[]; total_count: number }
+MyOrderFilters       { page?, page_size?, status?, direction?, order_type? }
+AdminOrderFilters    extends MyOrderFilters { agent_email? }
+```
+
+### Portfolio Types (`types/portfolio.ts`)
+
+```typescript
+Holding              { id, security_type: 'stock'|'futures'|'option', ticker, security_name,
+                       quantity, average_price, current_price, total_value, profit_loss,
+                       profit_loss_percent, is_public, public_quantity }
+PortfolioSummary     { total_value, total_cost, total_profit_loss, total_profit_loss_percent,
+                       holdings_count }
+HoldingListResponse  { holdings: Holding[]; total_count: number }
+PortfolioFilters     { page?, page_size?, security_type? }
+MakePublicPayload    { quantity: number }
+```
+
+### Tax Types (`types/tax.ts`)
+
+```typescript
+TaxRecord            { id, user_type: 'client'|'actuary', user_name, user_email,
+                       taxable_amount, tax_amount, status, created_at }
+TaxListResponse      { tax_records: TaxRecord[]; total_count: number }
+TaxFilters           { page?, page_size?, user_type?, search? }
+CollectTaxResponse   { collected_count, total_collected_rsd, failed_count }
+```
+
 ### Shared Constants (`lib/utils/constants.ts`)
 
 ```typescript
@@ -743,18 +1138,18 @@ All defined in `lib/utils/validation.ts` using Zod.
 
 ## 12. Test Coverage
 
-_Measured: 2026-03-25 — 107 test suites, 485 tests, all passing._
+_Measured: 2026-04-02 — 146 test suites, 718 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **78.22%** |
-| **Branches** | **60.23%** |
-| **Functions** | **57.06%** |
-| **Lines** | **79.68%** |
+| **Statements** | **81.37%** |
+| **Branches** | **65.19%** |
+| **Functions** | **63.28%** |
+| **Lines** | **82.70%** |
 
-> Testing covers approximately **~68% of the project** (average across all four metrics). The lower coverage relative to earlier snapshots reflects the large number of new pages, hooks, and API modules added since the last measurement, many of which are not yet fully tested.
+> Testing covers approximately **~73% of the project** (average across all four metrics). Securities portal, orders, portfolio, and tax modules are well-tested.
 
 ### Coverage by Module
 
@@ -771,6 +1166,18 @@ _Measured: 2026-03-25 — 107 test suites, 485 tests, all passing._
 | `lib/api/roles.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/interestRateTiers.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/bankMargins.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/actuaries.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/stockExchanges.ts` | 100% | 100% | 100% | 100% |
+| `pages/ActuaryListPage.tsx` | 97.05% | 91.66% | 85.71% | 97.05% |
+| `pages/StockExchangesPage.tsx` | 100% | 100% | 100% | 100% |
+| `pages/SecuritiesPage.tsx` | ~79% | ~90% | 20% | ~79% |
+| `pages/StockDetailPage.tsx` | ~93% | 70% | 80% | ~96% |
+| `pages/FuturesDetailPage.tsx` | ~90% | ~63% | 50% | ~95% |
+| `pages/ForexDetailPage.tsx` | ~90% | ~63% | 50% | ~95% |
+| `pages/MyOrdersPage.tsx` | ~90% | 100% | ~67% | ~90% |
+| `pages/PortfolioPage.tsx` | ~85% | 100% | 25% | ~85% |
+| `pages/AdminOrdersPage.tsx` | ~90% | ~92% | ~67% | ~90% |
+| `pages/TaxPage.tsx` | ~90% | ~92% | ~67% | ~90% |
 | `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
 | `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
 | `pages` | 81.50% | 58.45% | 50.27% | 83.64% |

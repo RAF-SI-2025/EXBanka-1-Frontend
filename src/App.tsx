@@ -34,6 +34,17 @@ import { AdminLoanRequestsPage } from '@/pages/AdminLoanRequestsPage'
 import { AdminCardRequestsPage } from '@/pages/AdminCardRequestsPage'
 import { AdminLoansPage } from '@/pages/AdminLoansPage'
 import { CreateClientPage } from '@/pages/CreateClientPage'
+import { ActuaryListPage } from '@/pages/ActuaryListPage'
+import { StockExchangesPage } from '@/pages/StockExchangesPage'
+import { SecuritiesPage } from '@/pages/SecuritiesPage'
+import { StockDetailPage } from '@/pages/StockDetailPage'
+import { FuturesDetailPage } from '@/pages/FuturesDetailPage'
+import { ForexDetailPage } from '@/pages/ForexDetailPage'
+import { CreateOrderPage } from '@/pages/CreateOrderPage'
+import { MyOrdersPage } from '@/pages/MyOrdersPage'
+import { PortfolioPage } from '@/pages/PortfolioPage'
+import { AdminOrdersPage } from '@/pages/AdminOrdersPage'
+import { TaxPage } from '@/pages/TaxPage'
 
 export default function App() {
   return (
@@ -148,6 +159,22 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="Employee">
               <AdminLoansPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/actuaries"
+          element={
+            <ProtectedRoute requiredPermission="agents.manage">
+              <ActuaryListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/stock-exchanges"
+          element={
+            <ProtectedRoute requiredRole="Employee">
+              <StockExchangesPage />
             </ProtectedRoute>
           }
         />
@@ -278,6 +305,33 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="Client">
               <LoanDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Shared trading routes (any authenticated user) */}
+        <Route path="/securities" element={<SecuritiesPage />} />
+        <Route path="/securities/stocks/:id" element={<StockDetailPage />} />
+        <Route path="/securities/futures/:id" element={<FuturesDetailPage />} />
+        <Route path="/securities/forex/:id" element={<ForexDetailPage />} />
+        <Route path="/securities/order/new" element={<CreateOrderPage />} />
+        <Route path="/orders" element={<MyOrdersPage />} />
+        <Route path="/portfolio" element={<PortfolioPage />} />
+
+        {/* Admin trading routes */}
+        <Route
+          path="/admin/orders"
+          element={
+            <ProtectedRoute requiredPermission="orders.approve">
+              <AdminOrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/tax"
+          element={
+            <ProtectedRoute requiredPermission="tax.manage">
+              <TaxPage />
             </ProtectedRoute>
           }
         />
