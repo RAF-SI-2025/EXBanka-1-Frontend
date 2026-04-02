@@ -1,30 +1,4 @@
-import {
-  passwordSchema,
-  emailSchema,
-  loginSchema,
-  createLoanRequestSchema,
-} from '@/lib/utils/validation'
-
-const validLoanData = {
-  loan_type: 'CASH' as const,
-  interest_type: 'FIXED' as const,
-  account_number: '265-0000000000001-00',
-  amount: 100000,
-  currency_code: 'RSD',
-  repayment_period: 24,
-}
-
-describe('createLoanRequestSchema', () => {
-  it('accepts repayment_period as the period field', () => {
-    expect(createLoanRequestSchema.safeParse(validLoanData).success).toBe(true)
-  })
-
-  it('rejects when repayment_period is missing', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { repayment_period: _period, ...without } = validLoanData
-    expect(createLoanRequestSchema.safeParse(without).success).toBe(false)
-  })
-})
+import { passwordSchema, emailSchema, loginSchema } from '@/lib/utils/validation'
 
 describe('passwordSchema', () => {
   it('rejects password shorter than 8 chars', () => {

@@ -10,7 +10,7 @@ export const selectIsAuthenticated = createSelector(
 
 export const selectIsAdmin = createSelector(
   selectAuthState,
-  (auth) => auth.user?.permissions.includes('employees.read') ?? false
+  (auth) => auth.user?.role === 'EmployeeAdmin'
 )
 
 export const selectHasPermission = (state: RootState, permission: string): boolean => {
@@ -19,5 +19,3 @@ export const selectHasPermission = (state: RootState, permission: string): boole
 }
 
 export const selectCurrentUser = createSelector(selectAuthState, (auth) => auth.user)
-
-export const selectUserType = createSelector(selectAuthState, (auth) => auth.userType)

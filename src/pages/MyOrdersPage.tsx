@@ -46,7 +46,7 @@ export function MyOrdersPage() {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : data?.orders.length ? (
+      ) : data?.orders?.length ? (
         <>
           <OrderTable orders={data.orders} onCancel={handleCancel} />
           <p className="text-sm text-muted-foreground mt-2">{data.total_count} orders</p>

@@ -1,4 +1,4 @@
-import { screen, waitFor, fireEvent } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { CreateEmployeePage } from '@/pages/CreateEmployeePage'
@@ -29,12 +29,10 @@ describe('CreateEmployeePage', () => {
     await userEvent.type(screen.getByLabelText(/last name/i), 'Doe')
     await userEvent.type(screen.getByLabelText(/email/i), 'jane@test.com')
     await userEvent.type(screen.getByLabelText(/username/i), 'jane.doe')
-    await userEvent.type(screen.getByLabelText(/jmbg/i), '1234567890123')
-    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: '1990-01-01' } })
     await userEvent.click(screen.getByRole('button', { name: /save/i }))
 
     await waitFor(() => {
       expect(employeesApi.createEmployee).toHaveBeenCalled()
     })
-  }, 15000)
+  })
 })

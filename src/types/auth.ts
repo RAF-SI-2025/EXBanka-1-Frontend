@@ -29,5 +29,4 @@ export interface AuthUser {
   email: string
   role: string
   permissions: string[]
-  system_type: 'employee' | 'client' | null
 }

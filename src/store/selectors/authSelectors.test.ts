@@ -2,9 +2,8 @@ import {
   selectIsAuthenticated,
   selectIsAdmin,
   selectHasPermission,
-  selectUserType,
 } from '@/store/selectors/authSelectors'
-import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
+import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
 import type { RootState } from '@/store'
 
 function mockRootState(authOverrides = {}): RootState {
@@ -20,28 +19,15 @@ describe('authSelectors', () => {
     expect(selectIsAuthenticated(mockRootState({ status: 'idle' }))).toBe(false)
   })
 
-  it('selectIsAdmin returns true when user has employees.read permission', () => {
+  it('selectIsAdmin returns true for EmployeeAdmin role', () => {
     expect(selectIsAdmin(mockRootState())).toBe(true)
   })
 
-  it('selectIsAdmin returns true for any role that has employees.read permission', () => {
+  it('selectIsAdmin returns false for other roles', () => {
     const state = mockRootState({
-      user: createMockAuthUser({ role: 'EmployeeBasic', permissions: ['employees.read'] }),
-    })
-    expect(selectIsAdmin(state)).toBe(true)
-  })
-
-  it('selectIsAdmin returns false when user lacks employees.read permission', () => {
-    const state = mockRootState({
-      user: createMockAuthUser({ role: 'EmployeeBasic', permissions: [] }),
+      user: { id: 1, email: 'a@b.com', role: 'EmployeeBasic', permissions: [] },
     })
     expect(selectIsAdmin(state)).toBe(false)
-  })
-
-  it('selectUserType returns the userType from state', () => {
-    expect(selectUserType(mockRootState({ userType: 'employee' }))).toBe('employee')
-    expect(selectUserType(mockRootState({ userType: 'client' }))).toBe('client')
-    expect(selectUserType(mockRootState({ userType: null }))).toBeNull()
   })
 
   it('selectHasPermission checks for a specific permission', () => {

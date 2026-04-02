@@ -12,9 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Local settings (device-specific paths)
-.claude/settings.local.json
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,6 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Test coverage
-coverage/
