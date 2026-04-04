@@ -43,7 +43,8 @@ function LimitRow({
       <div className="flex justify-between text-sm">
         <span className="font-medium">{label}</span>
         <span className="text-muted-foreground">
-          {formatCurrency(spentAmount, currency)} / {formatCurrency(limit, currency)} ({percentage}%)
+          {formatCurrency(spentAmount, currency)} / {formatCurrency(limit, currency)} ({percentage}
+          %)
         </span>
       </div>
       <div className="h-2 rounded-full bg-gray-200 dark:bg-gray-700">
@@ -71,7 +72,12 @@ export function LimitsUsageCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <LimitRow label="Daily" spent={dailySpending} limit={dailyLimit} currency={currency} />
-        <LimitRow label="Monthly" spent={monthlySpending} limit={monthlyLimit} currency={currency} />
+        <LimitRow
+          label="Monthly"
+          spent={monthlySpending}
+          limit={monthlyLimit}
+          currency={currency}
+        />
       </CardContent>
     </Card>
   )
