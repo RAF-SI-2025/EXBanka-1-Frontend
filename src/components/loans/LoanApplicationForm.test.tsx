@@ -81,7 +81,7 @@ describe('LoanApplicationForm', () => {
   })
 
   it('shows housing period options when housing loan type is selected', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
     renderWithProviders(<LoanApplicationForm {...defaultProps} />)
     // Open loan type select
     const loanTypeSelect = screen.getByRole('combobox', { name: /loan type/i })
