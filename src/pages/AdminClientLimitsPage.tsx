@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { useAllClients } from '@/hooks/useClients'
 import { FilterBar } from '@/components/ui/FilterBar'
@@ -88,7 +89,7 @@ export function AdminClientLimitsPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={(e) => {
+                          onClick={(e: React.MouseEvent) => {
                             e.stopPropagation()
                             handleRowClick(client)
                           }}
