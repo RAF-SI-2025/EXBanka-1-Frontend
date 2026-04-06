@@ -21,5 +21,5 @@ export interface CreateCardPayload {
   account_number: string
   owner_id: number
   owner_type: 'AUTHORIZED_PERSON'
-  card_brand: string
+  card_brand: CardBrand
 }
