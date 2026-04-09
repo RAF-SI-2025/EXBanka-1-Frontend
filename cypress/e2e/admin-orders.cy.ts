@@ -24,8 +24,8 @@ describe('Admin Orders Page — Order Approval', () => {
     cy.contains('2 orders').should('be.visible')
 
     // Both orders are pending — each should have Approve and Decline
-    cy.contains('button', 'Approve').should('have.length', 2)
-    cy.contains('button', 'Decline').should('have.length', 2)
+    cy.get('button').filter(':contains("Approve")').should('have.length', 2)
+    cy.get('button').filter(':contains("Decline")').should('have.length', 2)
   })
 
   it('should approve an order', () => {

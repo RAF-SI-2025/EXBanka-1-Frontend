@@ -17,10 +17,9 @@ import type {
 } from '@/types/security'
 
 function flattenListing<T>(item: T): T {
-  const raw = item as any
+  const raw = item as unknown as Record<string, unknown>
   if (raw && typeof raw === 'object' && 'listing' in raw && raw.listing) {
     const { listing, ...rest } = raw
-    return { ...rest, ...listing } as T
     return { ...rest, ...(listing as Record<string, unknown>) } as T
   }
   return item
