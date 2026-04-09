@@ -9,7 +9,7 @@ import type {
 export async function createChallenge(
   payload: CreateChallengeRequest
 ): Promise<CreateChallengeResponse> {
-  const { data } = await apiClient.post<CreateChallengeResponse>('/api/verifications', payload)
+  const { data } = await apiClient.post<CreateChallengeResponse>('/api/v1/verifications', payload)
   return data
 }
 
@@ -18,7 +18,7 @@ export async function submitVerificationCode(
   code: string
 ): Promise<SubmitCodeResponse> {
   const { data } = await apiClient.post<SubmitCodeResponse>(
-    `/api/verifications/${challengeId}/code`,
+    `/api/v1/verifications/${challengeId}/code`,
     { code }
   )
   return data
@@ -26,7 +26,7 @@ export async function submitVerificationCode(
 
 export async function getChallengeStatus(challengeId: number): Promise<ChallengeStatusResponse> {
   const { data } = await apiClient.get<ChallengeStatusResponse>(
-    `/api/verifications/${challengeId}/status`
+    `/api/v1/verifications/${challengeId}/status`
   )
   return data
 }

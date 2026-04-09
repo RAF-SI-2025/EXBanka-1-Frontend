@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
@@ -13,7 +13,7 @@ import {
   setChallengeId,
   setVerificationError,
 } from '@/store/slices/transferSlice'
-import { createChallenge, submitVerificationCode, getChallengeStatus } from '@/lib/api/verification'
+import { createChallenge, submitVerificationCode } from '@/lib/api/verification'
 import { CreateTransferForm } from '@/components/transfers/CreateTransferForm'
 import { TransferPreview } from '@/components/transfers/TransferPreview'
 import { VerificationStep } from '@/components/verification/VerificationStep'
@@ -38,13 +38,8 @@ export function CreateTransferPage() {
 
   const fromAcc = accounts.find((a) => a.account_number === formData?.from_account_number)
   const toAcc = accounts.find((a) => a.account_number === formData?.to_account_number)
-  const sameCurrency = fromAcc?.currency_code === toAcc?.currency_code
 
-  const { data: rateData } = useTransferPreview(
-    fromAcc?.currency_code ?? '',
-    toAcc?.currency_code ?? '',
-    formData?.amount ?? 0
-  )
+  const { data: previewData } = useTransferPreview(formData ?? null)
 
   const executeTransfer = useExecuteTransfer()
   const [verifying, setVerifying] = useState(false)
@@ -60,7 +55,7 @@ export function CreateTransferPage() {
       createChallenge({
         source_service: 'transfer',
         source_id: transactionId,
-        method: 'email',
+        method: 'code_pull',
       })
         .then((res) => {
           dispatch(setChallengeId(res.challenge_id))
@@ -70,6 +65,25 @@ export function CreateTransferPage() {
         })
     }
   }, [step, transactionId, challengeId, dispatch])
+
+  const handleExecute = useCallback(() => {
+    if (transactionId === null || challengeId === null) return
+    setVerifying(true)
+    dispatch(setVerificationError(null))
+    executeTransfer.mutate(
+      { id: transactionId, challengeId },
+      {
+        onSuccess: () => {
+          setVerifying(false)
+          dispatch(setTransferStep('success'))
+        },
+        onError: () => {
+          setVerifying(false)
+          dispatch(setVerificationError('Transfer execution failed. Please try again.'))
+        },
+      }
+    )
+  }, [transactionId, challengeId, executeTransfer, dispatch])
 
   if (isLoading) return <p>Loading...</p>
 
@@ -111,10 +125,11 @@ export function CreateTransferPage() {
   if (step === 'verification' && transactionId !== null) {
     return (
       <VerificationStep
+        challengeId={challengeId}
         codeRequested={codeRequested && challengeId !== null}
         loading={verifying || executeTransfer.isPending}
         error={verificationError}
-        onRequestCode={() => {}}
+        onStatusVerified={handleExecute}
         onVerified={async (code) => {
           if (challengeId === null) return
           setVerifying(true)
@@ -130,25 +145,7 @@ export function CreateTransferPage() {
               setVerifying(false)
               return
             }
-            const status = await getChallengeStatus(challengeId)
-            if (status.status !== 'verified') {
-              dispatch(setVerificationError('Verification not confirmed. Please try again.'))
-              setVerifying(false)
-              return
-            }
-            executeTransfer.mutate(
-              { id: transactionId, challengeId },
-              {
-                onSuccess: () => {
-                  setVerifying(false)
-                  dispatch(setTransferStep('success'))
-                },
-                onError: () => {
-                  setVerifying(false)
-                  dispatch(setVerificationError('Transfer execution failed. Please try again.'))
-                },
-              }
-            )
+            handleExecute()
           } catch {
             setVerifying(false)
             dispatch(setVerificationError('Verification failed. Please try again.'))
@@ -166,13 +163,11 @@ export function CreateTransferPage() {
         fromAccount={formData.from_account_number}
         toAccount={formData.to_account_number}
         amount={formData.amount}
-        fromCurrency={fromAcc?.currency_code ?? ''}
-        toCurrency={toAcc?.currency_code ?? ''}
-        rate={sameCurrency ? 1 : Number(rateData?.buy_rate ?? 0)}
-        commission={0}
-        finalAmount={
-          sameCurrency ? formData.amount : (formData.amount ?? 0) * Number(rateData?.buy_rate ?? 0)
-        }
+        fromCurrency={previewData?.from_currency ?? fromAcc?.currency_code ?? ''}
+        toCurrency={previewData?.to_currency ?? toAcc?.currency_code ?? ''}
+        rate={Number(previewData?.exchange_rate ?? 1)}
+        commission={Number(previewData?.total_fee ?? 0)}
+        finalAmount={Number(previewData?.converted_amount ?? formData.amount)}
         onConfirm={handleConfirm}
         onBack={() => dispatch(setTransferStep('form'))}
         submitting={submitting}

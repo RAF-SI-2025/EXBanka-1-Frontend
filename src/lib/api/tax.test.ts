@@ -15,7 +15,7 @@ describe('getTaxRecords', () => {
     const response = { tax_records: [createMockTaxRecord()], total_count: 1 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getTaxRecords({ user_type: 'client', page: 1, page_size: 10 })
-    expect(mockGet).toHaveBeenCalledWith('/api/tax', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/tax', {
       params: { user_type: 'client', page: 1, page_size: 10 },
     })
     expect(result).toEqual(response)
@@ -25,7 +25,7 @@ describe('getTaxRecords', () => {
     const response = { tax_records: [], total_count: 0 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getTaxRecords()
-    expect(mockGet).toHaveBeenCalledWith('/api/tax', { params: {} })
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/tax', { params: {} })
     expect(result).toEqual(response)
   })
 })
@@ -35,7 +35,7 @@ describe('collectTaxes', () => {
     const response = { collected_count: 5, total_collected_rsd: '3750.00', failed_count: 0 }
     mockPost.mockResolvedValue({ data: response })
     const result = await collectTaxes()
-    expect(mockPost).toHaveBeenCalledWith('/api/tax/collect')
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/tax/collect')
     expect(result).toEqual(response)
   })
 })

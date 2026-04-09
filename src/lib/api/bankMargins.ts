@@ -6,11 +6,11 @@ export interface MarginListResponse {
 }
 
 export async function getBankMargins(): Promise<MarginListResponse> {
-  const { data } = await apiClient.get<MarginListResponse>('/api/bank-margins')
+  const { data } = await apiClient.get<MarginListResponse>('/api/v1/bank-margins')
   return { ...data, margins: data.margins ?? [] }
 }
 
 export async function updateBankMargin(id: number, margin: number): Promise<BankMargin> {
-  const { data } = await apiClient.put<BankMargin>(`/api/bank-margins/${id}`, { margin })
+  const { data } = await apiClient.put<BankMargin>(`/api/v1/bank-margins/${id}`, { margin })
   return data
 }

@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCurrency, formatAccountNumber } from '@/lib/utils/format'
+import { formatCurrency, formatAccountNumber, formatDate } from '@/lib/utils/format'
 import type { Transfer } from '@/types/transfer'
 
 interface TransferHistoryTableProps {
@@ -34,7 +34,7 @@ export function TransferHistoryTable({ transfers }: TransferHistoryTableProps) {
       <TableBody>
         {transfers.map((t) => (
           <TableRow key={t.id}>
-            <TableCell>{new Date(t.timestamp).toLocaleDateString('sr-Latn-RS')}</TableCell>
+            <TableCell>{formatDate(t.timestamp)}</TableCell>
             <TableCell>{formatAccountNumber(t.from_account_number)}</TableCell>
             <TableCell>{formatAccountNumber(t.to_account_number)}</TableCell>
             <TableCell>{formatCurrency(t.initial_amount, 'RSD')}</TableCell>

@@ -17,7 +17,10 @@ describe('login', () => {
 
     const result = await login({ email: 'a@b.com', password: 'pass' })
 
-    expect(mockPost).toHaveBeenCalledWith('/api/auth/login', { email: 'a@b.com', password: 'pass' })
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/auth/login', {
+      email: 'a@b.com',
+      password: 'pass',
+    })
     expect(result).toEqual(tokens)
   })
 })
@@ -28,7 +31,7 @@ describe('logout', () => {
 
     await logout('rt')
 
-    expect(mockPost).toHaveBeenCalledWith('/api/auth/logout', { refresh_token: 'rt' })
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/auth/logout', { refresh_token: 'rt' })
   })
 })
 
@@ -38,7 +41,9 @@ describe('requestPasswordReset', () => {
 
     await requestPasswordReset('a@b.com')
 
-    expect(mockPost).toHaveBeenCalledWith('/api/auth/password/reset-request', { email: 'a@b.com' })
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/auth/password/reset-request', {
+      email: 'a@b.com',
+    })
   })
 })
 
@@ -53,7 +58,7 @@ describe('resetPassword', () => {
 
     await resetPassword(payload)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/auth/password/reset', payload)
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/auth/password/reset', payload)
   })
 })
 
@@ -68,6 +73,6 @@ describe('activateAccount', () => {
 
     await activateAccount(payload)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/auth/activate', payload)
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/auth/activate', payload)
   })
 })

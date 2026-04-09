@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getTransfers, executeTransfer } from '@/lib/api/transfers'
-import { getExchangeRate } from '@/lib/api/exchange'
-import type { TransferFilters } from '@/types/transfer'
+import { getTransfers, getTransferPreview, executeTransfer } from '@/lib/api/transfers'
+import type { TransferFilters, CreateTransferRequest } from '@/types/transfer'
 
 export function useTransfers(filters?: TransferFilters) {
   return useQuery({
@@ -10,11 +9,15 @@ export function useTransfers(filters?: TransferFilters) {
   })
 }
 
-export function useTransferPreview(fromCurrency: string, toCurrency: string, amount: number) {
+export function useTransferPreview(payload: CreateTransferRequest | null) {
   return useQuery({
-    queryKey: ['exchange-rate', fromCurrency, toCurrency, amount],
-    queryFn: () => getExchangeRate(fromCurrency, toCurrency),
-    enabled: !!fromCurrency && !!toCurrency && fromCurrency !== toCurrency && amount > 0,
+    queryKey: ['transfer-preview', payload],
+    queryFn: () => getTransferPreview(payload!),
+    enabled:
+      !!payload &&
+      !!payload.from_account_number &&
+      !!payload.to_account_number &&
+      payload.amount > 0,
   })
 }
 

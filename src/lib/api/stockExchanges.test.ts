@@ -18,7 +18,7 @@ describe('getStockExchanges', () => {
 
     const result = await getStockExchanges({ search: 'NYSE', page: 1, page_size: 10 })
 
-    expect(mockGet).toHaveBeenCalledWith('/api/stock-exchanges', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/stock-exchanges', {
       params: { search: 'NYSE', page: 1, page_size: 10 },
     })
     expect(result).toEqual(response)
@@ -30,7 +30,7 @@ describe('getStockExchanges', () => {
 
     const result = await getStockExchanges()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/stock-exchanges', { params: {} })
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/stock-exchanges', { params: {} })
     expect(result).toEqual(response)
   })
 })
@@ -41,7 +41,7 @@ describe('getTestingMode', () => {
 
     const result = await getTestingMode()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/stock-exchanges/testing-mode')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/stock-exchanges/testing-mode')
     expect(result).toEqual({ testing_mode: false })
   })
 })
@@ -52,7 +52,7 @@ describe('setTestingMode', () => {
 
     const result = await setTestingMode(true)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/stock-exchanges/testing-mode', { enabled: true })
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/stock-exchanges/testing-mode', { enabled: true })
     expect(result).toEqual({ testing_mode: true })
   })
 
@@ -61,7 +61,9 @@ describe('setTestingMode', () => {
 
     const result = await setTestingMode(false)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/stock-exchanges/testing-mode', { enabled: false })
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/stock-exchanges/testing-mode', {
+      enabled: false,
+    })
     expect(result).toEqual({ testing_mode: false })
   })
 })

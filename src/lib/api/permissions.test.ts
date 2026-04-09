@@ -21,7 +21,7 @@ describe('permissions API', () => {
 
     const result = await getPermissions()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/permissions')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/permissions')
     expect(result).toEqual(mockData)
   })
 
@@ -54,7 +54,7 @@ describe('permissions API', () => {
 
     const result = await setEmployeeRoles(3, ['EmployeeBasic'])
 
-    expect(mockPut).toHaveBeenCalledWith('/api/employees/3/roles', {
+    expect(mockPut).toHaveBeenCalledWith('/api/v1/employees/3/roles', {
       role_names: ['EmployeeBasic'],
     })
     expect(result).toEqual(mockEmployee)
@@ -81,7 +81,7 @@ describe('permissions API', () => {
 
     const result = await setEmployeePermissions(3, ['clients.read'])
 
-    expect(mockPut).toHaveBeenCalledWith('/api/employees/3/permissions', {
+    expect(mockPut).toHaveBeenCalledWith('/api/v1/employees/3/permissions', {
       permission_codes: ['clients.read'],
     })
     expect(result).toEqual(mockEmployee)

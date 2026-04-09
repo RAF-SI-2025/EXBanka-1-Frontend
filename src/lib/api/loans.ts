@@ -10,17 +10,17 @@ import type {
 } from '@/types/loan'
 
 export async function getLoans(): Promise<LoanListResponse> {
-  const response = await apiClient.get<LoanListResponse>('/api/me/loans')
+  const response = await apiClient.get<LoanListResponse>('/api/v1/me/loans')
   return response.data
 }
 
 export async function getLoan(id: number): Promise<Loan> {
-  const response = await apiClient.get<Loan>(`/api/loans/${id}`)
+  const response = await apiClient.get<Loan>(`/api/v1/loans/${id}`)
   return response.data
 }
 
 export async function createLoanRequest(payload: CreateLoanRequest): Promise<LoanRequest> {
-  const response = await apiClient.post<LoanRequest>('/api/me/loan-requests', payload)
+  const response = await apiClient.post<LoanRequest>('/api/v1/me/loan-requests', payload)
   return response.data
 }
 
@@ -33,16 +33,16 @@ export async function getLoanRequests(
   if (filters?.status) params.append('status_filter', filters.status)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<LoanRequestListResponse>('/api/loan-requests', { params })
+  const response = await apiClient.get<LoanRequestListResponse>('/api/v1/loan-requests', { params })
   return response.data
 }
 
 export async function approveLoanRequest(id: number): Promise<void> {
-  await apiClient.post(`/api/loan-requests/${id}/approve`)
+  await apiClient.post(`/api/v1/loan-requests/${id}/approve`)
 }
 
 export async function rejectLoanRequest(id: number): Promise<void> {
-  await apiClient.post(`/api/loan-requests/${id}/reject`)
+  await apiClient.post(`/api/v1/loan-requests/${id}/reject`)
 }
 
 export async function getAllLoans(filters?: LoanFilters): Promise<LoanListResponse> {
@@ -52,6 +52,6 @@ export async function getAllLoans(filters?: LoanFilters): Promise<LoanListRespon
   if (filters?.status) params.append('status_filter', filters.status)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<LoanListResponse>('/api/loans', { params })
+  const response = await apiClient.get<LoanListResponse>('/api/v1/loans', { params })
   return response.data
 }

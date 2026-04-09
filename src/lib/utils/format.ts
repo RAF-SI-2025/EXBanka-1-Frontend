@@ -26,8 +26,15 @@ export function formatCurrency(amount: number, currency: string): string {
   )
 }
 
-export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('sr-Latn-RS')
+export function formatDate(dateString: string | number | null | undefined): string {
+  if (!dateString && dateString !== 0) return '-'
+  const normalized = typeof dateString === 'string' ? dateString.replace(/ UTC$/, 'Z') : dateString
+  const date =
+    typeof normalized === 'number'
+      ? new Date(normalized < 1e12 ? normalized * 1000 : normalized)
+      : new Date(normalized)
+  if (isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('sr-Latn-RS')
 }
 
 export function formatUnixDate(timestamp: number): string {

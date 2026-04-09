@@ -8,36 +8,36 @@ import type {
 } from '@/types/order'
 
 export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
-  const { data } = await apiClient.post<Order>('/api/me/orders', payload)
+  const { data } = await apiClient.post<Order>('/api/v1/me/orders', payload)
   return data
 }
 
 export async function getMyOrders(filters: MyOrderFilters = {}): Promise<OrderListResponse> {
-  const { data } = await apiClient.get<OrderListResponse>('/api/me/orders', { params: filters })
+  const { data } = await apiClient.get<OrderListResponse>('/api/v1/me/orders', { params: filters })
   return { ...data, orders: data.orders ?? [] }
 }
 
 export async function getMyOrder(id: number): Promise<Order> {
-  const { data } = await apiClient.get<Order>(`/api/me/orders/${id}`)
+  const { data } = await apiClient.get<Order>(`/api/v1/me/orders/${id}`)
   return data
 }
 
 export async function cancelOrder(id: number): Promise<Order> {
-  const { data } = await apiClient.post<Order>(`/api/me/orders/${id}/cancel`)
+  const { data } = await apiClient.post<Order>(`/api/v1/me/orders/${id}/cancel`)
   return data
 }
 
 export async function getAllOrders(filters: AdminOrderFilters = {}): Promise<OrderListResponse> {
-  const { data } = await apiClient.get<OrderListResponse>('/api/orders', { params: filters })
+  const { data } = await apiClient.get<OrderListResponse>('/api/v1/orders', { params: filters })
   return { ...data, orders: data.orders ?? [] }
 }
 
 export async function approveOrder(id: number): Promise<Order> {
-  const { data } = await apiClient.post<Order>(`/api/orders/${id}/approve`)
+  const { data } = await apiClient.post<Order>(`/api/v1/orders/${id}/approve`)
   return data
 }
 
 export async function declineOrder(id: number): Promise<Order> {
-  const { data } = await apiClient.post<Order>(`/api/orders/${id}/decline`)
+  const { data } = await apiClient.post<Order>(`/api/v1/orders/${id}/decline`)
   return data
 }
