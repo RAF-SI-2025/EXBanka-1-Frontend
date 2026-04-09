@@ -4,11 +4,13 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { AdminAccountCardsPage } from '@/pages/AdminAccountCardsPage'
 import * as useCardsHook from '@/hooks/useCards'
 import * as useAccountsHook from '@/hooks/useAccounts'
+import * as useClientsHook from '@/hooks/useClients'
 import { createMockCard } from '@/__tests__/fixtures/card-fixtures'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 
 jest.mock('@/hooks/useCards')
 jest.mock('@/hooks/useAccounts')
+jest.mock('@/hooks/useClients')
 
 describe('AdminAccountCardsPage', () => {
   beforeEach(() => {
@@ -30,6 +32,18 @@ describe('AdminAccountCardsPage', () => {
     jest
       .mocked(useCardsHook.useDeactivateCard)
       .mockReturnValue({ mutate: jest.fn(), isPending: false } as any)
+    jest.mocked(useCardsHook.useCreateCard).mockReturnValue({
+      mutate: jest.fn(),
+      isPending: false,
+    } as any)
+    jest.mocked(useAccountsHook.useSearchAccounts).mockReturnValue({
+      data: { accounts: [], total: 0 },
+      isLoading: false,
+    } as any)
+    jest.mocked(useClientsHook.useSearchClients).mockReturnValue({
+      data: { clients: [], total: 0 },
+      isLoading: false,
+    } as any)
   })
 
   it('renders card management page', () => {
@@ -54,5 +68,11 @@ describe('AdminAccountCardsPage', () => {
     const deactivateButtons = screen.getAllByText('Deactivate')
     await userEvent.click(deactivateButtons[0])
     expect(screen.getByRole('heading', { name: /permanently deactivate/i })).toBeInTheDocument()
+  })
+
+  it('opens Create Card dialog when Create Card button is clicked', async () => {
+    renderWithProviders(<AdminAccountCardsPage />, { route: '/admin/accounts/1/cards' })
+    await userEvent.click(screen.getByRole('button', { name: /create card/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })

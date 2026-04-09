@@ -74,6 +74,7 @@ describe('Celina 0.2: Upravljanje zaposlenima', () => {
   // Note: spec says "prikazuje potvrdu o uspešnoj izmeni" but EditEmployeePage has no
   // success message — it redirects to /employees on success (useMutationWithRedirect).
   it('should edit employee phone and department (Scenario 13)', () => {
+    cy.intercept('GET', '/api/employees*', { fixture: 'employees-list.json' }).as('getEmployeesList')
     cy.intercept('GET', '/api/employees/7', { fixture: 'employee-detail.json' }).as('getEmployee')
     cy.intercept('PUT', '/api/employees/7', {
       statusCode: 200,
@@ -135,6 +136,7 @@ describe('Celina 0.2: Upravljanje zaposlenima', () => {
   // Note: spec says "klikne na opciju 'Deaktiviraj'" but there is no Deactivate button.
   // Deactivation is done by changing the Status Select from Active to Inactive and clicking Save.
   it('should deactivate employee by changing Status to Inactive (Scenario 14)', () => {
+    cy.intercept('GET', '/api/employees*', { fixture: 'employees-list.json' }).as('getEmployeesList')
     cy.intercept('GET', '/api/employees/7', { fixture: 'employee-detail.json' }).as('getEmployee')
     cy.intercept('PUT', '/api/employees/7', {
       statusCode: 200,

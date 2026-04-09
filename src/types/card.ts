@@ -16,3 +16,10 @@ export interface Card {
   status: CardStatus
   owner_name: string
 }
+
+export interface CreateCardPayload {
+  account_number: string
+  owner_id: number
+  owner_type: 'AUTHORIZED_PERSON'
+  card_brand: CardBrand
+}

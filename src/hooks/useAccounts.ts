@@ -76,3 +76,11 @@ export function useAllAccounts(filters?: AccountFilters) {
     queryFn: () => getAllAccounts(filters),
   })
 }
+
+export function useSearchAccounts(query: string) {
+  return useQuery({
+    queryKey: ['accounts', 'search', query],
+    queryFn: () => getAllAccounts({ account_number_filter: query, page_size: 10 }),
+    enabled: query.length > 0,
+  })
+}

@@ -16,6 +16,9 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
         body: { payments: [], total: 0 },
       }).as('getPayments')
       cy.loginAsClient('/transfers/new')
+      // Force a full JS context reset so Redux transfer state doesn't leak between tests
+      // (cy.visit to the same SPA URL may skip a full reload, persisting Redux state)
+      cy.reload()
     })
 
     // Scenario 17: Transfer između sopstvenih računa u istoj valuti
@@ -28,25 +31,36 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
         statusCode: 200,
         fixture: 'transfer-executed.json',
       }).as('executeTransfer')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       cy.wait('@getAccounts')
 
       // Step 1: Fill transfer form
-      // Scope option search to visible select-content to avoid finding hidden portals from closed selects.
-      // Use trigger('pointerdown', { pointerType: 'touch' }) to bypass Base UI's click guard which
-      // requires highlighted state — pointerTypeRef is a useRef so it's always current.
-      cy.contains('Select account').click()
+      cy.get('[aria-label="Source Account"]').click()
       cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Tekući RSD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+        .realHover()
+        .realClick()
+      cy.get('[aria-label="Source Account"]').should('have.attr', 'aria-expanded', 'false')
+      // Wait for Source portal exit animation to complete so it doesn't overlap Destination
+      cy.get('[data-slot="select-content"]:visible').should('not.exist')
 
-      // Select destination account — first select now shows selected value, second shows placeholder
-      cy.contains('Select account').click()
+      cy.get('[aria-label="Destination Account"]').click()
       cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Štedni RSD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+        .realHover()
+        .realClick()
+      cy.get('[aria-label="Destination Account"]').should('have.attr', 'aria-expanded', 'false')
+      cy.get('[data-slot="select-content"]:visible').should('not.exist')
 
       cy.get('#amount').type('10000')
 
@@ -73,6 +87,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
         })
 
       // Step 3: Verification
+      cy.wait('@createChallenge')
       cy.contains('Verification').should('be.visible')
       cy.get('#verification-code').type('123456')
       cy.contains('button', 'Confirm').click()
@@ -80,7 +95,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
 
       cy.get('@executeTransfer')
         .its('request.body')
-        .should('have.property', 'verification_code', '123456')
+        .should('have.property', 'challenge_id', 1)
 
       // Step 4: Success
       cy.contains('Transfer successful!').should('be.visible')
@@ -117,27 +132,42 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('executeTransfer')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       cy.wait('@getAccounts')
 
       // Select RSD source account
-      cy.contains('Select account').click()
+      cy.get('[aria-label="Source Account"]').click()
       cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Tekući RSD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+        .realHover()
+        .realClick()
+      cy.get('[aria-label="Source Account"]').should('have.attr', 'aria-expanded', 'false')
+      cy.get('[data-slot="select-content"]:visible').should('not.exist')
 
       // Select EUR destination account (different currency)
-      cy.contains('Select account').click()
+      cy.get('[aria-label="Destination Account"]').click()
       cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Devizni EUR')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+        .scrollIntoView()
+        .realHover()
+        .realClick()
+      cy.get('[aria-label="Destination Account"]').should('have.attr', 'aria-expanded', 'false')
+      cy.get('[data-slot="select-content"]:visible').should('not.exist')
 
       cy.get('#amount').type('11650')
       cy.contains('button', 'Make Transfer').click()
 
-      // Wait for exchange rate query to resolve (fires when confirmation renders with cross-currency formData)
+      // Wait for exchange rate query to resolve (fires when formData is set in Redux with cross-currency accounts)
       cy.wait('@getExchangeRate')
 
       // Confirmation — exchange rate should be shown
@@ -160,6 +190,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
         })
 
       // Complete verification
+      cy.wait('@createChallenge')
       cy.get('#verification-code').type('123456')
       cy.contains('button', 'Confirm').click()
       cy.wait('@executeTransfer')
@@ -182,16 +213,19 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
       cy.wait('@getAccounts')
 
       // Select source and destination (same currency)
-      cy.contains('Select account').click()
+      cy.get('[aria-label="Source Account"]').click()
       cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Tekući RSD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
-      cy.contains('Select account').click()
+        .realHover()
+        .realClick()
+      cy.get('[aria-label="Source Account"]').should('have.attr', 'aria-expanded', 'false')
+      cy.get('[data-slot="select-content"]:visible').should('not.exist')
+
+      cy.get('[aria-label="Destination Account"]').click()
       cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Štedni RSD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+        .realHover()
+        .realClick()
+      cy.get('[aria-label="Destination Account"]').should('have.attr', 'aria-expanded', 'false')
+      cy.get('[data-slot="select-content"]:visible').should('not.exist')
 
       // Enter amount exceeding available balance (145,000)
       cy.get('#amount').type('200000')
