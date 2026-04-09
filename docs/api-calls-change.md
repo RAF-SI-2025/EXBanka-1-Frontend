@@ -1,2 +1,0 @@
-- Check if the routes are still consistent with the ones in the REST_API file, if they are, make no changes.
-- If routes are different, adapt api calls so they work with those routes and make sure to check if the request form and data types are in accordance to ones in REST_API file

@@ -15,8 +15,8 @@ describe('Password Reset Page', () => {
 
     cy.visit('/password-reset?token=test-token-123')
 
-    cy.get('#new_password').type('NewPassword1!')
-    cy.get('#confirm_password').type('NewPassword1!')
+    cy.get('#new_password').type('NewPassword12!')
+    cy.get('#confirm_password').type('NewPassword12!')
     cy.contains('button', 'Reset Password').click()
 
     cy.wait('@resetPassword')
@@ -24,8 +24,8 @@ describe('Password Reset Page', () => {
       .its('request.body')
       .should((body) => {
         expect(body.token).to.equal('test-token-123')
-        expect(body.new_password).to.equal('NewPassword1!')
-        expect(body.confirm_password).to.equal('NewPassword1!')
+        expect(body.new_password).to.equal('NewPassword12!')
+        expect(body.confirm_password).to.equal('NewPassword12!')
       })
 
     // Success state
@@ -36,7 +36,7 @@ describe('Password Reset Page', () => {
   it('should show validation error when passwords do not match', () => {
     cy.visit('/password-reset?token=test-token-123')
 
-    cy.get('#new_password').type('NewPassword1!')
+    cy.get('#new_password').type('NewPassword12!')
     cy.get('#confirm_password').type('DifferentPassword1!')
     cy.contains('button', 'Reset Password').click()
 
@@ -50,8 +50,8 @@ describe('Password Reset Page', () => {
 
     cy.visit('/password-reset?token=expired-token')
 
-    cy.get('#new_password').type('NewPassword1!')
-    cy.get('#confirm_password').type('NewPassword1!')
+    cy.get('#new_password').type('NewPassword12!')
+    cy.get('#confirm_password').type('NewPassword12!')
     cy.contains('button', 'Reset Password').click()
 
     cy.wait('@resetPasswordFail')

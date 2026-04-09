@@ -24,6 +24,18 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
         statusCode: 200,
         fixture: 'payment-executed.json',
       }).as('executePayment')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       // Step 1: Fill the payment form
       cy.contains('Select account').click()
@@ -42,6 +54,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
       cy.contains('button', 'Confirm').click()
       cy.wait('@createPayment')
+      cy.wait('@createChallenge')
 
       // Verify the request body
       cy.get('@createPayment')
@@ -59,10 +72,10 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
       cy.contains('button', 'Confirm').click()
       cy.wait('@executePayment')
 
-      // Verify execute request has verification code
+      // Verify execute request sends challenge_id
       cy.get('@executePayment')
         .its('request.body')
-        .should('have.property', 'verification_code', '123456')
+        .should('have.property', 'challenge_id', 1)
 
       // Step 4: Success screen
       cy.contains('Payment successful!').should('be.visible')
@@ -154,6 +167,18 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
           timestamp: '2026-03-26T10:00:00Z',
         },
       }).as('executePayment')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       // Select EUR foreign account as source
       cy.contains('Select account').click()
@@ -172,6 +197,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
       cy.contains('button', 'Confirm').click()
       cy.wait('@createPayment')
+      cy.wait('@createChallenge')
 
       // Verify request was sent with EUR account
       cy.get('@createPayment')
@@ -199,6 +225,18 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
         statusCode: 200,
         fixture: 'payment-executed.json',
       }).as('executePayment')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       // Fill form quickly
       cy.contains('Select account').click()
@@ -211,6 +249,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
       // Confirm
       cy.contains('button', 'Confirm').click()
       cy.wait('@createPayment')
+      cy.wait('@createChallenge')
 
       // Verification step UI
       cy.contains('Verification').should('be.visible')
@@ -230,7 +269,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
       cy.get('@executePayment')
         .its('request.body')
-        .should('have.property', 'verification_code', '654321')
+        .should('have.property', 'challenge_id', 1)
 
       cy.contains('Payment successful!').should('be.visible')
     })
@@ -241,33 +280,24 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
         statusCode: 201,
         fixture: 'payment-created.json',
       }).as('createPayment')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
 
-      // First two attempts: generic failure; third: transaction cancelled
-      let attemptCount = 0
-      cy.intercept('POST', '/api/me/payments/101/execute', (req) => {
-        attemptCount++
-        if (attemptCount < 3) {
-          req.reply({
-            statusCode: 400,
-            body: {
-              error: {
-                code: 'INVALID_CODE',
-                message: 'Invalid verification code',
-              },
-            },
-          })
-        } else {
-          req.reply({
-            statusCode: 400,
-            body: {
-              error: {
-                code: 'TRANSACTION_CANCELLED',
-                message: 'Transaction cancelled after too many failed attempts',
-              },
-            },
-          })
-        }
-      }).as('executePayment')
+      // Each submitCode call returns one fewer remaining attempt
+      let submitAttempt = 0
+      cy.intercept('POST', '/api/verifications/1/code', (req) => {
+        submitAttempt++
+        req.reply({
+          statusCode: 200,
+          body: { success: false, remaining_attempts: 3 - submitAttempt },
+        })
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'pending' },
+      }).as('challengeStatus')
 
       // Fill form and get to verification step
       cy.contains('Select account').click()
@@ -278,24 +308,25 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
       cy.contains('button', 'Continue').click()
       cy.contains('button', 'Confirm').click()
       cy.wait('@createPayment')
+      cy.wait('@createChallenge')
 
       // First wrong code
       cy.get('#verification-code').type('000001')
       cy.contains('button', 'Confirm').click()
-      cy.wait('@executePayment')
-      cy.contains('Payment execution failed').should('be.visible')
+      cy.wait('@submitCode')
+      cy.contains('Invalid code. 2 attempts remaining.').should('be.visible')
 
       // Second wrong code
       cy.get('#verification-code').clear().type('000002')
       cy.contains('button', 'Confirm').click()
-      cy.wait('@executePayment')
-      cy.contains('Payment execution failed').should('be.visible')
+      cy.wait('@submitCode')
+      cy.contains('Invalid code. 1 attempts remaining.').should('be.visible')
 
-      // Third wrong code — transaction should be cancelled
+      // Third wrong code
       cy.get('#verification-code').clear().type('000003')
       cy.contains('button', 'Confirm').click()
-      cy.wait('@executePayment')
-      cy.contains('Payment execution failed').should('be.visible')
+      cy.wait('@submitCode')
+      cy.contains('Invalid code. 0 attempts remaining.').should('be.visible')
     })
 
     // Scenario 15: Dodavanje primaoca nakon uspešnog plaćanja
@@ -318,6 +349,18 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
           created_at: '2026-03-26T10:05:00Z',
         },
       }).as('saveRecipient')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       // Complete payment flow
       cy.contains('Select account').click()
@@ -328,6 +371,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
       cy.contains('button', 'Continue').click()
       cy.contains('button', 'Confirm').click()
       cy.wait('@createPayment')
+      cy.wait('@createChallenge')
       cy.get('#verification-code').type('123456')
       cy.contains('button', 'Confirm').click()
       cy.wait('@executePayment')
