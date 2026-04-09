@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
@@ -16,7 +16,7 @@ import {
   setVerificationError,
   resetPaymentFlow,
 } from '@/store/slices/paymentSlice'
-import { createChallenge, submitVerificationCode, getChallengeStatus } from '@/lib/api/verification'
+import { createChallenge, submitVerificationCode } from '@/lib/api/verification'
 import { Button } from '@/components/ui/button'
 import { NewPaymentForm } from '@/components/payments/NewPaymentForm'
 import { PaymentConfirmation } from '@/components/payments/PaymentConfirmation'
@@ -90,7 +90,7 @@ export function NewPaymentPage() {
       createChallenge({
         source_service: 'payment',
         source_id: transactionId,
-        method: 'email',
+        method: 'code_pull',
       })
         .then((res) => {
           dispatch(setChallengeId(res.challenge_id))
@@ -100,6 +100,25 @@ export function NewPaymentPage() {
         })
     }
   }, [step, transactionId, challengeId, dispatch])
+
+  const handleExecute = useCallback(() => {
+    if (transactionId === null || challengeId === null) return
+    setVerifying(true)
+    dispatch(setVerificationError(null))
+    executePayment.mutate(
+      { id: transactionId, challengeId },
+      {
+        onSuccess: () => {
+          setVerifying(false)
+          dispatch(setPaymentStep('success'))
+        },
+        onError: () => {
+          setVerifying(false)
+          dispatch(setVerificationError('Payment execution failed. Please try again.'))
+        },
+      }
+    )
+  }, [transactionId, challengeId, executePayment, dispatch])
 
   if (step === 'success' && result) {
     const paymentFormData = formData as CreatePaymentRequest | null
@@ -132,10 +151,11 @@ export function NewPaymentPage() {
   if (step === 'verification' && transactionId !== null) {
     return (
       <VerificationStep
+        challengeId={challengeId}
         codeRequested={codeRequested && challengeId !== null}
         loading={verifying || executePayment.isPending}
         error={verificationError}
-        onRequestCode={() => {}}
+        onStatusVerified={handleExecute}
         onVerified={async (code) => {
           if (challengeId === null) return
           setVerifying(true)
@@ -151,25 +171,7 @@ export function NewPaymentPage() {
               setVerifying(false)
               return
             }
-            const status = await getChallengeStatus(challengeId)
-            if (status.status !== 'verified') {
-              dispatch(setVerificationError('Verification not confirmed. Please try again.'))
-              setVerifying(false)
-              return
-            }
-            executePayment.mutate(
-              { id: transactionId, challengeId },
-              {
-                onSuccess: () => {
-                  setVerifying(false)
-                  dispatch(setPaymentStep('success'))
-                },
-                onError: () => {
-                  setVerifying(false)
-                  dispatch(setVerificationError('Payment execution failed. Please try again.'))
-                },
-              }
-            )
+            handleExecute()
           } catch {
             setVerifying(false)
             dispatch(setVerificationError('Verification failed. Please try again.'))

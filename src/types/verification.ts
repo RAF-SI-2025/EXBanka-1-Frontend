@@ -1,7 +1,7 @@
 export interface CreateChallengeRequest {
-  source_service: 'payment' | 'transfer'
+  source_service: 'transaction' | 'payment' | 'transfer'
   source_id: number
-  method?: 'code_pull' | 'email'
+  method?: 'code_pull'
 }
 
 export interface CreateChallengeResponse {

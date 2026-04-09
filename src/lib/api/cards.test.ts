@@ -47,7 +47,7 @@ describe('createAuthorizedPerson', () => {
 
     const result = await createAuthorizedPerson(payload)
 
-    expect(apiClient.post).toHaveBeenCalledWith('/api/cards/authorized-person', payload)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/v1/cards/authorized-person', payload)
     expect(result).toEqual(mockAuthorizedPerson)
   })
 })
@@ -65,7 +65,7 @@ describe('createCard', () => {
 
     const result = await createCard(payload)
 
-    expect(apiClient.post).toHaveBeenCalledWith('/api/cards', payload)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/v1/cards', payload)
     expect(result).toEqual(mockCard)
   })
 })

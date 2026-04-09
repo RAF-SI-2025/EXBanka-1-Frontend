@@ -28,7 +28,7 @@ describe('getInterestRateTiers', () => {
 
     const result = await getInterestRateTiers()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/interest-rate-tiers')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/interest-rate-tiers')
     expect(result).toEqual(mockData)
   })
 })
@@ -52,7 +52,7 @@ describe('createTier', () => {
 
     const result = await createTier(payload)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/interest-rate-tiers', payload)
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/interest-rate-tiers', payload)
     expect(result).toEqual(created)
   })
 })
@@ -79,7 +79,7 @@ describe('updateTier', () => {
     }
     const result = await updateTier(1, payload)
 
-    expect(mockPut).toHaveBeenCalledWith('/api/interest-rate-tiers/1', payload)
+    expect(mockPut).toHaveBeenCalledWith('/api/v1/interest-rate-tiers/1', payload)
     expect(result).toEqual(updated)
   })
 })
@@ -90,7 +90,7 @@ describe('deleteTier', () => {
 
     await deleteTier(1)
 
-    expect(mockDelete).toHaveBeenCalledWith('/api/interest-rate-tiers/1')
+    expect(mockDelete).toHaveBeenCalledWith('/api/v1/interest-rate-tiers/1')
   })
 })
 
@@ -101,7 +101,7 @@ describe('applyTier', () => {
 
     const result = await applyTier(1)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/interest-rate-tiers/1/apply')
+    expect(mockPost).toHaveBeenCalledWith('/api/v1/interest-rate-tiers/1/apply')
     expect(result).toEqual(response)
   })
 })
