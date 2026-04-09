@@ -22,6 +22,7 @@ export interface TransferFlowState {
   error: string | null
   result: Transfer | null
   transactionId: number | null
+  challengeId: number | null
   codeRequested: boolean
   verificationError: string | null
 }
@@ -34,6 +35,7 @@ const initialState: TransferFlowState = {
   error: null,
   result: null,
   transactionId: null,
+  challengeId: null,
   codeRequested: false,
   verificationError: null,
 }
@@ -65,6 +67,9 @@ const transferSlice = createSlice({
     },
     resetTransferFlow() {
       return initialState
+    },
+    setChallengeId(state, action: PayloadAction<number | null>) {
+      state.challengeId = action.payload
     },
     setCodeRequested(state, action: PayloadAction<boolean>) {
       state.codeRequested = action.payload
@@ -98,6 +103,7 @@ export const {
   setTransferFormData,
   setTransferPreview,
   resetTransferFlow,
+  setChallengeId,
   setCodeRequested,
   setVerificationError,
 } = transferSlice.actions

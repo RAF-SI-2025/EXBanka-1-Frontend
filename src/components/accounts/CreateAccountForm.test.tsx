@@ -51,7 +51,7 @@ describe('CreateAccountForm', () => {
   })
 
   it('shows currency dropdown alongside account kind when Foreign is selected', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
     renderWithProviders(<CreateAccountForm {...defaultProps} />, {
       preloadedState: { auth: createMockAuthState() },
     })
@@ -62,7 +62,7 @@ describe('CreateAccountForm', () => {
   })
 
   it('shows company kind options when Company category is selected', async () => {
-    const user = userEvent.setup()
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
     renderWithProviders(<CreateAccountForm {...defaultProps} />, {
       preloadedState: { auth: createMockAuthState() },
     })

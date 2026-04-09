@@ -32,7 +32,7 @@ describe('stocks', () => {
     const response = { stocks: [createMockStock()], total_count: 1 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getStocks({ search: 'AAPL', page: 1, page_size: 10 })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/stocks', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/stocks', {
       params: { search: 'AAPL', page: 1, page_size: 10 },
     })
     expect(result).toEqual(response)
@@ -42,7 +42,7 @@ describe('stocks', () => {
     const stock = createMockStock()
     mockGet.mockResolvedValue({ data: stock })
     const result = await getStock(1)
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/stocks/1')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/stocks/1')
     expect(result).toEqual(stock)
   })
 
@@ -50,7 +50,7 @@ describe('stocks', () => {
     const response = { history: createMockPriceHistory(), total_count: 5 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getStockHistory(1, { period: 'month' })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/stocks/1/history', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/stocks/1/history', {
       params: { period: 'month' },
     })
     expect(result).toEqual(response)
@@ -62,7 +62,7 @@ describe('futures', () => {
     const response = { futures: [createMockFutures()], total_count: 1 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getFutures({ search: 'CL' })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/futures', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/futures', {
       params: { search: 'CL' },
     })
     expect(result).toEqual(response)
@@ -72,7 +72,7 @@ describe('futures', () => {
     const futures = createMockFutures()
     mockGet.mockResolvedValue({ data: futures })
     const result = await getFuture(1)
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/futures/1')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/futures/1')
     expect(result).toEqual(futures)
   })
 
@@ -80,7 +80,7 @@ describe('futures', () => {
     const response = { history: createMockPriceHistory(), total_count: 5 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getFutureHistory(1, { period: 'week' })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/futures/1/history', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/futures/1/history', {
       params: { period: 'week' },
     })
     expect(result).toEqual(response)
@@ -92,7 +92,7 @@ describe('forex', () => {
     const response = { forex_pairs: [createMockForex()], total_count: 1 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getForexPairs({ base_currency: 'EUR' })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/forex', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/forex', {
       params: { base_currency: 'EUR' },
     })
     expect(result).toEqual(response)
@@ -102,7 +102,7 @@ describe('forex', () => {
     const forex = createMockForex()
     mockGet.mockResolvedValue({ data: forex })
     const result = await getForexPair(1)
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/forex/1')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/forex/1')
     expect(result).toEqual(forex)
   })
 
@@ -110,7 +110,7 @@ describe('forex', () => {
     const response = { history: createMockPriceHistory(), total_count: 5 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getForexHistory(1, { period: 'year' })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/forex/1/history', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/forex/1/history', {
       params: { period: 'year' },
     })
     expect(result).toEqual(response)
@@ -122,7 +122,7 @@ describe('options', () => {
     const response = { options: [createMockOption()], total_count: 1 }
     mockGet.mockResolvedValue({ data: response })
     const result = await getOptions({ stock_id: 1 })
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/options', {
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/options', {
       params: { stock_id: 1 },
     })
     expect(result).toEqual(response)
@@ -132,7 +132,7 @@ describe('options', () => {
     const option = createMockOption()
     mockGet.mockResolvedValue({ data: option })
     const result = await getOption(1)
-    expect(mockGet).toHaveBeenCalledWith('/api/securities/options/1')
+    expect(mockGet).toHaveBeenCalledWith('/api/v1/securities/options/1')
     expect(result).toEqual(option)
   })
 })

@@ -118,17 +118,11 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
 
       // Change From Currency to EUR
       cy.get('[aria-label="From Currency"]').click()
-      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'EUR')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'EUR').realClick()
 
       // Change To Currency to USD
       cy.get('[aria-label="To Currency"]').click()
-      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'USD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'USD').realClick()
 
       cy.get('#amount').type('100')
       cy.contains('button', 'Calculate').click()
@@ -141,16 +135,10 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
     it('should disable Calculate button when same currency selected', () => {
       // Select EUR for both From and To
       cy.get('[aria-label="From Currency"]').click()
-      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'EUR')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'EUR').realClick()
 
       cy.get('[aria-label="To Currency"]').click()
-      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'EUR')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'EUR').realClick()
 
       cy.get('#amount').type('100')
 
@@ -219,22 +207,28 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('executeTransfer')
+      cy.intercept('POST', '/api/verifications', {
+        statusCode: 200,
+        body: { challenge_id: 1 },
+      }).as('createChallenge')
+      cy.intercept('POST', '/api/verifications/1/code', {
+        statusCode: 200,
+        body: { success: true, remaining_attempts: 0 },
+      }).as('submitCode')
+      cy.intercept('GET', '/api/verifications/1/status', {
+        statusCode: 200,
+        body: { status: 'verified' },
+      }).as('challengeStatus')
 
       cy.wait('@getAccounts')
 
       // Select RSD source account
       cy.contains('Select account').click()
-      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Tekući RSD')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Tekući RSD').realClick()
 
       // Select EUR destination account (different currency)
       cy.contains('Select account').click()
-      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Devizni EUR')
-        .trigger('pointerdown', { pointerType: 'touch', bubbles: true })
-        .trigger('click', { bubbles: true })
-      cy.get('[data-base-ui-inert]').should('not.exist')
+      cy.get('[data-slot="select-content"]:visible').contains('[role="option"]', 'Devizni EUR').realClick()
 
       cy.get('#amount').clear().type('11650')
       cy.contains('button', 'Make Transfer').click()
@@ -257,6 +251,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
       // Complete the transfer
       cy.contains('button', 'Confirm').click()
       cy.wait('@createTransfer')
+      cy.wait('@createChallenge')
 
       cy.get('#verification-code').type('123456')
       cy.contains('button', 'Confirm').click()

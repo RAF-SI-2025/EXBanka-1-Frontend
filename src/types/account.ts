@@ -26,6 +26,8 @@ export interface Account {
   owner_name?: string
   daily_limit?: number
   monthly_limit?: number
+  daily_spending?: number
+  monthly_spending?: number
   company?: Company
   created_at?: string
 }

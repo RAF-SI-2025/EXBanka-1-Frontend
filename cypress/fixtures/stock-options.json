@@ -1,0 +1,37 @@
+{
+  "options": [
+    {
+      "id": 100,
+      "ticker": "AAPL240621C00180000",
+      "name": "AAPL Call 180",
+      "stock_listing_id": 1,
+      "option_type": "call",
+      "strike_price": "180.00",
+      "implied_volatility": "0.25",
+      "premium": "5.50",
+      "open_interest": 12000,
+      "settlement_date": "2026-06-21",
+      "price": "5.50",
+      "ask": "5.60",
+      "bid": "5.40",
+      "volume": 3500
+    },
+    {
+      "id": 101,
+      "ticker": "AAPL240621P00175000",
+      "name": "AAPL Put 175",
+      "stock_listing_id": 1,
+      "option_type": "put",
+      "strike_price": "175.00",
+      "implied_volatility": "0.22",
+      "premium": "3.20",
+      "open_interest": 8000,
+      "settlement_date": "2026-06-21",
+      "price": "3.20",
+      "ask": "3.30",
+      "bid": "3.10",
+      "volume": 2100
+    }
+  ],
+  "total_count": 2
+}

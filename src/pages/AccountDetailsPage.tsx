@@ -10,6 +10,7 @@ import { AccountCard } from '@/components/accounts/AccountCard'
 import { RenameAccountDialog } from '@/components/accounts/RenameAccountDialog'
 import { ChangeLimitsDialog } from '@/components/accounts/ChangeLimitsDialog'
 import { BusinessAccountInfo } from '@/components/accounts/BusinessAccountInfo'
+import { LimitsUsageCard } from '@/components/accounts/LimitsUsageCard'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils/format'
@@ -70,20 +71,16 @@ export function AccountDetailsPage() {
             value={formatCurrency(account.available_balance, account.currency_code)}
           />
           <InfoRow label="Reserved Funds" value={formatCurrency(0, account.currency_code)} />
-          {account.daily_limit !== undefined && (
-            <InfoRow
-              label="Daily Limit"
-              value={formatCurrency(account.daily_limit, account.currency_code)}
-            />
-          )}
-          {account.monthly_limit !== undefined && (
-            <InfoRow
-              label="Monthly Limit"
-              value={formatCurrency(account.monthly_limit, account.currency_code)}
-            />
-          )}
         </CardContent>
       </Card>
+
+      <LimitsUsageCard
+        dailyLimit={account.daily_limit}
+        monthlyLimit={account.monthly_limit}
+        dailySpending={account.daily_spending}
+        monthlySpending={account.monthly_spending}
+        currency={account.currency_code}
+      />
 
       <BusinessAccountInfo company={account.company} />
 

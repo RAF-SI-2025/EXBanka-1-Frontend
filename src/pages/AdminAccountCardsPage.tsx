@@ -4,6 +4,7 @@ import { useAccountCards, useBlockCard, useUnblockCard, useDeactivateCard } from
 import { useAccount } from '@/hooks/useAccounts'
 import { Button } from '@/components/ui/button'
 import { AdminCardItem } from '@/components/admin/AdminCardItem'
+import { CreateCardDialog } from '@/components/admin/CreateCardDialog'
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ export function AdminAccountCardsPage() {
   const unblockCard = useUnblockCard()
   const deactivateCard = useDeactivateCard()
   const [pending, setPending] = useState<PendingAction>(null)
+  const [createCardOpen, setCreateCardOpen] = useState(false)
 
   const isPending = blockCard.isPending || unblockCard.isPending || deactivateCard.isPending
 
@@ -57,11 +59,14 @@ export function AdminAccountCardsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={() => navigate('/admin/accounts')}>
-          ← Back
-        </Button>
-        <h1 className="text-2xl font-bold">Cards — {account?.account_name ?? 'Account'}</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" onClick={() => navigate('/admin/accounts')}>
+            ← Back
+          </Button>
+          <h1 className="text-2xl font-bold">Cards — {account?.account_name ?? 'Account'}</h1>
+        </div>
+        <Button onClick={() => setCreateCardOpen(true)}>Create Card</Button>
       </div>
 
       {isLoading ? (
@@ -98,6 +103,8 @@ export function AdminAccountCardsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CreateCardDialog open={createCardOpen} onClose={() => setCreateCardOpen(false)} />
     </div>
   )
 }

@@ -50,6 +50,7 @@ describe('Celina 8: Portal za zaposlene — Upravljanje klijentima', () => {
 
   // Scenario 40: Izmena podataka klijenta
   it('should edit client phone and address (Scenario 40)', () => {
+    cy.intercept('GET', '/api/clients*', { fixture: 'clients-list.json' }).as('getClientsList')
     cy.intercept('GET', '/api/clients/42', { fixture: 'client-detail.json' }).as('getClient')
     cy.intercept('PUT', '/api/clients/42', {
       statusCode: 200,

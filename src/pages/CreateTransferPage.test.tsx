@@ -85,6 +85,7 @@ describe('CreateTransferPage', () => {
           error: null,
           result: null,
           transactionId: 42,
+          challengeId: null,
           codeRequested: false,
           verificationError: null,
         },

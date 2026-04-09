@@ -5,7 +5,7 @@ import { useSearchClients } from '@/hooks/useClients'
 import type { Client } from '@/types/client'
 
 interface ClientSelectorProps {
-  onClientSelected: (client: Client) => void
+  onClientSelected: (client: Client | null) => void
   onCreateNew?: () => void
   selectedClient?: Client | null
 }
@@ -24,11 +24,7 @@ export function ClientSelector({
         <span>
           {selectedClient.first_name} {selectedClient.last_name} ({selectedClient.email})
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onClientSelected(null as unknown as Client)}
-        >
+        <Button variant="ghost" size="sm" onClick={() => onClientSelected(null)}>
           Promeni
         </Button>
       </div>

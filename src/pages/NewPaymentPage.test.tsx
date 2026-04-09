@@ -52,6 +52,7 @@ describe('NewPaymentPage', () => {
           submitting: false,
           error: null,
           transactionId: null,
+          challengeId: null,
           codeRequested: false,
           verificationError: null,
         },

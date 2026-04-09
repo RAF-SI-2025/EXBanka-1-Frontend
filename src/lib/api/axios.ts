@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:8080'
+const API_BASE_URL = 'http://bytenity.com'
+// const API_BASE_URL = 'http://localhost:8080'
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -26,7 +27,7 @@ apiClient.interceptors.response.use(
       const refreshToken = sessionStorage.getItem('refresh_token')
       if (refreshToken) {
         try {
-          const { data } = await axios.post(`${API_BASE_URL}/api/auth/refresh`, {
+          const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
             refresh_token: refreshToken,
           })
           sessionStorage.setItem('access_token', data.access_token)

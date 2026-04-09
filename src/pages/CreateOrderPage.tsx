@@ -1,6 +1,7 @@
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { CreateOrderForm } from '@/components/orders/CreateOrderForm'
 import { useCreateOrder } from '@/hooks/useOrders'
+import { useClientAccounts } from '@/hooks/useAccounts'
 import type { CreateOrderPayload, OrderDirection } from '@/types/order'
 
 export function CreateOrderPage() {
@@ -11,6 +12,8 @@ export function CreateOrderPage() {
   const direction = (searchParams.get('direction') as OrderDirection) || 'buy'
 
   const createOrderMutation = useCreateOrder()
+  const { data: accountsData } = useClientAccounts()
+  const accounts = accountsData?.accounts ?? []
 
   const handleSubmit = (payload: CreateOrderPayload) => {
     createOrderMutation.mutate(payload, {
@@ -27,6 +30,7 @@ export function CreateOrderPage() {
         submitting={createOrderMutation.isPending}
         listingId={listingId}
         holdingId={holdingId}
+        accounts={accounts}
       />
     </div>
   )

@@ -1,0 +1,17 @@
+{
+  "id": 10,
+  "ticker": "ESM26",
+  "name": "E-mini S&P 500 Jun 2026",
+  "contract_size": 50,
+  "contract_unit": "USD",
+  "settlement_date": "2026-06-20",
+  "exchange_acronym": "CME",
+  "price": "5250.00",
+  "ask": "5250.50",
+  "bid": "5249.50",
+  "change": "+15.00",
+  "volume": 1500000,
+  "last_refresh": "2026-04-03T16:00:00Z",
+  "maintenance_margin": "12000",
+  "initial_margin_cost": "15000"
+}

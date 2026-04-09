@@ -76,7 +76,7 @@ export function CreateAccountForm({ onSuccess }: CreateAccountFormProps) {
 
   const typeOptions = accountCategory === 'business' ? COMPANY_TYPE_OPTIONS : PERSONAL_TYPE_OPTIONS
 
-  const handleClientSelected = (client: Client) => {
+  const handleClientSelected = (client: Client | null) => {
     setSelectedClient(client)
     setValue('owner_id', client?.id ?? 0)
   }

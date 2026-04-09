@@ -1,22 +1,23 @@
-export interface GenerateVerificationRequest {
-  client_id: number
-  transaction_id: number
-  transaction_type: 'PAYMENT' | 'TRANSFER'
+export interface CreateChallengeRequest {
+  source_service: 'transaction' | 'payment' | 'transfer'
+  source_id: number
+  method?: 'code_pull'
 }
 
-export interface GenerateVerificationResponse {
-  code: string
+export interface CreateChallengeResponse {
+  challenge_id: number
+  challenge_data: Record<string, unknown>
   expires_at: string
 }
 
-export interface ValidateVerificationRequest {
-  client_id: number
-  transaction_id: number
-  // NOTE: API requires lowercase here, unlike GenerateVerificationRequest which uses uppercase ('PAYMENT' | 'TRANSFER')
-  transaction_type: 'payment' | 'transfer'
-  code: string
+export interface SubmitCodeResponse {
+  success: boolean
+  remaining_attempts: number
 }
 
-export interface ValidateVerificationResponse {
-  valid: boolean
+export interface ChallengeStatusResponse {
+  status: 'pending' | 'verified' | 'expired' | 'failed'
+  method: string
+  verified_at: string | null
+  expires_at: string
 }

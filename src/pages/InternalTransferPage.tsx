@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
@@ -8,9 +8,11 @@ import {
   submitPayment,
   setPaymentStep,
   setPaymentFormData,
+  setChallengeId,
   setVerificationError,
   resetPaymentFlow,
 } from '@/store/slices/paymentSlice'
+import { createChallenge, submitVerificationCode } from '@/lib/api/verification'
 import { Button } from '@/components/ui/button'
 import { InternalTransferForm } from '@/components/payments/InternalTransferForm'
 import { TransferConfirmation } from '@/components/payments/TransferConfirmation'
@@ -30,12 +32,14 @@ export function InternalTransferPage() {
     result,
     formData,
     transactionId,
+    challengeId,
     codeRequested,
     verificationError,
   } = useAppSelector((s) => s.payment)
   const { data: accountsData } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
   const executeTransfer = useExecuteTransfer()
+  const [verifying, setVerifying] = useState(false)
 
   useEffect(() => {
     return () => {
@@ -43,13 +47,48 @@ export function InternalTransferPage() {
     }
   }, [dispatch])
 
+  useEffect(() => {
+    if (step === 'verification' && transactionId !== null && challengeId === null) {
+      createChallenge({
+        source_service: 'transfer',
+        source_id: transactionId,
+        method: 'code_pull',
+      })
+        .then((res) => {
+          dispatch(setChallengeId(res.challenge_id))
+        })
+        .catch(() => {
+          dispatch(setVerificationError('Failed to create verification challenge.'))
+        })
+    }
+  }, [step, transactionId, challengeId, dispatch])
+
+  const handleExecute = useCallback(() => {
+    if (transactionId === null || challengeId === null) return
+    setVerifying(true)
+    dispatch(setVerificationError(null))
+    executeTransfer.mutate(
+      { id: transactionId, challengeId },
+      {
+        onSuccess: () => {
+          setVerifying(false)
+          dispatch(setPaymentStep('success'))
+        },
+        onError: () => {
+          setVerifying(false)
+          dispatch(setVerificationError('Transfer execution failed. Please try again.'))
+        },
+      }
+    )
+  }, [transactionId, challengeId, executeTransfer, dispatch])
+
   if (step === 'success' && result) {
     return (
       <div className="space-y-4 text-center">
         <h2 className="text-xl font-semibold">Transfer successful!</h2>
         <p>Transaction ID: {result.id}</p>
         <div className="flex justify-center gap-3">
-          <Button onClick={() => navigate('/payments/history')}>History</Button>
+          <Button onClick={() => navigate('/transfers/history')}>History</Button>
           <Button variant="outline" onClick={() => dispatch(resetPaymentFlow())}>
             New Transfer
           </Button>
@@ -61,19 +100,31 @@ export function InternalTransferPage() {
   if (step === 'verification' && transactionId !== null) {
     return (
       <VerificationStep
-        codeRequested={codeRequested}
-        loading={executeTransfer.isPending}
+        challengeId={challengeId}
+        codeRequested={codeRequested && challengeId !== null}
+        loading={verifying || executeTransfer.isPending}
         error={verificationError}
-        onRequestCode={() => {}}
-        onVerified={(code) => {
-          executeTransfer.mutate(
-            { id: transactionId, verificationCode: code },
-            {
-              onSuccess: () => dispatch(setPaymentStep('success')),
-              onError: () =>
-                dispatch(setVerificationError('Transfer execution failed. Please try again.')),
+        onStatusVerified={handleExecute}
+        onVerified={async (code) => {
+          if (challengeId === null) return
+          setVerifying(true)
+          dispatch(setVerificationError(null))
+          try {
+            const submitResult = await submitVerificationCode(challengeId, code)
+            if (!submitResult.success) {
+              dispatch(
+                setVerificationError(
+                  `Invalid code. ${submitResult.remaining_attempts} attempts remaining.`
+                )
+              )
+              setVerifying(false)
+              return
             }
-          )
+            handleExecute()
+          } catch {
+            setVerifying(false)
+            dispatch(setVerificationError('Verification failed. Please try again.'))
+          }
         }}
         onBack={() => dispatch(setPaymentStep('confirmation'))}
       />

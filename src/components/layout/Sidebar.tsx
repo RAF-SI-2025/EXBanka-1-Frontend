@@ -92,11 +92,19 @@ function EmployeeNav({
   canManageAgents,
   canApproveOrders,
   canManageTax,
+  canManagePermissions,
+  canManageLimits,
+  canManageInterestRates,
+  canManageFees,
 }: {
   isAdmin: boolean
   canManageAgents: boolean
   canApproveOrders: boolean
   canManageTax: boolean
+  canManagePermissions: boolean
+  canManageLimits: boolean
+  canManageInterestRates: boolean
+  canManageFees: boolean
 }) {
   return (
     <>
@@ -147,6 +155,33 @@ function EmployeeNav({
           Tax
         </Link>
       )}
+      {(canManagePermissions || canManageLimits || canManageInterestRates || canManageFees) && (
+        <div className="mt-2">
+          <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
+            Settings
+          </p>
+          {canManagePermissions && (
+            <Link to="/admin/roles" className={navLinkClass}>
+              Roles & Permissions
+            </Link>
+          )}
+          {canManageLimits && (
+            <Link to="/admin/limits/employees" className={navLinkClass}>
+              Limits
+            </Link>
+          )}
+          {canManageInterestRates && (
+            <Link to="/admin/interest-rates" className={navLinkClass}>
+              Interest Rates
+            </Link>
+          )}
+          {canManageFees && (
+            <Link to="/admin/fees" className={navLinkClass}>
+              Transfer Fees
+            </Link>
+          )}
+        </div>
+      )}
     </>
   )
 }
@@ -162,6 +197,14 @@ export function Sidebar() {
   const canManageAgents = useAppSelector((state) => selectHasPermission(state, 'agents.manage'))
   const canApproveOrders = useAppSelector((state) => selectHasPermission(state, 'orders.approve'))
   const canManageTax = useAppSelector((state) => selectHasPermission(state, 'tax.manage'))
+  const canManagePermissions = useAppSelector((state) =>
+    selectHasPermission(state, 'employees.permissions')
+  )
+  const canManageLimits = useAppSelector((state) => selectHasPermission(state, 'limits.manage'))
+  const canManageInterestRates = useAppSelector((state) =>
+    selectHasPermission(state, 'interest-rates.manage')
+  )
+  const canManageFees = useAppSelector((state) => selectHasPermission(state, 'fees.manage'))
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -179,6 +222,10 @@ export function Sidebar() {
             canManageAgents={canManageAgents}
             canApproveOrders={canApproveOrders}
             canManageTax={canManageTax}
+            canManagePermissions={canManagePermissions}
+            canManageLimits={canManageLimits}
+            canManageInterestRates={canManageInterestRates}
+            canManageFees={canManageFees}
           />
         )}
       </nav>

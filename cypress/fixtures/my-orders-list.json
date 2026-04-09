@@ -1,0 +1,41 @@
+{
+  "orders": [
+    {
+      "id": 50,
+      "listing_id": 1,
+      "holding_id": null,
+      "direction": "buy",
+      "order_type": "market",
+      "status": "pending",
+      "quantity": 10,
+      "limit_value": null,
+      "stop_value": null,
+      "all_or_none": false,
+      "margin": false,
+      "account_id": 1,
+      "ticker": "AAPL",
+      "security_name": "Apple Inc.",
+      "created_at": "2026-04-01T10:00:00Z",
+      "updated_at": "2026-04-01T10:00:00Z"
+    },
+    {
+      "id": 51,
+      "listing_id": 2,
+      "holding_id": null,
+      "direction": "buy",
+      "order_type": "limit",
+      "status": "filled",
+      "quantity": 5,
+      "limit_value": "400.00",
+      "stop_value": null,
+      "all_or_none": false,
+      "margin": false,
+      "account_id": 1,
+      "ticker": "MSFT",
+      "security_name": "Microsoft Corp",
+      "created_at": "2026-03-28T10:00:00Z",
+      "updated_at": "2026-03-29T14:00:00Z"
+    }
+  ],
+  "total_count": 2
+}

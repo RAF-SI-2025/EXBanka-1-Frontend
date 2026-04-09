@@ -1,0 +1,17 @@
+{
+  "id": 20,
+  "ticker": "EUR/USD",
+  "name": "Euro / US Dollar",
+  "base_currency": "EUR",
+  "quote_currency": "USD",
+  "exchange_rate": "1.0850",
+  "liquidity": "high",
+  "price": "1.0850",
+  "ask": "1.0851",
+  "bid": "1.0849",
+  "change": "+0.0012",
+  "volume": 180000000,
+  "last_refresh": "2026-04-03T16:00:00Z",
+  "maintenance_margin": "2%",
+  "initial_margin_cost": "3%"
+}

@@ -1,21 +1,32 @@
 import { apiClient } from '@/lib/api/axios'
 import type {
-  GenerateVerificationRequest,
-  GenerateVerificationResponse,
-  ValidateVerificationRequest,
-  ValidateVerificationResponse,
+  CreateChallengeRequest,
+  CreateChallengeResponse,
+  SubmitCodeResponse,
+  ChallengeStatusResponse,
 } from '@/types/verification'
 
-export async function generateVerificationCode(
-  payload: GenerateVerificationRequest
-): Promise<GenerateVerificationResponse> {
-  const { data } = await apiClient.post('/api/me/verification', payload)
+export async function createChallenge(
+  payload: CreateChallengeRequest
+): Promise<CreateChallengeResponse> {
+  const { data } = await apiClient.post<CreateChallengeResponse>('/api/v1/verifications', payload)
   return data
 }
 
-export async function validateVerificationCode(
-  payload: ValidateVerificationRequest
-): Promise<ValidateVerificationResponse> {
-  const { data } = await apiClient.post('/api/me/verification/validate', payload)
+export async function submitVerificationCode(
+  challengeId: number,
+  code: string
+): Promise<SubmitCodeResponse> {
+  const { data } = await apiClient.post<SubmitCodeResponse>(
+    `/api/v1/verifications/${challengeId}/code`,
+    { code }
+  )
+  return data
+}
+
+export async function getChallengeStatus(challengeId: number): Promise<ChallengeStatusResponse> {
+  const { data } = await apiClient.get<ChallengeStatusResponse>(
+    `/api/v1/verifications/${challengeId}/status`
+  )
   return data
 }

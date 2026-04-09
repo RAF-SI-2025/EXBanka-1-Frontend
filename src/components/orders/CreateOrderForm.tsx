@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { OrderDirection, OrderType, CreateOrderPayload } from '@/types/order'
+import type { Account } from '@/types/account'
 
 interface CreateOrderFormProps {
   defaultDirection: OrderDirection
@@ -10,6 +11,7 @@ interface CreateOrderFormProps {
   submitting: boolean
   listingId?: number
   holdingId?: number
+  accounts?: Account[]
 }
 
 export function CreateOrderForm({
@@ -18,6 +20,7 @@ export function CreateOrderForm({
   submitting,
   listingId,
   holdingId,
+  accounts = [],
 }: CreateOrderFormProps) {
   const [direction, setDirection] = useState<OrderDirection>(defaultDirection)
   const [orderType, setOrderType] = useState<OrderType>('market')
@@ -26,6 +29,7 @@ export function CreateOrderForm({
   const [stopValue, setStopValue] = useState('')
   const [allOrNone, setAllOrNone] = useState(false)
   const [margin, setMargin] = useState(false)
+  const [accountId, setAccountId] = useState<number | undefined>(accounts[0]?.id)
 
   const showLimit = orderType === 'limit' || orderType === 'stop_limit'
   const showStop = orderType === 'stop' || orderType === 'stop_limit'
@@ -41,12 +45,32 @@ export function CreateOrderForm({
       ...(holdingId ? { holding_id: holdingId } : {}),
       ...(showLimit && limitValue ? { limit_value: limitValue } : {}),
       ...(showStop && stopValue ? { stop_value: stopValue } : {}),
+      ...(accountId ? { account_id: accountId } : {}),
     }
     onSubmit(payload)
   }
 
   return (
     <div className="space-y-4 max-w-md">
+      {accounts.length > 0 && (
+        <div>
+          <Label htmlFor="account">Account</Label>
+          <select
+            id="account"
+            className="w-full border rounded px-3 py-2 text-sm mt-1"
+            value={accountId ?? ''}
+            onChange={(e) => setAccountId(Number(e.target.value) || undefined)}
+          >
+            <option value="">Select account</option>
+            {accounts.map((acc) => (
+              <option key={acc.id} value={acc.id}>
+                {acc.account_number} ({acc.currency_code}) - {acc.account_name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div>
         <Label htmlFor="direction">Direction</Label>
         <select

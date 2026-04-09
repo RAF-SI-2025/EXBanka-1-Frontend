@@ -45,6 +45,11 @@ import { MyOrdersPage } from '@/pages/MyOrdersPage'
 import { PortfolioPage } from '@/pages/PortfolioPage'
 import { AdminOrdersPage } from '@/pages/AdminOrdersPage'
 import { TaxPage } from '@/pages/TaxPage'
+import { AdminRolesPage } from '@/pages/AdminRolesPage'
+import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
+import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
+import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
+import { AdminFeesPage } from '@/pages/AdminFeesPage'
 
 export default function App() {
   return (
@@ -332,6 +337,48 @@ export default function App() {
           element={
             <ProtectedRoute requiredPermission="tax.manage">
               <TaxPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin settings routes */}
+        <Route
+          path="/admin/roles"
+          element={
+            <ProtectedRoute requiredPermission="employees.permissions">
+              <AdminRolesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/limits/employees"
+          element={
+            <ProtectedRoute requiredPermission="limits.manage">
+              <AdminEmployeeLimitsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/limits/clients"
+          element={
+            <ProtectedRoute requiredPermission="limits.manage">
+              <AdminClientLimitsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/interest-rates"
+          element={
+            <ProtectedRoute requiredPermission="interest-rates.manage">
+              <AdminInterestRatesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/fees"
+          element={
+            <ProtectedRoute requiredPermission="fees.manage">
+              <AdminFeesPage />
             </ProtectedRoute>
           }
         />

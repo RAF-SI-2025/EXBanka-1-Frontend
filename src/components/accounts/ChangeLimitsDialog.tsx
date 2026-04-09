@@ -64,10 +64,11 @@ export function ChangeLimitsDialog({
         </DialogHeader>
         {step === 'verification' ? (
           <VerificationStep
+            challengeId={null}
             codeRequested
             loading={false}
             error={null}
-            onRequestCode={() => {}}
+            onStatusVerified={handleVerified}
             onVerified={handleVerified}
             onBack={() => setStep('form')}
           />

@@ -13,6 +13,7 @@ export interface PaymentFlowState {
   error: string | null
   result: { id: number } | null
   transactionId: number | null
+  challengeId: number | null
   codeRequested: boolean
   verificationError: string | null
 }
@@ -25,6 +26,7 @@ const initialState: PaymentFlowState = {
   error: null,
   result: null,
   transactionId: null,
+  challengeId: null,
   codeRequested: false,
   verificationError: null,
 }
@@ -71,6 +73,9 @@ const paymentSlice = createSlice({
     setTransactionId(state, action: PayloadAction<number | null>) {
       state.transactionId = action.payload
     },
+    setChallengeId(state, action: PayloadAction<number | null>) {
+      state.challengeId = action.payload
+    },
     setCodeRequested(state, action: PayloadAction<boolean>) {
       state.codeRequested = action.payload
     },
@@ -107,6 +112,7 @@ export const {
   setPaymentFlowType,
   setPaymentFormData,
   setTransactionId,
+  setChallengeId,
   setCodeRequested,
   setVerificationError,
   resetPaymentFlow,

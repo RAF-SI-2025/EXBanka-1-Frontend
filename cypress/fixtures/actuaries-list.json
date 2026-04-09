@@ -1,0 +1,31 @@
+{
+  "actuaries": [
+    {
+      "id": 1,
+      "first_name": "Petar",
+      "last_name": "Nikolić",
+      "email": "petar@banka.rs",
+      "phone": "+381641111111",
+      "position": "Senior Actuary",
+      "department": "Risk",
+      "active": true,
+      "limit": "100000",
+      "used_limit": "45000",
+      "need_approval": false
+    },
+    {
+      "id": 2,
+      "first_name": "Jovana",
+      "last_name": "Đorđević",
+      "email": "jovana@banka.rs",
+      "phone": "+381642222222",
+      "position": "Junior Actuary",
+      "department": "Risk",
+      "active": true,
+      "limit": "50000",
+      "used_limit": "10000",
+      "need_approval": true
+    }
+  ],
+  "total_count": 2
+}

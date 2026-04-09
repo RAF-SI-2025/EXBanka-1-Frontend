@@ -32,3 +32,21 @@ export interface ExchangeRateResult {
   commission?: number
   to_amount?: number
 }
+
+export interface TransferPreviewFee {
+  name: string
+  fee_type: string
+  fee_value: string
+  calculated_amount: string
+}
+
+export interface TransferPreviewResponse {
+  from_currency: string
+  to_currency: string
+  input_amount: string
+  total_fee: string
+  fee_breakdown: TransferPreviewFee[]
+  converted_amount: string
+  exchange_rate: string
+  exchange_commission_rate: string
+}

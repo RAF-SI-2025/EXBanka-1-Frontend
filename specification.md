@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-02 (securities portal update)_
+_Last updated: 2026-04-06 (admin management views, OTC portal, limits dashboard, Cypress e2e tests, employee card creation)_
 
 ---
 
@@ -67,7 +67,9 @@ src/
 │   │   ├── security-fixtures.ts     # Mock stock, futures, forex, option, price history factories
 │   │   ├── order-fixtures.ts        # Mock order factory
 │   │   ├── portfolio-fixtures.ts    # Mock holding, portfolio summary factories
-│   │   └── tax-fixtures.ts          # Mock tax record factory
+│   │   ├── tax-fixtures.ts          # Mock tax record factory
+│   │   ├── otc-fixtures.ts          # Mock OTC offer factory
+│   │   └── verification-fixtures.ts # Mock verification data factory
 │   ├── mocks/
 │   │   └── select-mock.tsx           # Shadcn Select mock for tests
 │   └── utils/
@@ -131,14 +133,25 @@ src/
 │   │   ├── PriceChart.tsx + .test.tsx         # Recharts line chart with period selector
 │   │   ├── SecurityInfoPanel.tsx + .test.tsx  # Key-value detail info panel
 │   │   └── OptionsChain.tsx + .test.tsx       # Calls/Puts options chain table
+│   ├── accounts/
+│   │   ├── LimitsUsageCard.tsx + .test.tsx    # Daily/monthly spending usage progress bars
+│   │   └── AccountSelector.tsx + .test.tsx   # Search-as-you-type account picker; businessOnly prop filters to business accounts
 │   ├── orders/
 │   │   ├── CreateOrderForm.tsx + .test.tsx    # Order creation form
-│   │   └── OrderTable.tsx + .test.tsx         # Reusable orders table with actions
+│   │   ├── OrderTable.tsx + .test.tsx         # Reusable orders table with actions (cancel/approve/decline)
+│   │   └── OrdersTable.tsx + .test.tsx        # Simplified admin orders table (approve/decline only)
+│   ├── otc/
+│   │   ├── OtcOffersTable.tsx + .test.tsx     # OTC offers list with Buy action
+│   │   └── BuyOtcDialog.tsx + .test.tsx       # Dialog to buy an OTC offer
 │   ├── portfolio/
-│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Make Public/Exercise
+│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Make Public/Exercise actions
+│   │   ├── HoldingsTable.tsx + .test.tsx      # Alternative holdings table variant
+│   │   ├── MakePublicDialog.tsx + .test.tsx   # Dialog to set holding public quantity
+│   │   ├── SellOrderDialog.tsx + .test.tsx    # Dialog to create sell order from portfolio
 │   │   └── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
 │   ├── tax/
-│   │   └── TaxTable.tsx + .test.tsx           # Tax records table
+│   │   ├── TaxTable.tsx + .test.tsx           # Tax records table (used in TaxPage)
+│   │   └── TaxTrackingTable.tsx + .test.tsx   # Tax tracking table (used in TaxTrackingPage)
 │   ├── cards/
 │   │   ├── CardRequestDenyDialog.tsx     # Deny confirmation dialog with optional reason textarea
 │   │   └── CardRequestDenyDialog.test.tsx
@@ -174,6 +187,22 @@ src/
 │   │   ├── AccountTable.tsx + .test.tsx   # Admin account list table
 │   │   ├── ClientTable.tsx + .test.tsx    # Admin client list table
 │   │   ├── EditClientForm.tsx + .test.tsx # Admin edit client form
+│   │   ├── RolesTable.tsx                 # Roles list table with edit-permissions action
+│   │   ├── PermissionsTable.tsx           # Permissions list table
+│   │   ├── CreateRoleDialog.tsx           # Dialog to create a new role
+│   │   ├── EditRolePermissionsDialog.tsx  # Dialog to update a role's permissions
+│   │   ├── InterestRateTiersTable.tsx     # Interest rate tiers table with CRUD actions
+│   │   ├── BankMarginsTable.tsx           # Bank margins table with edit action
+│   │   ├── CreateTierDialog.tsx           # Dialog to create an interest rate tier
+│   │   ├── EditTierDialog.tsx             # Dialog to edit an interest rate tier
+│   │   ├── EditMarginDialog.tsx           # Dialog to edit a bank margin
+│   │   ├── FeesTable.tsx                  # Transfer fees table with edit/deactivate actions
+│   │   ├── CreateFeeDialog.tsx            # Dialog to create a transfer fee
+│   │   ├── EditFeeDialog.tsx              # Dialog to edit a transfer fee
+│   │   ├── EditEmployeeLimitsDialog.tsx   # Dialog to edit an employee's limits
+│   │   ├── EditClientLimitsDialog.tsx     # Dialog to edit a client's limits
+│   │   ├── LimitTemplatesDialog.tsx       # Dialog to view/apply limit templates
+│   │   └── CreateCardDialog.tsx + .test.tsx  # Dialog for employee card issuance: account search, client search, card brand dropdown
 │   └── shared/
 │       ├── ProtectedRoute.tsx        # Auth + permission guard
 │       ├── ProtectedRoute.test.tsx
@@ -194,7 +223,7 @@ src/
 │   ├── AccountListPage.tsx + .test.tsx
 │   ├── AccountDetailsPage.tsx + .test.tsx
 │   ├── AdminAccountsPage.tsx + .test.tsx
-│   ├── AdminAccountCardsPage.tsx + .test.tsx
+│   ├── AdminAccountCardsPage.tsx + .test.tsx     # Lists cards for an account; block/unblock/deactivate per card; "Create Card" button opens CreateCardDialog
 │   ├── AdminClientsPage.tsx + .test.tsx
 │   ├── AdminCardRequestsPage.tsx + .test.tsx
 │   ├── AdminLoanRequestsPage.tsx + .test.tsx
@@ -210,6 +239,13 @@ src/
 │   ├── PortfolioPage.tsx + .test.tsx
 │   ├── AdminOrdersPage.tsx + .test.tsx
 │   ├── TaxPage.tsx + .test.tsx
+│   ├── TaxTrackingPage.tsx + .test.tsx   # (not yet routed)
+│   ├── OtcPortalPage.tsx + .test.tsx     # (not yet routed)
+│   ├── AdminRolesPage.tsx + .test.tsx
+│   ├── AdminEmployeeLimitsPage.tsx + .test.tsx
+│   ├── AdminClientLimitsPage.tsx
+│   ├── AdminInterestRatesPage.tsx + .test.tsx
+│   ├── AdminFeesPage.tsx + .test.tsx
 │   ├── CardListPage.tsx + .test.tsx
 │   ├── CardRequestPage.tsx + .test.tsx
 │   ├── CreateAccountPage.tsx + .test.tsx
@@ -248,7 +284,14 @@ src/
 │   ├── useSecurities.ts + .test.ts   # React Query: stocks, futures, forex, options hooks
 │   ├── useOrders.ts + .test.ts       # React Query: orders CRUD hooks (my + admin)
 │   ├── usePortfolio.ts + .test.ts    # React Query: portfolio, holdings, exercise hooks
-│   └── useTax.ts + .test.ts          # React Query: tax records + collect hooks
+│   ├── useTax.ts + .test.ts          # React Query: tax records + collect hooks
+│   ├── useOtc.ts + .test.ts          # React Query: OTC offers + buy hooks
+│   ├── useRoles.ts                   # React Query: roles CRUD hooks
+│   ├── usePermissions.ts             # React Query: permissions + employee role/permission assignment
+│   ├── useFees.ts                    # React Query: transfer fees CRUD hooks
+│   ├── useInterestRateTiers.ts       # React Query: interest rate tiers CRUD + apply hooks
+│   ├── useBankMargins.ts             # React Query: bank margins + update hooks
+│   └── useLimits.ts                  # React Query: employee/client limits + template hooks
 │
 ├── lib/
 │   ├── api/
@@ -271,7 +314,11 @@ src/
 │   │   ├── securities.ts + .test.ts # Securities API calls (stocks, futures, forex, options)
 │   │   ├── orders.ts + .test.ts     # Orders API calls (create, cancel, approve, decline)
 │   │   ├── portfolio.ts + .test.ts  # Portfolio API calls (holdings, make public, exercise)
-│   │   └── tax.ts + .test.ts        # Tax API calls (records, collect)
+│   │   ├── tax.ts + .test.ts        # Tax API calls (records, collect)
+│   │   ├── otc.ts + .test.ts        # OTC API calls (offers, buy)
+│   │   ├── fees.ts                  # Transfer fees API calls (CRUD)
+│   │   ├── limits.ts                # Employee/client limits + template API calls
+│   │   └── permissions.ts + .test.ts # Permissions API + employee role/permission assignment
 │   └── utils/
 │       ├── constants.ts              # EMPLOYEE_ROLES, GENDERS, COUNTRY_CODES, formatRoleLabel
 │       ├── banking.ts                # CARD_BRANDS, CARD_STATUSES, CARD_STATUS_LABELS, CARD_STATUS_VARIANT, CARD_LIMITS
@@ -285,7 +332,7 @@ src/
 │   ├── employee.ts                   # Employee-related TypeScript interfaces
 │   ├── account.ts                    # Account-related TypeScript interfaces
 │   ├── authorized-person.ts          # Authorized person interfaces
-│   ├── card.ts                       # CardStatus ('ACTIVE'|'BLOCKED'|'DEACTIVATED'), CardType, CardBrand ('VISA'|'MASTERCARD'|'DINACARD'|'AMEX'), Card interface
+│   ├── card.ts                       # CardStatus, CardType, CardBrand ('VISA'|'MASTERCARD'|'DINACARD'|'AMEX'), Card, CreateCardPayload interfaces
 │   ├── cardRequest.ts                # CardRequest, CardRequestListResponse, CardRequestFilters types
 │   ├── client.ts                     # Client-related TypeScript interfaces
 │   ├── exchange.ts                   # Exchange rate interfaces
@@ -302,7 +349,11 @@ src/
 │   ├── security.ts                  # Stock, FuturesContract, ForexPair, Option, PriceHistory types + filters
 │   ├── order.ts                     # Order, CreateOrderPayload, OrderFilters types
 │   ├── portfolio.ts                 # Holding, PortfolioSummary, PortfolioFilters types
-│   └── tax.ts                       # TaxRecord, TaxFilters, CollectTaxResponse types
+│   ├── tax.ts                       # TaxRecord, TaxFilters, CollectTaxResponse types
+│   ├── otc.ts                       # OtcOffer, OtcOfferListResponse, OtcBuyRequest, OtcFilters types
+│   ├── fee.ts                       # TransferFee, FeeListResponse, CreateFeePayload, UpdateFeePayload types
+│   ├── limits.ts                    # EmployeeLimits, ClientLimits, LimitTemplate, update payload types
+│   └── verification.ts              # Verification interfaces
 │
 ├── contexts/                         # Reserved for theme/locale (currently empty)
 ├── assets/
@@ -345,6 +396,11 @@ src/
 | `/admin/exchange-rates` | ExchangeRatesPage | admin |
 | `/admin/orders` | AdminOrdersPage | `orders.approve` |
 | `/admin/tax` | TaxPage | `tax.manage` |
+| `/admin/roles` | AdminRolesPage | `employees.permissions` |
+| `/admin/limits/employees` | AdminEmployeeLimitsPage | `limits.manage` |
+| `/admin/limits/clients` | AdminClientLimitsPage | `limits.manage` |
+| `/admin/interest-rates` | AdminInterestRatesPage | `interest-rates.manage` |
+| `/admin/fees` | AdminFeesPage | `fees.manage` |
 
 ### Protected Routes — Shared Trading (AppLayout + ProtectedRoute)
 
@@ -481,7 +537,8 @@ src/
 ### PortfolioPage
 - Fetches holdings via `usePortfolio(filters)` and summary via `usePortfolioSummary()`.
 - Renders `PortfolioSummaryCard` + security_type filter + `HoldingTable` + pagination.
-- Actions: Make Public, Exercise (for options).
+- Actions: Make Public (opens `MakePublicDialog`), Exercise (for options).
+- Make Public uses `useMakePublic` mutation; Exercise uses `useExerciseOption` mutation.
 
 ### AdminOrdersPage
 - Supervisor view for order approval. Requires `orders.approve` permission.
@@ -494,9 +551,66 @@ src/
 - FilterBar (user_type, search) + `TaxTable` + pagination.
 - "Collect Taxes" button triggers `useCollectTaxes` mutation.
 
+### AdminRolesPage
+- Settings page for role and permission management. Requires `employees.permissions` permission.
+- Two tabs: **Roles** and **Permissions**.
+- **Roles tab:** Fetches roles via `useRoles()`; renders `RolesTable` with Create and Edit Permissions actions.
+  - Create Role: opens `CreateRoleDialog`.
+  - Edit Permissions: opens `EditRolePermissionsDialog` to update role's permission codes.
+- **Permissions tab:** Fetches all permissions via `usePermissions()`; renders `PermissionsTable` (read-only).
+
+### AdminEmployeeLimitsPage
+- Settings page for employee limits management. Requires `limits.manage` permission.
+- Two tabs: **Employee Limits** and **Limit Templates**.
+- **Employee Limits tab:** Fetches employees via `useEmployees()`; renders inline table with Edit Limits button per row.
+  - Edit Limits: opens `EditEmployeeLimitsDialog`; uses `useUpdateEmployeeLimits` mutation.
+  - Apply Template: uses `useApplyLimitTemplate` mutation.
+- **Limit Templates tab:** Fetches templates via `useLimitTemplates()`; renders table; uses `useLimitTemplatesDialog` for creation.
+- Pagination: `PAGE_SIZE = 10`, `PaginationControls`.
+
+### AdminClientLimitsPage
+- Settings page for client limits management. Requires `limits.manage` permission.
+- Fetches all clients via `useAllClients()`; renders inline table with Edit Limits button per row.
+- Edit Limits: opens `EditClientLimitsDialog`; uses `useUpdateClientLimits` mutation.
+- Pagination: `PAGE_SIZE = 10`, `PaginationControls`.
+
+### AdminInterestRatesPage
+- Settings page for interest rate tiers and bank margins. Requires `interest-rates.manage` permission.
+- Two tabs: **Interest Rate Tiers** and **Bank Margins**.
+- **Interest Rate Tiers tab:** Fetches tiers via `useInterestRateTiers()`; renders `InterestRateTiersTable`.
+  - Create, Edit, Delete (soft), Apply tier via respective mutations.
+- **Bank Margins tab:** Fetches margins via `useBankMargins()`; renders `BankMarginsTable`.
+  - Edit margin: opens `EditMarginDialog`; uses `useUpdateBankMargin` mutation.
+
+### AdminFeesPage
+- Settings page for transfer fee management. Requires `fees.manage` permission.
+- Fetches fees via `useFees()`; renders `FeesTable` with Create, Edit, Deactivate actions.
+- Create: opens `CreateFeeDialog`; Edit: opens `EditFeeDialog`; Deactivate: confirmation dialog → `useDeleteFee` mutation.
+- Mutations: `useCreateFee`, `useUpdateFee`, `useDeleteFee`.
+
+### OtcPortalPage _(created, not yet routed)_
+- OTC trading portal for clients.
+- Fetches OTC offers via `useOtcOffers()`; fetches client accounts via `useClientAccounts()`.
+- Renders `OtcOffersTable`. Selecting an offer opens `BuyOtcDialog` to specify quantity and account.
+- Buy action uses `useBuyOtcOffer` mutation; invalidates `['otc-offers']` and `['portfolio']`.
+
+### TaxTrackingPage _(created, not yet routed)_
+- Alternative tax tracking page (complements `TaxPage`).
+- Fetches tax records via `useTaxRecords(filters)`; renders `TaxTrackingTable`.
+- Filters: search input, user_type select. "Collect Taxes" button.
+
 ---
 
 ## 6. Components
+
+### Account Components
+
+**LimitsUsageCard** (`components/accounts/LimitsUsageCard.tsx`)
+- Displays daily and monthly spending usage as progress bars with amounts.
+- Props: `dailyLimit`, `monthlyLimit`, `dailySpending?`, `monthlySpending?` (all numbers).
+- Shown on `AccountDetailsPage` below account details.
+
+---
 
 ### Auth Components
 
@@ -641,6 +755,10 @@ src/
 - Reusable orders table. Columns: Ticker, Security, Direction, Type, Quantity, Status, Actions.
 - Props: `orders: Order[]`, `onCancel?`, `onApprove?`, `onDecline?`. Actions shown conditionally for pending orders.
 
+**OrdersTable** (`components/orders/OrdersTable.tsx`)
+- Simplified admin orders table (approve/decline only, no cancel).
+- Props: `orders: Order[]`, `onApprove?`, `onDecline?`.
+
 ---
 
 ### Portfolio Components
@@ -650,9 +768,69 @@ src/
 - Props: `holdings: Holding[]`, `onMakePublic`, `onExercise`.
 - "Make Public" shown for non-public holdings. "Exercise" shown for option holdings.
 
+**HoldingsTable** (`components/portfolio/HoldingsTable.tsx`)
+- Alternative holdings table variant (complements `HoldingTable`).
+
+**MakePublicDialog** (`components/portfolio/MakePublicDialog.tsx`)
+- Dialog to set a holding's public quantity.
+- Props: `open`, `holding: Holding`, `onClose`, `onConfirm(quantity: number)`.
+
+**SellOrderDialog** (`components/portfolio/SellOrderDialog.tsx`)
+- Dialog to pre-fill and submit a sell order directly from the portfolio view.
+
 **PortfolioSummaryCard** (`components/portfolio/PortfolioSummaryCard.tsx`)
 - Grid of summary stats: Total Value, Total Cost, Profit/Loss (color-coded), Holdings count.
 - Props: `summary: PortfolioSummary`.
+
+---
+
+### OTC Components
+
+**OtcOffersTable** (`components/otc/OtcOffersTable.tsx`)
+- Displays OTC offers. Columns: Ticker, Name, Type, Quantity, Price, Actions.
+- Props: `offers: OtcOffer[]`, `onBuy: (offer: OtcOffer) => void`.
+
+**BuyOtcDialog** (`components/otc/BuyOtcDialog.tsx`)
+- Shadcn Dialog to buy an OTC offer. Fields: quantity, account selector.
+- Props: `open`, `onOpenChange`, `offer: OtcOffer`, `accounts: Account[]`.
+- Submits via `useBuyOtcOffer` mutation.
+
+---
+
+### Admin Management Components
+
+**RolesTable** (`components/admin/RolesTable.tsx`)
+- Displays roles list. Columns: Name, Description, Permissions count, Actions (Edit Permissions).
+- Props: `roles: Role[]`, `onEditPermissions: (role: Role) => void`.
+
+**PermissionsTable** (`components/admin/PermissionsTable.tsx`)
+- Read-only permissions list. Columns: Code, Description, Category.
+- Props: `permissions: Permission[]`.
+
+**CreateRoleDialog / EditRolePermissionsDialog** — dialogs for role CRUD and permission assignment.
+
+**InterestRateTiersTable** (`components/admin/InterestRateTiersTable.tsx`)
+- Displays interest rate tiers. Columns: Amount From, Amount To, Fixed Rate, Variable Base, Actions.
+- Props: `tiers: InterestRateTier[]`, `onEdit`, `onDelete`, `onApply`.
+
+**BankMarginsTable** (`components/admin/BankMarginsTable.tsx`)
+- Displays bank margins. Columns: Loan Type, Margin, Active, Updated At, Actions (Edit).
+- Props: `margins: BankMargin[]`, `onEdit: (margin: BankMargin) => void`.
+
+**FeesTable** (`components/admin/FeesTable.tsx`)
+- Displays transfer fees. Columns: Name, Type, Value, Min Amount, Max Fee, Transaction Type, Currency, Active, Actions.
+- Props: `fees: TransferFee[]`, `onEdit`, `onDeactivate`.
+
+**EditEmployeeLimitsDialog** (`components/admin/EditEmployeeLimitsDialog.tsx`)
+- Dialog to edit an employee's limits (max loan approval, single/daily transaction, client daily/monthly limits).
+- Props: `open`, `employee: Employee`, `onClose`, `onConfirm`.
+
+**EditClientLimitsDialog** (`components/admin/EditClientLimitsDialog.tsx`)
+- Dialog to edit a client's limits (daily, monthly, transfer).
+- Props: `open`, `client: Client`, `onClose`, `onConfirm`.
+
+**LimitTemplatesDialog** (`components/admin/LimitTemplatesDialog.tsx`)
+- Dialog to view and apply predefined limit templates to employees.
 
 ---
 
@@ -660,6 +838,10 @@ src/
 
 **TaxTable** (`components/tax/TaxTable.tsx`)
 - Tax records table. Columns: User, Email, Type, Taxable Amount, Tax Amount, Status, Date.
+- Props: `records: TaxRecord[]`.
+
+**TaxTrackingTable** (`components/tax/TaxTrackingTable.tsx`)
+- Tax tracking table used in `TaxTrackingPage`. Similar columns to `TaxTable`.
 - Props: `records: TaxRecord[]`.
 
 ---
@@ -673,6 +855,12 @@ src/
 **Sidebar**
 - Logo: "EXBanka"
 - Nav links (employee portal): Employees, Card Requests (`/admin/cards/requests`), Loan Requests, etc.
+- Tax link shown only for users with `tax.manage` permission.
+- **Settings section** (shown when user has any of `employees.permissions`, `limits.manage`, `interest-rates.manage`, `fees.manage`):
+  - Roles & Permissions → `/admin/roles` (requires `employees.permissions`)
+  - Employee Limits → `/admin/limits/employees` (requires `limits.manage`)
+  - Interest Rates → `/admin/interest-rates` (requires `interest-rates.manage`)
+  - Fees → `/admin/fees` (requires `fees.manage`)
 - Displays current user's email
 - Logout button → dispatches `logoutThunk` → redirects to `/login`
 
@@ -779,6 +967,8 @@ interface AuthState {
 | `getCardRequests(filters?)` | GET | `/api/cards/requests` — supports `status`, `page`, `page_size` query params |
 | `approveCardRequest(id)` | PUT | `/api/cards/requests/{id}/approve` |
 | `rejectCardRequest(id, reason)` | PUT | `/api/cards/requests/{id}/reject` — body `{ reason: string }` |
+| `createAuthorizedPerson(payload)` | POST | `/api/cards/authorized-person` — body `CreateAuthorizedPersonPayload`; returns `AuthorizedPerson & { id }` |
+| `createCard(payload)` | POST | `/api/cards` — body `CreateCardPayload`; returns `Card` |
 
 ### Roles API (`lib/api/roles.ts`)
 
@@ -870,6 +1060,42 @@ interface AuthState {
 | `getTaxRecords(filters?)` | GET | `/api/tax` |
 | `collectTaxes()` | POST | `/api/tax/collect` |
 
+### OTC API (`lib/api/otc.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getOtcOffers(filters?)` | GET | `/api/otc/offers` — supports `page`, `page_size`, `security_type`, `ticker` query params |
+| `buyOtcOffer(id, payload)` | POST | `/api/otc/offers/{id}/buy` — body `{ quantity, account_id }` |
+
+### Fees API (`lib/api/fees.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getFees()` | GET | `/api/fees` |
+| `createFee(payload)` | POST | `/api/fees` |
+| `updateFee(id, payload)` | PUT | `/api/fees/{id}` |
+| `deleteFee(id)` | DELETE | `/api/fees/{id}` |
+
+### Limits API (`lib/api/limits.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getEmployeeLimits(id)` | GET | `/api/employees/{id}/limits` |
+| `updateEmployeeLimits(id, payload)` | PUT | `/api/employees/{id}/limits` |
+| `applyLimitTemplate(employeeId, templateName)` | POST | `/api/employees/{id}/limits/template` — body `{ template_name }` |
+| `getLimitTemplates()` | GET | `/api/limits/templates` |
+| `createLimitTemplate(payload)` | POST | `/api/limits/templates` |
+| `getClientLimits(id)` | GET | `/api/clients/{id}/limits` |
+| `updateClientLimits(id, payload)` | PUT | `/api/clients/{id}/limits` |
+
+### Permissions API (`lib/api/permissions.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getPermissions()` | GET | `/api/permissions` |
+| `setEmployeeRoles(employeeId, roleNames)` | PUT | `/api/employees/{id}/roles` — body `{ role_names }` |
+| `setEmployeePermissions(employeeId, permissionCodes)` | PUT | `/api/employees/{id}/permissions` — body `{ permission_codes }` |
+
 ---
 
 ## 9. Custom Hooks
@@ -914,6 +1140,34 @@ interface AuthState {
 | `useExerciseOption()` | React Query | Mutation: exercise option; invalidates `['portfolio']` |
 | `useTaxRecords(filters?)` | React Query | Fetch tax records; query key: `['tax', filters]` |
 | `useCollectTaxes()` | React Query | Mutation: collect taxes; invalidates `['tax']` |
+| `useOtcOffers(filters?)` | React Query | Fetch OTC offers; query key: `['otc-offers', filters]` |
+| `useBuyOtcOffer()` | React Query | Mutation: buy OTC offer; invalidates `['otc-offers']` + `['portfolio']` |
+| `useRoles()` | React Query | Fetch roles; query key: `['roles']` |
+| `useCreateRole()` | React Query | Mutation: create role; invalidates `['roles']` |
+| `useUpdateRolePermissions()` | React Query | Mutation: update role permissions; invalidates `['roles']` |
+| `usePermissions()` | React Query | Fetch all permissions; query key: `['permissions']` |
+| `useSetEmployeeRoles()` | React Query | Mutation: set employee's roles; invalidates `['employees']` |
+| `useSetEmployeePermissions()` | React Query | Mutation: set employee's permissions; invalidates `['employees']` |
+| `useFees()` | React Query | Fetch transfer fees; query key: `['fees']` |
+| `useCreateFee()` | React Query | Mutation: create fee; invalidates `['fees']` |
+| `useUpdateFee()` | React Query | Mutation: update fee; invalidates `['fees']` |
+| `useDeleteFee()` | React Query | Mutation: delete/deactivate fee; invalidates `['fees']` |
+| `useInterestRateTiers()` | React Query | Fetch interest rate tiers; query key: `['interestRateTiers']` |
+| `useCreateTier()` | React Query | Mutation: create tier; invalidates `['interestRateTiers']` |
+| `useUpdateTier()` | React Query | Mutation: update tier; invalidates `['interestRateTiers']` |
+| `useDeleteTier()` | React Query | Mutation: delete tier; invalidates `['interestRateTiers']` |
+| `useApplyTier()` | React Query | Mutation: apply tier to loans; invalidates `['interestRateTiers']` |
+| `useBankMargins()` | React Query | Fetch bank margins; query key: `['bankMargins']` |
+| `useUpdateBankMargin()` | React Query | Mutation: update bank margin; invalidates `['bankMargins']` |
+| `useEmployeeLimits(id)` | React Query | Fetch employee limits; query key: `['employeeLimits', id]`; disabled when `id <= 0` |
+| `useUpdateEmployeeLimits()` | React Query | Mutation: update employee limits; invalidates `['employeeLimits', id]` |
+| `useApplyLimitTemplate()` | React Query | Mutation: apply template to employee; invalidates `['employeeLimits', id]` |
+| `useLimitTemplates()` | React Query | Fetch limit templates; query key: `['limitTemplates']` |
+| `useCreateLimitTemplate()` | React Query | Mutation: create limit template; invalidates `['limitTemplates']` |
+| `useClientLimits(id)` | React Query | Fetch client limits; query key: `['clientLimits', id]` |
+| `useUpdateClientLimits()` | React Query | Mutation: update client limits; invalidates `['clientLimits', id]` |
+| `useSearchAccounts(query)` | React Query | Search accounts by account_number_filter; query key: `['accounts', 'search', query]`; disabled when query is empty |
+| `useCreateCard()` | React Query | Mutation: POST authorized person then POST card sequentially; invalidates `['cards', 'account', account_number]` on success |
 
 ---
 
@@ -967,6 +1221,28 @@ InterestRateTier     { id: number; amount_from: number; amount_to: number;
                        fixed_rate: number; variable_base: number }
 CreateTierPayload    { amount_from: number; amount_to: number;
                        fixed_rate: number; variable_base: number }
+```
+
+### Authorized Person Types (`types/authorized-person.ts`)
+
+```typescript
+CreateAuthorizedPersonPayload {
+  first_name: string; last_name: string
+  date_of_birth?: number; gender?: string
+  email?: string; phone?: string; address?: string
+  account_id: number
+}
+```
+
+### Card Payload Types (`types/card.ts`)
+
+```typescript
+CreateCardPayload {
+  account_number: string
+  owner_id: number
+  owner_type: 'AUTHORIZED_PERSON'
+  card_brand: CardBrand
+}
 ```
 
 ### Card Request Types (`types/cardRequest.ts`)
@@ -1082,6 +1358,53 @@ TaxFilters           { page?, page_size?, user_type?, search? }
 CollectTaxResponse   { collected_count, total_collected_rsd, failed_count }
 ```
 
+### OTC Types (`types/otc.ts`)
+
+```typescript
+OtcOffer             { id, ticker, name, security_type: 'stock'|'futures', quantity, price, seller_id }
+OtcOfferListResponse { offers: OtcOffer[]; total_count: number }
+OtcBuyRequest        { quantity: number; account_id: number }
+OtcFilters           { page?, page_size?, security_type?, ticker? }
+```
+
+### Fee Types (`types/fee.ts`)
+
+```typescript
+TransferFee          { id, name, fee_type: 'percentage'|'fixed', fee_value, min_amount, max_fee,
+                       transaction_type: 'payment'|'transfer'|'all', currency_code, active }
+FeeListResponse      { fees: TransferFee[] }
+CreateFeePayload     { name, fee_type, fee_value, min_amount?, max_fee?,
+                       transaction_type, currency_code? }
+UpdateFeePayload     { name?, fee_type?, fee_value?, min_amount?, max_fee?,
+                       transaction_type?, currency_code?, active? }
+```
+
+### Limits Types (`types/limits.ts`)
+
+```typescript
+EmployeeLimits       { id, employee_id, max_loan_approval_amount, max_single_transaction,
+                       max_daily_transaction, max_client_daily_limit, max_client_monthly_limit }
+ClientLimits         { id, client_id, daily_limit, monthly_limit, transfer_limit, set_by_employee }
+LimitTemplate        { id, name, description, max_loan_approval_amount, max_single_transaction,
+                       max_daily_transaction, max_client_daily_limit, max_client_monthly_limit }
+LimitTemplateListResponse { templates: LimitTemplate[] }
+UpdateEmployeeLimitsPayload { max_loan_approval_amount, max_single_transaction,
+                              max_daily_transaction, max_client_daily_limit, max_client_monthly_limit }
+UpdateClientLimitsPayload   { daily_limit, monthly_limit, transfer_limit }
+CreateLimitTemplatePayload  { name, description, ...all limit fields }
+```
+
+### Account Type Updates (`types/account.ts`)
+
+The `Account` interface now includes two optional spending fields:
+```typescript
+daily_spending?: number    // current day's spending amount
+monthly_spending?: number  // current month's spending amount
+```
+These are used by `LimitsUsageCard` on `AccountDetailsPage`.
+
+---
+
 ### Shared Constants (`lib/utils/constants.ts`)
 
 ```typescript
@@ -1138,54 +1461,63 @@ All defined in `lib/utils/validation.ts` using Zod.
 
 ## 12. Test Coverage
 
-_Measured: 2026-04-02 — 146 test suites, 718 tests, all passing._
+_Measured: 2026-04-06 — 171 test suites, 872 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **81.37%** |
-| **Branches** | **65.19%** |
-| **Functions** | **63.28%** |
-| **Lines** | **82.70%** |
+| **Statements** | **76%** |
+| **Branches** | **61.81%** |
+| **Functions** | **56.23%** |
+| **Lines** | **77.38%** |
 
-> Testing covers approximately **~73% of the project** (average across all four metrics). Securities portal, orders, portfolio, and tax modules are well-tested.
+> Coverage decreased slightly from the previous measurement due to significant new code added (admin management pages, OTC portal, limits dashboard) that lacks unit test coverage. Cypress e2e tests (28+ test files) provide integration-level coverage for these new features but are not counted in Jest metrics.
+
+> **Cypress e2e tests added:** 28+ test files covering auth, accounts, activation, actuaries, cards, loans, orders (admin + my orders), portfolio, payments, recipients, securities (stocks, futures, forex detail pages), tax, transfers, employees.
 
 ### Coverage by Module
 
 | Module | Statements | Branches | Functions | Lines |
 |---|---|---|---|---|
 | `components/auth` | 100% | 75% | 100% | 100% |
+| `components/accounts/LimitsUsageCard` | ~90% | ~80% | ~80% | ~90% |
+| `components/accounts/AccountSelector` | 100% | 80% | 100% | 100% |
+| `components/admin/CreateCardDialog` | 91% | 72% | 88% | 97% |
 | `components/cards` | ~87% | ~67% | ~69% | ~88% |
 | `components/employees` | ~93% | ~77% | ~79% | ~94% |
 | `components/layout` | ~95% | 100% | ~67% | ~95% |
 | `components/shared` | 100% | 100% | 100% | 100% |
+| `components/admin` | low — no unit tests for new dialogs/tables | — | — | — |
 | `hooks` | ~70% | ~40% | ~50% | ~72% |
-| `lib/api` | 46.52% | 0% | 40.62% | 51.62% |
 | `lib/api/auth.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/roles.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/interestRateTiers.ts` | 100% | 100% | 100% | 100% |
-| `lib/api/bankMargins.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/actuaries.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/stockExchanges.ts` | 100% | 100% | 100% | 100% |
-| `pages/ActuaryListPage.tsx` | 97.05% | 91.66% | 85.71% | 97.05% |
-| `pages/StockExchangesPage.tsx` | 100% | 100% | 100% | 100% |
-| `pages/SecuritiesPage.tsx` | ~79% | ~90% | 20% | ~79% |
-| `pages/StockDetailPage.tsx` | ~93% | 70% | 80% | ~96% |
-| `pages/FuturesDetailPage.tsx` | ~90% | ~63% | 50% | ~95% |
-| `pages/ForexDetailPage.tsx` | ~90% | ~63% | 50% | ~95% |
-| `pages/MyOrdersPage.tsx` | ~90% | 100% | ~67% | ~90% |
-| `pages/PortfolioPage.tsx` | ~85% | 100% | 25% | ~85% |
-| `pages/AdminOrdersPage.tsx` | ~90% | ~92% | ~67% | ~90% |
-| `pages/TaxPage.tsx` | ~90% | ~92% | ~67% | ~90% |
 | `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
 | `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
-| `pages` | 81.50% | 58.45% | 50.27% | 83.64% |
-| `pages/AdminCardRequestsPage.tsx` | 96.66% | 61.11% | 85.71% | 96.55% |
 | `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
+| `pages/StockExchangesPage.tsx` | 100% | 100% | 100% | 100% |
+| `pages/ActuaryListPage.tsx` | 97.05% | 91.66% | 85.71% | 97.05% |
+| `pages/AdminCardRequestsPage.tsx` | 96.66% | 61.11% | 85.71% | 96.55% |
+| `pages/StockDetailPage.tsx` | ~93% | 70% | 80% | ~96% |
+| `pages/TaxPage.tsx` | ~90% | ~92% | ~67% | ~90% |
+| `pages/AdminOrdersPage.tsx` | ~90% | ~92% | ~67% | ~90% |
+| `pages/MyOrdersPage.tsx` | ~90% | 100% | ~67% | ~90% |
+| `pages/OtcPortalPage.tsx` | ~79% | 60% | 25% | ~82% |
+| `pages/TaxTrackingPage.tsx` | ~79% | ~57% | ~33% | ~87% |
+| `pages/PortfolioPage.tsx` | ~85% | 100% | 25% | ~85% |
+| `pages/AdminFeesPage.tsx` | low — new, no unit tests | — | — | — |
+| `pages/AdminRolesPage.tsx` | low — new, no unit tests | — | — | — |
+| `pages/AdminInterestRatesPage.tsx` | low — new, no unit tests | — | — | — |
+| `pages/AdminEmployeeLimitsPage.tsx` | low — new, no unit tests | — | — | — |
 | `store` | 100% | 100% | 100% | 100% |
 | `store/selectors` | 100% | 50% | 100% | 100% |
 | `store/slices/authSlice.ts` | 98.14% | 76.92% | 100% | 98.14% |
+| `store/slices/loanSlice.ts` | ~41% | 0% | 25% | ~41% |
+| `store/slices/paymentSlice.ts` | ~29% | 0% | ~15% | ~29% |
+| `store/slices/transferSlice.ts` | ~32% | 0% | ~17% | ~32% |
 
 ### Notable Coverage Gaps
 
@@ -1195,6 +1527,18 @@ _Measured: 2026-04-02 — 146 test suites, 718 tests, all passing._
 | `lib/api/accounts.ts` | 23.33% statements — most account API calls untested |
 | `lib/api/loans.ts` | 19.04% statements — most loan API calls untested |
 | `lib/api/payments.ts` | 21.21% statements — most payment API calls untested |
+| `lib/api/fees.ts` | no unit tests (new module) |
+| `lib/api/limits.ts` | no unit tests (new module) |
+| `pages/AdminFeesPage.tsx` | no unit tests (new page) |
+| `pages/AdminRolesPage.tsx` | no unit tests (new page) |
+| `pages/AdminInterestRatesPage.tsx` | no unit tests (new page) |
+| `pages/AdminEmployeeLimitsPage.tsx` | no unit tests (new page) |
+| `pages/AdminClientLimitsPage.tsx` | no unit tests (new page) |
+| `pages/InternalTransferPage.tsx` | ~44% — most transfer flow paths untested |
+| `pages/NewPaymentPage.tsx` | ~49% — confirmation and multi-step flow paths untested |
+| `store/slices/loanSlice.ts` | ~41% — async thunk paths untested |
+| `store/slices/paymentSlice.ts` | ~29% — async thunk paths untested |
+| `store/slices/transferSlice.ts` | ~32% — async thunk paths untested |
 | `store/slices/authSlice.ts` | Branch 50% — error path in `logoutThunk` uncovered |
 | `store/selectors/authSelectors.ts` | Branch 50% — null-user path in one selector |
 | `hooks/usePayments.ts` | 31.03% statements — query hooks untested |

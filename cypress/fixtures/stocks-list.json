@@ -1,0 +1,39 @@
+{
+  "stocks": [
+    {
+      "id": 1,
+      "ticker": "AAPL",
+      "name": "Apple Inc.",
+      "outstanding_shares": 15000000000,
+      "dividend_yield": 0.0055,
+      "exchange_acronym": "NASDAQ",
+      "price": "178.50",
+      "ask": "178.60",
+      "bid": "178.40",
+      "change": "+2.30",
+      "volume": 52000000,
+      "last_refresh": "2026-04-03T16:00:00Z",
+      "market_cap": "2.8T",
+      "maintenance_margin": "25%",
+      "initial_margin_cost": "50%"
+    },
+    {
+      "id": 2,
+      "ticker": "MSFT",
+      "name": "Microsoft Corp",
+      "outstanding_shares": 7500000000,
+      "dividend_yield": 0.008,
+      "exchange_acronym": "NASDAQ",
+      "price": "415.20",
+      "ask": "415.30",
+      "bid": "415.10",
+      "change": "-1.50",
+      "volume": 28000000,
+      "last_refresh": "2026-04-03T16:00:00Z",
+      "market_cap": "3.1T",
+      "maintenance_margin": "25%",
+      "initial_margin_cost": "50%"
+    }
+  ],
+  "total_count": 2
+}
