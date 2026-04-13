@@ -50,6 +50,7 @@ export async function getAllAccounts(filters?: AccountFilters): Promise<AccountL
   if (filters?.account_number_filter)
     params.append('account_number_filter', filters.account_number_filter)
   if (filters?.type_filter) params.append('type_filter', filters.type_filter)
+  if (filters?.client_id) params.append('client_id', String(filters.client_id))
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
   const response = await apiClient.get<AccountListResponse>('/api/v1/accounts', { params })
