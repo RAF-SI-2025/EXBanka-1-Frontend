@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getLoans,
   getLoan,
+  getLoanInstallments,
   getLoanRequests,
   approveLoanRequest,
   rejectLoanRequest,
@@ -21,6 +22,14 @@ export function useLoan(id: number) {
     queryKey: ['loan', id],
     queryFn: () => getLoan(id),
     enabled: id > 0,
+  })
+}
+
+export function useLoanInstallments(loanId: number) {
+  return useQuery({
+    queryKey: ['loan-installments', loanId],
+    queryFn: () => getLoanInstallments(loanId),
+    enabled: loanId > 0,
   })
 }
 

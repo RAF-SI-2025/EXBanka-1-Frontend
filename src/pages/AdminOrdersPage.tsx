@@ -1,9 +1,10 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { OrderTable } from '@/components/orders/OrderTable'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useAllOrders, useApproveOrder, useDeclineOrder } from '@/hooks/useOrders'
+import { useListingMap } from '@/hooks/useSecurities'
 import type { AdminOrderFilters } from '@/types/order'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 
@@ -27,9 +28,20 @@ export function AdminOrdersPage() {
   }
 
   const { data, isLoading } = useAllOrders(apiFilters)
+  const listingMap = useListingMap()
   const totalPages = Math.max(1, Math.ceil((data?.total_count ?? 0) / PAGE_SIZE))
   const approveMutation = useApproveOrder()
   const declineMutation = useDeclineOrder()
+
+  const orders = useMemo(
+    () =>
+      (data?.orders ?? []).map((o) => ({
+        ...o,
+        ticker: o.ticker || listingMap.get(o.listing_id)?.ticker || '',
+        security_name: o.security_name || listingMap.get(o.listing_id)?.name || '',
+      })),
+    [data?.orders, listingMap]
+  )
 
   const handleFilterChange = (newFilters: FilterValues) => {
     setFilterValues(newFilters)
@@ -62,10 +74,10 @@ export function AdminOrdersPage() {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : data?.orders.length ? (
+      ) : orders.length ? (
         <>
-          <OrderTable orders={data.orders} onApprove={handleApprove} onDecline={handleDecline} />
-          <p className="text-sm text-muted-foreground mt-2">{data.total_count} orders</p>
+          <OrderTable orders={orders} onApprove={handleApprove} onDecline={handleDecline} />
+          <p className="text-sm text-muted-foreground mt-2">{data?.total_count} orders</p>
           <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       ) : (

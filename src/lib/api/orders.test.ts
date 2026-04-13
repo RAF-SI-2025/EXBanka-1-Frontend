@@ -52,6 +52,29 @@ describe('getMyOrders', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/v1/me/orders', { params: {} })
     expect(result).toEqual(response)
   })
+
+  it('flattens nested listing object and maps name to security_name', async () => {
+    const rawOrder = {
+      id: 1,
+      listing_id: 42,
+      listing: { id: 42, ticker: 'AAPL', name: 'Apple Inc.' },
+      direction: 'buy',
+      order_type: 'market',
+      quantity: 10,
+      status: 'pending',
+      limit_value: null,
+      stop_value: null,
+      all_or_none: false,
+      margin: false,
+      account_id: 1,
+      created_at: '2026-04-01T10:00:00Z',
+      updated_at: '2026-04-01T10:00:00Z',
+    }
+    mockGet.mockResolvedValue({ data: { orders: [rawOrder], total_count: 1 } })
+    const result = await getMyOrders()
+    expect(result.orders[0].ticker).toBe('AAPL')
+    expect(result.orders[0].security_name).toBe('Apple Inc.')
+  })
 })
 
 describe('getMyOrder', () => {
@@ -81,6 +104,29 @@ describe('getAllOrders', () => {
     const result = await getAllOrders({ status: 'pending' })
     expect(mockGet).toHaveBeenCalledWith('/api/v1/orders', { params: { status: 'pending' } })
     expect(result).toEqual(response)
+  })
+
+  it('flattens nested listing object and maps name to security_name', async () => {
+    const rawOrder = {
+      id: 2,
+      listing_id: 7,
+      listing: { id: 7, ticker: 'TSLA', name: 'Tesla Inc.' },
+      direction: 'sell',
+      order_type: 'limit',
+      quantity: 5,
+      status: 'pending',
+      limit_value: '200.00',
+      stop_value: null,
+      all_or_none: false,
+      margin: false,
+      account_id: 3,
+      created_at: '2026-04-02T08:00:00Z',
+      updated_at: '2026-04-02T08:00:00Z',
+    }
+    mockGet.mockResolvedValue({ data: { orders: [rawOrder], total_count: 1 } })
+    const result = await getAllOrders()
+    expect(result.orders[0].ticker).toBe('TSLA')
+    expect(result.orders[0].security_name).toBe('Tesla Inc.')
   })
 })
 

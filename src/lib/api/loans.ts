@@ -2,6 +2,8 @@ import { apiClient } from '@/lib/api/axios'
 import type {
   Loan,
   LoanListResponse,
+  LoanInstallment,
+  LoanInstallmentListResponse,
   LoanRequest,
   LoanRequestListResponse,
   LoanFilters,
@@ -15,7 +17,7 @@ export async function getLoans(): Promise<LoanListResponse> {
 }
 
 export async function getLoan(id: number): Promise<Loan> {
-  const response = await apiClient.get<Loan>(`/api/v1/loans/${id}`)
+  const response = await apiClient.get<Loan>(`/api/v1/me/loans/${id}`)
   return response.data
 }
 
@@ -43,6 +45,13 @@ export async function approveLoanRequest(id: number): Promise<void> {
 
 export async function rejectLoanRequest(id: number): Promise<void> {
   await apiClient.post(`/api/v1/loan-requests/${id}/reject`)
+}
+
+export async function getLoanInstallments(loanId: number): Promise<LoanInstallment[]> {
+  const response = await apiClient.get<LoanInstallmentListResponse>(
+    `/api/v1/me/loans/${loanId}/installments`
+  )
+  return response.data.installments ?? []
 }
 
 export async function getAllLoans(filters?: LoanFilters): Promise<LoanListResponse> {
