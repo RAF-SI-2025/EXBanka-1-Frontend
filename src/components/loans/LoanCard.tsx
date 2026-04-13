@@ -24,6 +24,9 @@ export interface LoanCardProps {
 const loanTypeLabel = (type: string) => LOAN_TYPES.find((t) => t.value === type)?.label ?? type
 
 export function LoanCard({ loan, onClick }: LoanCardProps) {
+  const currency = loan.currency_code ?? 'RSD'
+  const installmentAmount = loan.installment_amount ?? loan.next_installment_amount
+
   return (
     <Card
       role="article"
@@ -34,9 +37,11 @@ export function LoanCard({ loan, onClick }: LoanCardProps) {
         <div className="space-y-1">
           <p className="font-semibold">{loanTypeLabel(loan.loan_type)}</p>
           <p className="text-sm text-muted-foreground">{loan.loan_number}</p>
-          <p className="text-sm text-muted-foreground">
-            Installment: {formatCurrency(loan.installment_amount, 'RSD')}/month
-          </p>
+          {installmentAmount !== undefined && (
+            <p className="text-sm text-muted-foreground">
+              Installment: {formatCurrency(installmentAmount, currency)}/month
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">Approved: {formatDate(loan.created_at)}</p>
         </div>
         <div className="text-right space-y-1">

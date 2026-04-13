@@ -29,6 +29,30 @@ describe('LoanCard', () => {
     expect(screen.getByText(/500\.000/)).toBeInTheDocument()
   })
 
+  it('renders installment amount from installment_amount field', () => {
+    const loan = createMockLoan({ installment_amount: 10234, next_installment_amount: undefined })
+    renderWithProviders(<LoanCard loan={loan} onClick={mockOnClick} />)
+    expect(screen.getByText(/10\.234/)).toBeInTheDocument()
+  })
+
+  it('falls back to next_installment_amount when installment_amount is undefined', () => {
+    const loan = createMockLoan({
+      installment_amount: undefined as any,
+      next_installment_amount: 9755.5,
+    })
+    renderWithProviders(<LoanCard loan={loan} onClick={mockOnClick} />)
+    expect(screen.getByText(/9\.755/)).toBeInTheDocument()
+  })
+
+  it('hides installment line when neither amount field is available', () => {
+    const loan = createMockLoan({
+      installment_amount: undefined as any,
+      next_installment_amount: undefined,
+    })
+    renderWithProviders(<LoanCard loan={loan} onClick={mockOnClick} />)
+    expect(screen.queryByText(/installment:/i)).not.toBeInTheDocument()
+  })
+
   it('calls onClick when card is clicked', async () => {
     const loan = createMockLoan()
     renderWithProviders(<LoanCard loan={loan} onClick={mockOnClick} />)

@@ -1,4 +1,4 @@
-import type { Loan, LoanRequest } from '@/types/loan'
+import type { Loan, LoanInstallment, LoanRequest } from '@/types/loan'
 
 export function createMockLoan(overrides: Partial<Loan> = {}): Loan {
   return {
@@ -21,6 +21,20 @@ export function createMockLoan(overrides: Partial<Loan> = {}): Loan {
     currency_code: 'RSD',
     status: 'ACTIVE',
     created_at: '2026-01-15T10:00:00Z',
+    ...overrides,
+  }
+}
+
+export function createMockInstallment(overrides: Partial<LoanInstallment> = {}): LoanInstallment {
+  return {
+    id: 1,
+    loan_id: 1,
+    expected_date: '2026-04-13',
+    actual_date: null,
+    amount: 9755.5,
+    interest_rate: 6.5,
+    currency_code: 'RSD',
+    status: 'PENDING',
     ...overrides,
   }
 }
