@@ -1,15 +1,22 @@
 export type LoanType = 'CASH' | 'HOUSING' | 'AUTO' | 'REFINANCING' | 'STUDENT'
 export type LoanStatus = 'ACTIVE' | 'PAID_OFF' | 'DELINQUENT'
 export type LoanRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
-export type InstallmentStatus = 'PAID' | 'UNPAID' | 'OVERDUE'
+export type InstallmentStatus = 'PAID' | 'PENDING' | 'OVERDUE'
 export type InterestType = 'FIXED' | 'VARIABLE'
 
 export interface LoanInstallment {
   id: number
-  installment_number: number
-  due_date: string
+  loan_id: number
+  expected_date: string
+  actual_date: string | null
   amount: number
+  interest_rate?: number
+  currency_code?: string
   status: InstallmentStatus
+}
+
+export interface LoanInstallmentListResponse {
+  installments: LoanInstallment[]
 }
 
 export interface Loan {

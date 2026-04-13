@@ -17,13 +17,13 @@ interface InstallmentTableProps {
 
 const INSTALLMENT_STATUS_LABELS: Record<string, string> = {
   PAID: 'Paid',
-  UNPAID: 'Unpaid',
+  PENDING: 'Pending',
   OVERDUE: 'Overdue',
 }
 
 const INSTALLMENT_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
   PAID: 'default',
-  UNPAID: 'secondary',
+  PENDING: 'secondary',
   OVERDUE: 'destructive',
 }
 
@@ -57,11 +57,11 @@ export function InstallmentTable({ installments }: InstallmentTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {installments.map((inst) => (
+            {installments.map((inst, index) => (
               <TableRow key={inst.id}>
-                <TableCell>{inst.installment_number}</TableCell>
-                <TableCell>{formatDate(inst.due_date)}</TableCell>
-                <TableCell>{formatCurrency(inst.amount, 'RSD')}</TableCell>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell>{formatDate(inst.expected_date)}</TableCell>
+                <TableCell>{formatCurrency(inst.amount, inst.currency_code ?? 'RSD')}</TableCell>
                 <TableCell>
                   <Badge variant={INSTALLMENT_VARIANT[inst.status] ?? 'secondary'}>
                     {INSTALLMENT_STATUS_LABELS[inst.status] ?? inst.status}

@@ -46,10 +46,12 @@ export function LoanDetails({ loan }: LoanDetailsProps) {
           <InfoRow label="Effective Interest Rate" value={`${loan.effective_interest_rate}%`} />
         )}
         <InfoRow label="Period" value={`${loan.period} months`} />
-        <InfoRow
-          label="Monthly Installment"
-          value={formatCurrency(loan.installment_amount, currency)}
-        />
+        {loan.installment_amount !== undefined && (
+          <InfoRow
+            label="Monthly Installment"
+            value={formatCurrency(loan.installment_amount, currency)}
+          />
+        )}
         {loan.remaining_debt !== undefined && (
           <InfoRow label="Remaining Debt" value={formatCurrency(loan.remaining_debt, currency)} />
         )}
