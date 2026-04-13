@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import {
   getStocks,
   getStock,
@@ -77,4 +78,20 @@ export function useOptions(filters: OptionsFilters) {
     queryFn: () => getOptions(filters),
     enabled: filters.stock_id > 0,
   })
+}
+
+/** Builds a Map<listingId, {ticker, name}> from all stocks, futures, and forex pairs. */
+export function useListingMap(): Map<number, { ticker: string; name: string }> {
+  const { data: stocksData } = useStocks({ page_size: 500 })
+  const { data: futuresData } = useFutures({ page_size: 500 })
+  const { data: forexData } = useForexPairs({ page_size: 500 })
+
+  return useMemo(() => {
+    const map = new Map<number, { ticker: string; name: string }>()
+    for (const s of stocksData?.stocks ?? []) map.set(s.id, { ticker: s.ticker, name: s.name })
+    for (const f of futuresData?.futures ?? []) map.set(f.id, { ticker: f.ticker, name: f.name })
+    for (const fx of forexData?.forex_pairs ?? [])
+      map.set(fx.id, { ticker: fx.ticker, name: fx.name })
+    return map
+  }, [stocksData, futuresData, forexData])
 }

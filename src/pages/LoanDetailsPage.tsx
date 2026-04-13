@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useLoan } from '@/hooks/useLoans'
+import { useLoan, useLoanInstallments } from '@/hooks/useLoans'
 import { Button } from '@/components/ui/button'
 import { LOAN_TYPES } from '@/lib/constants/banking'
 import { LoanDetails } from '@/components/loans/LoanDetails'
@@ -8,7 +8,9 @@ import { InstallmentTable } from '@/components/loans/InstallmentTable'
 export function LoanDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { data: loan, isLoading } = useLoan(Number(id))
+  const loanId = Number(id)
+  const { data: loan, isLoading } = useLoan(loanId)
+  const { data: installments = [] } = useLoanInstallments(loanId)
 
   if (isLoading) return <p>Loading...</p>
   if (!loan) return <p>Loan not found.</p>
@@ -26,7 +28,7 @@ export function LoanDetailsPage() {
 
       <LoanDetails loan={loan} />
 
-      <InstallmentTable installments={loan.installments ?? []} />
+      <InstallmentTable installments={installments} />
     </div>
   )
 }

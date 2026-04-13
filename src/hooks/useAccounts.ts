@@ -7,6 +7,7 @@ import {
   updateAccountName,
   updateAccountLimits,
   getAllAccounts,
+  getBankAccounts,
 } from '@/lib/api/accounts'
 import type {
   AccountFilters,
@@ -74,6 +75,21 @@ export function useAllAccounts(filters?: AccountFilters) {
   return useQuery({
     queryKey: ['accounts', 'all', filters],
     queryFn: () => getAllAccounts(filters),
+  })
+}
+
+export function useBankAccounts() {
+  return useQuery({
+    queryKey: ['accounts', 'bank'],
+    queryFn: () => getBankAccounts(),
+  })
+}
+
+export function useAccountsByClient(clientId: number) {
+  return useQuery({
+    queryKey: ['accounts', 'client', clientId],
+    queryFn: () => getAllAccounts({ client_id: clientId }),
+    enabled: clientId > 0,
   })
 }
 
