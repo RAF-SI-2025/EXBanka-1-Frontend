@@ -1,8 +1,8 @@
 describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
   describe('Client: Card Request & Viewing (Scenarios 28–30, 32)', () => {
     beforeEach(() => {
-      cy.intercept('GET', '/api/me/cards', { fixture: 'cards-list.json' }).as('getCards')
-      cy.intercept('GET', '/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/cards', { fixture: 'cards-list.json' }).as('getCards')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -10,15 +10,15 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
           email: 'marko@example.com',
         },
       }).as('getMe')
-      cy.intercept('GET', '/api/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
-      cy.intercept('GET', '/api/me/payments*', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
     })
 
     // Scenario 28: Kreiranje kartice na zahtev klijenta
     it('should request a new card for a personal account (Scenario 28)', () => {
-      cy.intercept('POST', '/api/me/cards/requests', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/cards/requests', {
         statusCode: 201,
         body: {
           id: 5,
@@ -86,7 +86,7 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
 
     // Scenario 30: Blokiranje kartice od strane klijenta
     it('should temporarily block an active card for 12 hours (Scenario 30)', () => {
-      cy.intercept('POST', '/api/me/cards/10/temporary-block', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/cards/10/temporary-block', {
         statusCode: 200,
         body: {},
       }).as('blockCard')
@@ -95,7 +95,7 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
       cy.wait('@getCards')
 
       // Register the updated cards intercept AFTER initial load to avoid LIFO conflict
-      cy.intercept('GET', '/api/me/cards', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/cards', {
         body: {
           cards: [
             {
@@ -186,13 +186,13 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
   describe('Employee: Card Management (Scenarios 27, 31)', () => {
     // Scenario 27: Automatsko kreiranje kartice prilikom otvaranja računa
     it('should create a card automatically when account is created with card option (Scenario 27)', () => {
-      cy.intercept('GET', '/api/clients?*', { fixture: 'clients.json' }).as('searchClients')
-      cy.intercept('POST', '/api/accounts', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/clients?*', { fixture: 'clients.json' }).as('searchClients')
+      cy.intercept('POST', 'https://bytenity.com/api/v1/accounts', {
         statusCode: 201,
         fixture: 'create-account-response.json',
       }).as('createAccount')
-      cy.intercept('GET', '/api/accounts?*', { fixture: 'accounts.json' }).as('getAccounts')
-      cy.intercept('GET', '/api/clients', { fixture: 'clients.json' }).as('getAllClients')
+      cy.intercept('GET', 'https://bytenity.com/api/v2/accounts?*', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/clients', { fixture: 'clients.json' }).as('getAllClients')
       cy.loginAsEmployee('/accounts/new')
 
       // Search and select client
@@ -224,11 +224,11 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
 
     // Scenario 31: Odblokiranje kartice od strane zaposlenog
     it('should unblock a blocked card from admin panel (Scenario 31)', () => {
-      cy.intercept('GET', '/api/accounts/1', { fixture: 'admin-account.json' }).as('getAccount')
-      cy.intercept('GET', '/api/cards?account_number=265000000000000011', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/accounts/1', { fixture: 'admin-account.json' }).as('getAccount')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/cards?account_number=265000000000000011', {
         fixture: 'admin-cards.json',
       }).as('getAccountCards')
-      cy.intercept('POST', '/api/cards/11/unblock', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/cards/11/unblock', {
         statusCode: 200,
         body: {},
       }).as('unblockCard')
@@ -238,7 +238,7 @@ describe('Celina 6: Kartice — Upravljanje bankarskim karticama', () => {
       cy.wait('@getAccountCards')
 
       // Register the updated cards intercept AFTER initial load to avoid LIFO conflict
-      cy.intercept('GET', '/api/cards?account_number=265000000000000011', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/cards?account_number=265000000000000011', {
         body: {
           cards: [
             {

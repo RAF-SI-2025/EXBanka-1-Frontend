@@ -164,10 +164,12 @@ export function useListingMap(): Map<number, { ticker: string; name: string }> {
 
   return useMemo(() => {
     const map = new Map<number, { ticker: string; name: string }>()
-    for (const s of stocksData?.stocks ?? []) map.set(s.id, { ticker: s.ticker, name: s.name })
-    for (const f of futuresData?.futures ?? []) map.set(f.id, { ticker: f.ticker, name: f.name })
+    for (const s of stocksData?.stocks ?? [])
+      if (s.listing_id != null) map.set(s.listing_id, { ticker: s.ticker, name: s.name })
+    for (const f of futuresData?.futures ?? [])
+      if (f.listing_id != null) map.set(f.listing_id, { ticker: f.ticker, name: f.name })
     for (const fx of forexData?.forex_pairs ?? [])
-      map.set(fx.id, { ticker: fx.ticker, name: fx.name })
+      if (fx.listing_id != null) map.set(fx.listing_id, { ticker: fx.ticker, name: fx.name })
     return map
   }, [stocksData, futuresData, forexData])
 }

@@ -3,22 +3,18 @@
     {
       "id": 1,
       "user_type": "client",
-      "user_name": "Marko Jovanović",
-      "user_email": "marko@example.com",
-      "taxable_amount": "925.00",
-      "tax_amount": "138.75",
-      "status": "pending",
-      "created_at": "2026-04-01T00:00:00Z"
+      "first_name": "Marko",
+      "last_name": "Jovanović",
+      "unpaid_tax": "138.75",
+      "last_collection": null
     },
     {
       "id": 2,
       "user_type": "actuary",
-      "user_name": "Petar Nikolić",
-      "user_email": "petar@banka.rs",
-      "taxable_amount": "5200.00",
-      "tax_amount": "780.00",
-      "status": "collected",
-      "created_at": "2026-03-31T00:00:00Z"
+      "first_name": "Petar",
+      "last_name": "Nikolić",
+      "unpaid_tax": "780.00",
+      "last_collection": "2026-03-31T00:00:00Z"
     }
   ],
   "total_count": 2

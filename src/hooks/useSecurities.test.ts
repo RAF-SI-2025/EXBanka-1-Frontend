@@ -11,6 +11,7 @@ import {
   useForexPair,
   useForexHistory,
   useOptions,
+  useListingMap,
 } from '@/hooks/useSecurities'
 import * as securitiesApi from '@/lib/api/securities'
 import {
@@ -194,5 +195,37 @@ describe('useOptions', () => {
 
     expect(result.current.fetchStatus).toBe('idle')
     expect(securitiesApi.getOptions).not.toHaveBeenCalled()
+  })
+})
+
+describe('useListingMap', () => {
+  it('keys the map by listing_id so order.listing_id resolves to the correct security', async () => {
+    const stock = createMockStock({ id: 10, listing_id: 101, ticker: 'AAPL', name: 'Apple Inc.' })
+    const forex = createMockForex({
+      id: 20,
+      listing_id: 202,
+      ticker: 'RSD/CHF',
+      name: 'Serbian Dinar to Swiss Franc',
+    })
+
+    jest.mocked(securitiesApi.getStocks).mockResolvedValue({ stocks: [stock], total_count: 1 })
+    jest.mocked(securitiesApi.getFutures).mockResolvedValue({ futures: [], total_count: 0 })
+    jest
+      .mocked(securitiesApi.getForexPairs)
+      .mockResolvedValue({ forex_pairs: [forex], total_count: 1 })
+
+    const { result } = renderHook(() => useListingMap(), { wrapper: createQueryWrapper() })
+
+    await waitFor(() => expect(result.current.size).toBeGreaterThan(0))
+
+    // Order with listing_id 101 should resolve to AAPL, not the forex pair
+    expect(result.current.get(101)).toEqual({ ticker: 'AAPL', name: 'Apple Inc.' })
+    // Order with listing_id 202 should resolve to the forex pair
+    expect(result.current.get(202)).toEqual({
+      ticker: 'RSD/CHF',
+      name: 'Serbian Dinar to Swiss Franc',
+    })
+    // Security's own id (10) should NOT be in the map
+    expect(result.current.get(10)).toBeUndefined()
   })
 })

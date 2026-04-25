@@ -1,6 +1,6 @@
 describe('Admin Loans Page', () => {
   it('should display loans table with all columns', () => {
-    cy.intercept('GET', '/api/loans*', { fixture: 'admin-loans-list.json' }).as('getLoans')
+    cy.intercept('GET', 'https://bytenity.com/api/v1/loans*', { fixture: 'admin-loans-list.json' }).as('getLoans')
 
     cy.loginAsEmployee('/admin/loans')
     cy.wait('@getLoans')
@@ -29,7 +29,7 @@ describe('Admin Loans Page', () => {
   })
 
   it('should show empty state when no loans', () => {
-    cy.intercept('GET', '/api/loans*', { body: { loans: [], total: 0 } }).as('getEmptyLoans')
+    cy.intercept('GET', 'https://bytenity.com/api/v1/loans*', { body: { loans: [], total: 0 } }).as('getEmptyLoans')
 
     cy.loginAsEmployee('/admin/loans')
     cy.wait('@getEmptyLoans')
@@ -38,7 +38,7 @@ describe('Admin Loans Page', () => {
   })
 
   it('should show interest type labels correctly', () => {
-    cy.intercept('GET', '/api/loans*', { fixture: 'admin-loans-list.json' }).as('getLoans')
+    cy.intercept('GET', 'https://bytenity.com/api/v1/loans*', { fixture: 'admin-loans-list.json' }).as('getLoans')
 
     cy.loginAsEmployee('/admin/loans')
     cy.wait('@getLoans')

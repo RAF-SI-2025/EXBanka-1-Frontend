@@ -39,6 +39,10 @@ export interface CreateOrderPayload {
   security_type?: string
 }
 
+export interface CreateOrderOnBehalfPayload extends CreateOrderPayload {
+  client_id: number
+}
+
 export interface OrderListResponse {
   orders: Order[]
   total_count: number
