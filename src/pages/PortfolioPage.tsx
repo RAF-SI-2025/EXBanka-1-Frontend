@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { HoldingTable } from '@/components/portfolio/HoldingTable'
 import { PortfolioSummaryCard } from '@/components/portfolio/PortfolioSummaryCard'
@@ -18,6 +19,7 @@ const PAGE_SIZE = 10
 const PORTFOLIO_FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
 export function PortfolioPage() {
+  const navigate = useNavigate()
   const [filterValues, setFilterValues] = useState<FilterValues>({})
   const [page, setPage] = useState(1)
 
@@ -37,6 +39,24 @@ export function PortfolioPage() {
     setFilterValues(newFilters)
     setPage(1)
   }
+
+  const handleSell = useCallback(
+    (id: number) => {
+      const holding = data?.holdings.find((h) => h.id === id)
+      if (!holding) return
+      navigate(
+        `/securities/order/new?direction=sell&securityType=${holding.security_type}&ticker=${encodeURIComponent(holding.ticker)}`
+      )
+    },
+    [navigate, data]
+  )
+
+  const handleRowClick = useCallback(
+    (id: number) => {
+      navigate(`/portfolio/holdings/${id}/transactions`)
+    },
+    [navigate]
+  )
 
   const handleMakePublic = useCallback(
     (id: number) => {
@@ -70,6 +90,8 @@ export function PortfolioPage() {
         <>
           <HoldingTable
             holdings={data.holdings}
+            onRowClick={handleRowClick}
+            onSell={handleSell}
             onMakePublic={handleMakePublic}
             onExercise={handleExercise}
           />

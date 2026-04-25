@@ -33,7 +33,7 @@ export async function getMyOrder(id: number): Promise<Order> {
 }
 
 export async function cancelOrder(id: number): Promise<Order> {
-  const { data } = await apiClient.post<Order>(`/api/v1/me/orders/${id}/cancel`)
+  const { data } = await apiClient.post<Order>(`/api/v2/me/orders/${id}/cancel`)
   return data
 }
 

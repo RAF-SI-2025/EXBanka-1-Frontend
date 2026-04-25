@@ -6,25 +6,26 @@ describe('TaxTrackingTable', () => {
   const records = [
     createMockTaxRecord({
       id: 1,
-      user_name: 'Marko Marković',
+      first_name: 'Marko',
+      last_name: 'Marković',
       user_type: 'client',
-      tax_amount: '1500.00',
+      unpaid_tax: '1500.00',
     }),
     createMockTaxRecord({
       id: 2,
-      user_name: 'Ana Anić',
-      user_email: 'ana.anic@example.com',
+      first_name: 'Ana',
+      last_name: 'Anić',
       user_type: 'actuary',
-      tax_amount: '3000.00',
+      unpaid_tax: '3000.00',
     }),
   ]
 
   it('renders table headers', () => {
     render(<TaxTrackingTable records={records} />)
     expect(screen.getByText('Name')).toBeInTheDocument()
-    expect(screen.getByText('Email')).toBeInTheDocument()
     expect(screen.getByText('Type')).toBeInTheDocument()
-    expect(screen.getByText(/tax amount/i)).toBeInTheDocument()
+    expect(screen.getByText('Total Debt (RSD)')).toBeInTheDocument()
+    expect(screen.getByText('Last Collection')).toBeInTheDocument()
   })
 
   it('renders each record row', () => {
@@ -42,7 +43,7 @@ describe('TaxTrackingTable', () => {
 
   it('renders user_type badge for each row', () => {
     render(<TaxTrackingTable records={records} />)
-    expect(screen.getByText('client')).toBeInTheDocument()
-    expect(screen.getByText('actuary')).toBeInTheDocument()
+    expect(screen.getByText('Client')).toBeInTheDocument()
+    expect(screen.getByText('Actuary')).toBeInTheDocument()
   })
 })

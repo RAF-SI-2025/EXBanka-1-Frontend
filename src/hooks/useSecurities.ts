@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import {
   getStocks,
@@ -11,6 +11,9 @@ import {
   getForexPair,
   getForexHistory,
   getOptions,
+  getOption,
+  createOptionOrder,
+  exerciseOption,
 } from '@/lib/api/securities'
 import type {
   StockFilters,
@@ -18,6 +21,7 @@ import type {
   ForexFilters,
   OptionsFilters,
   PriceHistoryFilters,
+  CreateOptionOrderPayload,
 } from '@/types/security'
 
 export function useStocks(filters: StockFilters = {}) {
@@ -78,6 +82,78 @@ export function useOptions(filters: OptionsFilters) {
     queryFn: () => getOptions(filters),
     enabled: filters.stock_id > 0,
   })
+}
+
+export function useOption(id: number) {
+  return useQuery({
+    queryKey: ['option', id],
+    queryFn: () => getOption(id),
+    enabled: id > 0,
+  })
+}
+
+export function useCreateOptionOrder() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ optionId, payload }: { optionId: number; payload: CreateOptionOrderPayload }) =>
+      createOptionOrder(optionId, payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      qc.invalidateQueries({ queryKey: ['portfolio'] })
+    },
+  })
+}
+
+export function useExerciseOption() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (optionId: number) => exerciseOption(optionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['portfolio'] })
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+    },
+  })
+}
+
+export interface ListingOption {
+  listing_id: number
+  label: string
+}
+
+/**
+ * Returns available listing options for a given security type and ticker.
+ * Used by the sell order form so the user can pick which venue to sell on.
+ */
+export function useListingsForSell(
+  securityType: string | undefined,
+  ticker: string | undefined
+): ListingOption[] {
+  const { data: stocksData } = useStocks(
+    securityType === 'stock' && ticker ? { search: ticker, page_size: 50 } : {}
+  )
+  const { data: futuresData } = useFutures(
+    securityType === 'futures' && ticker ? { search: ticker, page_size: 50 } : {}
+  )
+
+  return useMemo(() => {
+    if (securityType === 'stock') {
+      return (stocksData?.stocks ?? [])
+        .filter((s) => s.listing_id !== undefined)
+        .map((s) => ({
+          listing_id: s.listing_id!,
+          label: `${s.exchange_acronym} — ${s.ticker}`,
+        }))
+    }
+    if (securityType === 'futures') {
+      return (futuresData?.futures ?? [])
+        .filter((f) => f.listing_id !== undefined)
+        .map((f) => ({
+          listing_id: f.listing_id!,
+          label: `${f.exchange_acronym} — ${f.ticker}`,
+        }))
+    }
+    return []
+  }, [securityType, ticker, stocksData, futuresData])
 }
 
 /** Builds a Map<listingId, {ticker, name}> from all stocks, futures, and forex pairs. */

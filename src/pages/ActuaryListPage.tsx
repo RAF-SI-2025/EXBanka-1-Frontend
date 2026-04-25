@@ -52,7 +52,7 @@ export function ActuaryListPage() {
   const handleConfirmLimit = useCallback(
     (limit: string) => {
       if (editingActuary) {
-        setLimitMutation.mutate({ id: editingActuary.id, payload: { limit } })
+        setLimitMutation.mutate({ id: editingActuary.employee_id, payload: { limit } })
       }
       setEditingActuary(null)
     },

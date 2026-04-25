@@ -6,6 +6,8 @@ import type {
   CreateAccountRequest,
   UpdateAccountNameRequest,
   UpdateAccountLimitsRequest,
+  AccountActivityResponse,
+  AccountActivityFilters,
 } from '@/types/account'
 
 export async function getClientAccounts(): Promise<AccountListResponse> {
@@ -53,11 +55,22 @@ export async function getAllAccounts(filters?: AccountFilters): Promise<AccountL
   if (filters?.client_id) params.append('client_id', String(filters.client_id))
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<AccountListResponse>('/api/v1/accounts', { params })
+  const response = await apiClient.get<AccountListResponse>('/api/v2/accounts', { params })
   return response.data
 }
 
 export async function getBankAccounts(): Promise<AccountListResponse> {
   const response = await apiClient.get<{ accounts: Account[] }>('/api/v1/bank-accounts')
   return { accounts: response.data.accounts, total: response.data.accounts.length }
+}
+
+export async function getAccountActivity(
+  id: number,
+  filters: AccountActivityFilters = {}
+): Promise<AccountActivityResponse> {
+  const { data } = await apiClient.get<AccountActivityResponse>(
+    `/api/v2/me/accounts/${id}/activity`,
+    { params: filters }
+  )
+  return { ...data, entries: data.entries ?? [] }
 }

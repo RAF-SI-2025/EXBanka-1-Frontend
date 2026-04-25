@@ -39,10 +39,16 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = 
 interface AccountTableProps {
   accounts: Account[]
   onViewCards: (accountId: number) => void
+  onViewActivity?: (accountId: number) => void
   clientsById?: Record<number, Client>
 }
 
-export function AccountTable({ accounts, onViewCards, clientsById }: AccountTableProps) {
+export function AccountTable({
+  accounts,
+  onViewCards,
+  onViewActivity,
+  clientsById,
+}: AccountTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -82,9 +88,16 @@ export function AccountTable({ accounts, onViewCards, clientsById }: AccountTabl
               </Badge>
             </TableCell>
             <TableCell>
-              <Button size="sm" variant="outline" onClick={() => onViewCards(acc.id)}>
-                Cards
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => onViewCards(acc.id)}>
+                  Cards
+                </Button>
+                {onViewActivity && (
+                  <Button size="sm" variant="outline" onClick={() => onViewActivity(acc.id)}>
+                    Activity
+                  </Button>
+                )}
+              </div>
             </TableCell>
           </TableRow>
         ))}

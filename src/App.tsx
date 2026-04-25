@@ -40,9 +40,12 @@ import { SecuritiesPage } from '@/pages/SecuritiesPage'
 import { StockDetailPage } from '@/pages/StockDetailPage'
 import { FuturesDetailPage } from '@/pages/FuturesDetailPage'
 import { ForexDetailPage } from '@/pages/ForexDetailPage'
+import { OptionDetailPage } from '@/pages/OptionDetailPage'
 import { CreateOrderPage } from '@/pages/CreateOrderPage'
 import { MyOrdersPage } from '@/pages/MyOrdersPage'
 import { PortfolioPage } from '@/pages/PortfolioPage'
+import { HoldingTransactionsPage } from '@/pages/HoldingTransactionsPage'
+import { AccountActivityPage } from '@/pages/AccountActivityPage'
 import { AdminOrdersPage } from '@/pages/AdminOrdersPage'
 import { TaxPage } from '@/pages/TaxPage'
 import { AdminRolesPage } from '@/pages/AdminRolesPage'
@@ -209,6 +212,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/accounts/:id/activity" element={<AccountActivityPage />} />
         <Route
           path="/cards"
           element={
@@ -319,9 +323,11 @@ export default function App() {
         <Route path="/securities/stocks/:id" element={<StockDetailPage />} />
         <Route path="/securities/futures/:id" element={<FuturesDetailPage />} />
         <Route path="/securities/forex/:id" element={<ForexDetailPage />} />
+        <Route path="/securities/options/:id" element={<OptionDetailPage />} />
         <Route path="/securities/order/new" element={<CreateOrderPage />} />
         <Route path="/orders" element={<MyOrdersPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
+        <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsPage />} />
 
         {/* Admin trading routes */}
         <Route

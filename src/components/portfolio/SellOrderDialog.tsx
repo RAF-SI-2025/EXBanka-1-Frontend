@@ -50,8 +50,8 @@ export function SellOrderDialog({
   const approxPrice = calculateApproxPrice(
     orderType,
     'sell',
-    holding.current_price,
-    holding.current_price,
+    '0',
+    '0',
     1,
     quantity,
     limitValue || undefined,
@@ -63,7 +63,6 @@ export function SellOrderDialog({
   const handleSubmit = () => {
     if (!isValid) return
     onSubmit({
-      holding_id: holding.id,
       direction: 'sell',
       order_type: orderType,
       quantity,
