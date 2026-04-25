@@ -384,6 +384,7 @@ describe('Hartije od vrednosti — Securities', () => {
 
       cy.get('#quantity').type('0')
       cy.get('#quantity').then(($input) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(($input[0] as HTMLInputElement).validity.valid).to.be.false
       })
     })
@@ -393,6 +394,7 @@ describe('Hartije od vrednosti — Securities', () => {
 
       cy.get('#quantity').type('-5')
       cy.get('#quantity').then(($input) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         expect(($input[0] as HTMLInputElement).validity.valid).to.be.false
       })
     })
