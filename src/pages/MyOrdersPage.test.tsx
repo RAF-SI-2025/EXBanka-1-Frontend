@@ -52,7 +52,7 @@ describe('MyOrdersPage', () => {
   })
 
   it('shows ticker and security name from listing map when order fields are empty', async () => {
-    const stock = createMockStock({ id: 42, ticker: 'TSLA', name: 'Tesla Inc.' })
+    const stock = createMockStock({ id: 42, listing_id: 42, ticker: 'TSLA', name: 'Tesla Inc.' })
     jest.mocked(securitiesApi.getStocks).mockResolvedValue({ stocks: [stock], total_count: 1 })
     jest.mocked(ordersApi.getMyOrders).mockResolvedValue({
       orders: [
