@@ -1,10 +1,10 @@
 describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
   describe('Exchange Rate List (Scenario 24)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/exchange/rates', { fixture: 'exchange-rates.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates', { fixture: 'exchange-rates.json' }).as(
         'getExchangeRates'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -54,10 +54,10 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
   describe('Equivalence Calculator (Scenario 25)', () => {
     beforeEach(() => {
       // The calculator page also fetches all rates for local fallback
-      cy.intercept('GET', 'https://bytenity.com/api/exchange/rates', { fixture: 'exchange-rates.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates', { fixture: 'exchange-rates.json' }).as(
         'getExchangeRates'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -71,7 +71,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
     // Scenario 25: Provera ekvivalentnosti valute
     it('should calculate equivalence without executing a transaction (Scenario 25)', () => {
       // Stub the specific rate lookup (called by convertCurrency)
-      cy.intercept('GET', 'https://bytenity.com/api/exchange/rates/RSD/EUR', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates/RSD/EUR', {
         body: {
           from_currency: 'RSD',
           to_currency: 'EUR',
@@ -106,7 +106,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
     })
 
     it('should allow changing currencies and recalculating (Scenario 25 — different pair)', () => {
-      cy.intercept('GET', 'https://bytenity.com/api/exchange/rates/EUR/USD', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates/EUR/USD', {
         body: {
           from_currency: 'EUR',
           to_currency: 'USD',
@@ -152,10 +152,10 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
 
   describe('Currency Conversion During Transfer (Scenario 26)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/me/accounts', { fixture: 'transfer-accounts.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'transfer-accounts.json' }).as(
         'getAccounts'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -163,25 +163,28 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           email: 'marko@example.com',
         },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
-      // Stub exchange rate lookup for RSD→EUR
-      cy.intercept('GET', 'https://bytenity.com/api/exchange/rates/RSD/EUR', {
-        body: {
-          from_currency: 'RSD',
-          to_currency: 'EUR',
-          buy_rate: 116.5,
-          sell_rate: 117.8,
-          updated_at: '2026-03-26T08:00:00Z',
-        },
-      }).as('getExchangeRate')
       cy.loginAsClient('/transfers/new')
     })
 
     // Scenario 26: Konverzija valute tokom transfera
     it('should display exchange rate and commission on cross-currency transfer (Scenario 26)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/preview', {
+        statusCode: 200,
+        body: {
+          from_currency: 'RSD',
+          to_currency: 'EUR',
+          input_amount: '11650',
+          total_fee: '0',
+          fee_breakdown: [],
+          converted_amount: '100',
+          exchange_rate: '116.5',
+          exchange_commission_rate: '0',
+        },
+      }).as('previewTransfer')
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers', {
         statusCode: 201,
         body: {
           id: 205,
@@ -194,7 +197,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('createTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers/205/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/205/execute', {
         statusCode: 200,
         body: {
           id: 205,
@@ -207,17 +210,17 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('executeTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       cy.wait('@getAccounts')
@@ -233,8 +236,8 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
       cy.get('#amount').clear().type('11650')
       cy.contains('button', 'Make Transfer').click()
 
-      // Wait for exchange rate query to resolve
-      cy.wait('@getExchangeRate')
+      // Wait for transfer preview to resolve
+      cy.wait('@previewTransfer')
 
       // Confirmation step — verify exchange rate details
       cy.contains('Confirm Transfer').should('be.visible')

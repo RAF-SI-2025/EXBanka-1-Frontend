@@ -1,6 +1,9 @@
 describe('Create Order Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
+    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
   })
 
   it('should display the create order form with query params', () => {
@@ -10,9 +13,6 @@ describe('Create Order Page', () => {
     cy.contains('h1', 'Create Order').should('be.visible')
 
     // Form elements
-    cy.contains('label', 'Direction').should('be.visible')
-    cy.get('#direction').should('have.value', 'buy')
-
     cy.contains('label', 'Order Type').should('be.visible')
     cy.get('#order-type').should('have.value', 'market')
 
@@ -31,11 +31,11 @@ describe('Create Order Page', () => {
     cy.contains('button', 'Place Order').should('be.visible')
   })
 
-  it('should default direction to sell when query param is sell', () => {
+  it('should show sell order page when query param is sell', () => {
     cy.loginAsClient('/securities/order/new?listingId=1&direction=sell')
     cy.wait('@getAccounts')
 
-    cy.get('#direction').should('have.value', 'sell')
+    cy.contains('h1', 'Sell Order').should('be.visible')
   })
 
   it('should show limit value field when limit order type is selected', () => {
@@ -61,7 +61,7 @@ describe('Create Order Page', () => {
   })
 
   it('should submit an order', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/me/orders', {
+    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
       statusCode: 200,
       body: {
         id: 100,
@@ -82,7 +82,7 @@ describe('Create Order Page', () => {
       },
     }).as('createOrder')
     // Mock the orders page that we redirect to
-    cy.intercept('GET', 'https://bytenity.com/api/me/orders*', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getOrders')
 

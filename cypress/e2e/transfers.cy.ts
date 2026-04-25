@@ -1,10 +1,10 @@
 describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', () => {
   describe('Transfer Flow (Scenarios 17–18, 20)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/me/accounts', { fixture: 'transfer-accounts.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'transfer-accounts.json' }).as(
         'getAccounts'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -12,7 +12,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
           email: 'marko@example.com',
         },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
       cy.loginAsClient('/transfers/new')
@@ -23,25 +23,38 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
 
     // Scenario 17: Transfer između sopstvenih računa u istoj valuti
     it('should complete same-currency transfer without commission (Scenario 17)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/preview', {
+        statusCode: 200,
+        body: {
+          from_currency: 'RSD',
+          to_currency: 'RSD',
+          input_amount: '10000',
+          total_fee: '0',
+          fee_breakdown: [],
+          converted_amount: '10000',
+          exchange_rate: '1',
+          exchange_commission_rate: '0',
+        },
+      }).as('previewTransfer')
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers', {
         statusCode: 201,
         fixture: 'transfer-created.json',
       }).as('createTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers/201/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/201/execute', {
         statusCode: 200,
         fixture: 'transfer-executed.json',
       }).as('executeTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       cy.wait('@getAccounts')
@@ -104,22 +117,25 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
 
     // Scenario 18: Transfer između sopstvenih računa u različitim valutama
     it('should complete cross-currency transfer with exchange rate (Scenario 18)', () => {
-      // Stub exchange rate lookup (triggered when currencies differ)
-      cy.intercept('GET', 'https://bytenity.com/api/exchange/rates/RSD/EUR', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/preview', {
+        statusCode: 200,
         body: {
           from_currency: 'RSD',
           to_currency: 'EUR',
-          buy_rate: 116.5,
-          sell_rate: 117.8,
-          updated_at: '2026-03-26T08:00:00Z',
+          input_amount: '11650',
+          total_fee: '0',
+          fee_breakdown: [],
+          converted_amount: '100',
+          exchange_rate: '116.5',
+          exchange_commission_rate: '0',
         },
-      }).as('getExchangeRate')
+      }).as('previewTransfer')
 
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers', {
         statusCode: 201,
         fixture: 'transfer-cross-currency.json',
       }).as('createTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers/204/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/204/execute', {
         statusCode: 200,
         body: {
           id: 204,
@@ -132,17 +148,17 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('executeTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       cy.wait('@getAccounts')
@@ -167,8 +183,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
       cy.get('#amount').type('11650')
       cy.contains('button', 'Make Transfer').click()
 
-      // Wait for exchange rate query to resolve (fires when formData is set in Redux with cross-currency accounts)
-      cy.wait('@getExchangeRate')
+      cy.wait('@previewTransfer')
 
       // Confirmation — exchange rate should be shown
       cy.contains('Confirm Transfer').should('be.visible')
@@ -200,7 +215,20 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
 
     // Scenario 20: Neuspešan transfer zbog nedovoljnih sredstava
     it('should handle failed transfer due to insufficient funds (Scenario 20)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/transfers', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/preview', {
+        statusCode: 200,
+        body: {
+          from_currency: 'RSD',
+          to_currency: 'RSD',
+          input_amount: '200000',
+          total_fee: '0',
+          fee_breakdown: [],
+          converted_amount: '200000',
+          exchange_rate: '1',
+          exchange_commission_rate: '0',
+        },
+      }).as('previewTransfer')
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers', {
         statusCode: 400,
         body: {
           error: {
@@ -247,10 +275,10 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
 
   describe('Transfer History (Scenario 19)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/me/accounts', { fixture: 'transfer-accounts.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'transfer-accounts.json' }).as(
         'getAccounts'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -258,7 +286,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
           email: 'marko@example.com',
         },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/me/transfers*', { fixture: 'transfer-history.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/transfers*', { fixture: 'transfer-history.json' }).as(
         'getTransfers'
       )
       cy.loginAsClient('/transfers/history')
@@ -295,7 +323,7 @@ describe('Celina 3: Transferi — Prenos sredstava između sopstvenih računa', 
     })
 
     it('should show empty state when no transfers exist', () => {
-      cy.intercept('GET', 'https://bytenity.com/api/me/transfers*', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/transfers*', {
         body: { transfers: [], total: 0 },
       }).as('getEmptyTransfers')
 

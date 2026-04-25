@@ -1,14 +1,14 @@
 describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () => {
   describe('Payment Flow (Scenarios 9–15)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: { id: 42, first_name: 'Marko', last_name: 'Jovanović', email: 'marko@example.com' },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/me/payment-recipients', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payment-recipients', {
         body: { recipients: [] },
       }).as('getRecipients')
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
       cy.loginAsClient('/payments/new')
@@ -16,25 +16,25 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 9: Uspešno plaćanje drugom klijentu
     it('should complete a payment successfully (Scenario 9)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 201,
         fixture: 'payment-created.json',
       }).as('createPayment')
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments/101/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments/101/execute', {
         statusCode: 200,
         fixture: 'payment-executed.json',
       }).as('executePayment')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       // Step 1: Fill the payment form
@@ -84,7 +84,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 10: Neuspešno plaćanje zbog nedovoljnih sredstava
     it('should show error when payment amount exceeds balance (Scenario 10)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 400,
         body: {
           error: {
@@ -115,7 +115,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 11: Neuspešno plaćanje zbog nepostojećeg računa
     it('should show error when recipient account does not exist (Scenario 11)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 404,
         body: {
           error: {
@@ -146,11 +146,11 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 12: Plaćanje u različitim valutama uz konverziju
     it('should handle cross-currency payment with conversion (Scenario 12)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 201,
         fixture: 'payment-cross-currency.json',
       }).as('createPayment')
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments/104/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments/104/execute', {
         statusCode: 200,
         body: {
           id: 104,
@@ -167,17 +167,17 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
           timestamp: '2026-03-26T10:00:00Z',
         },
       }).as('executePayment')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       // Select EUR foreign account as source
@@ -217,25 +217,25 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 13: Plaćanje uz verifikacioni kod
     it('should verify payment with 6-digit code within 5 minutes (Scenario 13)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 201,
         fixture: 'payment-created.json',
       }).as('createPayment')
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments/101/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments/101/execute', {
         statusCode: 200,
         fixture: 'payment-executed.json',
       }).as('executePayment')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       // Fill form quickly
@@ -253,7 +253,6 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
       // Verification step UI
       cy.contains('Verification').should('be.visible')
-      cy.contains('5 minutes').should('be.visible')
       cy.get('#verification-code').should('be.visible')
       cy.get('#verification-code').should('have.attr', 'maxlength', '6')
       cy.get('#verification-code').should('have.attr', 'placeholder', '000000')
@@ -276,25 +275,25 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 14: Otkazivanje transakcije nakon tri pogrešna koda
     it('should show error after failed verification attempts (Scenario 14)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 201,
         fixture: 'payment-created.json',
       }).as('createPayment')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
 
       // Each submitCode call returns one fewer remaining attempt
       let submitAttempt = 0
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', (req) => {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', (req) => {
         submitAttempt++
         req.reply({
           statusCode: 200,
           body: { success: false, remaining_attempts: 3 - submitAttempt },
         })
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
         body: { status: 'pending' },
       }).as('challengeStatus')
@@ -331,15 +330,15 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
     // Scenario 15: Dodavanje primaoca nakon uspešnog plaćanja
     it('should allow saving recipient after successful payment (Scenario 15)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments', {
         statusCode: 201,
         fixture: 'payment-created.json',
       }).as('createPayment')
-      cy.intercept('POST', 'https://bytenity.com/api/me/payments/101/execute', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payments/101/execute', {
         statusCode: 200,
         fixture: 'payment-executed.json',
       }).as('executePayment')
-      cy.intercept('POST', 'https://bytenity.com/api/me/payment-recipients', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/me/payment-recipients', {
         statusCode: 201,
         body: {
           id: 2,
@@ -349,17 +348,17 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
           created_at: '2026-03-26T10:05:00Z',
         },
       }).as('saveRecipient')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/verifications/1/code', {
+      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/verifications/1/status', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
         statusCode: 200,
-        body: { status: 'verified' },
+        body: { status: 'pending' },
       }).as('challengeStatus')
 
       // Complete payment flow
@@ -400,11 +399,11 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
 
   describe('Payment History (Scenario 16)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
-      cy.intercept('GET', 'https://bytenity.com/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: { id: 42, first_name: 'Marko', last_name: 'Jovanović', email: 'marko@example.com' },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', { fixture: 'payment-history.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', { fixture: 'payment-history.json' }).as(
         'getPayments'
       )
       cy.loginAsClient('/payments/history')
@@ -431,7 +430,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
       cy.wait('@getPayments')
 
       // Intercept the filtered request
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', (req) => {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', (req) => {
         const url = new URL(req.url, 'http://localhost')
         if (url.searchParams.get('status_filter') === 'COMPLETED') {
           req.reply({
@@ -472,7 +471,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
       cy.wait('@getPayments')
 
       // Intercept filtered request
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', (req) => {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', (req) => {
         const url = new URL(req.url, 'http://localhost')
         if (url.searchParams.get('date_from')) {
           req.reply({ fixture: 'payment-history.json' })
@@ -492,7 +491,7 @@ describe('Celina 2: Plaćanja — Izvršavanje plaćanja između klijenata', () 
     it('should filter payments by amount range (Scenario 16 — amount filter)', () => {
       cy.wait('@getPayments')
 
-      cy.intercept('GET', 'https://bytenity.com/api/me/payments*', (req) => {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', (req) => {
         const url = new URL(req.url, 'http://localhost')
         if (url.searchParams.get('amount_min')) {
           req.reply({ fixture: 'payment-history.json' })

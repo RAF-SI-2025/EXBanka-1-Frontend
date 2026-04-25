@@ -1,9 +1,9 @@
 describe('Admin Card Requests Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/cards/requests*', { fixture: 'card-requests-list.json' }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/v1/cards/requests*', { fixture: 'card-requests-list.json' }).as(
       'getRequests'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/clients*', { fixture: 'clients-list.json' }).as('getClients')
+    cy.intercept('GET', 'https://bytenity.com/api/v1/clients*', { fixture: 'clients-list.json' }).as('getClients')
   })
 
   it('should display pending card requests with client info', () => {
@@ -31,7 +31,7 @@ describe('Admin Card Requests Page', () => {
   })
 
   it('should approve a card request', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/cards/requests/10/approve', { statusCode: 200, body: {} }).as(
+    cy.intercept('POST', 'https://bytenity.com/api/v1/cards/requests/10/approve', { statusCode: 200, body: {} }).as(
       'approveRequest'
     )
 
@@ -44,7 +44,7 @@ describe('Admin Card Requests Page', () => {
   })
 
   it('should open deny dialog and submit with reason', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/cards/requests/10/reject', { statusCode: 200, body: {} }).as(
+    cy.intercept('POST', 'https://bytenity.com/api/v1/cards/requests/10/reject', { statusCode: 200, body: {} }).as(
       'rejectRequest'
     )
 
@@ -68,7 +68,7 @@ describe('Admin Card Requests Page', () => {
   })
 
   it('should show empty state when no requests', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/cards/requests*', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/cards/requests*', {
       body: { requests: [], total: 0 },
     }).as('getEmptyRequests')
 
