@@ -1,6 +1,6 @@
 describe('Create Order Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
+    cy.intercept('GET', 'https://bytenity.com/api/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
   })
 
   it('should display the create order form with query params', () => {
@@ -61,7 +61,7 @@ describe('Create Order Page', () => {
   })
 
   it('should submit an order', () => {
-    cy.intercept('POST', '/api/me/orders', {
+    cy.intercept('POST', 'https://bytenity.com/api/me/orders', {
       statusCode: 200,
       body: {
         id: 100,
@@ -82,7 +82,7 @@ describe('Create Order Page', () => {
       },
     }).as('createOrder')
     // Mock the orders page that we redirect to
-    cy.intercept('GET', '/api/me/orders*', {
+    cy.intercept('GET', 'https://bytenity.com/api/me/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getOrders')
 

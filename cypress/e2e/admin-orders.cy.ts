@@ -1,6 +1,6 @@
 describe('Admin Orders Page — Order Approval', () => {
   it('should display orders list with approve/decline actions', () => {
-    cy.intercept('GET', '/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', 'https://bytenity.com/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
 
     cy.loginAsEmployee('/admin/orders')
     cy.wait('@getOrders')
@@ -29,8 +29,8 @@ describe('Admin Orders Page — Order Approval', () => {
   })
 
   it('should approve an order', () => {
-    cy.intercept('GET', '/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', '/api/orders/60/approve', {
+    cy.intercept('GET', 'https://bytenity.com/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', 'https://bytenity.com/api/orders/60/approve', {
       statusCode: 200,
       body: { id: 60, status: 'approved' },
     }).as('approveOrder')
@@ -43,8 +43,8 @@ describe('Admin Orders Page — Order Approval', () => {
   })
 
   it('should decline an order', () => {
-    cy.intercept('GET', '/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', '/api/orders/60/decline', {
+    cy.intercept('GET', 'https://bytenity.com/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', 'https://bytenity.com/api/orders/60/decline', {
       statusCode: 200,
       body: { id: 60, status: 'declined' },
     }).as('declineOrder')
@@ -57,7 +57,7 @@ describe('Admin Orders Page — Order Approval', () => {
   })
 
   it('should show empty state when no orders', () => {
-    cy.intercept('GET', '/api/orders*', {
+    cy.intercept('GET', 'https://bytenity.com/api/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getEmptyOrders')
 

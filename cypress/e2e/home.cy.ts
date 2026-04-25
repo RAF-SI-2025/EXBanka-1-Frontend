@@ -1,8 +1,8 @@
 describe('Home Page — Client Dashboard', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
-    cy.intercept('GET', '/api/me/payments*', { fixture: 'home-payments.json' }).as('getPayments')
-    cy.intercept('GET', '/api/me/payment-recipients*', {
+    cy.intercept('GET', 'https://bytenity.com/api/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
+    cy.intercept('GET', 'https://bytenity.com/api/me/payments*', { fixture: 'home-payments.json' }).as('getPayments')
+    cy.intercept('GET', 'https://bytenity.com/api/me/payment-recipients*', {
       fixture: 'home-recipients.json',
     }).as('getRecipients')
   })
@@ -50,7 +50,7 @@ describe('Home Page — Client Dashboard', () => {
   })
 
   it('should show empty state when no accounts', () => {
-    cy.intercept('GET', '/api/me/accounts*', { body: { accounts: [], total: 0 } }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/me/accounts*', { body: { accounts: [], total: 0 } }).as(
       'getEmptyAccounts'
     )
     cy.loginAsClient('/home')

@@ -1,6 +1,6 @@
 describe('Admin Actuaries Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/actuaries*', { fixture: 'actuaries-list.json' }).as('getActuaries')
+    cy.intercept('GET', 'https://bytenity.com/api/actuaries*', { fixture: 'actuaries-list.json' }).as('getActuaries')
   })
 
   it('should display actuaries list with table', () => {
@@ -56,7 +56,7 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should submit new limit via edit dialog', () => {
-    cy.intercept('PUT', '/api/actuaries/1/limit', {
+    cy.intercept('PUT', 'https://bytenity.com/api/actuaries/1/limit', {
       statusCode: 200,
       body: { id: 1, limit: '200000' },
     }).as('setLimit')
@@ -76,7 +76,7 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should reset an actuary limit', () => {
-    cy.intercept('POST', '/api/actuaries/1/reset-limit', {
+    cy.intercept('POST', 'https://bytenity.com/api/actuaries/1/reset-limit', {
       statusCode: 200,
       body: { id: 1, used_limit: '0' },
     }).as('resetLimit')
@@ -89,7 +89,7 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should toggle approval for an actuary', () => {
-    cy.intercept('PUT', '/api/actuaries/1/approval', {
+    cy.intercept('PUT', 'https://bytenity.com/api/actuaries/1/approval', {
       statusCode: 200,
       body: { id: 1, need_approval: true },
     }).as('setApproval')
@@ -103,7 +103,7 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should show empty state when no actuaries', () => {
-    cy.intercept('GET', '/api/actuaries*', {
+    cy.intercept('GET', 'https://bytenity.com/api/actuaries*', {
       body: { actuaries: [], total_count: 0 },
     }).as('getEmptyActuaries')
 

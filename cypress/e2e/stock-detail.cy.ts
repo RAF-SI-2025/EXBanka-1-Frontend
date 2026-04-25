@@ -1,12 +1,12 @@
 describe('Stock Detail Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/securities/stocks/1', { fixture: 'stock-detail.json' }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/securities/stocks/1', { fixture: 'stock-detail.json' }).as(
       'getStock'
     )
-    cy.intercept('GET', '/api/securities/stocks/1/history*', {
+    cy.intercept('GET', 'https://bytenity.com/api/securities/stocks/1/history*', {
       fixture: 'stock-history.json',
     }).as('getStockHistory')
-    cy.intercept('GET', '/api/securities/options*', { fixture: 'stock-options.json' }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/securities/options*', { fixture: 'stock-options.json' }).as(
       'getOptions'
     )
   })
@@ -48,13 +48,13 @@ describe('Stock Detail Page', () => {
   })
 
   it('should show not found for invalid stock id', () => {
-    cy.intercept('GET', '/api/securities/stocks/999', { statusCode: 200, body: null }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/securities/stocks/999', { statusCode: 200, body: null }).as(
       'getStockNotFound'
     )
-    cy.intercept('GET', '/api/securities/stocks/999/history*', {
+    cy.intercept('GET', 'https://bytenity.com/api/securities/stocks/999/history*', {
       body: { history: [], total_count: 0 },
     }).as('getEmptyHistory')
-    cy.intercept('GET', '/api/securities/options*', {
+    cy.intercept('GET', 'https://bytenity.com/api/securities/options*', {
       body: { options: [], total_count: 0 },
     }).as('getEmptyOptions')
 

@@ -1,7 +1,7 @@
 describe('Celina 8: Portal za zaposlene — Upravljanje klijentima', () => {
   // Scenario 39: Pretraga klijenta
   it('should search clients by name (Scenario 39)', () => {
-    cy.intercept('GET', '/api/clients*', { fixture: 'clients-list.json' }).as('getClients')
+    cy.intercept('GET', 'https://bytenity.com/api/clients*', { fixture: 'clients-list.json' }).as('getClients')
 
     cy.loginAsEmployee('/admin/clients')
     cy.wait('@getClients')
@@ -18,7 +18,7 @@ describe('Celina 8: Portal za zaposlene — Upravljanje klijentima', () => {
     cy.contains('th', 'Email').should('be.visible')
 
     // Filter by name — intercept the filtered request
-    cy.intercept('GET', '/api/clients*', (req) => {
+    cy.intercept('GET', 'https://bytenity.com/api/clients*', (req) => {
       const url = new URL(req.url, 'http://localhost')
       if (url.searchParams.get('name')) {
         req.reply({
@@ -50,9 +50,9 @@ describe('Celina 8: Portal za zaposlene — Upravljanje klijentima', () => {
 
   // Scenario 40: Izmena podataka klijenta
   it('should edit client phone and address (Scenario 40)', () => {
-    cy.intercept('GET', '/api/clients*', { fixture: 'clients-list.json' }).as('getClientsList')
-    cy.intercept('GET', '/api/clients/42', { fixture: 'client-detail.json' }).as('getClient')
-    cy.intercept('PUT', '/api/clients/42', {
+    cy.intercept('GET', 'https://bytenity.com/api/clients*', { fixture: 'clients-list.json' }).as('getClientsList')
+    cy.intercept('GET', 'https://bytenity.com/api/clients/42', { fixture: 'client-detail.json' }).as('getClient')
+    cy.intercept('PUT', 'https://bytenity.com/api/clients/42', {
       statusCode: 200,
       body: {
         id: 42,

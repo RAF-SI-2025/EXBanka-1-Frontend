@@ -1,9 +1,9 @@
 describe('Portfolio Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/me/portfolio?*', { fixture: 'portfolio-holdings.json' }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/me/portfolio?*', { fixture: 'portfolio-holdings.json' }).as(
       'getPortfolio'
     )
-    cy.intercept('GET', '/api/me/portfolio/summary*', { fixture: 'portfolio-summary.json' }).as(
+    cy.intercept('GET', 'https://bytenity.com/api/me/portfolio/summary*', { fixture: 'portfolio-summary.json' }).as(
       'getSummary'
     )
   })
@@ -61,7 +61,7 @@ describe('Portfolio Page', () => {
   })
 
   it('should make a holding public', () => {
-    cy.intercept('POST', '/api/me/portfolio/30/make-public', {
+    cy.intercept('POST', 'https://bytenity.com/api/me/portfolio/30/make-public', {
       statusCode: 200,
       body: { id: 30, is_public: true, public_quantity: 1 },
     }).as('makePublic')
@@ -74,7 +74,7 @@ describe('Portfolio Page', () => {
   })
 
   it('should show empty state when no holdings', () => {
-    cy.intercept('GET', '/api/me/portfolio?*', {
+    cy.intercept('GET', 'https://bytenity.com/api/me/portfolio?*', {
       body: { holdings: [], total_count: 0 },
     }).as('getEmptyPortfolio')
 

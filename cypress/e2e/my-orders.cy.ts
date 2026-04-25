@@ -1,6 +1,6 @@
 describe('My Orders Page', () => {
   it('should display orders list with table', () => {
-    cy.intercept('GET', '/api/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', 'https://bytenity.com/api/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
 
     cy.loginAsClient('/orders')
     cy.wait('@getOrders')
@@ -29,7 +29,7 @@ describe('My Orders Page', () => {
   })
 
   it('should show Cancel button only for pending orders', () => {
-    cy.intercept('GET', '/api/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', 'https://bytenity.com/api/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
 
     cy.loginAsClient('/orders')
     cy.wait('@getOrders')
@@ -39,8 +39,8 @@ describe('My Orders Page', () => {
   })
 
   it('should cancel a pending order', () => {
-    cy.intercept('GET', '/api/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', '/api/me/orders/50/cancel', {
+    cy.intercept('GET', 'https://bytenity.com/api/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', 'https://bytenity.com/api/me/orders/50/cancel', {
       statusCode: 200,
       body: { id: 50, status: 'cancelled' },
     }).as('cancelOrder')
@@ -53,7 +53,7 @@ describe('My Orders Page', () => {
   })
 
   it('should show empty state when no orders', () => {
-    cy.intercept('GET', '/api/me/orders*', {
+    cy.intercept('GET', 'https://bytenity.com/api/me/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getEmptyOrders')
 
