@@ -1,6 +1,6 @@
 describe('Admin Tax Management Page', () => {
   it('should display tax records table', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
+    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
 
     cy.loginAsEmployee('/admin/tax')
     cy.wait('@getTaxRecords')
@@ -10,32 +10,25 @@ describe('Admin Tax Management Page', () => {
     // Collect Taxes button
     cy.contains('button', 'Collect Taxes').should('be.visible')
 
-    // Table headers
-    cy.contains('th', 'User').should('be.visible')
-    cy.contains('th', 'Email').should('be.visible')
+    // Table headers (new format)
+    cy.contains('th', 'Name').should('be.visible')
     cy.contains('th', 'Type').should('be.visible')
-    cy.contains('th', 'Taxable Amount').should('be.visible')
-    cy.contains('th', 'Tax Amount').should('be.visible')
-    cy.contains('th', 'Status').should('be.visible')
-    cy.contains('th', 'Date').should('be.visible')
+    cy.contains('th', 'Total Debt (RSD)').should('be.visible')
+    cy.contains('th', 'Last Collection').should('be.visible')
 
-    // Tax record data
+    // Tax record data (new field names)
     cy.contains('Marko Jovanović').should('be.visible')
-    cy.contains('marko@example.com').should('be.visible')
-    cy.contains('client').should('be.visible')
-    cy.contains('925.00').should('be.visible')
     cy.contains('138.75').should('be.visible')
 
     cy.contains('Petar Nikolić').should('be.visible')
-    cy.contains('petar@banka.rs').should('be.visible')
-    cy.contains('actuary').should('be.visible')
+    cy.contains('780.00').should('be.visible')
 
     cy.contains('2 records').should('be.visible')
   })
 
   it('should trigger tax collection', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
-    cy.intercept('POST', 'https://bytenity.com/api/tax/collect', {
+    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
+    cy.intercept('POST', 'https://bytenity.com/api/v2/tax/collect', {
       statusCode: 200,
       body: { collected_count: 5, total_collected_rsd: '15000.00', failed_count: 0 },
     }).as('collectTaxes')
@@ -48,7 +41,7 @@ describe('Admin Tax Management Page', () => {
   })
 
   it('should show empty state when no tax records', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/tax*', {
+    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', {
       body: { tax_records: [], total_count: 0 },
     }).as('getEmptyTax')
 
