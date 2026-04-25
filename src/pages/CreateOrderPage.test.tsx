@@ -15,6 +15,7 @@ jest.mock('@/lib/api/orders')
 jest.mock('@/lib/api/accounts')
 jest.mock('@/lib/api/clients')
 jest.mock('@/lib/api/securities')
+jest.mock('@/lib/api/portfolio')
 
 const mockNavigate = jest.fn()
 let mockSearchParams = 'listingId=42&direction=buy'
@@ -39,6 +40,7 @@ const bankAccount = createMockAccount({
 beforeEach(() => {
   jest.clearAllMocks()
   jest.mocked(ordersApi.createOrder).mockResolvedValue(createMockOrder())
+  jest.mocked(ordersApi.createOrderOnBehalf).mockResolvedValue(createMockOrder())
   jest
     .mocked(accountsApi.getClientAccounts)
     .mockResolvedValue({ accounts: [clientAccount], total: 1 })
@@ -177,6 +179,52 @@ describe('CreateOrderPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/BANK-001/)).toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('employee on-behalf order routing', () => {
+    it('calls createOrderOnBehalf with client_id when employee submits in client charge mode', async () => {
+      const mockClient = createMockClient({ id: 7, first_name: 'Ana', last_name: 'Anić' })
+      const anaAccount = createMockAccount({ id: 55, account_number: 'CLIENT-ANA-001' })
+      jest.mocked(clientsApi.getClients).mockResolvedValue({ clients: [mockClient], total: 1 })
+      jest
+        .mocked(accountsApi.getAllAccounts)
+        .mockResolvedValue({ accounts: [anaAccount], total: 1 })
+
+      renderWithProviders(<CreateOrderPage />, {
+        preloadedState: { auth: createMockAuthState({ userType: 'employee' }) },
+      })
+
+      fireEvent.change(screen.getByLabelText('Charge As'), { target: { value: 'client' } })
+      await userEvent.type(screen.getByPlaceholderText(/search client/i), 'Ana')
+      await waitFor(() => expect(screen.getByText(/Ana Anić/)).toBeInTheDocument())
+      fireEvent.click(screen.getByText(/Ana Anić/))
+
+      await waitFor(() => expect(screen.getByText(/CLIENT-ANA-001/)).toBeInTheDocument())
+
+      fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '5' } })
+      fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+      await waitFor(() => {
+        expect(ordersApi.createOrderOnBehalf).toHaveBeenCalledWith(
+          expect.objectContaining({ client_id: 7, listing_id: 42, direction: 'buy', quantity: 5 })
+        )
+        expect(ordersApi.createOrder).not.toHaveBeenCalled()
+      })
+    })
+
+    it('calls createOrder (not on-behalf) when employee submits in bank charge mode', async () => {
+      renderWithProviders(<CreateOrderPage />, {
+        preloadedState: { auth: createMockAuthState({ userType: 'employee' }) },
+      })
+
+      fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '5' } })
+      fireEvent.click(screen.getByRole('button', { name: /place order/i }))
+
+      await waitFor(() => {
+        expect(ordersApi.createOrder).toHaveBeenCalled()
+        expect(ordersApi.createOrderOnBehalf).not.toHaveBeenCalled()
       })
     })
   })

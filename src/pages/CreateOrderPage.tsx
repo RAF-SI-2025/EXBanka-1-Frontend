@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { CreateOrderForm } from '@/components/orders/CreateOrderForm'
 import { ClientSelector } from '@/components/accounts/ClientSelector'
-import { useCreateOrder } from '@/hooks/useOrders'
+import { useCreateOrder, useCreateOrderOnBehalf } from '@/hooks/useOrders'
 import { useCreateOptionOrder } from '@/hooks/useSecurities'
 import { useClientAccounts, useBankAccounts, useAccountsByClient } from '@/hooks/useAccounts'
 import { useListingsForSell } from '@/hooks/useSecurities'
@@ -33,6 +33,7 @@ export function CreateOrderPage() {
   const [selectedListingId, setSelectedListingId] = useState<number | undefined>(undefined)
 
   const createOrderMutation = useCreateOrder()
+  const createOrderOnBehalfMutation = useCreateOrderOnBehalf()
   const createOptionOrderMutation = useCreateOptionOrder()
   const { data: clientAccountsData } = useClientAccounts()
   const { data: bankAccountsData } = useBankAccounts()
@@ -69,6 +70,11 @@ export function CreateOrderPage() {
       }
       createOptionOrderMutation.mutate(
         { optionId, payload: optionPayload },
+        { onSuccess: () => navigate('/orders') }
+      )
+    } else if (userType === 'employee' && chargeMode === 'client' && selectedClient) {
+      createOrderOnBehalfMutation.mutate(
+        { ...payload, client_id: selectedClient.id },
         { onSuccess: () => navigate('/orders') }
       )
     } else {
@@ -141,7 +147,11 @@ export function CreateOrderPage() {
       <CreateOrderForm
         defaultDirection={direction}
         onSubmit={handleSubmit}
-        submitting={createOrderMutation.isPending || createOptionOrderMutation.isPending}
+        submitting={
+          createOrderMutation.isPending ||
+          createOrderOnBehalfMutation.isPending ||
+          createOptionOrderMutation.isPending
+        }
         listingId={effectiveListingId}
         accounts={accounts}
         depositAccounts={depositAccounts}
