@@ -37,7 +37,7 @@ export function ActuaryTable({
       </TableHeader>
       <TableBody>
         {actuaries.map((actuary) => (
-          <TableRow key={actuary.id}>
+          <TableRow key={actuary.employee_id}>
             <TableCell>
               {actuary.first_name} {actuary.last_name}
             </TableCell>
@@ -51,13 +51,17 @@ export function ActuaryTable({
                 <Button size="sm" variant="outline" onClick={() => onEditLimit(actuary)}>
                   Edit Limit
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => onResetLimit(actuary.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onResetLimit(actuary.employee_id)}
+                >
                   Reset
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => onToggleApproval(actuary.id, actuary.need_approval)}
+                  onClick={() => onToggleApproval(actuary.employee_id, actuary.need_approval)}
                   aria-label="Toggle approval"
                 >
                   Toggle Approval

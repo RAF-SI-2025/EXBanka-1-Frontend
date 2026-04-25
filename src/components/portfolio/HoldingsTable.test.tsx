@@ -8,8 +8,6 @@ describe('HoldingsTable', () => {
     ticker: 'AAPL',
     security_type: 'stock',
     quantity: 10,
-    current_price: '185.00',
-    profit_loss: '350.00',
     public_quantity: 2,
   })
   const optionHolding = createMockHolding({
@@ -34,17 +32,17 @@ describe('HoldingsTable', () => {
       />
     )
 
-  it('renders table headers including P&L', () => {
+  it('renders table headers', () => {
     renderTable()
     expect(screen.getByText('Ticker')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
-    expect(screen.getByText('Current Price')).toBeInTheDocument()
+    expect(screen.getByText('Public Qty')).toBeInTheDocument()
   })
 
   it('renders holding row data', () => {
     renderTable()
     expect(screen.getByText('AAPL')).toBeInTheDocument()
-    expect(screen.getByText('350.00')).toBeInTheDocument()
+    expect(screen.getByText('Apple Inc.')).toBeInTheDocument()
   })
 
   it('renders empty state when no holdings', () => {

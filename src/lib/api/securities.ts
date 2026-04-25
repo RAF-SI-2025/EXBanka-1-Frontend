@@ -14,13 +14,21 @@ import type {
   Stock,
   StockFilters,
   StockListResponse,
+  CreateOptionOrderPayload,
+  ExerciseOptionResponse,
 } from '@/types/security'
+import type { Order } from '@/types/order'
 
 function flattenListing<T>(item: T): T {
   const raw = item as unknown as Record<string, unknown>
   if (raw && typeof raw === 'object' && 'listing' in raw && raw.listing) {
     const { listing, ...rest } = raw
-    return { ...rest, ...(listing as Record<string, unknown>) } as T
+    const { id: listingId, ...listingRest } = listing as Record<string, unknown>
+    return {
+      ...rest,
+      ...listingRest,
+      ...(listingId !== undefined ? { listing_id: listingId } : {}),
+    } as T
   }
   return item
 }
@@ -95,13 +103,28 @@ export async function getForexHistory(
 }
 
 export async function getOptions(filters: OptionsFilters): Promise<OptionsListResponse> {
-  const { data } = await apiClient.get<OptionsListResponse>('/api/v1/securities/options', {
+  const { data } = await apiClient.get<OptionsListResponse>('/api/v2/securities/options', {
     params: filters,
   })
   return { ...data, options: (data.options ?? []).map(flattenListing) }
 }
 
 export async function getOption(id: number): Promise<Option> {
-  const { data } = await apiClient.get<Option>(`/api/v1/securities/options/${id}`)
+  const { data } = await apiClient.get<Option>(`/api/v2/securities/options/${id}`)
   return flattenListing(data)
+}
+
+export async function createOptionOrder(
+  optionId: number,
+  payload: CreateOptionOrderPayload
+): Promise<Order> {
+  const { data } = await apiClient.post<Order>(`/api/v2/options/${optionId}/orders`, payload)
+  return data
+}
+
+export async function exerciseOption(optionId: number): Promise<ExerciseOptionResponse> {
+  const { data } = await apiClient.post<ExerciseOptionResponse>(
+    `/api/v2/options/${optionId}/exercise`
+  )
+  return data
 }

@@ -1,5 +1,6 @@
 export interface Stock {
   id: number
+  listing_id?: number
   ticker: string
   name: string
   outstanding_shares: number
@@ -18,6 +19,7 @@ export interface Stock {
 
 export interface FuturesContract {
   id: number
+  listing_id?: number
   ticker: string
   name: string
   contract_size: number
@@ -36,6 +38,7 @@ export interface FuturesContract {
 
 export interface ForexPair {
   id: number
+  listing_id?: number
   ticker: string
   name: string
   base_currency: string
@@ -158,4 +161,23 @@ export interface PriceHistoryFilters {
   period?: PriceHistoryPeriod
   page?: number
   page_size?: number
+}
+
+export interface CreateOptionOrderPayload {
+  direction: 'buy' | 'sell'
+  order_type: 'market' | 'limit' | 'stop' | 'stop_limit'
+  quantity: number
+  account_id?: number
+  limit_value?: string
+  stop_value?: string
+  all_or_none?: boolean
+  margin?: boolean
+}
+
+export interface ExerciseOptionResponse {
+  id: number
+  option_ticker: string
+  exercised_quantity: number
+  shares_affected: number
+  profit: string
 }

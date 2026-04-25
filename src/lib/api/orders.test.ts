@@ -92,7 +92,7 @@ describe('cancelOrder', () => {
     const order = createMockOrder({ status: 'cancelled' })
     mockPost.mockResolvedValue({ data: order })
     const result = await cancelOrder(1)
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/me/orders/1/cancel')
+    expect(mockPost).toHaveBeenCalledWith('/api/v2/me/orders/1/cancel')
     expect(result).toEqual(order)
   })
 })

@@ -29,10 +29,9 @@ export function HoldingsTable({ holdings, onSell, onMakePublic, onExercise }: Pr
           <TableHead>Name</TableHead>
           <TableHead>Type</TableHead>
           <TableHead className="text-right">Quantity</TableHead>
-          <TableHead className="text-right">Avg. Price</TableHead>
-          <TableHead className="text-right">Current Price</TableHead>
-          <TableHead className="text-right">P&amp;L</TableHead>
           <TableHead className="text-right">Public Qty</TableHead>
+          <TableHead className="text-right">Account</TableHead>
+          <TableHead className="text-right">Last Modified</TableHead>
           <TableHead />
         </TableRow>
       </TableHeader>
@@ -40,14 +39,13 @@ export function HoldingsTable({ holdings, onSell, onMakePublic, onExercise }: Pr
         {holdings.map((h) => (
           <TableRow key={h.id}>
             <TableCell className="font-medium">{h.ticker}</TableCell>
-            <TableCell>{h.security_name}</TableCell>
+            <TableCell>{h.name}</TableCell>
             <TableCell>{h.security_type}</TableCell>
             <TableCell className="text-right">{h.quantity}</TableCell>
-            <TableCell className="text-right">{h.average_price}</TableCell>
-            <TableCell className="text-right">{h.current_price}</TableCell>
-            <TableCell className="text-right">{h.profit_loss}</TableCell>
+            <TableCell className="text-right">{h.public_quantity}</TableCell>
+            <TableCell className="text-right">{h.account_id}</TableCell>
             <TableCell className="text-right">
-              {h.security_type === 'stock' ? h.public_quantity : '—'}
+              {new Date(h.last_modified).toLocaleDateString()}
             </TableCell>
             <TableCell className="text-right space-x-1">
               <Button size="sm" variant="outline" onClick={() => onSell(h)}>

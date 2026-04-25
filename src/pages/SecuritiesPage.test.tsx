@@ -6,6 +6,7 @@ import {
   createMockStock,
   createMockFutures,
   createMockForex,
+  createMockOption,
 } from '@/__tests__/fixtures/security-fixtures'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
@@ -45,6 +46,10 @@ beforeEach(() => {
     forex_pairs: [createMockForex()],
     total_count: 1,
   })
+  jest.mocked(securitiesApi.getOptions).mockResolvedValue({
+    options: [createMockOption()],
+    total_count: 1,
+  })
 })
 
 describe('SecuritiesPage', () => {
@@ -55,22 +60,44 @@ describe('SecuritiesPage', () => {
     expect(screen.getByText('Securities')).toBeInTheDocument()
   })
 
-  it('renders Stocks, Futures, and Forex tabs for employees', () => {
+  it('renders Stocks, Futures, Forex, and Options tabs for employees', () => {
     renderWithProviders(<SecuritiesPage />, {
       preloadedState: { auth: employeeAuth },
     })
     expect(screen.getByText('Stocks')).toBeInTheDocument()
     expect(screen.getByText('Futures')).toBeInTheDocument()
     expect(screen.getByText('Forex')).toBeInTheDocument()
+    expect(screen.getByText('Options')).toBeInTheDocument()
   })
 
-  it('renders only Stocks and Futures tabs for clients', () => {
+  it('renders Stocks, Futures, and Options tabs for clients (no Forex)', () => {
     renderWithProviders(<SecuritiesPage />, {
       preloadedState: { auth: clientAuth },
     })
     expect(screen.getByText('Stocks')).toBeInTheDocument()
     expect(screen.getByText('Futures')).toBeInTheDocument()
     expect(screen.queryByText('Forex')).not.toBeInTheDocument()
+    expect(screen.getByText('Options')).toBeInTheDocument()
+  })
+
+  it('Options tab shows stock search prompt when no stock selected', async () => {
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    fireEvent.click(screen.getByText('Options'))
+    await waitFor(() => {
+      expect(screen.getByText(/select a stock above/i)).toBeInTheDocument()
+    })
+  })
+
+  it('Options tab shows stock search input', async () => {
+    renderWithProviders(<SecuritiesPage />, {
+      preloadedState: { auth: employeeAuth },
+    })
+    fireEvent.click(screen.getByText('Options'))
+    await waitFor(() => {
+      expect(screen.getByLabelText('Search stock')).toBeInTheDocument()
+    })
   })
 
   it('displays stocks on load', async () => {

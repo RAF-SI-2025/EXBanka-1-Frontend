@@ -8,12 +8,14 @@ import {
   updateAccountLimits,
   getAllAccounts,
   getBankAccounts,
+  getAccountActivity,
 } from '@/lib/api/accounts'
 import type {
   AccountFilters,
   CreateAccountRequest,
   UpdateAccountNameRequest,
   UpdateAccountLimitsRequest,
+  AccountActivityFilters,
 } from '@/types/account'
 
 export function useClientAccounts() {
@@ -98,5 +100,13 @@ export function useSearchAccounts(query: string) {
     queryKey: ['accounts', 'search', query],
     queryFn: () => getAllAccounts({ account_number_filter: query, page_size: 10 }),
     enabled: query.length > 0,
+  })
+}
+
+export function useAccountActivity(id: number, filters: AccountActivityFilters = {}) {
+  return useQuery({
+    queryKey: ['accountActivity', id, filters],
+    queryFn: () => getAccountActivity(id, filters),
+    enabled: id > 0,
   })
 }

@@ -1,6 +1,7 @@
 export type OrderDirection = 'buy' | 'sell'
 export type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit'
 export type OrderStatus = 'pending' | 'approved' | 'declined' | 'cancelled' | 'filled' | 'partial'
+export type OrderState = 'pending' | 'approved' | 'filling' | 'filled' | 'cancelled' | 'declined'
 
 export interface Order {
   id: number
@@ -9,6 +10,9 @@ export interface Order {
   direction: OrderDirection
   order_type: OrderType
   status: OrderStatus
+  state?: OrderState
+  filled_quantity?: number
+  is_done?: boolean
   quantity: number
   limit_value: string | null
   stop_value: string | null
@@ -23,7 +27,6 @@ export interface Order {
 
 export interface CreateOrderPayload {
   listing_id?: number
-  holding_id?: number
   direction: OrderDirection
   order_type: OrderType
   quantity: number
@@ -32,6 +35,8 @@ export interface CreateOrderPayload {
   all_or_none?: boolean
   margin?: boolean
   account_id?: number
+  base_account_id?: number
+  security_type?: string
 }
 
 export interface OrderListResponse {

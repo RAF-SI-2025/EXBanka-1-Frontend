@@ -4,8 +4,13 @@ import {
   getPortfolioSummary,
   makeHoldingPublic,
   exerciseOption,
+  getHoldingTransactions,
 } from '@/lib/api/portfolio'
-import type { PortfolioFilters, MakePublicPayload } from '@/types/portfolio'
+import type {
+  PortfolioFilters,
+  MakePublicPayload,
+  HoldingTransactionsFilters,
+} from '@/types/portfolio'
 
 export function usePortfolio(filters: PortfolioFilters = {}) {
   return useQuery({ queryKey: ['portfolio', filters], queryFn: () => getPortfolio(filters) })
@@ -32,5 +37,13 @@ export function useExerciseOption() {
   return useMutation({
     mutationFn: (id: number) => exerciseOption(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['portfolio'] }),
+  })
+}
+
+export function useHoldingTransactions(id: number, filters: HoldingTransactionsFilters = {}) {
+  return useQuery({
+    queryKey: ['holdingTransactions', id, filters],
+    queryFn: () => getHoldingTransactions(id, filters),
+    enabled: id > 0,
   })
 }

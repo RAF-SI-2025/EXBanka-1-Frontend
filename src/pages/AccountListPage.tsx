@@ -41,7 +41,7 @@ export function AccountListPage() {
           <AccountCard
             key={account.id}
             account={account}
-            onClick={() => navigate(`/accounts/${account.id}`)}
+            onClick={() => navigate(`/accounts/${account.id}/activity`)}
           />
         ))}
         {accounts.length === 0 && (

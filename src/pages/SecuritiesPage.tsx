@@ -5,6 +5,7 @@ import { FilterBar } from '@/components/ui/FilterBar'
 import { StockTable } from '@/components/securities/StockTable'
 import { FuturesTable } from '@/components/securities/FuturesTable'
 import { ForexTable } from '@/components/securities/ForexTable'
+import { OptionsTab } from '@/components/securities/OptionsTab'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { useStocks, useFutures, useForexPairs } from '@/hooks/useSecurities'
@@ -81,21 +82,23 @@ export function SecuritiesPage() {
 
   const handleBuyStock = useCallback(
     (stock: Stock) => {
-      navigate(`/securities/order/new?listingId=${stock.id}&direction=buy`)
+      navigate(`/securities/order/new?listingId=${stock.listing_id ?? stock.id}&direction=buy`)
     },
     [navigate]
   )
 
   const handleBuyFutures = useCallback(
     (futures: FuturesContract) => {
-      navigate(`/securities/order/new?listingId=${futures.id}&direction=buy`)
+      navigate(`/securities/order/new?listingId=${futures.listing_id ?? futures.id}&direction=buy`)
     },
     [navigate]
   )
 
   const handleBuyForex = useCallback(
     (pair: ForexPair) => {
-      navigate(`/securities/order/new?listingId=${pair.id}&direction=buy`)
+      navigate(
+        `/securities/order/new?listingId=${pair.listing_id ?? pair.id}&direction=buy&securityType=forex`
+      )
     },
     [navigate]
   )
@@ -108,6 +111,7 @@ export function SecuritiesPage() {
           <TabsTrigger value="stocks">Stocks</TabsTrigger>
           <TabsTrigger value="futures">Futures</TabsTrigger>
           {!isClient && <TabsTrigger value="forex">Forex</TabsTrigger>}
+          <TabsTrigger value="options">Options</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stocks">
@@ -205,6 +209,10 @@ export function SecuritiesPage() {
             )}
           </TabsContent>
         )}
+
+        <TabsContent value="options">
+          <OptionsTab />
+        </TabsContent>
       </Tabs>
     </div>
   )
