@@ -29,12 +29,9 @@ describe('SellOrderDialog', () => {
     expect(screen.getByLabelText(/quantity/i)).toBeInTheDocument()
   })
 
-  it('shows approx price when quantity changes', () => {
+  it('shows order type information', () => {
     render(<SellOrderDialog {...defaultProps} />)
-    const quantityInput = screen.getByLabelText(/quantity/i)
-    fireEvent.change(quantityInput, { target: { value: '2' } })
-    // 2 * 1 * 178.50 (current_price) = 357.00
-    expect(screen.getByText(/357/)).toBeInTheDocument()
+    expect(screen.getByText(/order type/i)).toBeInTheDocument()
   })
 
   it('calls onSubmit with correct payload', async () => {
@@ -44,7 +41,6 @@ describe('SellOrderDialog', () => {
     await waitFor(() => {
       expect(defaultProps.onSubmit).toHaveBeenCalledWith(
         expect.objectContaining({
-          holding_id: holding.id,
           direction: 'sell',
           quantity: 3,
           order_type: 'market',

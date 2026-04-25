@@ -3,6 +3,7 @@ import type {
   Order,
   OrderListResponse,
   CreateOrderPayload,
+  CreateOrderOnBehalfPayload,
   MyOrderFilters,
   AdminOrderFilters,
 } from '@/types/order'
@@ -22,6 +23,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return data
 }
 
+export async function createOrderOnBehalf(payload: CreateOrderOnBehalfPayload): Promise<Order> {
+  const { data } = await apiClient.post<Order>('/api/v2/orders', payload)
+  return data
+}
+
 export async function getMyOrders(filters: MyOrderFilters = {}): Promise<OrderListResponse> {
   const { data } = await apiClient.get<OrderListResponse>('/api/v1/me/orders', { params: filters })
   return { ...data, orders: (data.orders ?? []).map(normalizeOrder) }
@@ -33,7 +39,7 @@ export async function getMyOrder(id: number): Promise<Order> {
 }
 
 export async function cancelOrder(id: number): Promise<Order> {
-  const { data } = await apiClient.post<Order>(`/api/v1/me/orders/${id}/cancel`)
+  const { data } = await apiClient.post<Order>(`/api/v2/me/orders/${id}/cancel`)
   return data
 }
 

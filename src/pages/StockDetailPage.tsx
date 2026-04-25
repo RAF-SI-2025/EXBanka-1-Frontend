@@ -49,7 +49,11 @@ export function StockDetailPage() {
           {stock.ticker} — {stock.name}
         </h1>
         <Button
-          onClick={() => navigate(`/securities/order/new?listingId=${stock.id}&direction=buy`)}
+          onClick={() =>
+            navigate(
+              `/securities/order/new?listingId=${stock.listing_id ?? stock.id}&direction=buy`
+            )
+          }
         >
           Buy
         </Button>

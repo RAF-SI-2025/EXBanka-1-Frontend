@@ -70,6 +70,7 @@ export function AdminAccountsPage() {
         <AccountTable
           accounts={accounts}
           onViewCards={(id) => navigate(`/admin/accounts/${id}/cards`)}
+          onViewActivity={(id) => navigate(`/accounts/${id}/activity`)}
           clientsById={clientsById}
         />
       )}

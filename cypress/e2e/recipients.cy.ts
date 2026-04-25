@@ -1,9 +1,9 @@
 describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
   beforeEach(() => {
-    cy.intercept('GET', '/api/me/payment-recipients', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me/payment-recipients', {
       fixture: 'recipients-list.json',
     }).as('getRecipients')
-    cy.intercept('GET', '/api/me', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
       body: {
         id: 42,
         first_name: 'Marko',
@@ -17,7 +17,7 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
 
   // Scenario 21: Dodavanje novog primaoca plaćanja
   it('should add a new payment recipient (Scenario 21)', () => {
-    cy.intercept('POST', '/api/me/payment-recipients', {
+    cy.intercept('POST', 'https://bytenity.com/api/v1/me/payment-recipients', {
       statusCode: 201,
       body: {
         id: 3,
@@ -29,7 +29,7 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
     }).as('createRecipient')
 
     // After create, refetch returns updated list with 3 recipients
-    cy.intercept('GET', '/api/me/payment-recipients', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me/payment-recipients', {
       body: {
         recipients: [
           {
@@ -90,7 +90,7 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
 
   // Scenario 22: Izmena podataka primaoca plaćanja
   it('should edit an existing recipient (Scenario 22)', () => {
-    cy.intercept('PUT', '/api/me/payment-recipients/1', {
+    cy.intercept('PUT', 'https://bytenity.com/api/v1/me/payment-recipients/1', {
       statusCode: 200,
       body: {
         id: 1,
@@ -102,7 +102,7 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
     }).as('updateRecipient')
 
     // After update, refetch returns updated data
-    cy.intercept('GET', '/api/me/payment-recipients', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me/payment-recipients', {
       body: {
         recipients: [
           {
@@ -156,13 +156,13 @@ describe('Celina 4: Primaoci plaćanja — Upravljanje primaocima', () => {
 
   // Scenario 23: Brisanje primaoca plaćanja
   it('should delete a recipient with confirmation dialog (Scenario 23)', () => {
-    cy.intercept('DELETE', '/api/me/payment-recipients/2', {
+    cy.intercept('DELETE', 'https://bytenity.com/api/v1/me/payment-recipients/2', {
       statusCode: 200,
       body: { success: true },
     }).as('deleteRecipient')
 
     // After delete, refetch returns list without deleted recipient
-    cy.intercept('GET', '/api/me/payment-recipients', {
+    cy.intercept('GET', 'https://bytenity.com/api/v1/me/payment-recipients', {
       body: {
         recipients: [
           {

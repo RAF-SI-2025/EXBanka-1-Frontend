@@ -1,13 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createOrder,
+  createOrderOnBehalf,
   getMyOrders,
   cancelOrder,
   getAllOrders,
   approveOrder,
   declineOrder,
 } from '@/lib/api/orders'
-import type { MyOrderFilters, AdminOrderFilters, CreateOrderPayload } from '@/types/order'
+import type {
+  MyOrderFilters,
+  AdminOrderFilters,
+  CreateOrderPayload,
+  CreateOrderOnBehalfPayload,
+} from '@/types/order'
 
 export function useMyOrders(filters: MyOrderFilters = {}) {
   return useQuery({ queryKey: ['my-orders', filters], queryFn: () => getMyOrders(filters) })
@@ -17,6 +23,17 @@ export function useCreateOrder() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateOrderPayload) => createOrder(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      qc.invalidateQueries({ queryKey: ['portfolio'] })
+    },
+  })
+}
+
+export function useCreateOrderOnBehalf() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateOrderOnBehalfPayload) => createOrderOnBehalf(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
       qc.invalidateQueries({ queryKey: ['portfolio'] })

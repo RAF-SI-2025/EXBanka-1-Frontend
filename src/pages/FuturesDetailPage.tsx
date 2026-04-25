@@ -39,7 +39,11 @@ export function FuturesDetailPage() {
           {future.ticker} — {future.name}
         </h1>
         <Button
-          onClick={() => navigate(`/securities/order/new?listingId=${future.id}&direction=buy`)}
+          onClick={() =>
+            navigate(
+              `/securities/order/new?listingId=${future.listing_id ?? future.id}&direction=buy`
+            )
+          }
         >
           Buy
         </Button>

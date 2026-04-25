@@ -1,13 +1,13 @@
 describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
   describe('Employee: Account Creation (Scenarios 1–4)', () => {
     beforeEach(() => {
-      cy.intercept('GET', '/api/clients?*', { fixture: 'clients.json' }).as('searchClients')
-      cy.intercept('POST', '/api/accounts', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/clients?*', { fixture: 'clients.json' }).as('searchClients')
+      cy.intercept('POST', 'https://bytenity.com/api/v1/accounts', {
         statusCode: 201,
         fixture: 'create-account-response.json',
       }).as('createAccount')
-      cy.intercept('GET', '/api/accounts?*', { fixture: 'accounts.json' }).as('getAccounts')
-      cy.intercept('GET', '/api/clients', { fixture: 'clients.json' }).as('getAllClients')
+      cy.intercept('GET', 'https://bytenity.com/api/v2/accounts?*', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', 'https://bytenity.com/api/v1/clients', { fixture: 'clients.json' }).as('getAllClients')
       cy.loginAsEmployee('/accounts/new')
     })
 
@@ -119,13 +119,13 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
 
   describe('Client: Account Viewing & Management (Scenarios 6–8)', () => {
     beforeEach(() => {
-      cy.intercept('GET', '/api/me/accounts', { fixture: 'accounts.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'accounts.json' }).as(
         'getClientAccounts'
       )
-      cy.intercept('GET', '/api/me/payments*', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
-      cy.intercept('GET', '/api/me', {
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
         body: { id: 42, first_name: 'Marko', last_name: 'Jovanović', email: 'marko@example.com' },
       }).as('getClientMe')
       cy.loginAsClient('/accounts')
@@ -142,7 +142,7 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
 
     // Scenario 7: Pregled detalja računa
     it('should display account details when account card is clicked', () => {
-      cy.intercept('GET', '/api/me/accounts/1', { fixture: 'account-detail.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts/1', { fixture: 'account-detail.json' }).as(
         'getAccountDetail'
       )
 
@@ -159,11 +159,11 @@ describe('Celina 1: Računi — Kreiranje i upravljanje računima', () => {
 
     // Scenario 8: Promena naziva računa
     it('should rename an account successfully', () => {
-      cy.intercept('GET', '/api/me/accounts/1', { fixture: 'account-detail.json' }).as(
+      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts/1', { fixture: 'account-detail.json' }).as(
         'getAccountDetail'
       )
       cy.fixture('account-detail.json').then((account) => {
-        cy.intercept('PUT', '/api/accounts/1/name', {
+        cy.intercept('PUT', 'https://bytenity.com/api/v1/accounts/1/name', {
           statusCode: 200,
           body: { ...account, account_name: 'Glavni račun' },
         }).as('renameAccount')

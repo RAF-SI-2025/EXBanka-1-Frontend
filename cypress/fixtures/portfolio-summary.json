@@ -1,7 +1,13 @@
 {
-  "total_value": "35175.00",
-  "total_cost": "34250.00",
-  "total_profit_loss": "925.00",
-  "total_profit_loss_percent": "2.70",
-  "holdings_count": 2
+  "total_profit": "925.00",
+  "total_profit_rsd": "108325.00",
+  "unrealized_profit": "750.00",
+  "realized_profit_this_month_rsd": "10000.00",
+  "realized_profit_this_year_rsd": "25000.00",
+  "realized_profit_lifetime_rsd": "175.00",
+  "tax_paid_this_year": "50.00",
+  "tax_unpaid_this_month": "0.00",
+  "tax_unpaid_total_rsd": "0.00",
+  "open_positions_count": 2,
+  "closed_trades_this_year": 3
 }

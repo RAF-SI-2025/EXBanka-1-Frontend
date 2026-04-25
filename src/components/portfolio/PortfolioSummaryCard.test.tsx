@@ -6,17 +6,17 @@ import { createMockPortfolioSummary } from '@/__tests__/fixtures/portfolio-fixtu
 describe('PortfolioSummaryCard', () => {
   it('renders summary values', () => {
     renderWithProviders(<PortfolioSummaryCard summary={createMockPortfolioSummary()} />)
-    expect(screen.getByText('25000.00')).toBeInTheDocument()
-    expect(screen.getByText('22000.00')).toBeInTheDocument()
-    expect(screen.getByText('3000.00')).toBeInTheDocument()
+    expect(screen.getByText('1500.00')).toBeInTheDocument()
+    expect(screen.getByText('3000.00 RSD')).toBeInTheDocument()
+    expect(screen.getByText('300.00 RSD')).toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
   it('renders labels', () => {
     renderWithProviders(<PortfolioSummaryCard summary={createMockPortfolioSummary()} />)
-    expect(screen.getByText('Total Value')).toBeInTheDocument()
-    expect(screen.getByText('Total Cost')).toBeInTheDocument()
-    expect(screen.getByText('Profit/Loss')).toBeInTheDocument()
-    expect(screen.getByText('Holdings')).toBeInTheDocument()
+    expect(screen.getByText('Unrealized P&L')).toBeInTheDocument()
+    expect(screen.getByText('Realized (Lifetime)')).toBeInTheDocument()
+    expect(screen.getByText('Tax Paid (Year)')).toBeInTheDocument()
+    expect(screen.getByText('Open Positions')).toBeInTheDocument()
   })
 })

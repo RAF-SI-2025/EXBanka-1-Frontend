@@ -9,7 +9,7 @@ jest.mock('@/lib/api/tax')
 beforeEach(() => {
   jest.clearAllMocks()
   jest.mocked(taxApi.getTaxRecords).mockResolvedValue({
-    tax_records: [createMockTaxRecord({ id: 1, user_name: 'John Doe' })],
+    tax_records: [createMockTaxRecord({ id: 1, first_name: 'John', last_name: 'Doe' })],
     total_count: 1,
   })
   jest.mocked(taxApi.collectTaxes).mockResolvedValue({

@@ -1,7 +1,7 @@
 describe('Celina 0.1: Aktivacija naloga', () => {
   // Scenario 8: Zaposleni aktivira nalog putem email linka
   it('should activate account with valid token and matching passwords (Scenario 8)', () => {
-    cy.intercept('POST', '/api/auth/activate', {
+    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/activate', {
       statusCode: 200,
       body: {},
     }).as('activate')
@@ -33,7 +33,7 @@ describe('Celina 0.1: Aktivacija naloga', () => {
 
   // Scenario 9: Aktivacija naloga sa isteklim tokenom
   it('should show expiry error when activation token is expired (Scenario 9)', () => {
-    cy.intercept('POST', '/api/auth/activate', {
+    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/activate', {
       statusCode: 400,
       body: { message: 'Token expired' },
     }).as('activateExpired')
@@ -64,7 +64,7 @@ describe('Celina 0.1: Aktivacija naloga', () => {
   it('should reject weak password and show validation errors (Scenario 10)', () => {
     // No API intercept — validation is client-side (Zod passwordSchema)
     // Track whether activate was called (it should NOT be)
-    cy.intercept('POST', '/api/auth/activate').as('activate')
+    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/activate').as('activate')
 
     cy.visit('/activate?token=some-token')
 
