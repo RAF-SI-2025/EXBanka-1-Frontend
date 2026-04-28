@@ -15,7 +15,7 @@ export class AppErrorBoundary extends Component<{ children: ReactNode }, State> 
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
     notifyError(error)
-     
+
     console.error('AppErrorBoundary caught:', error, info.componentStack)
   }
 

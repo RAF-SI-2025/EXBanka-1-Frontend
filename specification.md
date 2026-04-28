@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-29 (standardized error handling + notifications bell + selectHasPermission grants all permissions to EmployeeAdmin)_
+_Last updated: 2026-04-29 (motion polish — TopProgressBar, PageTransition, sidebar hover/active indicator, bell flourishes, skeletons + standardized error handling + notifications bell + selectHasPermission grants all permissions to EmployeeAdmin)_
 
 ---
 
@@ -147,6 +147,8 @@ src/
 │   ├── shared/
 │   │   ├── AppErrorBoundary.tsx + .test.tsx       # Class boundary at router root; toasts + renders ErrorFallback
 │   │   ├── ErrorFallback.tsx + .test.tsx          # Stateless fallback page used by the boundary
+│   │   ├── PageTransition.tsx + .test.tsx         # Re-keys on pathname; 200ms fade + slide-in for every route change
+│   │   ├── TopProgressBar.tsx + .test.tsx         # Top-of-viewport accent bar driven by useIsFetching/useIsMutating (250ms grace)
 │   │   ├── LoadingSpinner.tsx                     # Existing
 │   │   ├── PaginationControls.tsx                 # Existing
 │   │   └── ProtectedRoute.tsx + .test.tsx         # Existing
