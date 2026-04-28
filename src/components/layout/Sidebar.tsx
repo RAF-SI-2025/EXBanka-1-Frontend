@@ -6,6 +6,7 @@ import { useAppSelector } from '@/hooks/useAppSelector'
 import { logoutThunk } from '@/store/slices/authSlice'
 import {
   selectCurrentUser,
+  selectHasPermission,
   selectIsAdmin,
   selectIsSupervisorOrAdmin,
   selectUserType,
@@ -18,7 +19,7 @@ const navLinkClass =
   'before:absolute before:left-1 before:top-1/2 before:-translate-y-1/2 before:h-0 before:w-0.5 before:rounded-full before:bg-accent-2 before:transition-all before:duration-200 ' +
   'hover:before:h-4 aria-[current=page]:bg-sidebar-accent aria-[current=page]:text-sidebar-foreground aria-[current=page]:before:h-5'
 
-function ClientNav() {
+function ClientNav({ canManageFunds }: { canManageFunds: boolean }) {
   return (
     <>
       <NavLink to="/home" className={navLinkClass}>
@@ -82,6 +83,14 @@ function ClientNav() {
         <NavLink to="/otc" className={navLinkClass}>
           OTC Market
         </NavLink>
+        <NavLink to="/funds" className={navLinkClass}>
+          Funds
+        </NavLink>
+        {canManageFunds && (
+          <NavLink to="/funds/new" className={navLinkClass}>
+            Create Fund
+          </NavLink>
+        )}
         <NavLink to="/orders" className={navLinkClass}>
           My Orders
         </NavLink>
@@ -96,9 +105,11 @@ function ClientNav() {
 function EmployeeNav({
   isAdmin,
   isSupervisorOrAdmin,
+  canManageFunds,
 }: {
   isAdmin: boolean
   isSupervisorOrAdmin: boolean
+  canManageFunds: boolean
 }) {
   return (
     <>
@@ -136,6 +147,14 @@ function EmployeeNav({
       <NavLink to="/otc" className={navLinkClass}>
         OTC Market
       </NavLink>
+      <NavLink to="/funds" className={navLinkClass}>
+        Funds
+      </NavLink>
+      {canManageFunds && (
+        <NavLink to="/funds/new" className={navLinkClass}>
+          Create Fund
+        </NavLink>
+      )}
       <NavLink to="/orders" className={navLinkClass}>
         My Orders
       </NavLink>
@@ -184,6 +203,7 @@ export function Sidebar() {
   const isClient = userType === 'client'
   const isAdmin = useAppSelector(selectIsAdmin)
   const isSupervisorOrAdmin = useAppSelector(selectIsSupervisorOrAdmin)
+  const canManageFunds = useAppSelector((state) => selectHasPermission(state, 'funds.manage'))
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -194,9 +214,13 @@ export function Sidebar() {
       <div className="text-lg font-bold mb-6 text-accent-2">EXBanka</div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {isClient ? (
-          <ClientNav />
+          <ClientNav canManageFunds={canManageFunds} />
         ) : (
-          <EmployeeNav isAdmin={isAdmin} isSupervisorOrAdmin={isSupervisorOrAdmin} />
+          <EmployeeNav
+            isAdmin={isAdmin}
+            isSupervisorOrAdmin={isSupervisorOrAdmin}
+            canManageFunds={canManageFunds}
+          />
         )}
       </nav>
       <div className="border-t border-sidebar-border pt-4 mt-4">

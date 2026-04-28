@@ -54,6 +54,9 @@ import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
 import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
 import { AdminFeesPage } from '@/pages/AdminFeesPage'
 import { OtcPortalPage } from '@/pages/OtcPortalPage'
+import { FundsDiscoveryPage } from '@/pages/FundsDiscoveryPage'
+import { FundDetailsPage } from '@/pages/FundDetailsPage'
+import { CreateFundPage } from '@/pages/CreateFundPage'
 
 export default function App() {
   return (
@@ -328,6 +331,16 @@ export default function App() {
         <Route path="/securities/order/new" element={<CreateOrderPage />} />
         <Route path="/orders" element={<MyOrdersPage />} />
         <Route path="/otc" element={<OtcPortalPage />} />
+        <Route path="/funds" element={<FundsDiscoveryPage />} />
+        <Route
+          path="/funds/new"
+          element={
+            <ProtectedRoute requiredPermission="funds.manage">
+              <CreateFundPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/funds/:id" element={<FundDetailsPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsPage />} />
 
