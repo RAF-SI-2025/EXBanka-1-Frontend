@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useCards, useTemporaryBlockCard } from '@/hooks/useCards'
 import { useClientMe } from '@/hooks/useClients'
+import { useClientAccounts } from '@/hooks/useAccounts'
 import { CardGrid } from '@/components/cards/CardGrid'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
@@ -11,13 +12,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { SetCardPinDialog } from '@/components/cards/SetCardPinDialog'
+import { VerifyCardPinDialog } from '@/components/cards/VerifyCardPinDialog'
+import { CreateVirtualCardDialog } from '@/components/cards/CreateVirtualCardDialog'
+import type { Card as CardModel } from '@/types/card'
 
 export function CardListPage() {
   const navigate = useNavigate()
   const { data: cards, isLoading, error } = useCards()
   const { data: client } = useClientMe()
+  const { data: accountsData } = useClientAccounts()
+  const accounts = accountsData?.accounts ?? []
   const temporaryBlock = useTemporaryBlockCard()
   const [blockingCardId, setBlockingCardId] = useState<number | null>(null)
+  const [setPinCardId, setSetPinCardId] = useState<number | null>(null)
+  const [pinCard, setPinCard] = useState<CardModel | null>(null)
+  const [virtualOpen, setVirtualOpen] = useState(false)
   const holderName = client ? `${client.first_name} ${client.last_name}` : undefined
 
   if (isLoading) return <p>Loading...</p>
@@ -25,13 +35,20 @@ export function CardListPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-2">
         <h1 className="text-2xl font-bold">Cards</h1>
-        <Button onClick={() => navigate('/cards/request')}>Request Card</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setVirtualOpen(true)} disabled={!client}>
+            Create Virtual Card
+          </Button>
+          <Button onClick={() => navigate('/cards/request')}>Request Card</Button>
+        </div>
       </div>
       <CardGrid
         cards={cards ?? []}
         onBlock={(id) => setBlockingCardId(id)}
+        onSetPin={(id) => setSetPinCardId(id)}
+        onShowPin={(card) => setPinCard(card)}
         holderName={holderName}
       />
 
@@ -65,6 +82,27 @@ export function CardListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {setPinCardId !== null && (
+        <SetCardPinDialog
+          open
+          onOpenChange={(o) => !o && setSetPinCardId(null)}
+          cardId={setPinCardId}
+        />
+      )}
+
+      {pinCard !== null && (
+        <VerifyCardPinDialog open onOpenChange={(o) => !o && setPinCard(null)} card={pinCard} />
+      )}
+
+      {virtualOpen && client && (
+        <CreateVirtualCardDialog
+          open
+          onOpenChange={setVirtualOpen}
+          accounts={accounts}
+          ownerId={client.id}
+        />
+      )}
     </div>
   )
 }
