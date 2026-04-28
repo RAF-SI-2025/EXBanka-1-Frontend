@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-29 (motion polish — TopProgressBar, PageTransition, sidebar hover/active indicator, bell flourishes, skeletons + standardized error handling + notifications bell + selectHasPermission grants all permissions to EmployeeAdmin)_
+_Last updated: 2026-04-29 (Celina 4 phases 1, 3, 4: OTC MVP + Investment Funds + Profit Banke + motion polish + standardized error handling + notifications bell)_
 
 ---
 
@@ -153,8 +153,21 @@ src/
 │   │   ├── PaginationControls.tsx                 # Existing
 │   │   └── ProtectedRoute.tsx + .test.tsx         # Existing
 │   ├── otc/
-│   │   ├── OtcOffersTable.tsx + .test.tsx     # OTC offers list with Buy action
-│   │   └── BuyOtcDialog.tsx + .test.tsx       # Dialog to buy an OTC offer
+│   │   ├── OtcOffersTable.tsx + .test.tsx          # OTC offers list with Buy action
+│   │   ├── BuyOtcDialog.tsx + .test.tsx            # Dialog to buy an OTC offer (client variant)
+│   │   └── BuyOnBehalfOtcDialog.tsx + .test.tsx    # Dialog to buy on behalf of a client (employee variant)
+│   ├── funds/
+│   │   ├── FundsTable.tsx + .test.tsx              # Discovery table; rows linked to /funds/:id
+│   │   ├── FundDetailsPanel.tsx                    # Header card; resolves manager via useEmployee
+│   │   ├── FundHoldingsTable.tsx                   # Per-row useStock to resolve ticker
+│   │   ├── FundPerformanceChart.tsx                # Recharts line over performance[]
+│   │   ├── CreateFundForm.tsx + .test.tsx          # name + description + minimum_contribution_rsd
+│   │   ├── InvestInFundDialog.tsx + .test.tsx      # Source account + amount + currency; asBank toggle
+│   │   ├── RedeemFromFundDialog.tsx + .test.tsx    # Amount or "withdraw full"; asBank toggle
+│   │   └── MyFundsList.tsx + .test.tsx             # Per-position cards with Invest/Redeem
+│   ├── profit/
+│   │   ├── ActuaryPerformanceTable.tsx + .test.tsx # Sorted by realised_profit_rsd desc
+│   │   └── BankFundPositionsTable.tsx              # Linked to /funds/:id with Invest/Redeem actions
 │   ├── portfolio/
 │   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Make Public/Exercise actions
 │   │   ├── HoldingsTable.tsx + .test.tsx      # Alternative holdings table variant
@@ -252,7 +265,12 @@ src/
 │   ├── AdminOrdersPage.tsx + .test.tsx
 │   ├── TaxPage.tsx + .test.tsx
 │   ├── TaxTrackingPage.tsx + .test.tsx   # (not yet routed)
-│   ├── OtcPortalPage.tsx + .test.tsx     # (not yet routed)
+│   ├── OtcPortalPage.tsx + .test.tsx     # /otc — role-aware: clients use BuyOtcDialog, employees use BuyOnBehalfOtcDialog
+│   ├── FundsDiscoveryPage.tsx            # /funds — search + active-only + InvestInFundDialog
+│   ├── FundDetailsPage.tsx               # /funds/:id — Panel + Holdings + Performance + Invest
+│   ├── CreateFundPage.tsx                # /funds/new — gated on funds.manage
+│   ├── ActuaryPerformancePage.tsx        # /admin/profit/actuaries — gated on actuaries.read.all
+│   ├── BankFundPositionsPage.tsx         # /admin/profit/funds — gated on funds.bank-position-read; reuses Invest/Redeem dialogs with asBank
 │   ├── AdminRolesPage.tsx + .test.tsx
 │   ├── AdminEmployeeLimitsPage.tsx + .test.tsx
 │   ├── AdminClientLimitsPage.tsx
@@ -600,7 +618,7 @@ src/
 - Create: opens `CreateFeeDialog`; Edit: opens `EditFeeDialog`; Deactivate: confirmation dialog → `useDeleteFee` mutation.
 - Mutations: `useCreateFee`, `useUpdateFee`, `useDeleteFee`.
 
-### OtcPortalPage _(created, not yet routed)_
+### OtcPortalPage
 - OTC trading portal for clients.
 - Fetches OTC offers via `useOtcOffers()`; fetches client accounts via `useClientAccounts()`.
 - Renders `OtcOffersTable`. Selecting an offer opens `BuyOtcDialog` to specify quantity and account.
@@ -1053,6 +1071,31 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `markNotificationRead(id)` | POST | `/me/notifications/{id}/read` |
 | `markAllNotificationsRead()` | POST | `/me/notifications/read-all` |
 
+### OTC API (extension — `lib/api/otc.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `buyOtcOfferOnBehalf(id, payload)` | POST | `/otc/offers/{id}/buy-on-behalf` — body `{ client_id, account_id, quantity }` (employee variant) |
+
+### Investment Funds API (`lib/api/funds.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getFunds(filters?)` | GET | `/investment-funds` — `page`, `page_size`, `search`, `active_only` |
+| `getFund(id)` | GET | `/investment-funds/{id}` — returns `{ fund, holdings, performance }` |
+| `createFund(payload)` | POST | `/investment-funds` — body `CreateFundPayload`; requires `funds.manage` |
+| `updateFund(id, payload)` | PUT | `/investment-funds/{id}` — body `UpdateFundPayload`; requires `funds.manage` |
+| `investInFund(id, payload)` | POST | `/investment-funds/{id}/invest` — body `{ source_account_id, amount, currency, on_behalf_of_type? }` |
+| `redeemFromFund(id, payload)` | POST | `/investment-funds/{id}/redeem` — body `{ amount_rsd, target_account_id, on_behalf_of_type? }` |
+| `getMyFundPositions()` | GET | `/me/investment-funds` — caller's positions (employees act as bank) |
+
+### Profit Banke API (`lib/api/profit.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getActuaryPerformance()` | GET | `/actuaries/performance` — requires `actuaries.read.all` |
+| `getBankFundPositions()` | GET | `/investment-funds/positions` — requires `funds.bank-position-read` |
+
 ### Securities API (`lib/api/securities.ts`)
 
 | Function | Method | Endpoint |
@@ -1159,6 +1202,16 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `useUnreadNotificationCount()` | React Query | Fetch unread count; query key: `['notifications', 'unread-count']`; polls every 60s while tab is visible |
 | `useMarkNotificationRead()` | React Query | Mutation: POST mark single notification read; invalidates `['notifications']` |
 | `useMarkAllNotificationsRead()` | React Query | Mutation: POST mark all read; invalidates `['notifications']` |
+| `useBuyOtcOfferOnBehalf()` | React Query | Mutation: employee POST `/otc/offers/:id/buy-on-behalf`; invalidates `['otc-offers']` |
+| `useFunds(filters?)` | React Query | List funds; `['funds', filters]` |
+| `useFund(id)` | React Query | Fund detail; `['funds', id]`, disabled when id is null |
+| `useMyFundPositions()` | React Query | `['funds', 'me']` |
+| `useCreateFund()` | React Query | Mutation: invalidates `['funds']` |
+| `useUpdateFund(id)` | React Query | Mutation: invalidates `['funds']` + `['funds', id]` |
+| `useInvestFund(id)` | React Query | Mutation: invalidates `['funds', id]` + `['funds', 'me']` + `['accounts']` |
+| `useRedeemFund(id)` | React Query | Mutation: same invalidations as invest |
+| `useActuaryPerformance()` | React Query | `['profit', 'actuaries']` |
+| `useBankFundPositions()` | React Query | `['profit', 'bank-fund-positions']` |
 | `useStocks(filters?)` | React Query | Fetch stocks; query key: `['stocks', filters]` |
 | `useStock(id)` | React Query | Fetch single stock; query key: `['stock', id]` |
 | `useStockHistory(id, filters?)` | React Query | Fetch stock price history; query key: `['stock-history', id, filters]` |
