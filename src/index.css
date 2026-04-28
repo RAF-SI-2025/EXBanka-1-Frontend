@@ -129,6 +129,7 @@
     --animate-piggy-shatter-right: piggy-shatter-right 0.7s cubic-bezier(0.4, 0, 1, 1) forwards;
     --animate-coin-fall: coin-fall 1s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
     --animate-overlay-fade: overlay-fade 1.8s ease-out forwards;
+    --animate-capybara-bob: capybara-bob 1.4s ease-in-out infinite;
 
     @keyframes progress-slide {
         0%   { transform: translateX(-100%) scaleX(0.6); }
@@ -168,6 +169,10 @@
     @keyframes overlay-fade {
         0%, 70% { opacity: 1; }
         100%    { opacity: 0; pointer-events: none; }
+    }
+    @keyframes capybara-bob {
+        0%, 100% { transform: translateY(0) rotate(-2deg); }
+        50%      { transform: translateY(-3px) rotate(2deg); }
     }
 }
 
