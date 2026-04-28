@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
@@ -13,75 +13,78 @@ import {
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navLinkClass =
-  'block px-3 py-2 rounded-md hover:bg-sidebar-accent text-sm text-sidebar-foreground'
+  'group relative block pl-4 pr-3 py-2 rounded-md text-sm text-sidebar-foreground/85 ' +
+  'transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground ' +
+  'before:absolute before:left-1 before:top-1/2 before:-translate-y-1/2 before:h-0 before:w-0.5 before:rounded-full before:bg-accent-2 before:transition-all before:duration-200 ' +
+  'hover:before:h-4 aria-[current=page]:bg-sidebar-accent aria-[current=page]:text-sidebar-foreground aria-[current=page]:before:h-5'
 
 function ClientNav() {
   return (
     <>
-      <Link to="/home" className={navLinkClass}>
+      <NavLink to="/home" className={navLinkClass}>
         Home
-      </Link>
-      <Link to="/accounts" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/accounts" className={navLinkClass}>
         My Accounts
-      </Link>
-      <Link to="/cards" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/cards" className={navLinkClass}>
         Cards
-      </Link>
+      </NavLink>
       <div className="mt-2">
         <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
           Payments
         </p>
-        <Link to="/payments/new" className={navLinkClass}>
+        <NavLink to="/payments/new" className={navLinkClass}>
           New Payment
-        </Link>
-        <Link to="/payments/transfer" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/payments/transfer" className={navLinkClass}>
           Internal Transfer
-        </Link>
-        <Link to="/payments/history" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/payments/history" className={navLinkClass}>
           Payment History
-        </Link>
-        <Link to="/payments/recipients" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/payments/recipients" className={navLinkClass}>
           Recipients
-        </Link>
+        </NavLink>
       </div>
       <div className="mt-2">
         <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
           Transfers
         </p>
-        <Link to="/transfers/new" className={navLinkClass}>
+        <NavLink to="/transfers/new" className={navLinkClass}>
           New Transfer
-        </Link>
-        <Link to="/transfers/history" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/transfers/history" className={navLinkClass}>
           Transfer History
-        </Link>
+        </NavLink>
       </div>
       <div className="mt-2">
         <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
           Exchange
         </p>
-        <Link to="/exchange/rates" className={navLinkClass}>
+        <NavLink to="/exchange/rates" className={navLinkClass}>
           Exchange Rates
-        </Link>
-        <Link to="/exchange/calculator" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/exchange/calculator" className={navLinkClass}>
           Calculator
-        </Link>
+        </NavLink>
       </div>
-      <Link to="/loans" className={navLinkClass}>
+      <NavLink to="/loans" className={navLinkClass}>
         Loans
-      </Link>
+      </NavLink>
       <div className="mt-2">
         <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
           Trading
         </p>
-        <Link to="/securities" className={navLinkClass}>
+        <NavLink to="/securities" className={navLinkClass}>
           Securities
-        </Link>
-        <Link to="/orders" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/orders" className={navLinkClass}>
           My Orders
-        </Link>
-        <Link to="/portfolio" className={navLinkClass}>
+        </NavLink>
+        <NavLink to="/portfolio" className={navLinkClass}>
           Portfolio
-        </Link>
+        </NavLink>
       </div>
     </>
   )
@@ -97,69 +100,69 @@ function EmployeeNav({
   return (
     <>
       {isAdmin && (
-        <Link to="/employees" className={navLinkClass}>
+        <NavLink to="/employees" className={navLinkClass}>
           Employees
-        </Link>
+        </NavLink>
       )}
-      <Link to="/admin/accounts" className={navLinkClass}>
+      <NavLink to="/admin/accounts" className={navLinkClass}>
         Accounts Management
-      </Link>
-      <Link to="/admin/clients" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/admin/clients" className={navLinkClass}>
         Clients
-      </Link>
-      <Link to="/admin/loans/requests" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/admin/loans/requests" className={navLinkClass}>
         Loan Requests
-      </Link>
-      <Link to="/admin/cards/requests" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/admin/cards/requests" className={navLinkClass}>
         Card Requests
-      </Link>
-      <Link to="/admin/loans" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/admin/loans" className={navLinkClass}>
         All Loans
-      </Link>
+      </NavLink>
       {isSupervisorOrAdmin && (
-        <Link to="/admin/actuaries" className={navLinkClass}>
+        <NavLink to="/admin/actuaries" className={navLinkClass}>
           Actuaries
-        </Link>
+        </NavLink>
       )}
-      <Link to="/admin/stock-exchanges" className={navLinkClass}>
+      <NavLink to="/admin/stock-exchanges" className={navLinkClass}>
         Stock Exchanges
-      </Link>
-      <Link to="/securities" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/securities" className={navLinkClass}>
         Securities
-      </Link>
-      <Link to="/orders" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/orders" className={navLinkClass}>
         My Orders
-      </Link>
-      <Link to="/portfolio" className={navLinkClass}>
+      </NavLink>
+      <NavLink to="/portfolio" className={navLinkClass}>
         Portfolio
-      </Link>
+      </NavLink>
       {isSupervisorOrAdmin && (
-        <Link to="/admin/orders" className={navLinkClass}>
+        <NavLink to="/admin/orders" className={navLinkClass}>
           Order Approval
-        </Link>
+        </NavLink>
       )}
       {isAdmin && (
-        <Link to="/admin/tax" className={navLinkClass}>
+        <NavLink to="/admin/tax" className={navLinkClass}>
           Tax
-        </Link>
+        </NavLink>
       )}
       {isAdmin && (
         <div className="mt-2">
           <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
             Settings
           </p>
-          <Link to="/admin/roles" className={navLinkClass}>
+          <NavLink to="/admin/roles" className={navLinkClass}>
             Roles & Permissions
-          </Link>
-          <Link to="/admin/limits/employees" className={navLinkClass}>
+          </NavLink>
+          <NavLink to="/admin/limits/employees" className={navLinkClass}>
             Limits
-          </Link>
-          <Link to="/admin/interest-rates" className={navLinkClass}>
+          </NavLink>
+          <NavLink to="/admin/interest-rates" className={navLinkClass}>
             Interest Rates
-          </Link>
-          <Link to="/admin/fees" className={navLinkClass}>
+          </NavLink>
+          <NavLink to="/admin/fees" className={navLinkClass}>
             Transfer Fees
-          </Link>
+          </NavLink>
         </div>
       )}
     </>
