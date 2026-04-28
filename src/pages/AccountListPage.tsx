@@ -5,6 +5,7 @@ import { usePayments } from '@/hooks/usePayments'
 import { AccountCard } from '@/components/accounts/AccountCard'
 import { RecentTransactions } from '@/components/accounts/RecentTransactions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -31,7 +32,19 @@ export function AccountListPage() {
     return a.status.localeCompare(b.status)
   })
 
-  if (isLoading) return <p>Loading...</p>
+  if (isLoading) {
+    return (
+      <div className="space-y-4" data-testid="accounts-skeleton">
+        <Skeleton className="h-8 w-48" />
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">

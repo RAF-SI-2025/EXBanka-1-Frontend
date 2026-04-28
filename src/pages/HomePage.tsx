@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useClientAccounts } from '@/hooks/useAccounts'
 import { usePayments } from '@/hooks/usePayments'
 import { AccountCard } from '@/components/accounts/AccountCard'
@@ -51,7 +52,13 @@ export function HomePage() {
 
       <div className="space-y-3">
         <h2 className="text-lg font-semibold">My Accounts</h2>
-        {isLoading && <p>Loading...</p>}
+        {isLoading && (
+          <div className="space-y-3" data-testid="home-accounts-skeleton">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            ))}
+          </div>
+        )}
         {accounts.map((account, i) => (
           <div
             key={account.id}
