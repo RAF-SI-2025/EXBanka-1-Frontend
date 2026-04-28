@@ -13,12 +13,15 @@ import {
   rejectCardRequest,
   createAuthorizedPerson,
   createCard,
+  createVirtualCard,
+  setCardPin,
+  verifyCardPin,
 } from '@/lib/api/cards'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
 import type { CardRequestFilters } from '@/types/cardRequest'
 import type { Account } from '@/types/account'
 import type { Client } from '@/types/client'
-import type { CardBrand } from '@/types/card'
+import type { CardBrand, CreateVirtualCardPayload } from '@/types/card'
 
 export function useCards() {
   return useQuery({
@@ -133,6 +136,28 @@ export function useRejectCardRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['card-requests'] })
     },
+  })
+}
+
+export function useCreateVirtualCard() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateVirtualCardPayload) => createVirtualCard(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] })
+    },
+  })
+}
+
+export function useSetCardPin() {
+  return useMutation({
+    mutationFn: ({ cardId, pin }: { cardId: number; pin: string }) => setCardPin(cardId, pin),
+  })
+}
+
+export function useVerifyCardPin() {
+  return useMutation({
+    mutationFn: ({ cardId, pin }: { cardId: number; pin: string }) => verifyCardPin(cardId, pin),
   })
 }
 

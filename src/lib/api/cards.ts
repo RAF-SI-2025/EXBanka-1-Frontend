@@ -1,5 +1,12 @@
 import { apiClient } from '@/lib/api/axios'
-import type { Card, CreateCardPayload } from '@/types/card'
+import type {
+  Card,
+  CreateCardPayload,
+  CreateVirtualCardPayload,
+  VirtualCardResponse,
+  SetCardPinResponse,
+  VerifyCardPinResponse,
+} from '@/types/card'
 import type {
   CreateAuthorizedPersonRequest,
   CreateAuthorizedPersonPayload,
@@ -92,5 +99,24 @@ export async function createAuthorizedPerson(
 
 export async function createCard(payload: CreateCardPayload): Promise<Card> {
   const response = await apiClient.post<Card>('/cards', payload)
+  return response.data
+}
+
+export async function createVirtualCard(
+  payload: CreateVirtualCardPayload
+): Promise<VirtualCardResponse> {
+  const response = await apiClient.post<VirtualCardResponse>('/me/cards/virtual', payload)
+  return response.data
+}
+
+export async function setCardPin(cardId: number, pin: string): Promise<SetCardPinResponse> {
+  const response = await apiClient.post<SetCardPinResponse>(`/me/cards/${cardId}/pin`, { pin })
+  return response.data
+}
+
+export async function verifyCardPin(cardId: number, pin: string): Promise<VerifyCardPinResponse> {
+  const response = await apiClient.post<VerifyCardPinResponse>(`/me/cards/${cardId}/verify-pin`, {
+    pin,
+  })
   return response.data
 }
