@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-28 (selectHasPermission grants all permissions to EmployeeAdmin)_
+_Last updated: 2026-04-28 (notifications bell + selectHasPermission grants all permissions to EmployeeAdmin)_
 
 ---
 
@@ -140,6 +140,10 @@ src/
 │   │   ├── CreateOrderForm.tsx + .test.tsx    # Order creation form
 │   │   ├── OrderTable.tsx + .test.tsx         # Reusable orders table with actions (cancel/approve/decline)
 │   │   └── OrdersTable.tsx + .test.tsx        # Simplified admin orders table (approve/decline only)
+│   ├── notifications/
+│   │   ├── NotificationItem.tsx + .test.tsx       # Single row with unread dot + relative time
+│   │   ├── NotificationDropdown.tsx + .test.tsx   # Popover content: list, empty/loading/error states, Mark all as read
+│   │   └── NotificationBell.tsx + .test.tsx       # Bell icon + unread badge ("9+" cap); base-ui Popover
 │   ├── otc/
 │   │   ├── OtcOffersTable.tsx + .test.tsx     # OTC offers list with Buy action
 │   │   └── BuyOtcDialog.tsx + .test.tsx       # Dialog to buy an OTC offer
@@ -1016,6 +1020,15 @@ interface AuthState {
 | `getTestingMode()` | GET | `/api/stock-exchanges/testing-mode` |
 | `setTestingMode(enabled)` | POST | `/api/stock-exchanges/testing-mode` — body `{ enabled: boolean }` |
 
+### Notifications API (`lib/api/notifications.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getNotifications(filters?)` | GET | `/me/notifications` — supports `page`, `page_size`, `read` ("read" \| "unread") |
+| `getUnreadCount()` | GET | `/me/notifications/unread-count` |
+| `markNotificationRead(id)` | POST | `/me/notifications/{id}/read` |
+| `markAllNotificationsRead()` | POST | `/me/notifications/read-all` |
+
 ### Securities API (`lib/api/securities.ts`)
 
 | Function | Method | Endpoint |
@@ -1118,6 +1131,10 @@ interface AuthState {
 | `useStockExchanges(filters?)` | React Query | Fetch stock exchanges; query key: `['stock-exchanges', filters]` |
 | `useTestingMode()` | React Query | Fetch testing mode status; query key: `['stock-exchanges', 'testing-mode']` |
 | `useSetTestingMode()` | React Query | Mutation: POST testing mode; invalidates `['stock-exchanges', 'testing-mode']` on success |
+| `useNotifications(filters?)` | React Query | Fetch notifications list; query key: `['notifications', filters]` |
+| `useUnreadNotificationCount()` | React Query | Fetch unread count; query key: `['notifications', 'unread-count']`; polls every 60s while tab is visible |
+| `useMarkNotificationRead()` | React Query | Mutation: POST mark single notification read; invalidates `['notifications']` |
+| `useMarkAllNotificationsRead()` | React Query | Mutation: POST mark all read; invalidates `['notifications']` |
 | `useStocks(filters?)` | React Query | Fetch stocks; query key: `['stocks', filters]` |
 | `useStock(id)` | React Query | Fetch single stock; query key: `['stock', id]` |
 | `useStockHistory(id, filters?)` | React Query | Fetch stock price history; query key: `['stock-history', id, filters]` |
