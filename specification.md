@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-29 (Celina 4 phases 1, 3, 4: OTC MVP + Investment Funds + Profit Banke + motion polish + standardized error handling + notifications bell)_
+_Last updated: 2026-04-29 (Celina 4 phases 1-4 complete: + OTC option contracts §29; portfolio tabs + profit chart; account activity embedded; sidebar icons + exact-match active state; notifications overflow fix)_
 
 ---
 
@@ -1095,6 +1095,20 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 |---|---|---|
 | `getActuaryPerformance()` | GET | `/actuaries/performance` — requires `actuaries.read.all` |
 | `getBankFundPositions()` | GET | `/investment-funds/positions` — requires `funds.bank-position-read` |
+
+### OTC Option Contracts API (`lib/api/otcOption.ts`) — §29
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `createOtcOptionOffer(payload)` | POST | `/otc/offers` — open negotiation thread |
+| `counterOtcOptionOffer(id, payload)` | POST | `/otc/offers/{id}/counter` |
+| `acceptOtcOptionOffer(id, payload)` | POST | `/otc/offers/{id}/accept` — premium SAGA + creates contract |
+| `rejectOtcOptionOffer(id)` | POST | `/otc/offers/{id}/reject` |
+| `getOtcOptionOffer(id)` | GET | `/otc/offers/{id}` — returns `{ offer, revisions }` |
+| `getMyOtcOptionOffers(filters?)` | GET | `/me/otc/offers` — `role`, `page`, `page_size` |
+| `getOtcOptionContract(id)` | GET | `/otc/contracts/{id}` |
+| `getMyOtcOptionContracts(filters?)` | GET | `/me/otc/contracts` |
+| `exerciseOtcOptionContract(id, payload)` | POST | `/otc/contracts/{id}/exercise` — 5-phase SAGA |
 
 ### Securities API (`lib/api/securities.ts`)
 
