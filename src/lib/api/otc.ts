@@ -1,5 +1,10 @@
 import { apiClient } from '@/lib/api/axios'
-import type { OtcOfferListResponse, OtcFilters, OtcBuyRequest } from '@/types/otc'
+import type {
+  OtcOfferListResponse,
+  OtcFilters,
+  OtcBuyRequest,
+  OtcBuyOnBehalfRequest,
+} from '@/types/otc'
 
 export async function getOtcOffers(filters?: OtcFilters): Promise<OtcOfferListResponse> {
   const params = new URLSearchParams()
@@ -14,4 +19,11 @@ export async function getOtcOffers(filters?: OtcFilters): Promise<OtcOfferListRe
 
 export async function buyOtcOffer(id: number, payload: OtcBuyRequest): Promise<void> {
   await apiClient.post(`/otc/offers/${id}/buy`, payload)
+}
+
+export async function buyOtcOfferOnBehalf(
+  id: number,
+  payload: OtcBuyOnBehalfRequest
+): Promise<void> {
+  await apiClient.post(`/otc/offers/${id}/buy-on-behalf`, payload)
 }
