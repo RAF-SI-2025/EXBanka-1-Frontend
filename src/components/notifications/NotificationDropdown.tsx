@@ -23,9 +23,9 @@ export function NotificationDropdown() {
   }
 
   return (
-    <div className="w-80">
-      <div className="flex justify-between items-center px-3 py-2 border-b">
-        <h3 className="text-sm font-semibold">Notifications</h3>
+    <div className="w-full">
+      <div className="flex justify-between items-center px-3 py-2 border-b gap-2">
+        <h3 className="text-sm font-semibold shrink-0">Notifications</h3>
         {hasUnread && (
           <Button
             variant="ghost"

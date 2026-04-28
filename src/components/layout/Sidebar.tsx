@@ -1,5 +1,36 @@
 import { NavLink } from 'react-router-dom'
-import { Moon, Sun } from 'lucide-react'
+import {
+  Moon,
+  Sun,
+  Home,
+  Wallet,
+  CreditCard,
+  Send,
+  ArrowRightLeft,
+  History,
+  Users,
+  Coins,
+  TrendingUp,
+  Calculator,
+  HandCoins,
+  LineChart,
+  Handshake,
+  PiggyBank,
+  PlusSquare,
+  ListOrdered,
+  Briefcase,
+  FileQuestion,
+  Files,
+  UserCheck,
+  Building2,
+  CheckSquare,
+  Receipt,
+  Shield,
+  Gauge,
+  Percent,
+  Banknote,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
@@ -14,90 +45,104 @@ import {
 import { useTheme } from '@/contexts/ThemeContext'
 
 const navLinkClass =
-  'group relative block pl-4 pr-3 py-2 rounded-md text-sm text-sidebar-foreground/85 ' +
+  'group relative flex items-center gap-2 pl-4 pr-3 py-2 rounded-md text-sm text-sidebar-foreground/85 ' +
   'transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground ' +
   'before:absolute before:left-1 before:top-1/2 before:-translate-y-1/2 before:h-0 before:w-0.5 before:rounded-full before:bg-accent-2 before:transition-all before:duration-200 ' +
   'hover:before:h-4 aria-[current=page]:bg-sidebar-accent aria-[current=page]:text-sidebar-foreground aria-[current=page]:before:h-5'
 
+interface NavItemProps {
+  to: string
+  icon: LucideIcon
+  children: React.ReactNode
+}
+
+function NavItem({ to, icon: Icon, children }: NavItemProps) {
+  return (
+    <NavLink to={to} end className={navLinkClass}>
+      <Icon className="h-4 w-4 shrink-0" aria-hidden />
+      <span className="truncate">{children}</span>
+    </NavLink>
+  )
+}
+
+function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-2">
+      <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
+
 function ClientNav({ canManageFunds }: { canManageFunds: boolean }) {
   return (
     <>
-      <NavLink to="/home" className={navLinkClass}>
+      <NavItem to="/home" icon={Home}>
         Home
-      </NavLink>
-      <NavLink to="/accounts" className={navLinkClass}>
+      </NavItem>
+      <NavItem to="/accounts" icon={Wallet}>
         My Accounts
-      </NavLink>
-      <NavLink to="/cards" className={navLinkClass}>
+      </NavItem>
+      <NavItem to="/cards" icon={CreditCard}>
         Cards
-      </NavLink>
-      <div className="mt-2">
-        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-          Payments
-        </p>
-        <NavLink to="/payments/new" className={navLinkClass}>
+      </NavItem>
+      <NavGroup label="Payments">
+        <NavItem to="/payments/new" icon={Send}>
           New Payment
-        </NavLink>
-        <NavLink to="/payments/transfer" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/payments/transfer" icon={ArrowRightLeft}>
           Internal Transfer
-        </NavLink>
-        <NavLink to="/payments/history" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/payments/history" icon={History}>
           Payment History
-        </NavLink>
-        <NavLink to="/payments/recipients" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/payments/recipients" icon={Users}>
           Recipients
-        </NavLink>
-      </div>
-      <div className="mt-2">
-        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-          Transfers
-        </p>
-        <NavLink to="/transfers/new" className={navLinkClass}>
+        </NavItem>
+      </NavGroup>
+      <NavGroup label="Transfers">
+        <NavItem to="/transfers/new" icon={Send}>
           New Transfer
-        </NavLink>
-        <NavLink to="/transfers/history" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/transfers/history" icon={History}>
           Transfer History
-        </NavLink>
-      </div>
-      <div className="mt-2">
-        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-          Exchange
-        </p>
-        <NavLink to="/exchange/rates" className={navLinkClass}>
+        </NavItem>
+      </NavGroup>
+      <NavGroup label="Exchange">
+        <NavItem to="/exchange/rates" icon={TrendingUp}>
           Exchange Rates
-        </NavLink>
-        <NavLink to="/exchange/calculator" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/exchange/calculator" icon={Calculator}>
           Calculator
-        </NavLink>
-      </div>
-      <NavLink to="/loans" className={navLinkClass}>
+        </NavItem>
+      </NavGroup>
+      <NavItem to="/loans" icon={HandCoins}>
         Loans
-      </NavLink>
-      <div className="mt-2">
-        <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-          Trading
-        </p>
-        <NavLink to="/securities" className={navLinkClass}>
+      </NavItem>
+      <NavGroup label="Trading">
+        <NavItem to="/securities" icon={LineChart}>
           Securities
-        </NavLink>
-        <NavLink to="/otc" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/otc" icon={Handshake}>
           OTC Market
-        </NavLink>
-        <NavLink to="/funds" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/funds" icon={PiggyBank}>
           Funds
-        </NavLink>
+        </NavItem>
         {canManageFunds && (
-          <NavLink to="/funds/new" className={navLinkClass}>
+          <NavItem to="/funds/new" icon={PlusSquare}>
             Create Fund
-          </NavLink>
+          </NavItem>
         )}
-        <NavLink to="/orders" className={navLinkClass}>
+        <NavItem to="/orders" icon={ListOrdered}>
           My Orders
-        </NavLink>
-        <NavLink to="/portfolio" className={navLinkClass}>
+        </NavItem>
+        <NavItem to="/portfolio" icon={Briefcase}>
           Portfolio
-        </NavLink>
-      </div>
+        </NavItem>
+      </NavGroup>
     </>
   )
 }
@@ -118,98 +163,94 @@ function EmployeeNav({
   return (
     <>
       {isAdmin && (
-        <NavLink to="/employees" className={navLinkClass}>
+        <NavItem to="/employees" icon={Users}>
           Employees
-        </NavLink>
+        </NavItem>
       )}
-      <NavLink to="/admin/accounts" className={navLinkClass}>
+      <NavItem to="/admin/accounts" icon={Wallet}>
         Accounts Management
-      </NavLink>
-      <NavLink to="/admin/clients" className={navLinkClass}>
+      </NavItem>
+      <NavItem to="/admin/clients" icon={Users}>
         Clients
-      </NavLink>
-      <NavLink to="/admin/loans/requests" className={navLinkClass}>
+      </NavItem>
+      <NavItem to="/admin/loans/requests" icon={FileQuestion}>
         Loan Requests
-      </NavLink>
-      <NavLink to="/admin/cards/requests" className={navLinkClass}>
+      </NavItem>
+      <NavItem to="/admin/cards/requests" icon={FileQuestion}>
         Card Requests
-      </NavLink>
-      <NavLink to="/admin/loans" className={navLinkClass}>
+      </NavItem>
+      <NavItem to="/admin/loans" icon={Files}>
         All Loans
-      </NavLink>
+      </NavItem>
       {isSupervisorOrAdmin && (
-        <NavLink to="/admin/actuaries" className={navLinkClass}>
+        <NavItem to="/admin/actuaries" icon={UserCheck}>
           Actuaries
-        </NavLink>
+        </NavItem>
       )}
-      <NavLink to="/admin/stock-exchanges" className={navLinkClass}>
+      <NavItem to="/admin/stock-exchanges" icon={Building2}>
         Stock Exchanges
-      </NavLink>
-      <NavLink to="/securities" className={navLinkClass}>
-        Securities
-      </NavLink>
-      <NavLink to="/otc" className={navLinkClass}>
-        OTC Market
-      </NavLink>
-      <NavLink to="/funds" className={navLinkClass}>
-        Funds
-      </NavLink>
-      {canManageFunds && (
-        <NavLink to="/funds/new" className={navLinkClass}>
-          Create Fund
-        </NavLink>
-      )}
-      <NavLink to="/orders" className={navLinkClass}>
-        My Orders
-      </NavLink>
-      <NavLink to="/portfolio" className={navLinkClass}>
-        Portfolio
-      </NavLink>
-      {isSupervisorOrAdmin && (
-        <NavLink to="/admin/orders" className={navLinkClass}>
-          Order Approval
-        </NavLink>
-      )}
+      </NavItem>
+      <NavGroup label="Trading">
+        <NavItem to="/securities" icon={LineChart}>
+          Securities
+        </NavItem>
+        <NavItem to="/otc" icon={Handshake}>
+          OTC Market
+        </NavItem>
+        <NavItem to="/funds" icon={PiggyBank}>
+          Funds
+        </NavItem>
+        {canManageFunds && (
+          <NavItem to="/funds/new" icon={PlusSquare}>
+            Create Fund
+          </NavItem>
+        )}
+        <NavItem to="/orders" icon={ListOrdered}>
+          My Orders
+        </NavItem>
+        <NavItem to="/portfolio" icon={Briefcase}>
+          Portfolio
+        </NavItem>
+        {isSupervisorOrAdmin && (
+          <NavItem to="/admin/orders" icon={CheckSquare}>
+            Order Approval
+          </NavItem>
+        )}
+      </NavGroup>
       {isAdmin && (
-        <NavLink to="/admin/tax" className={navLinkClass}>
+        <NavItem to="/admin/tax" icon={Receipt}>
           Tax
-        </NavLink>
+        </NavItem>
       )}
       {(canReadActuaryProfit || canReadBankFundPositions) && (
-        <div className="mt-2">
-          <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-            Bank Profit
-          </p>
+        <NavGroup label="Bank Profit">
           {canReadActuaryProfit && (
-            <NavLink to="/admin/profit/actuaries" className={navLinkClass}>
+            <NavItem to="/admin/profit/actuaries" icon={TrendingUp}>
               Actuary Profit
-            </NavLink>
+            </NavItem>
           )}
           {canReadBankFundPositions && (
-            <NavLink to="/admin/profit/funds" className={navLinkClass}>
+            <NavItem to="/admin/profit/funds" icon={Coins}>
               Fund Positions
-            </NavLink>
+            </NavItem>
           )}
-        </div>
+        </NavGroup>
       )}
       {isAdmin && (
-        <div className="mt-2">
-          <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
-            Settings
-          </p>
-          <NavLink to="/admin/roles" className={navLinkClass}>
-            Roles & Permissions
-          </NavLink>
-          <NavLink to="/admin/limits/employees" className={navLinkClass}>
+        <NavGroup label="Settings">
+          <NavItem to="/admin/roles" icon={Shield}>
+            Roles &amp; Permissions
+          </NavItem>
+          <NavItem to="/admin/limits/employees" icon={Gauge}>
             Limits
-          </NavLink>
-          <NavLink to="/admin/interest-rates" className={navLinkClass}>
+          </NavItem>
+          <NavItem to="/admin/interest-rates" icon={Percent}>
             Interest Rates
-          </NavLink>
-          <NavLink to="/admin/fees" className={navLinkClass}>
+          </NavItem>
+          <NavItem to="/admin/fees" icon={Banknote}>
             Transfer Fees
-          </NavLink>
-        </div>
+          </NavItem>
+        </NavGroup>
       )}
     </>
   )
@@ -254,11 +295,11 @@ export function Sidebar() {
       </nav>
       <div className="border-t border-sidebar-border pt-4 mt-4">
         <div className="flex justify-between items-center mb-2">
-          <p className="text-sm text-sidebar-foreground/70">{user?.email}</p>
+          <p className="text-sm text-sidebar-foreground/70 truncate">{user?.email}</p>
           <Button
             variant="ghost"
             size="icon"
-            className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground shrink-0"
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             onClick={toggleTheme}
           >

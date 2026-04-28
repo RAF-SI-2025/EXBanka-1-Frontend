@@ -22,7 +22,7 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
     <button
       type="button"
       onClick={() => onClick(notification)}
-      className={`w-full text-left px-3 py-2 hover:bg-accent flex gap-2 items-start ${
+      className={`w-full text-left px-3 py-2 hover:bg-accent flex gap-2 items-start overflow-hidden ${
         is_read ? 'opacity-70' : ''
       }`}
       aria-label={title}
@@ -34,9 +34,9 @@ export function NotificationItem({ notification, onClick }: NotificationItemProp
           aria-hidden
         />
       )}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 max-w-full">
         <p className="text-sm font-medium truncate">{title}</p>
-        <p className="text-xs text-muted-foreground truncate">{message}</p>
+        <p className="text-xs text-muted-foreground break-words line-clamp-2">{message}</p>
         <p className="text-[10px] text-muted-foreground mt-0.5">{formatRelativeTime(created_at)}</p>
       </div>
     </button>
