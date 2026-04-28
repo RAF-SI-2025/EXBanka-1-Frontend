@@ -28,6 +28,7 @@ export const selectIsSupervisorOrAdmin = createSelector(
 )
 
 export const selectHasPermission = (state: RootState, permission: string): boolean => {
+  if (state.auth.user?.role === 'EmployeeAdmin') return true
   const permissions = state.auth.user?.permissions ?? []
   return permissions.some((p) => permissionMatches(p, permission))
 }

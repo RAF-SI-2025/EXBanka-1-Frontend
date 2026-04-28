@@ -46,8 +46,21 @@ describe('authSelectors', () => {
   })
 
   it('selectHasPermission checks for a specific permission', () => {
-    const state = mockRootState()
+    const state = mockRootState({
+      user: createMockAuthUser({
+        role: 'EmployeeAgent',
+        permissions: ['employees.read', 'employees.create', 'employees.update'],
+      }),
+    })
     expect(selectHasPermission(state, 'employees.read')).toBe(true)
     expect(selectHasPermission(state, 'nonexistent')).toBe(false)
+  })
+
+  it('selectHasPermission returns true for EmployeeAdmin even when permissions array is empty', () => {
+    const state = mockRootState({
+      user: createMockAuthUser({ role: 'EmployeeAdmin', permissions: [] }),
+    })
+    expect(selectHasPermission(state, 'anything')).toBe(true)
+    expect(selectHasPermission(state, 'exchanges.manage')).toBe(true)
   })
 })

@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-06 (admin management views, OTC portal, limits dashboard, Cypress e2e tests, employee card creation)_
+_Last updated: 2026-04-28 (selectHasPermission grants all permissions to EmployeeAdmin)_
 
 ---
 
@@ -502,7 +502,7 @@ src/
 ### StockExchangesPage
 - Displays list of stock exchanges with search filter and pagination.
 - Accessible to all employees (`requiredRole="Employee"`).
-- Testing mode toggle button visible only to users with `exchanges.manage` permission (checked via `selectHasPermission`).
+- Testing mode toggle button visible to admins (`EmployeeAdmin`) and to users with `exchanges.manage` permission (checked via `selectHasPermission`, which bypasses for admins).
 - Fetches exchanges via `useStockExchanges(apiFilters)` and testing mode via `useTestingMode()`.
 - Toggle calls `useSetTestingMode` mutation.
 
@@ -929,7 +929,7 @@ interface AuthState {
 | `selectIsAuthenticated` | `status === 'authenticated'` |
 | `selectIsAdmin` | `user.role === 'EmployeeAdmin'` |
 | `selectCurrentUser` | `AuthUser \| null` |
-| `selectHasPermission(state, perm)` | `boolean` — checks `user.permissions[]` |
+| `selectHasPermission(state, perm)` | `boolean` — returns `true` for `EmployeeAdmin` (bypass); otherwise prefix-matches against `user.permissions[]` |
 
 ---
 

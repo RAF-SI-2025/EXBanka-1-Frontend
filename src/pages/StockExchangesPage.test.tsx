@@ -28,6 +28,14 @@ const authWithExchangePermission = createMockAuthState({
 
 const authWithoutExchangePermission = createMockAuthState({
   user: createMockAuthUser({
+    role: 'EmployeeAgent',
+    permissions: ['employees.read'],
+  }),
+})
+
+const authAdminWithoutExchangePermission = createMockAuthState({
+  user: createMockAuthUser({
+    role: 'EmployeeAdmin',
     permissions: ['employees.read'],
   }),
 })
@@ -91,6 +99,14 @@ describe('StockExchangesPage', () => {
     })
     await screen.findByText('New York Stock Exchange')
     expect(screen.queryByRole('button', { name: /testing mode/i })).not.toBeInTheDocument()
+  })
+
+  it('shows testing mode toggle for admin even without explicit exchanges.manage permission', async () => {
+    renderWithProviders(<StockExchangesPage />, {
+      preloadedState: { auth: authAdminWithoutExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+    expect(screen.getByRole('button', { name: /enable testing mode/i })).toBeInTheDocument()
   })
 
   it('calls setTestingMode(true) when Enable button is clicked', async () => {

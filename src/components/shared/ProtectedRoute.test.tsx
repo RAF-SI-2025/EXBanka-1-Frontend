@@ -33,7 +33,13 @@ describe('ProtectedRoute', () => {
       <ProtectedRoute requiredPermission="nonexistent.permission">
         <div>Admin Content</div>
       </ProtectedRoute>,
-      { preloadedState: { auth: createMockAuthState() } }
+      {
+        preloadedState: {
+          auth: createMockAuthState({
+            user: createMockAuthUser({ role: 'EmployeeAgent', permissions: ['employees.read'] }),
+          }),
+        },
+      }
     )
     expect(screen.queryByText('Admin Content')).not.toBeInTheDocument()
   })
