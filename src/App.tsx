@@ -57,6 +57,8 @@ import { OtcPortalPage } from '@/pages/OtcPortalPage'
 import { FundsDiscoveryPage } from '@/pages/FundsDiscoveryPage'
 import { FundDetailsPage } from '@/pages/FundDetailsPage'
 import { CreateFundPage } from '@/pages/CreateFundPage'
+import { ActuaryPerformancePage } from '@/pages/ActuaryPerformancePage'
+import { BankFundPositionsPage } from '@/pages/BankFundPositionsPage'
 
 export default function App() {
   return (
@@ -358,6 +360,22 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin>
               <TaxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profit/actuaries"
+          element={
+            <ProtectedRoute requiredPermission="actuaries.read.all">
+              <ActuaryPerformancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profit/funds"
+          element={
+            <ProtectedRoute requiredPermission="funds.bank-position-read">
+              <BankFundPositionsPage />
             </ProtectedRoute>
           }
         />

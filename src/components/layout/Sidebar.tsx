@@ -106,10 +106,14 @@ function EmployeeNav({
   isAdmin,
   isSupervisorOrAdmin,
   canManageFunds,
+  canReadActuaryProfit,
+  canReadBankFundPositions,
 }: {
   isAdmin: boolean
   isSupervisorOrAdmin: boolean
   canManageFunds: boolean
+  canReadActuaryProfit: boolean
+  canReadBankFundPositions: boolean
 }) {
   return (
     <>
@@ -171,6 +175,23 @@ function EmployeeNav({
           Tax
         </NavLink>
       )}
+      {(canReadActuaryProfit || canReadBankFundPositions) && (
+        <div className="mt-2">
+          <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
+            Bank Profit
+          </p>
+          {canReadActuaryProfit && (
+            <NavLink to="/admin/profit/actuaries" className={navLinkClass}>
+              Actuary Profit
+            </NavLink>
+          )}
+          {canReadBankFundPositions && (
+            <NavLink to="/admin/profit/funds" className={navLinkClass}>
+              Fund Positions
+            </NavLink>
+          )}
+        </div>
+      )}
       {isAdmin && (
         <div className="mt-2">
           <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
@@ -204,6 +225,12 @@ export function Sidebar() {
   const isAdmin = useAppSelector(selectIsAdmin)
   const isSupervisorOrAdmin = useAppSelector(selectIsSupervisorOrAdmin)
   const canManageFunds = useAppSelector((state) => selectHasPermission(state, 'funds.manage'))
+  const canReadActuaryProfit = useAppSelector((state) =>
+    selectHasPermission(state, 'actuaries.read.all')
+  )
+  const canReadBankFundPositions = useAppSelector((state) =>
+    selectHasPermission(state, 'funds.bank-position-read')
+  )
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -220,6 +247,8 @@ export function Sidebar() {
             isAdmin={isAdmin}
             isSupervisorOrAdmin={isSupervisorOrAdmin}
             canManageFunds={canManageFunds}
+            canReadActuaryProfit={canReadActuaryProfit}
+            canReadBankFundPositions={canReadBankFundPositions}
           />
         )}
       </nav>
