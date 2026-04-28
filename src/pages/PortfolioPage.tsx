@@ -4,6 +4,7 @@ import { FilterBar } from '@/components/ui/FilterBar'
 import { HoldingTable } from '@/components/portfolio/HoldingTable'
 import { PortfolioSummaryCard } from '@/components/portfolio/PortfolioSummaryCard'
 import { PortfolioProfitChart } from '@/components/portfolio/PortfolioProfitChart'
+import { PortfolioHoldingsPieChart } from '@/components/portfolio/PortfolioHoldingsPieChart'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -96,16 +97,26 @@ export function PortfolioPage() {
 
       {summary && <PortfolioSummaryCard summary={summary} />}
 
-      {summary && (
-        <Card className="mt-4 mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4 mb-4">
+        {summary && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Realised Profit</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PortfolioProfitChart summary={summary} />
+            </CardContent>
+          </Card>
+        )}
+        <Card>
           <CardHeader>
-            <CardTitle>Realised Profit</CardTitle>
+            <CardTitle>Holdings Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <PortfolioProfitChart summary={summary} />
+            <PortfolioHoldingsPieChart holdings={data?.holdings ?? []} />
           </CardContent>
         </Card>
-      )}
+      </div>
 
       <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList>

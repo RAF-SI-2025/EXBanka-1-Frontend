@@ -12,10 +12,10 @@ const config: Config = {
     ],
   },
   moduleNameMapper: {
-    '^@/assets/.*\\.(gif|png|svg|jpg)$': '<rootDir>/src/__tests__/utils/fileMock.ts',
+    '^@/assets/.*\\.(gif|png|svg|jpg|m4a|mp3)$': '<rootDir>/src/__tests__/utils/fileMock.ts',
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.(css|less|scss)$': 'identity-obj-proxy',
-    '\\.(svg|png|jpg|gif)$': '<rootDir>/src/__tests__/utils/fileMock.ts',
+    '\\.(svg|png|jpg|gif|m4a|mp3)$': '<rootDir>/src/__tests__/utils/fileMock.ts',
   },
   setupFiles: ['<rootDir>/jest.setup.globals.js'],
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/utils/setupTests.ts'],
