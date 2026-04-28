@@ -26,18 +26,16 @@ export function CardItem({
   return (
     <div className="flex flex-col items-center gap-3">
       <CardVisual card={card} holderName={holderName} />
-      <div className="flex flex-col gap-2 w-full max-w-sm">
-        <div className="flex items-center justify-between gap-2">
+      <div className="w-full max-w-sm space-y-2">
+        {accountName && (
+          <p className="text-xs text-muted-foreground truncate">
+            {accountName} — {formatAccountNumber(card.account_number)}
+          </p>
+        )}
+        <div className="flex items-center flex-wrap gap-2">
           <Badge variant={CARD_STATUS_VARIANT[status] ?? 'secondary'}>
             {CARD_STATUS_LABELS[status] ?? card.status}
           </Badge>
-          {accountName && (
-            <span className="text-xs text-muted-foreground truncate">
-              {accountName} — {formatAccountNumber(card.account_number)}
-            </span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
           {onShowPin && (
             <Button variant="outline" size="sm" onClick={() => onShowPin(card)}>
               Show details

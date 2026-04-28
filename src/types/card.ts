@@ -15,6 +15,10 @@ export interface Card {
   limit: number
   status: CardStatus
   owner_name: string
+  /** Optional virtual-card metadata. Populated only for virtual cards. */
+  is_virtual?: boolean
+  usage_type?: VirtualCardUsageType
+  max_uses?: number
 }
 
 export interface CreateCardPayload {
