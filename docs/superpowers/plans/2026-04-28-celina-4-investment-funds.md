@@ -2,76 +2,123 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build the full Investment Funds frontend (Discovery, Detail, Create, My Funds tab) per `Celina 4(Nova).md §Investicioni fondovi`, ahead of backend availability. Every API call goes through a thin, fully-typed layer that matches the proposed contract; when the backend lands, only fixture JSONs and a smoke test in `lib/api/funds.ts` need updating.
+> _Updated 2026-04-29 — backend §30 has landed. The "API contract — proposed" section that this plan originally carried has been replaced by the **locked contract** below, sourced verbatim from `REST_API_v3.md` §30._
+
+**Goal:** Build the full Investment Funds frontend (Discovery, Detail, Create, My Funds tab, Invest/Redeem) per `Celina 4(Nova).md §Investicioni fondovi`, against the live backend.
 
 **Architecture:**
-- Server data via TanStack Query against `/api/v3/funds*` and `/api/v3/me/funds*`. The endpoints don't exist yet (`REST_API_v3.md` audit, 2026-04-28); see "API contract — proposed" below.
+- Server data via TanStack Query against `/api/v3/investment-funds*` and `/api/v3/me/investment-funds`. All endpoints exist as of 2026-04-29.
 - Two top-level routes (`/funds`, `/funds/new`, `/funds/:id`) plus a tabbed addition to the existing portfolio page.
-- Permissions: `funds.invest` (client invest/redeem), `funds.manage` (supervisor create + ops).
-- Computed fields (`fund_value`, `profit`, `share_percent`, `current_value`) come from the backend per spec note "Predlažemo da ... budu izvedeni podaci".
-- No Redux; all server state. The "create fund" form uses `react-hook-form` + zod (see `useLoanApplicationForm.ts` for the pattern).
+- Permissions: `funds.manage` (supervisor create + edit), `funds.bank-position-read` (Profit Banke; covered by phase 4). Invest/Redeem use `OwnerIsBankIfEmployee` so an employee invest call automatically becomes a bank-on-behalf-of-bank action.
+- Computed fields (`fund_value_rsd`, `liquid_cash_rsd`, `profit_rsd`, `current_value_rsd`, `percentage_fund`) all come from the backend.
+- No Redux; pure server state. Forms use react-hook-form + zod.
 
-**Tech Stack:** React 19, TanStack Query v5, Shadcn UI, Tailwind, react-router v6, react-hook-form + zod, Recharts (already used by `PriceChart.tsx`) for the performance graph, Jest + RTL.
+**Tech Stack:** React 19, TanStack Query v5, Shadcn UI, Tailwind, react-router v6, react-hook-form + zod, Recharts (for the performance line), Jest + RTL.
 
-**Backend reference:** None today. This plan defines the contract the backend must honor; flag any backend-side disagreement before merging the API task.
+**Backend reference:** `REST_API_v3.md` §30 (Investment Funds) and §27 (Portfolio, used by the existing My Holdings tab).
 
 ---
 
-## API contract — proposed (lock before Task 2)
+## Locked API contract (from `REST_API_v3.md` §30)
 
-This section is the negotiation surface with the backend. The implementer should confirm with backend before writing fixtures.
-
-| Endpoint | Auth | Returns |
-|---|---|---|
-| `GET /api/v3/funds` | AnyAuth (read) | `{ funds: Fund[], total_count }` with filters `page`, `page_size`, `search`, `min_contribution_lt`, `sort` |
-| `GET /api/v3/funds/:id` | AnyAuth | `Fund` (with derived totals) plus `holdings: FundHolding[]` and `performance: FundPerformancePoint[]` |
-| `POST /api/v3/funds` | EmployeeJWT + `funds.manage` | `Fund` (newly created) |
-| `POST /api/v3/funds/:id/invest` | AnyAuth + `funds.invest` (client) or `funds.bank-invest` (supervisor for bank) | `ClientFundPosition` |
-| `POST /api/v3/funds/:id/redeem` | AnyAuth + `funds.invest` / `funds.bank-invest` | `ClientFundPosition` (or `null` if fully redeemed) |
-| `GET /api/v3/me/funds` | AnyAuth | `{ positions: ClientFundPosition[] }` for the caller |
+| Endpoint | Auth | Method | Purpose |
+|---|---|---|---|
+| `POST /api/v3/investment-funds` | Employee + `funds.manage` | Create | Provisions a bank-owned RSD account for the fund |
+| `GET /api/v3/investment-funds` | Any JWT | List | Discovery; filters: `page`, `page_size`, `search`, `active_only` |
+| `GET /api/v3/investment-funds/:id` | Any JWT | Detail | Returns `{ fund, holdings, performance }` |
+| `PUT /api/v3/investment-funds/:id` | Employee + `funds.manage` | Update | Mutable: `name`, `description`, `minimum_contribution_rsd`, `active` |
+| `POST /api/v3/investment-funds/:id/invest` | Any (`OwnerIsBankIfEmployee`) | Action | Body: `source_account_id`, `amount`, `currency`, `on_behalf_of_type?` |
+| `POST /api/v3/investment-funds/:id/redeem` | Any (`OwnerIsBankIfEmployee`) | Action | Body: `amount_rsd`, `target_account_id`, `on_behalf_of_type?` |
+| `GET /api/v3/me/investment-funds` | Any JWT | My positions | Returns the caller's positions; for employees this is the bank's positions |
 
 ```ts
-// proposed shapes, locked in src/types/fund.ts in Task 1
+// src/types/fund.ts — locked
 export interface Fund {
   id: number
   name: string
   description: string
-  manager_id: number
-  manager_name: string
-  minimum_contribution: string  // RSD, decimal-as-string per project convention
-  liquid_assets: string
-  fund_value: string  // derived
-  profit: string  // derived
-  account_number: string
+  minimum_contribution_rsd: string
+  manager_employee_id: number
+  rsd_account_id: number
+  fund_value_rsd: string
+  liquid_cash_rsd: string
+  profit_rsd: string
+  active: boolean
   created_at: string
 }
 
 export interface FundHolding {
-  id: number
-  ticker: string
-  price: string
-  change: string  // signed percent string e.g. "+2.31"
-  volume: number
-  initial_margin_cost: string
-  acquisition_date: string
+  stock_id: number
+  quantity: string
+  acquired_at: string
 }
 
 export interface FundPerformancePoint {
-  period: string  // ISO month, quarter, or year per `granularity`
-  fund_value: string
-  profit: string
+  as_of: string  // YYYY-MM-DD
+  fund_value_rsd: string
 }
 
 export interface ClientFundPosition {
-  id: number
   fund_id: number
   fund_name: string
-  total_invested: string
-  share_percent: string  // derived
-  current_value: string  // derived
-  is_bank: boolean  // true when this position represents bank-on-behalf
+  total_contributed_rsd: string
+  current_value_rsd: string
+  percentage_fund: string
+  profit_rsd: string
+  last_change_at: string
+}
+
+export interface FundContribution {
+  id: number
+  fund_id: number
+  amount_rsd: string
+  is_inflow: boolean
+  status: 'completed' | 'pending' | 'failed'
+  fee_rsd?: string
+  created_at: string
+}
+
+export interface FundFilters {
+  page?: number
+  page_size?: number
+  search?: string
+  active_only?: boolean
+}
+
+export interface CreateFundPayload {
+  name: string
+  description?: string
+  minimum_contribution_rsd?: string
+}
+
+export interface UpdateFundPayload {
+  name?: string
+  description?: string
+  minimum_contribution_rsd?: string
+  active?: boolean
+}
+
+export interface InvestPayload {
+  source_account_id: number
+  amount: string
+  currency: string
+  on_behalf_of_type?: 'self' | 'bank'
+}
+
+export interface RedeemPayload {
+  amount_rsd: string
+  target_account_id: number
+  on_behalf_of_type?: 'self' | 'bank'
 }
 ```
+
+**Notable contract details to design around:**
+- Spec talks about a "manager" name; backend exposes only `manager_employee_id`. The detail page must resolve the manager's name via the existing employees API (`GET /api/v3/employees/:id`) — add an extra `useEmployee(manager_employee_id)` query in `FundDetailsPanel`.
+- `holdings[]` in the detail response only includes `stock_id`, `quantity`, `acquired_at` — no ticker, price, or change. Resolve through the existing `useStock(id)` per-row OR add a backend endpoint follow-up; for v1, fetch each stock individually via existing `getStock(id)` and accept the n+1 (≤ ~20 holdings per fund typical).
+- `performance[]` has only `as_of` and `fund_value_rsd` — no profit per period. Compute deltas client-side or accept just the value line.
+- `POST /:id/invest` returns `contribution`, NOT the updated position. After mutation, invalidate `['funds', id]` and `['me-funds']` to refetch.
+- Redemption may fail with `409 insufficient_fund_cash` — show a specific error toast keyed off the backend `code` field.
+- The "manager" addendum (spec §Dodatak za Upravljanje zaposlenima — supervisor permission removal triggers fund ownership transfer) is backend-only; no frontend route. Confirmation dialog text update only.
 
 ---
 
@@ -79,44 +126,42 @@ export interface ClientFundPosition {
 
 | File | Action | Responsibility |
 |---|---|---|
-| `src/types/fund.ts` | Create | Types above |
+| `src/types/fund.ts` | Create | Types from "Locked API contract" |
 | `src/__tests__/fixtures/fund-fixtures.ts` | Create | `createMockFund`, `createMockFundHolding`, `createMockClientFundPosition`, canned datasets |
-| `src/lib/api/funds.ts` | Create | All six endpoints |
+| `src/lib/api/funds.ts` | Create | All seven endpoints |
 | `src/lib/api/funds.test.ts` | Create | Tests with `apiClient` mocked |
-| `src/hooks/useFunds.ts` | Create | `useFunds`, `useFund`, `useCreateFund`, `useInvestFund`, `useRedeemFund`, `useMyFundPositions` |
+| `src/hooks/useFunds.ts` | Create | `useFunds`, `useFund`, `useCreateFund`, `useUpdateFund`, `useInvestFund`, `useRedeemFund`, `useMyFundPositions` |
 | `src/hooks/useFunds.test.ts` | Create | Hook tests |
 | `src/components/funds/FundsTable.tsx` | Create | Discovery table with sort/filter |
 | `src/components/funds/FundsTable.test.tsx` | Create | RTL |
-| `src/components/funds/FundDetailsPanel.tsx` | Create | Header + key metrics on detail page |
+| `src/components/funds/FundDetailsPanel.tsx` | Create | Header + key metrics; resolves manager name via `useEmployee` |
 | `src/components/funds/FundDetailsPanel.test.tsx` | Create | RTL |
-| `src/components/funds/FundHoldingsTable.tsx` | Create | Listed securities with sell button (supervisor only) |
+| `src/components/funds/FundHoldingsTable.tsx` | Create | Holdings; resolves ticker via `useStock(stock_id)` per row |
 | `src/components/funds/FundHoldingsTable.test.tsx` | Create | RTL |
-| `src/components/funds/FundPerformanceChart.tsx` | Create | Recharts line — `granularity` selector (month/quarter/year) |
-| `src/components/funds/FundPerformanceChart.test.tsx` | Create | RTL (renders chart container w/ data) |
-| `src/components/funds/CreateFundForm.tsx` | Create | RHF + zod, four fields per spec |
-| `src/components/funds/CreateFundForm.test.tsx` | Create | RTL — validation + submit payload |
-| `src/components/funds/InvestInFundDialog.tsx` | Create | Account picker + amount; client picks own RSD acct, supervisor picks bank RSD acct |
+| `src/components/funds/FundPerformanceChart.tsx` | Create | Recharts `LineChart` over `performance[]` |
+| `src/components/funds/FundPerformanceChart.test.tsx` | Create | RTL (renders chart container with data) |
+| `src/components/funds/CreateFundForm.tsx` | Create | RHF + zod, three fields (name, description, minimum_contribution_rsd) |
+| `src/components/funds/CreateFundForm.test.tsx` | Create | RTL |
+| `src/components/funds/InvestInFundDialog.tsx` | Create | Account picker + amount + currency; enforces `amount >= minimum_contribution_rsd` for clients |
 | `src/components/funds/InvestInFundDialog.test.tsx` | Create | RTL |
 | `src/components/funds/RedeemFromFundDialog.tsx` | Create | Amount or "withdraw full position" + destination account |
 | `src/components/funds/RedeemFromFundDialog.test.tsx` | Create | RTL |
-| `src/components/funds/MyFundsList.tsx` | Create | Per-position card list (used inside the portfolio "My Funds" tab) |
+| `src/components/funds/MyFundsList.tsx` | Create | Per-position card list; client variant shows Invest/Redeem; supervisor variant routes to fund detail |
 | `src/components/funds/MyFundsList.test.tsx` | Create | RTL |
 | `src/pages/FundsDiscoveryPage.tsx` | Create | Wraps `FundsTable` + filters + invest button |
 | `src/pages/FundsDiscoveryPage.test.tsx` | Create | Page-level RTL |
-| `src/pages/FundDetailsPage.tsx` | Create | Header + holdings + performance chart |
+| `src/pages/FundDetailsPage.tsx` | Create | Composes Panel + Holdings + Performance with Invest/Redeem CTAs |
 | `src/pages/FundDetailsPage.test.tsx` | Create | Page-level RTL |
-| `src/pages/CreateFundPage.tsx` | Create | Hosts `CreateFundForm` + redirect on success |
+| `src/pages/CreateFundPage.tsx` | Create | Hosts `CreateFundForm`; redirects to `/funds/:id` on success |
 | `src/pages/CreateFundPage.test.tsx` | Create | Page-level RTL |
-| `src/pages/PortfolioPage.tsx` | Modify | Add tabs "Moje hartije" / "Moji fondovi"; second tab renders `MyFundsList` |
+| `src/pages/PortfolioPage.tsx` | Modify | Add tabs "My Holdings" / "My Funds"; second tab renders `MyFundsList` |
 | `src/pages/PortfolioPage.test.tsx` | Modify | Tab-switch test |
-| `src/App.tsx` | Modify | Add `/funds`, `/funds/new`, `/funds/:id` |
-| `src/components/layout/Sidebar.tsx` | Modify | Add "Funds" link in Trading group (both navs); "Create Fund" link guarded by `funds.manage` |
+| `src/App.tsx` | Modify | Add `/funds`, `/funds/new`, `/funds/:id` routes |
+| `src/components/layout/Sidebar.tsx` | Modify | Add "Funds" + "Create Fund" links |
 | `src/components/layout/Sidebar.test.tsx` | Modify | Coverage |
-| `cypress/fixtures/funds-list.json`, `cypress/fixtures/fund-detail.json`, `cypress/fixtures/me-funds.json` | Create | Match the contract above |
+| `cypress/fixtures/funds-list.json`, `fund-detail.json`, `me-funds.json`, `fund-contribution.json` | Create | Match the contract exactly |
 | `cypress/e2e/funds.cy.ts` | Create | Smoke: list → detail → invest → see in "My Funds" |
 | `specification.md` | Modify | Project Structure / Routes / Pages / Components / API / Hooks / Types / Coverage |
-
-**Component-size enforcement:** every component is sized to fit ≤150 lines (CLAUDE.md). The pages are intentionally thin — heavy logic goes into hooks and the dedicated panel components.
 
 ---
 
@@ -124,7 +169,7 @@ export interface ClientFundPosition {
 
 | Route | Page | Visibility |
 |---|---|---|
-| `/funds` | `FundsDiscoveryPage` | any authenticated (read) |
+| `/funds` | `FundsDiscoveryPage` | any authenticated |
 | `/funds/new` | `CreateFundPage` | `funds.manage` only |
 | `/funds/:id` | `FundDetailsPage` | any authenticated |
 | `/portfolio?tab=funds` | `PortfolioPage` (existing, +tabs) | client + employee |
@@ -145,60 +190,77 @@ Create Fund          ← new (only when funds.manage)
 - Create: `src/types/fund.ts`
 - Create: `src/__tests__/fixtures/fund-fixtures.ts`
 
-- [ ] **Step 1:** Write `src/types/fund.ts` with the contract from "API contract — proposed" above.
+- [ ] **Step 1:** Write `src/types/fund.ts` with the contract from "Locked API contract".
 - [ ] **Step 2:** Write `src/__tests__/fixtures/fund-fixtures.ts`:
 
 ```ts
-import type { Fund, FundHolding, ClientFundPosition, FundPerformancePoint } from '@/types/fund'
+import type {
+  Fund,
+  FundHolding,
+  ClientFundPosition,
+  FundPerformancePoint,
+  FundContribution,
+} from '@/types/fund'
 
 export function createMockFund(overrides: Partial<Fund> = {}): Fund {
   return {
     id: 101,
     name: 'Alpha Growth Fund',
-    description: 'Fond fokusiran na IT sektor.',
-    manager_id: 25,
-    manager_name: 'Marko Marković',
-    minimum_contribution: '1000.00',
-    liquid_assets: '1500000.00',
-    fund_value: '2600000.00',
-    profit: '500000.00',
-    account_number: '123-45678-90',
+    description: 'IT-sector focus',
+    minimum_contribution_rsd: '1000.00',
+    manager_employee_id: 25,
+    rsd_account_id: 9001,
+    fund_value_rsd: '2600000.00',
+    liquid_cash_rsd: '1500000.00',
+    profit_rsd: '5000.00',
+    active: true,
     created_at: '2020-05-15T00:00:00Z',
     ...overrides,
   }
 }
 
 export function createMockFundHolding(overrides: Partial<FundHolding> = {}): FundHolding {
-  return {
-    id: 1,
-    ticker: 'AAPL',
-    price: '150.00',
-    change: '+1.20',
-    volume: 200,
-    initial_margin_cost: '0',
-    acquisition_date: '2026-01-12T00:00:00Z',
-    ...overrides,
-  }
+  return { stock_id: 42, quantity: '100', acquired_at: '2026-01-12T00:00:00Z', ...overrides }
+}
+
+export function createMockPerformancePoint(
+  overrides: Partial<FundPerformancePoint> = {}
+): FundPerformancePoint {
+  return { as_of: '2026-04-01', fund_value_rsd: '2600000.00', ...overrides }
 }
 
 export function createMockClientFundPosition(
   overrides: Partial<ClientFundPosition> = {}
 ): ClientFundPosition {
   return {
-    id: 1,
     fund_id: 101,
     fund_name: 'Alpha Growth Fund',
-    total_invested: '25000.00',
-    share_percent: '0.005',
-    current_value: '27000.00',
-    is_bank: false,
+    total_contributed_rsd: '25000.00',
+    current_value_rsd: '27000.00',
+    percentage_fund: '0.005',
+    profit_rsd: '2000.00',
+    last_change_at: '2026-04-15T10:00:00Z',
+    ...overrides,
+  }
+}
+
+export function createMockFundContribution(
+  overrides: Partial<FundContribution> = {}
+): FundContribution {
+  return {
+    id: 7001,
+    fund_id: 101,
+    amount_rsd: '10000.00',
+    is_inflow: true,
+    status: 'completed',
+    created_at: '2026-04-28T15:30:00Z',
     ...overrides,
   }
 }
 
 export const mockFunds: Fund[] = [
   createMockFund(),
-  createMockFund({ id: 102, name: 'Beta Income Fund', minimum_contribution: '500.00' }),
+  createMockFund({ id: 102, name: 'Beta Income Fund', minimum_contribution_rsd: '500.00' }),
 ]
 ```
 
@@ -218,27 +280,30 @@ git commit -m "feat(funds): add Fund types and fixtures"
 - Create: `src/lib/api/funds.ts`
 - Create: `src/lib/api/funds.test.ts`
 
-For each of `getFunds`, `getFund(id)`, `createFund(payload)`, `investInFund(id, payload)`, `redeemFromFund(id, payload)`, `getMyFundPositions()`, follow the same RED → impl → GREEN cadence as the OTC plan Task 1. Each test asserts the URL, the params/body, and the return shape (use the fixtures from Task 1).
-
-Concrete signatures:
+For each function, follow RED → impl → GREEN → COMMIT.
 
 ```ts
-export async function getFunds(filters: FundFilters = {}): Promise<{ funds: Fund[]; total_count: number }>
-export async function getFund(id: number): Promise<{ fund: Fund; holdings: FundHolding[]; performance: FundPerformancePoint[] }>
-export async function createFund(payload: CreateFundPayload): Promise<Fund>
-export async function investInFund(id: number, payload: InvestPayload): Promise<ClientFundPosition>
-export async function redeemFromFund(id: number, payload: RedeemPayload): Promise<ClientFundPosition | null>
+// src/lib/api/funds.ts — concrete signatures
+export async function getFunds(filters: FundFilters = {}): Promise<{ funds: Fund[]; total: number }>
+export async function getFund(id: number): Promise<{
+  fund: Fund
+  holdings: FundHolding[]
+  performance: FundPerformancePoint[]
+}>
+export async function createFund(payload: CreateFundPayload): Promise<{ fund: Fund }>
+export async function updateFund(id: number, payload: UpdateFundPayload): Promise<{ fund: Fund }>
+export async function investInFund(id: number, payload: InvestPayload): Promise<{ contribution: FundContribution }>
+export async function redeemFromFund(id: number, payload: RedeemPayload): Promise<{ contribution: FundContribution }>
 export async function getMyFundPositions(): Promise<{ positions: ClientFundPosition[] }>
 ```
 
-Where `CreateFundPayload`, `InvestPayload`, `RedeemPayload`, `FundFilters` live in `types/fund.ts`. Define them in this task and add a quick types-only `tsc` check.
+**URL paths (verbatim from §30):** `/investment-funds`, `/investment-funds/:id`, `/investment-funds/:id/invest`, `/investment-funds/:id/redeem`, `/me/investment-funds`. Note: spec calls them "funds" but the URL segment is `investment-funds`.
 
-- [ ] Repeat the RED/GREEN/COMMIT cadence for each of the six functions.
-- [ ] After all six are green, single commit.
+After all seven functions are GREEN:
 
 ```sh
 git add src/types/fund.ts src/lib/api/funds.ts src/lib/api/funds.test.ts
-git commit -m "feat(funds): API layer (list/detail/create/invest/redeem/me)"
+git commit -m "feat(funds): API layer (list/detail/create/update/invest/redeem/me)"
 ```
 
 ---
@@ -250,14 +315,18 @@ git commit -m "feat(funds): API layer (list/detail/create/invest/redeem/me)"
 - Create: `src/hooks/useFunds.test.ts`
 
 Mirror `useStockExchanges.ts` and `useOtc.ts`:
-- `useFunds(filters)` — `queryKey: ['funds', filters]`
-- `useFund(id)` — `queryKey: ['funds', id]`, `enabled: id != null`
-- `useMyFundPositions()` — `queryKey: ['funds', 'me']`
-- `useCreateFund()` — invalidates `['funds']` on success, redirects via `useMutationWithRedirect` (existing helper) to `/funds/:id`
-- `useInvestFund()` — invalidates `['funds', id]` and `['funds', 'me']`
-- `useRedeemFund()` — same invalidations
 
-For each hook: RED test using `renderHook` + `QueryClient` wrapper (copy the pattern from `useNotifications.test.ts` or `useOtc.test.ts`), implement, GREEN, then commit when all six are green.
+| Hook | Type | Query key / invalidation |
+|---|---|---|
+| `useFunds(filters)` | useQuery | `['funds', filters]` |
+| `useFund(id)` | useQuery | `['funds', id]`, `enabled: id != null` |
+| `useMyFundPositions()` | useQuery | `['funds', 'me']` |
+| `useCreateFund()` | useMutation | invalidates `['funds']` on success |
+| `useUpdateFund(id)` | useMutation | invalidates `['funds']` and `['funds', id]` |
+| `useInvestFund(id)` | useMutation | invalidates `['funds', id]`, `['funds', 'me']`, `['accounts']` |
+| `useRedeemFund(id)` | useMutation | same invalidations |
+
+For each hook: RED test using `renderHook` + `createQueryWrapper()` (existing helper), implement, GREEN, then commit when all are green.
 
 ```sh
 git add src/hooks/useFunds.ts src/hooks/useFunds.test.ts
@@ -272,11 +341,11 @@ git commit -m "feat(funds): React Query hooks"
 - Create: `src/components/funds/FundsTable.tsx`
 - Create: `src/components/funds/FundsTable.test.tsx`
 
-Columns per spec: *naziv, opis, ukupna vrednost, profit, minimalni ulog*. Each row has an "Invest" button (only enabled when balance ≥ `minimum_contribution`; for supervisors, also show "Manage" if `current_user.id === fund.manager_id`).
+Columns per spec: *naziv, opis, fund_value_rsd, profit_rsd, minimum_contribution_rsd*. Each row has an "Invest" button (disabled when `!fund.active`); for supervisors, also a "Manage" link if `current_user.id === fund.manager_employee_id`.
 
-- [ ] RED: tests for column rendering, "Invest" disabled state, click handlers.
-- [ ] GREEN: implementation (≤120 lines, lift the bigger formatting helpers into `lib/utils/formatRsd.ts` if needed).
-- [ ] COMMIT.
+Use the new `Skeleton` pattern from `motion` polish for the loading state — five skeleton rows.
+
+- [ ] RED → GREEN → COMMIT.
 
 ---
 
@@ -286,11 +355,9 @@ Columns per spec: *naziv, opis, ukupna vrednost, profit, minimalni ulog*. Each r
 - Create: `src/components/funds/CreateFundForm.tsx`, `.test.tsx`
 - Create: `src/pages/CreateFundPage.tsx`, `.test.tsx`
 
-Spec fields: name, description, minimum_contribution (RSD decimal), manager (defaults to current supervisor; admin can choose another supervisor — extension noted in Celina 4). Use react-hook-form + zod with required-field validation, decimal regex on `minimum_contribution`, length caps on text. On submit, call `useCreateFund().mutate(payload)`, redirect to `/funds/:id`.
+Spec fields locked to the §30 body: `name` (required), `description` (optional), `minimum_contribution_rsd` (optional decimal string). Use react-hook-form + zod with required-on-name and decimal regex on `minimum_contribution_rsd`. On submit, call `useCreateFund().mutate(payload)`, on success redirect to `/funds/:id` (id from response).
 
-- [ ] RED tests: validation errors render, submit fires the API once with normalized payload.
-- [ ] GREEN.
-- [ ] COMMIT.
+- [ ] RED → GREEN → COMMIT.
 
 ---
 
@@ -298,10 +365,10 @@ Spec fields: name, description, minimum_contribution (RSD decimal), manager (def
 
 Split into three sub-components so each stays small.
 
-- **`FundDetailsPanel`** — header card: name, manager, fund value, minimum_contribution, profit, account number, liquid_assets.
-- **`FundHoldingsTable`** — columns Ticker, Price, Change, Volume, initialMarginCost, acquisitionDate. Adds a "Sell" button per row when `current_user.id === fund.manager_id`.
-- **`FundPerformanceChart`** — Recharts `LineChart`, granularity radio (month/quarter/year), reads from `performance` payload. Empty state when `performance.length === 0`.
-- **`FundDetailsPage`** — `useFund(id)`, composes the three sub-components with a top-right "Invest" button (`InvestInFundDialog`) or, for the manager, a "Manage" menu.
+- **`FundDetailsPanel`** — header card: name, manager (resolve via `useEmployee(fund.manager_employee_id)`), `fund_value_rsd`, `liquid_cash_rsd`, `profit_rsd`, `minimum_contribution_rsd`, `rsd_account_id` (formatted). The `active` flag is shown as a badge.
+- **`FundHoldingsTable`** — for each holding, render Ticker (resolved via `useStock(stock_id)`), Quantity, Acquired Date. Adds a "Sell" button per row when `current_user.id === fund.manager_employee_id`. Sell flows through the existing securities order API; route is out of scope for this plan (note in code: TODO link to phase 5 `on_behalf_of_type='fund'`).
+- **`FundPerformanceChart`** — Recharts `LineChart` over `performance[]` mapping `as_of` → x-axis, `fund_value_rsd` → y-axis. Empty state: "No performance data yet."
+- **`FundDetailsPage`** — `useFund(id)`, composes the three sub-components with a top-right "Invest" button (`InvestInFundDialog`). For the supervisor manager, additional "Edit" + "Toggle active" actions.
 
 Each sub-component gets its own RED/GREEN/COMMIT.
 
@@ -309,11 +376,18 @@ Each sub-component gets its own RED/GREEN/COMMIT.
 
 ## Task 7: `InvestInFundDialog` + `RedeemFromFundDialog`
 
-Each is a Shadcn `Dialog` with: amount input, account select (filtered to RSD accounts; for supervisor, the bank's RSD accounts via `useBankAccounts` — already exists at `src/lib/api/bankAccounts.ts`-compatible if present, or via `useClientAccounts` for clients). Redeem dialog has a "withdraw full position" toggle that fills the amount with `position.current_value`.
+Each is a Shadcn `Dialog` with: amount input, currency select (Invest only — Redeem is RSD-only by spec), account select (filtered to the current owner's accounts via `useClientAccounts()` for clients or `useBankAccounts()` for employees), and a Submit.
 
-- [ ] RED: validation (amount ≥ minimum_contribution for invest; amount ≤ position.current_value for redeem), payload shape on submit.
-- [ ] GREEN.
-- [ ] COMMIT.
+Invest:
+- Validation: `amount` decimal > 0; if currency is RSD, also enforce `>= fund.minimum_contribution_rsd`.
+- Body: `{ source_account_id, amount, currency }` — `on_behalf_of_type` is omitted for clients (defaults to `'self'`); employees pass `'bank'`.
+
+Redeem:
+- "Withdraw full position" toggle that fills `amount_rsd` from `position.current_value_rsd`.
+- Body: `{ amount_rsd, target_account_id }` plus `on_behalf_of_type` for employees.
+- On 409 with `code='insufficient_fund_cash'`, show inline error: "The fund does not have enough liquid cash. Please try a smaller amount or contact the fund manager."
+
+- [ ] RED → GREEN → COMMIT.
 
 ---
 
@@ -323,24 +397,22 @@ Each is a Shadcn `Dialog` with: amount input, account select (filtered to RSD ac
 - Create: `src/components/funds/MyFundsList.tsx`, `.test.tsx`
 - Modify: `src/pages/PortfolioPage.tsx`, `.test.tsx`
 
-`MyFundsList` renders one card per `ClientFundPosition` with: name, description, fund_value, share_percent + RSD value, profit, "Invest" + "Redeem" buttons. Card click navigates to `/funds/:id`. Behavior differs slightly for supervisor (per spec): card shows liquid_assets instead of profit; no Invest/Redeem on bank-position cards (handled separately in Profit Banke portal — phase 5).
+`MyFundsList` renders one card per `ClientFundPosition` from `useMyFundPositions()`. Card shows name, `current_value_rsd`, `percentage_fund`, `profit_rsd`. Client variant: "Invest" + "Redeem" buttons. Supervisor variant: "Open" button → `/funds/:id`. Card click navigates to `/funds/:id`.
 
 Modify `PortfolioPage.tsx` to use Shadcn Tabs:
 
 ```tsx
 <Tabs defaultValue={searchParams.get('tab') ?? 'holdings'}>
   <TabsList>
-    <TabsTrigger value="holdings">Moje hartije</TabsTrigger>
-    <TabsTrigger value="funds">Moji fondovi</TabsTrigger>
+    <TabsTrigger value="holdings">My Holdings</TabsTrigger>
+    <TabsTrigger value="funds">My Funds</TabsTrigger>
   </TabsList>
   <TabsContent value="holdings"><HoldingsTable .../></TabsContent>
   <TabsContent value="funds"><MyFundsList /></TabsContent>
 </Tabs>
 ```
 
-- [ ] RED: tab switch test, MyFundsList rendering tests.
-- [ ] GREEN.
-- [ ] COMMIT.
+- [ ] RED → GREEN → COMMIT.
 
 ---
 
@@ -351,7 +423,7 @@ Modify `PortfolioPage.tsx` to use Shadcn Tabs:
 - Modify: `src/App.tsx`
 - Modify: `src/components/layout/Sidebar.tsx`, `.test.tsx`
 
-`FundsDiscoveryPage` composes filters + `FundsTable` + pagination, opens `InvestInFundDialog` from row clicks.
+`FundsDiscoveryPage` composes filters (`search`, `active_only` toggle) + `FundsTable` + pagination, opens `InvestInFundDialog` from row clicks.
 
 Routes:
 
@@ -360,7 +432,7 @@ Routes:
 <Route
   path="/funds/new"
   element={
-    <ProtectedRoute requireSupervisorOrAdmin>
+    <ProtectedRoute requiredPermission="funds.manage">
       <CreateFundPage />
     </ProtectedRoute>
   }
@@ -368,21 +440,19 @@ Routes:
 <Route path="/funds/:id" element={<FundDetailsPage />} />
 ```
 
-Sidebar additions: "Funds" link in `ClientNav` Trading group, same in `EmployeeNav`. "Create Fund" link gated on `funds.manage` (use `selectHasPermission`).
+Sidebar additions: "Funds" link in `ClientNav` Trading group + same in `EmployeeNav`. "Create Fund" link gated on `selectHasPermission('funds.manage')`.
 
-- [ ] RED: page tests + sidebar tests.
-- [ ] GREEN.
-- [ ] COMMIT.
+- [ ] RED → GREEN → COMMIT.
 
 ---
 
 ## Task 10: Cypress smoke
 
 **Files:**
-- Create: `cypress/fixtures/funds-list.json`, `fund-detail.json`, `me-funds.json`
+- Create: `cypress/fixtures/funds-list.json`, `fund-detail.json`, `me-funds.json`, `fund-contribution.json`
 - Create: `cypress/e2e/funds.cy.ts`
 
-Mock all six endpoints with `cy.intercept`. Smoke flow: client logs in → `/funds` → sees list → opens detail → opens Invest dialog → submits → returns to `/portfolio?tab=funds` and sees the new position.
+Fixtures must match the `REST_API_v3.md` §30 response shapes verbatim. Smoke flow: client logs in → `/funds` → sees list → opens detail → opens Invest dialog → submits → returns to `/portfolio?tab=funds` and sees the new position.
 
 - [ ] Author + run — PASS.
 - [ ] COMMIT.
@@ -391,7 +461,7 @@ Mock all six endpoints with `cy.intercept`. Smoke flow: client logs in → `/fun
 
 ## Task 11: Quality gates + spec update
 
-- [ ] All gates: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npx prettier --check "src/**/*.{ts,tsx}"`, `npm run build` — PASS.
+- [ ] All gates pass: `npm test`, `npm run lint`, `npx tsc --noEmit`, `npx prettier --check "src/**/*.{ts,tsx}"`, `npm run build`.
 - [ ] Update `specification.md`: project tree, routes, pages, components (8 new), state mgmt API + hooks, types, coverage table, last-updated date.
 - [ ] `grep -rE "/api/v[0-9]" cypress/` clean.
 - [ ] COMMIT.
@@ -400,25 +470,26 @@ Mock all six endpoints with `cy.intercept`. Smoke flow: client logs in → `/fun
 
 ## Self-Review Checklist
 
-1. **Spec coverage:** every spec section is mapped to a task —
+1. **Spec coverage:** every §Investicioni fondovi sub-section is mapped:
    - "Discovery page" → Task 4 + Task 9 ✅
    - "Detaljan prikaz fonda" → Task 6 ✅
    - "Create investment fund page" → Task 5 ✅
    - "Dodatak za 'Moj portfolio' → Moji fondovi" → Task 8 ✅
-   - "Dodatak za 'Hartije od vrednosti' (buy on behalf of fund)" → **NOT in this plan** — see roadmap phase 4. (separate plan once this lands)
-   - "Dodatak za 'Upravljanje zaposlenima'" — backend permission removal logic, no frontend route. ✅ excluded.
+   - "Dodatak za 'Hartije od vrednosti' (buy on behalf of fund)" → **NOT in this plan** — see roadmap phase 5 (depends on backend confirmation of `on_behalf_of_type` on `POST /me/orders`)
+   - "Dodatak za 'Upravljanje zaposlenima'" — backend logic; frontend is just a confirmation-dialog text update done with the auth selector cleanup. ✅ excluded.
 2. **Permissions everywhere:** create page + create-fund link + sell-on-behalf actions all gated. ✅
-3. **Component size:** all 8 components ≤ 150 lines after the split into Header / HoldingsTable / Performance / Dialogs.
-4. **API contract risk:** every backend dependency is centralized in `src/lib/api/funds.ts`. When real endpoints land, only this file (+ Cypress fixtures) needs review.
-5. **YAGNI:** no Redux slice, no global cache, no realtime — purely server state via React Query. ✅
-6. **Decimal handling:** all currency values use `string` (project convention) — never coerce to `number` for arithmetic; rely on backend-derived `fund_value`/`profit` per spec note.
+3. **Component size:** all 8 components ≤ 150 lines after splitting Detail into Panel / HoldingsTable / Performance / Dialogs.
+4. **Locked API contract:** every backend dependency is centralized in `src/lib/api/funds.ts`. Field names, paths, and response shapes match §30 exactly.
+5. **Error handling:** every mutation will toast on failure via the global fallback (CLAUDE.md mandate). Inline errors only for the Redeem `insufficient_fund_cash` case where the user can act on the message.
+6. **Decimal handling:** all currency values use `string` (project convention).
+7. **TDD:** every implementation step is preceded by a failing test.
 
 ---
 
 ## Backend handoff notes
 
-When the funds backend lands, the implementer should:
+When the funds backend changes, the implementer should:
 
-1. Diff the actual response shapes against `src/types/fund.ts`. Update types or push back on backend if the contract drifted.
-2. Re-record Cypress fixtures from a real localhost run (decode JWTs to ensure they match the v3 shape — see `docs/environments-and-testing.md`).
-3. Re-run Task 11 gates. No source changes should be needed beyond `types/fund.ts` and fixtures, by design.
+1. Diff the actual response shapes against `src/types/fund.ts`. Update types or push back on backend.
+2. Re-record Cypress fixtures from a real localhost run (decode JWTs to confirm v3 shape — see `docs/environments-and-testing.md`).
+3. Re-run Task 11 gates. By design, only `types/fund.ts` and Cypress fixtures should need touching.
