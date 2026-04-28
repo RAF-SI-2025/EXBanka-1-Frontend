@@ -1,7 +1,14 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'https://bytenity.com'
-//const API_BASE_URL = 'http://localhost:8080'
+// Build-time constants injected by Vite's `define` from VITE_API_HOST /
+// VITE_API_VERSION (see vite.config.ts and .env.development / .env.production).
+// In Jest the constants are undeclared, so the fallback values are used.
+declare const __API_HOST__: string | undefined
+declare const __API_VERSION__: string | undefined
+
+const API_HOST = typeof __API_HOST__ !== 'undefined' ? __API_HOST__ : 'http://localhost:8080'
+export const API_VERSION = typeof __API_VERSION__ !== 'undefined' ? __API_VERSION__ : 'v3'
+export const API_BASE_URL = `${API_HOST}/api/${API_VERSION}`
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -27,7 +34,7 @@ apiClient.interceptors.response.use(
       const refreshToken = sessionStorage.getItem('refresh_token')
       if (refreshToken) {
         try {
-          const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
+          const { data } = await axios.post(`${API_BASE_URL}/auth/refresh`, {
             refresh_token: refreshToken,
           })
           sessionStorage.setItem('access_token', data.access_token)
