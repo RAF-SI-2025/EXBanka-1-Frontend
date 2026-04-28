@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label'
 import type { CreateOrderPayload, OrderDirection } from '@/types/order'
 import type { CreateOptionOrderPayload } from '@/types/security'
 import type { Client } from '@/types/client'
+import { usePiggy } from '@/hooks/usePiggy'
 
 type ChargeMode = 'bank' | 'client'
 
@@ -35,6 +36,7 @@ export function CreateOrderPage() {
   const createOrderMutation = useCreateOrder()
   const createOrderOnBehalfMutation = useCreateOrderOnBehalf()
   const createOptionOrderMutation = useCreateOptionOrder()
+  const { triggerPiggy } = usePiggy()
   const { data: clientAccountsData } = useClientAccounts()
   const { data: bankAccountsData } = useBankAccounts()
   const { data: clientSpecificData } = useAccountsByClient(selectedClient?.id ?? 0)
@@ -57,6 +59,10 @@ export function CreateOrderPage() {
   const effectiveListingId = isSell ? selectedListingId : listingId
 
   const handleSubmit = (payload: CreateOrderPayload) => {
+    const onSuccess = () => {
+      triggerPiggy(payload.direction === 'sell' ? 'fill' : 'break')
+      navigate('/orders')
+    }
     if (isOption && optionId) {
       const optionPayload: CreateOptionOrderPayload = {
         direction: payload.direction,
@@ -68,19 +74,14 @@ export function CreateOrderPage() {
         all_or_none: payload.all_or_none,
         margin: payload.margin,
       }
-      createOptionOrderMutation.mutate(
-        { optionId, payload: optionPayload },
-        { onSuccess: () => navigate('/orders') }
-      )
+      createOptionOrderMutation.mutate({ optionId, payload: optionPayload }, { onSuccess })
     } else if (userType === 'employee' && chargeMode === 'client' && selectedClient) {
       createOrderOnBehalfMutation.mutate(
         { ...payload, client_id: selectedClient.id },
-        { onSuccess: () => navigate('/orders') }
+        { onSuccess }
       )
     } else {
-      createOrderMutation.mutate(payload, {
-        onSuccess: () => navigate('/orders'),
-      })
+      createOrderMutation.mutate(payload, { onSuccess })
     }
   }
 

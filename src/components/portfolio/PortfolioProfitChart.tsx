@@ -22,16 +22,13 @@ export function PortfolioProfitChart({ summary }: PortfolioProfitChartProps) {
   ]
   const allZero = data.every((d) => d.value === 0)
 
-  if (allZero) {
-    return (
-      <p className="text-sm text-muted-foreground" data-testid="profit-chart-empty">
-        No realised profit yet — make your first trade to see it here.
-      </p>
-    )
-  }
-
   return (
     <div className="h-56 w-full" data-testid="profit-chart">
+      {allZero && (
+        <p className="text-xs text-muted-foreground mb-2" data-testid="profit-chart-empty">
+          No realised profit yet — make your first trade to see it here.
+        </p>
+      )}
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" />

@@ -8,6 +8,7 @@ import App from '@/App'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Toaster } from '@/components/ui/sonner'
 import { AppErrorBoundary } from '@/components/shared/AppErrorBoundary'
+import { PiggyProvider } from '@/contexts/PiggyContext'
 import { createQueryClient } from '@/lib/queryClient'
 import './index.css'
 
@@ -20,7 +21,9 @@ createRoot(document.getElementById('root')!).render(
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
             <AppErrorBoundary>
-              <App />
+              <PiggyProvider>
+                <App />
+              </PiggyProvider>
             </AppErrorBoundary>
           </BrowserRouter>
           <Toaster richColors position="top-right" />
