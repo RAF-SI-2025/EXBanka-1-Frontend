@@ -25,6 +25,21 @@ describe('AccountDetailsPage', () => {
       data: { accounts: [], total: 0 },
       isLoading: false,
     } as any)
+    jest.mocked(useAccountsHook.useAccountActivity).mockReturnValue({
+      data: { entries: [], total_count: 0 },
+      isLoading: false,
+    } as any)
+  })
+
+  it('embeds the activity panel', () => {
+    renderWithProviders(<AccountDetailsPage />, { route: '/accounts/1' })
+    expect(screen.getByText(/^activity$/i)).toBeInTheDocument()
+    expect(screen.getByText(/no activity yet/i)).toBeInTheDocument()
+  })
+
+  it('does not have a separate "View Activity" navigate button', () => {
+    renderWithProviders(<AccountDetailsPage />, { route: '/accounts/1' })
+    expect(screen.queryByRole('button', { name: /view activity/i })).not.toBeInTheDocument()
   })
 
   it('renders account name', () => {
