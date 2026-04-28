@@ -91,6 +91,9 @@ export function AccountDetailsPage() {
         <Button variant="outline" onClick={() => setRenameOpen(true)}>
           Rename Account
         </Button>
+        <Button variant="outline" onClick={() => navigate(`/accounts/${account.id}/activity`)}>
+          View Activity
+        </Button>
       </div>
 
       {account.daily_limit !== undefined && (

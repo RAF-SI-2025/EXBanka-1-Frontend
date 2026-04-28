@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
-import { createMockAuthState } from '@/__tests__/fixtures/auth-fixtures'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
 describe('ProtectedRoute', () => {
   it('renders children when authenticated', () => {
@@ -66,5 +66,37 @@ describe('ProtectedRoute', () => {
       { preloadedState: { auth: createMockAuthState({ userType: 'employee' }) } }
     )
     expect(screen.queryByText('Client Content')).not.toBeInTheDocument()
+  })
+
+  it('renders when requireAdmin and role is EmployeeAdmin', () => {
+    renderWithProviders(
+      <ProtectedRoute requireAdmin>
+        <div>Admin Area</div>
+      </ProtectedRoute>,
+      {
+        preloadedState: {
+          auth: createMockAuthState({
+            user: createMockAuthUser({ role: 'EmployeeAdmin' }),
+          }),
+        },
+      }
+    )
+    expect(screen.getByText('Admin Area')).toBeInTheDocument()
+  })
+
+  it('blocks when requireAdmin and role is not EmployeeAdmin', () => {
+    renderWithProviders(
+      <ProtectedRoute requireAdmin>
+        <div>Admin Area</div>
+      </ProtectedRoute>,
+      {
+        preloadedState: {
+          auth: createMockAuthState({
+            user: createMockAuthUser({ role: 'EmployeeBasic' }),
+          }),
+        },
+      }
+    )
+    expect(screen.queryByText('Admin Area')).not.toBeInTheDocument()
   })
 })

@@ -20,7 +20,7 @@ describe('getEmployees', () => {
 
     const result = await getEmployees({ email: 'jane', page: 1, page_size: 20 })
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/employees', {
+    expect(mockGet).toHaveBeenCalledWith('/employees', {
       params: { email: 'jane', page: 1, page_size: 20 },
     })
     expect(result).toEqual(response)
@@ -34,7 +34,7 @@ describe('getEmployee', () => {
 
     const result = await getEmployee(5)
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/employees/5')
+    expect(mockGet).toHaveBeenCalledWith('/employees/5')
     expect(result).toEqual(employee)
   })
 })
@@ -54,7 +54,7 @@ describe('createEmployee', () => {
 
     const result = await createEmployee(payload)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/employees', payload)
+    expect(mockPost).toHaveBeenCalledWith('/employees', payload)
     expect(result).toEqual(employee)
   })
 })
@@ -67,7 +67,7 @@ describe('updateEmployee', () => {
 
     const result = await updateEmployee(1, payload)
 
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/employees/1', payload)
+    expect(mockPut).toHaveBeenCalledWith('/employees/1', payload)
     expect(result).toEqual(employee)
   })
 })

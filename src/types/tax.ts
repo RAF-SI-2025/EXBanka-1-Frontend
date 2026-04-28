@@ -1,12 +1,10 @@
 export interface TaxRecord {
   id: number
+  first_name: string
+  last_name: string
   user_type: 'client' | 'actuary'
-  user_name: string
-  user_email: string
-  taxable_amount: string
-  tax_amount: string
-  status: string
-  created_at: string
+  unpaid_tax: string
+  last_collection?: string | null
 }
 
 export interface TaxListResponse {

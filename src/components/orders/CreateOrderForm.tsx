@@ -10,8 +10,8 @@ interface CreateOrderFormProps {
   onSubmit: (payload: CreateOrderPayload) => void
   submitting: boolean
   listingId?: number
-  holdingId?: number
   accounts?: Account[]
+  depositAccounts?: Account[]
 }
 
 export function CreateOrderForm({
@@ -19,10 +19,10 @@ export function CreateOrderForm({
   onSubmit,
   submitting,
   listingId,
-  holdingId,
   accounts = [],
+  depositAccounts,
 }: CreateOrderFormProps) {
-  const [direction, setDirection] = useState<OrderDirection>(defaultDirection)
+  const isForex = depositAccounts !== undefined
   const [orderType, setOrderType] = useState<OrderType>('market')
   const [quantity, setQuantity] = useState('')
   const [limitValue, setLimitValue] = useState('')
@@ -30,39 +30,62 @@ export function CreateOrderForm({
   const [allOrNone, setAllOrNone] = useState(false)
   const [margin, setMargin] = useState(false)
   const [accountId, setAccountId] = useState<number | undefined>(accounts[0]?.id)
+  const [depositAccountId, setDepositAccountId] = useState<number | undefined>(
+    depositAccounts?.[0]?.id
+  )
 
   const showLimit = orderType === 'limit' || orderType === 'stop_limit'
   const showStop = orderType === 'stop' || orderType === 'stop_limit'
 
   const handleSubmit = () => {
     const payload: CreateOrderPayload = {
-      direction,
+      direction: defaultDirection,
       order_type: orderType,
       quantity: Number(quantity) || 0,
       all_or_none: allOrNone,
       margin,
       ...(listingId ? { listing_id: listingId } : {}),
-      ...(holdingId ? { holding_id: holdingId } : {}),
       ...(showLimit && limitValue ? { limit_value: limitValue } : {}),
       ...(showStop && stopValue ? { stop_value: stopValue } : {}),
       ...(accountId ? { account_id: accountId } : {}),
+      ...(isForex && depositAccountId
+        ? { base_account_id: depositAccountId, security_type: 'forex' }
+        : {}),
     }
     onSubmit(payload)
   }
 
   return (
     <div className="space-y-4 max-w-md">
-      {accounts.length > 0 && (
+      <div>
+        <Label htmlFor="account">Account</Label>
+        <select
+          id="account"
+          className="w-full border rounded px-3 py-2 text-sm mt-1"
+          value={accountId ?? ''}
+          onChange={(e) => setAccountId(Number(e.target.value) || undefined)}
+        >
+          <option value="">Select account</option>
+          {accounts.map((acc) => (
+            <option key={acc.id} value={acc.id}>
+              {acc.account_number} ({acc.currency_code}) - {acc.account_name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {isForex && (
         <div>
-          <Label htmlFor="account">Account</Label>
+          <Label htmlFor="deposit-account">Deposit Account</Label>
           <select
-            id="account"
+            id="deposit-account"
+            aria-label="Deposit Account"
             className="w-full border rounded px-3 py-2 text-sm mt-1"
-            value={accountId ?? ''}
-            onChange={(e) => setAccountId(Number(e.target.value) || undefined)}
+            value={depositAccountId ?? ''}
+            onChange={(e) => setDepositAccountId(Number(e.target.value) || undefined)}
           >
-            <option value="">Select account</option>
-            {accounts.map((acc) => (
+            <option value="">Select deposit account</option>
+            {depositAccounts.map((acc) => (
               <option key={acc.id} value={acc.id}>
                 {acc.account_number} ({acc.currency_code}) - {acc.account_name}
               </option>
@@ -70,19 +93,6 @@ export function CreateOrderForm({
           </select>
         </div>
       )}
-
-      <div>
-        <Label htmlFor="direction">Direction</Label>
-        <select
-          id="direction"
-          className="w-full border rounded px-3 py-2 text-sm mt-1"
-          value={direction}
-          onChange={(e) => setDirection(e.target.value as OrderDirection)}
-        >
-          <option value="buy">Buy</option>
-          <option value="sell">Sell</option>
-        </select>
-      </div>
 
       <div>
         <Label htmlFor="order-type">Order Type</Label>

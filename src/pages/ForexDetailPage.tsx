@@ -39,7 +39,11 @@ export function ForexDetailPage() {
           {pair.ticker} — {pair.name}
         </h1>
         <Button
-          onClick={() => navigate(`/securities/order/new?listingId=${pair.id}&direction=buy`)}
+          onClick={() =>
+            navigate(
+              `/securities/order/new?listingId=${pair.listing_id ?? pair.id}&direction=buy&securityType=forex`
+            )
+          }
         >
           Buy
         </Button>

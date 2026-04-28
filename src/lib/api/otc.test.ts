@@ -18,7 +18,7 @@ describe('getOtcOffers', () => {
 
     const result = await getOtcOffers()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/otc/offers', {
+    expect(mockGet).toHaveBeenCalledWith('/otc/offers', {
       params: expect.any(URLSearchParams),
     })
     expect(result).toEqual(mockData)
@@ -39,7 +39,7 @@ describe('buyOtcOffer', () => {
 
     await buyOtcOffer(3, { quantity: 2, account_id: 42 })
 
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/otc/offers/3/buy', {
+    expect(mockPost).toHaveBeenCalledWith('/otc/offers/3/buy', {
       quantity: 2,
       account_id: 42,
     })

@@ -24,7 +24,7 @@ describe('getActuaries', () => {
 
     const result = await getActuaries({ search: 'Smith', page: 1, page_size: 10 })
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/actuaries', {
+    expect(mockGet).toHaveBeenCalledWith('/actuaries', {
       params: { search: 'Smith', page: 1, page_size: 10 },
     })
     expect(result).toEqual(response)
@@ -36,7 +36,7 @@ describe('getActuaries', () => {
 
     const result = await getActuaries()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/actuaries', { params: {} })
+    expect(mockGet).toHaveBeenCalledWith('/actuaries', { params: {} })
     expect(result).toEqual(response)
   })
 })
@@ -48,7 +48,7 @@ describe('setActuaryLimit', () => {
 
     const result = await setActuaryLimit(1, { limit: '200000.00' })
 
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/actuaries/1/limit', { limit: '200000.00' })
+    expect(mockPut).toHaveBeenCalledWith('/actuaries/1/limit', { limit: '200000.00' })
     expect(result).toEqual(actuary)
   })
 })
@@ -60,19 +60,29 @@ describe('resetActuaryLimit', () => {
 
     const result = await resetActuaryLimit(1)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/actuaries/1/reset-limit')
+    expect(mockPost).toHaveBeenCalledWith('/actuaries/1/reset-limit')
     expect(result).toEqual(actuary)
   })
 })
 
 describe('setActuaryApproval', () => {
-  it('sends PUT with need_approval payload', async () => {
+  it('POSTs to /actuaries/:id/skip-approval when need_approval is false', async () => {
     const actuary = createMockActuary({ need_approval: false })
-    mockPut.mockResolvedValue({ data: actuary })
+    mockPost.mockResolvedValue({ data: actuary })
 
     const result = await setActuaryApproval(1, { need_approval: false })
 
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/actuaries/1/approval', { need_approval: false })
+    expect(mockPost).toHaveBeenCalledWith('/actuaries/1/skip-approval')
+    expect(result).toEqual(actuary)
+  })
+
+  it('POSTs to /actuaries/:id/require-approval when need_approval is true', async () => {
+    const actuary = createMockActuary({ need_approval: true })
+    mockPost.mockResolvedValue({ data: actuary })
+
+    const result = await setActuaryApproval(1, { need_approval: true })
+
+    expect(mockPost).toHaveBeenCalledWith('/actuaries/1/require-approval')
     expect(result).toEqual(actuary)
   })
 })

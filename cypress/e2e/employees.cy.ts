@@ -1,7 +1,7 @@
 describe('Celina 0.1: Kreiranje zaposlenog', () => {
   // Scenario 6: Admin kreira novog zaposlenog
   it('should create a new employee and redirect to employee list (Scenario 6)', () => {
-    cy.intercept('POST', '/api/employees', {
+    cy.intercept('POST', '**/api/v3/employees', {
       statusCode: 201,
       fixture: 'employee-created.json',
     }).as('createEmployee')
@@ -44,7 +44,7 @@ describe('Celina 0.1: Kreiranje zaposlenog', () => {
 
   // Scenario 7: Kreiranje zaposlenog sa već postojećim email-om
   it('should show error when creating employee with duplicate email (Scenario 7)', () => {
-    cy.intercept('POST', '/api/employees', {
+    cy.intercept('POST', '**/api/v3/employees', {
       statusCode: 409,
       body: { message: 'Email already exists' },
     }).as('createEmployeeDuplicate')

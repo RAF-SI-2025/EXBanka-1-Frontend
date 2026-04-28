@@ -967,7 +967,7 @@ interface AuthState {
 | `getCardRequests(filters?)` | GET | `/api/cards/requests` — supports `status`, `page`, `page_size` query params |
 | `approveCardRequest(id)` | PUT | `/api/cards/requests/{id}/approve` |
 | `rejectCardRequest(id, reason)` | PUT | `/api/cards/requests/{id}/reject` — body `{ reason: string }` |
-| `createAuthorizedPerson(payload)` | POST | `/api/cards/authorized-person` — body `CreateAuthorizedPersonPayload`; returns `AuthorizedPerson & { id }` |
+| `createAuthorizedPerson(payload)` | POST | `/api/cards/authorized-persons` — body `CreateAuthorizedPersonPayload`; returns `AuthorizedPerson & { id }` |
 | `createCard(payload)` | POST | `/api/cards` — body `CreateCardPayload`; returns `Card` |
 
 ### Roles API (`lib/api/roles.ts`)
@@ -1006,7 +1006,7 @@ interface AuthState {
 | `getActuaries(filters?)` | GET | `/api/actuaries` — supports `search`, `position`, `page`, `page_size` query params |
 | `setActuaryLimit(id, payload)` | PUT | `/api/actuaries/{id}/limit` — body `{ limit: string }` |
 | `resetActuaryLimit(id)` | POST | `/api/actuaries/{id}/reset-limit` |
-| `setActuaryApproval(id, payload)` | PUT | `/api/actuaries/{id}/approval` — body `{ need_approval: boolean }` |
+| `setActuaryApproval(id, payload)` | POST | `/api/actuaries/{id}/require-approval` if `payload.need_approval` is `true`, else `/api/actuaries/{id}/skip-approval` (no body) |
 
 ### Stock Exchanges API (`lib/api/stockExchanges.ts`)
 
@@ -1042,7 +1042,7 @@ interface AuthState {
 | `cancelOrder(id)` | POST | `/api/me/orders/{id}/cancel` |
 | `getAllOrders(filters?)` | GET | `/api/orders` |
 | `approveOrder(id)` | POST | `/api/orders/{id}/approve` |
-| `declineOrder(id)` | POST | `/api/orders/{id}/decline` |
+| `declineOrder(id)` | POST | `/api/orders/{id}/reject` |
 
 ### Portfolio API (`lib/api/portfolio.ts`)
 
@@ -1114,7 +1114,7 @@ interface AuthState {
 | `useActuaries(filters?)` | React Query | Fetch actuaries with server-side filters; query key: `['actuaries', filters]` |
 | `useSetActuaryLimit()` | React Query | Mutation: PUT limit; invalidates `['actuaries']` on success |
 | `useResetActuaryLimit()` | React Query | Mutation: POST reset limit; invalidates `['actuaries']` on success |
-| `useSetActuaryApproval()` | React Query | Mutation: PUT approval; invalidates `['actuaries']` on success |
+| `useSetActuaryApproval()` | React Query | Mutation: POST require-approval/skip-approval action; invalidates `['actuaries']` on success |
 | `useStockExchanges(filters?)` | React Query | Fetch stock exchanges; query key: `['stock-exchanges', filters]` |
 | `useTestingMode()` | React Query | Fetch testing mode status; query key: `['stock-exchanges', 'testing-mode']` |
 | `useSetTestingMode()` | React Query | Mutation: POST testing mode; invalidates `['stock-exchanges', 'testing-mode']` on success |

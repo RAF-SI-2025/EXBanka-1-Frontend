@@ -1,6 +1,12 @@
 describe('Admin Orders Page — Order Approval', () => {
+  beforeEach(() => {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+  })
+
   it('should display orders list with approve/decline actions', () => {
-    cy.intercept('GET', '/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
 
     cy.loginAsEmployee('/admin/orders')
     cy.wait('@getOrders')
@@ -13,6 +19,7 @@ describe('Admin Orders Page — Order Approval', () => {
     cy.contains('th', 'Direction').should('be.visible')
     cy.contains('th', 'Type').should('be.visible')
     cy.contains('th', 'Quantity').should('be.visible')
+    cy.contains('th', 'Filled').should('be.visible')
     cy.contains('th', 'Status').should('be.visible')
     cy.contains('th', 'Actions').should('be.visible')
 
@@ -29,10 +36,10 @@ describe('Admin Orders Page — Order Approval', () => {
   })
 
   it('should approve an order', () => {
-    cy.intercept('GET', '/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', '/api/orders/60/approve', {
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', '**/api/v3/orders/60/approve', {
       statusCode: 200,
-      body: { id: 60, status: 'approved' },
+      body: { id: 60, status: 'approved', state: 'approved' },
     }).as('approveOrder')
 
     cy.loginAsEmployee('/admin/orders')
@@ -43,10 +50,10 @@ describe('Admin Orders Page — Order Approval', () => {
   })
 
   it('should decline an order', () => {
-    cy.intercept('GET', '/api/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', '/api/orders/60/decline', {
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', '**/api/v3/orders/60/reject', {
       statusCode: 200,
-      body: { id: 60, status: 'declined' },
+      body: { id: 60, status: 'declined', state: 'declined' },
     }).as('declineOrder')
 
     cy.loginAsEmployee('/admin/orders')
@@ -57,7 +64,7 @@ describe('Admin Orders Page — Order Approval', () => {
   })
 
   it('should show empty state when no orders', () => {
-    cy.intercept('GET', '/api/orders*', {
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getEmptyOrders')
 

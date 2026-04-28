@@ -26,6 +26,35 @@ describe('AccountTable', () => {
     expect(onViewCards).toHaveBeenCalledWith(1)
   })
 
+  it('renders Activity button when onViewActivity is provided', () => {
+    renderWithProviders(
+      <AccountTable
+        accounts={[createMockAccount()]}
+        onViewCards={jest.fn()}
+        onViewActivity={jest.fn()}
+      />
+    )
+    expect(screen.getByRole('button', { name: /activity/i })).toBeInTheDocument()
+  })
+
+  it('calls onViewActivity when Activity button clicked', async () => {
+    const onViewActivity = jest.fn()
+    renderWithProviders(
+      <AccountTable
+        accounts={[createMockAccount()]}
+        onViewCards={jest.fn()}
+        onViewActivity={onViewActivity}
+      />
+    )
+    await userEvent.click(screen.getByRole('button', { name: /activity/i }))
+    expect(onViewActivity).toHaveBeenCalledWith(1)
+  })
+
+  it('does not render Activity button when onViewActivity is not provided', () => {
+    renderWithProviders(<AccountTable accounts={[createMockAccount()]} onViewCards={jest.fn()} />)
+    expect(screen.queryByRole('button', { name: /activity/i })).not.toBeInTheDocument()
+  })
+
   it('shows client first and last name for personal accounts when clientsById provided', () => {
     const account = createMockAccount({ account_category: 'personal', owner_id: 1 })
     const clientsById = { 1: mockClient }

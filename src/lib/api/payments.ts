@@ -9,12 +9,12 @@ import type {
 } from '@/types/payment'
 
 export async function createPayment(payload: CreatePaymentRequest): Promise<Payment> {
-  const response = await apiClient.post<Payment>('/api/v1/me/payments', payload)
+  const response = await apiClient.post<Payment>('/me/payments', payload)
   return response.data
 }
 
 export async function executePayment(id: number, challengeId: number): Promise<Payment> {
-  const response = await apiClient.post<Payment>(`/api/v1/me/payments/${id}/execute`, {
+  const response = await apiClient.post<Payment>(`/me/payments/${id}/execute`, {
     challenge_id: challengeId,
   })
   return response.data
@@ -29,21 +29,19 @@ export async function getPayments(filters?: PaymentFilters): Promise<PaymentList
   if (filters?.amount_max) params.append('amount_max', String(filters.amount_max))
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<PaymentListResponse>('/api/v1/me/payments', { params })
+  const response = await apiClient.get<PaymentListResponse>('/me/payments', { params })
   return response.data
 }
 
 export async function getPaymentRecipients(): Promise<PaymentRecipient[]> {
-  const response = await apiClient.get<{ recipients: PaymentRecipient[] }>(
-    '/api/v1/me/payment-recipients'
-  )
+  const response = await apiClient.get<{ recipients: PaymentRecipient[] }>('/me/payment-recipients')
   return response.data.recipients
 }
 
 export async function createPaymentRecipient(
   payload: Pick<CreatePaymentRecipientRequest, 'recipient_name' | 'account_number'>
 ): Promise<PaymentRecipient> {
-  const response = await apiClient.post<PaymentRecipient>('/api/v1/me/payment-recipients', payload)
+  const response = await apiClient.post<PaymentRecipient>('/me/payment-recipients', payload)
   return response.data
 }
 
@@ -51,13 +49,10 @@ export async function updatePaymentRecipient(
   id: number,
   payload: Partial<Pick<CreatePaymentRecipientRequest, 'recipient_name' | 'account_number'>>
 ): Promise<PaymentRecipient> {
-  const response = await apiClient.put<PaymentRecipient>(
-    `/api/v1/me/payment-recipients/${id}`,
-    payload
-  )
+  const response = await apiClient.put<PaymentRecipient>(`/me/payment-recipients/${id}`, payload)
   return response.data
 }
 
 export async function deletePaymentRecipient(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/me/payment-recipients/${id}`)
+  await apiClient.delete(`/me/payment-recipients/${id}`)
 }

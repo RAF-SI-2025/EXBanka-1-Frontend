@@ -8,14 +8,28 @@ export const selectIsAuthenticated = createSelector(
   (auth) => auth.status === 'authenticated'
 )
 
+function permissionMatches(granted: string, required: string): boolean {
+  return granted === required || granted.startsWith(`${required}.`)
+}
+
 export const selectIsAdmin = createSelector(
   selectAuthState,
-  (auth) => auth.user?.permissions.includes('employees.read') ?? false
+  (auth) => auth.user?.role === 'EmployeeAdmin'
+)
+
+export const selectIsSupervisor = createSelector(
+  selectAuthState,
+  (auth) => auth.user?.role === 'EmployeeSupervisor'
+)
+
+export const selectIsSupervisorOrAdmin = createSelector(
+  selectAuthState,
+  (auth) => auth.user?.role === 'EmployeeSupervisor' || auth.user?.role === 'EmployeeAdmin'
 )
 
 export const selectHasPermission = (state: RootState, permission: string): boolean => {
   const permissions = state.auth.user?.permissions ?? []
-  return permissions.includes(permission)
+  return permissions.some((p) => permissionMatches(p, permission))
 }
 
 export const selectCurrentUser = createSelector(selectAuthState, (auth) => auth.user)

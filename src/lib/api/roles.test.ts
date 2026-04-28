@@ -20,7 +20,7 @@ describe('roles API', () => {
 
     const result = await getRoles()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/roles')
+    expect(mockGet).toHaveBeenCalledWith('/roles')
     expect(result).toEqual(mockData)
   })
 
@@ -38,7 +38,7 @@ describe('roles API', () => {
 
     const result = await getRole(1)
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/roles/1')
+    expect(mockGet).toHaveBeenCalledWith('/roles/1')
     expect(result).toEqual(mockRole)
   })
 
@@ -54,7 +54,7 @@ describe('roles API', () => {
 
     const result = await createRole(payload)
 
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/roles', payload)
+    expect(mockPost).toHaveBeenCalledWith('/roles', payload)
     expect(result).toEqual(mockRole)
   })
 
@@ -64,7 +64,7 @@ describe('roles API', () => {
 
     const result = await updateRolePermissions(1, ['clients.read'])
 
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/roles/1/permissions', {
+    expect(mockPut).toHaveBeenCalledWith('/roles/1/permissions', {
       permission_codes: ['clients.read'],
     })
     expect(result).toEqual(mockRole)

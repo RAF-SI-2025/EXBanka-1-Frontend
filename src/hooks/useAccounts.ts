@@ -7,13 +7,16 @@ import {
   updateAccountName,
   updateAccountLimits,
   getAllAccounts,
+  getAccountsByClient,
   getBankAccounts,
+  getAccountActivity,
 } from '@/lib/api/accounts'
 import type {
   AccountFilters,
   CreateAccountRequest,
   UpdateAccountNameRequest,
   UpdateAccountLimitsRequest,
+  AccountActivityFilters,
 } from '@/types/account'
 
 export function useClientAccounts() {
@@ -88,7 +91,7 @@ export function useBankAccounts() {
 export function useAccountsByClient(clientId: number) {
   return useQuery({
     queryKey: ['accounts', 'client', clientId],
-    queryFn: () => getAllAccounts({ client_id: clientId }),
+    queryFn: () => getAccountsByClient(clientId),
     enabled: clientId > 0,
   })
 }
@@ -98,5 +101,13 @@ export function useSearchAccounts(query: string) {
     queryKey: ['accounts', 'search', query],
     queryFn: () => getAllAccounts({ account_number_filter: query, page_size: 10 }),
     enabled: query.length > 0,
+  })
+}
+
+export function useAccountActivity(id: number, filters: AccountActivityFilters = {}) {
+  return useQuery({
+    queryKey: ['accountActivity', id, filters],
+    queryFn: () => getAccountActivity(id, filters),
+    enabled: id > 0,
   })
 }

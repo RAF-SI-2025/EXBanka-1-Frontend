@@ -4,29 +4,21 @@
       "id": 30,
       "security_type": "stock",
       "ticker": "AAPL",
-      "security_name": "Apple Inc.",
+      "name": "Apple Inc.",
       "quantity": 50,
-      "average_price": "165.00",
-      "current_price": "178.50",
-      "total_value": "8925.00",
-      "profit_loss": "675.00",
-      "profit_loss_percent": "8.18",
-      "is_public": false,
-      "public_quantity": 0
+      "public_quantity": 0,
+      "account_id": 101,
+      "last_modified": "2026-04-20T10:00:00Z"
     },
     {
       "id": 31,
       "security_type": "futures",
       "ticker": "ESM26",
-      "security_name": "E-mini S&P 500 Jun 2026",
+      "name": "E-mini S&P 500 Jun 2026",
       "quantity": 5,
-      "average_price": "5200.00",
-      "current_price": "5250.00",
-      "total_value": "26250.00",
-      "profit_loss": "250.00",
-      "profit_loss_percent": "0.96",
-      "is_public": true,
-      "public_quantity": 2
+      "public_quantity": 2,
+      "account_id": 102,
+      "last_modified": "2026-04-21T12:00:00Z"
     }
   ],
   "total_count": 2

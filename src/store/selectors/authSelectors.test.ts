@@ -20,21 +20,22 @@ describe('authSelectors', () => {
     expect(selectIsAuthenticated(mockRootState({ status: 'idle' }))).toBe(false)
   })
 
-  it('selectIsAdmin returns true when user has employees.read permission', () => {
-    expect(selectIsAdmin(mockRootState())).toBe(true)
-  })
-
-  it('selectIsAdmin returns true for any role that has employees.read permission', () => {
+  it('selectIsAdmin returns true when role is EmployeeAdmin', () => {
     const state = mockRootState({
-      user: createMockAuthUser({ role: 'EmployeeBasic', permissions: ['employees.read'] }),
+      user: createMockAuthUser({ role: 'EmployeeAdmin' }),
     })
     expect(selectIsAdmin(state)).toBe(true)
   })
 
-  it('selectIsAdmin returns false when user lacks employees.read permission', () => {
+  it('selectIsAdmin returns false for non-admin employee roles', () => {
     const state = mockRootState({
-      user: createMockAuthUser({ role: 'EmployeeBasic', permissions: [] }),
+      user: createMockAuthUser({ role: 'EmployeeBasic' }),
     })
+    expect(selectIsAdmin(state)).toBe(false)
+  })
+
+  it('selectIsAdmin returns false when user is null', () => {
+    const state = mockRootState({ user: null })
     expect(selectIsAdmin(state)).toBe(false)
   })
 

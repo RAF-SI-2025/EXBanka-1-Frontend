@@ -2,7 +2,7 @@ name: MyWorkflow
 
 on:
   push:
-    branches: [Development]
+    branches: [Development, feature/*]
 
 env:
   REGISTRY: ghcr.io

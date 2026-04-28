@@ -7,8 +7,8 @@ import { logoutThunk } from '@/store/slices/authSlice'
 import {
   selectCurrentUser,
   selectIsAdmin,
+  selectIsSupervisorOrAdmin,
   selectUserType,
-  selectHasPermission,
 } from '@/store/selectors/authSelectors'
 import { useTheme } from '@/contexts/ThemeContext'
 
@@ -89,22 +89,10 @@ function ClientNav() {
 
 function EmployeeNav({
   isAdmin,
-  canManageAgents,
-  canApproveOrders,
-  canManageTax,
-  canManagePermissions,
-  canManageLimits,
-  canManageInterestRates,
-  canManageFees,
+  isSupervisorOrAdmin,
 }: {
   isAdmin: boolean
-  canManageAgents: boolean
-  canApproveOrders: boolean
-  canManageTax: boolean
-  canManagePermissions: boolean
-  canManageLimits: boolean
-  canManageInterestRates: boolean
-  canManageFees: boolean
+  isSupervisorOrAdmin: boolean
 }) {
   return (
     <>
@@ -128,7 +116,7 @@ function EmployeeNav({
       <Link to="/admin/loans" className={navLinkClass}>
         All Loans
       </Link>
-      {canManageAgents && (
+      {isSupervisorOrAdmin && (
         <Link to="/admin/actuaries" className={navLinkClass}>
           Actuaries
         </Link>
@@ -145,41 +133,33 @@ function EmployeeNav({
       <Link to="/portfolio" className={navLinkClass}>
         Portfolio
       </Link>
-      {canApproveOrders && (
+      {isSupervisorOrAdmin && (
         <Link to="/admin/orders" className={navLinkClass}>
           Order Approval
         </Link>
       )}
-      {canManageTax && (
+      {isAdmin && (
         <Link to="/admin/tax" className={navLinkClass}>
           Tax
         </Link>
       )}
-      {(canManagePermissions || canManageLimits || canManageInterestRates || canManageFees) && (
+      {isAdmin && (
         <div className="mt-2">
           <p className="px-3 py-1 text-xs text-sidebar-foreground/50 uppercase tracking-wider">
             Settings
           </p>
-          {canManagePermissions && (
-            <Link to="/admin/roles" className={navLinkClass}>
-              Roles & Permissions
-            </Link>
-          )}
-          {canManageLimits && (
-            <Link to="/admin/limits/employees" className={navLinkClass}>
-              Limits
-            </Link>
-          )}
-          {canManageInterestRates && (
-            <Link to="/admin/interest-rates" className={navLinkClass}>
-              Interest Rates
-            </Link>
-          )}
-          {canManageFees && (
-            <Link to="/admin/fees" className={navLinkClass}>
-              Transfer Fees
-            </Link>
-          )}
+          <Link to="/admin/roles" className={navLinkClass}>
+            Roles & Permissions
+          </Link>
+          <Link to="/admin/limits/employees" className={navLinkClass}>
+            Limits
+          </Link>
+          <Link to="/admin/interest-rates" className={navLinkClass}>
+            Interest Rates
+          </Link>
+          <Link to="/admin/fees" className={navLinkClass}>
+            Transfer Fees
+          </Link>
         </div>
       )}
     </>
@@ -194,17 +174,7 @@ export function Sidebar() {
   const userType = useAppSelector(selectUserType)
   const isClient = userType === 'client'
   const isAdmin = useAppSelector(selectIsAdmin)
-  const canManageAgents = useAppSelector((state) => selectHasPermission(state, 'agents.manage'))
-  const canApproveOrders = useAppSelector((state) => selectHasPermission(state, 'orders.approve'))
-  const canManageTax = useAppSelector((state) => selectHasPermission(state, 'tax.manage'))
-  const canManagePermissions = useAppSelector((state) =>
-    selectHasPermission(state, 'employees.permissions')
-  )
-  const canManageLimits = useAppSelector((state) => selectHasPermission(state, 'limits.manage'))
-  const canManageInterestRates = useAppSelector((state) =>
-    selectHasPermission(state, 'interest-rates.manage')
-  )
-  const canManageFees = useAppSelector((state) => selectHasPermission(state, 'fees.manage'))
+  const isSupervisorOrAdmin = useAppSelector(selectIsSupervisorOrAdmin)
 
   const handleLogout = () => {
     dispatch(logoutThunk())
@@ -217,16 +187,7 @@ export function Sidebar() {
         {isClient ? (
           <ClientNav />
         ) : (
-          <EmployeeNav
-            isAdmin={isAdmin}
-            canManageAgents={canManageAgents}
-            canApproveOrders={canApproveOrders}
-            canManageTax={canManageTax}
-            canManagePermissions={canManagePermissions}
-            canManageLimits={canManageLimits}
-            canManageInterestRates={canManageInterestRates}
-            canManageFees={canManageFees}
-          />
+          <EmployeeNav isAdmin={isAdmin} isSupervisorOrAdmin={isSupervisorOrAdmin} />
         )}
       </nav>
       <div className="border-t border-sidebar-border pt-4 mt-4">

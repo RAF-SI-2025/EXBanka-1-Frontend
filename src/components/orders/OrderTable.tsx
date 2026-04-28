@@ -26,40 +26,47 @@ export function OrderTable({ orders, onCancel, onApprove, onDecline }: OrderTabl
           <TableHead>Direction</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Quantity</TableHead>
+          <TableHead>Filled</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {orders.map((order) => (
-          <TableRow key={order.id}>
-            <TableCell className="font-mono font-semibold">{order.ticker}</TableCell>
-            <TableCell>{order.security_name}</TableCell>
-            <TableCell>{order.direction}</TableCell>
-            <TableCell>{order.order_type}</TableCell>
-            <TableCell>{order.quantity}</TableCell>
-            <TableCell>{order.status}</TableCell>
-            <TableCell>
-              <div className="flex gap-2">
-                {onCancel && order.status === 'pending' && (
-                  <Button size="sm" variant="outline" onClick={() => onCancel(order.id)}>
-                    Cancel
-                  </Button>
-                )}
-                {onApprove && order.status === 'pending' && (
-                  <Button size="sm" onClick={() => onApprove(order.id)}>
-                    Approve
-                  </Button>
-                )}
-                {onDecline && order.status === 'pending' && (
-                  <Button size="sm" variant="destructive" onClick={() => onDecline(order.id)}>
-                    Decline
-                  </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+        {orders.map((order) => {
+          const isCancellable = !order.is_done && order.state !== 'filled'
+          return (
+            <TableRow key={order.id}>
+              <TableCell className="font-mono font-semibold">{order.ticker}</TableCell>
+              <TableCell>{order.security_name}</TableCell>
+              <TableCell>{order.direction}</TableCell>
+              <TableCell>{order.order_type}</TableCell>
+              <TableCell>{order.quantity}</TableCell>
+              <TableCell>
+                {order.filled_quantity ?? 0} / {order.quantity}
+              </TableCell>
+              <TableCell>{order.state ?? order.status}</TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  {onCancel && isCancellable && (
+                    <Button size="sm" variant="outline" onClick={() => onCancel(order.id)}>
+                      Cancel
+                    </Button>
+                  )}
+                  {onApprove && order.status === 'pending' && (
+                    <Button size="sm" onClick={() => onApprove(order.id)}>
+                      Approve
+                    </Button>
+                  )}
+                  {onDecline && order.status === 'pending' && (
+                    <Button size="sm" variant="destructive" onClick={() => onDecline(order.id)}>
+                      Decline
+                    </Button>
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          )
+        })}
       </TableBody>
     </Table>
   )

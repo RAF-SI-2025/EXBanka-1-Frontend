@@ -1,4 +1,4 @@
-, # EXBanka REST API v1 Documentation
+# EXBanka REST API Documentation
 
 **Base URL:** `http://localhost:8080`
 **Content-Type:** `application/json`
@@ -8,11 +8,11 @@
 
 ## Version Notes
 
-All endpoints in this document are served under the `/api/v1/` prefix. This is the first explicitly versioned API surface.
+All endpoints in this document are served under the `/api/v3/` prefix. v3 is the only live API version after plan E (route consolidation, 2026-04-27); it merged the entire surfaces of the retired v1 and v2 routers plus the v3-only investment-funds, OTC-options, and inter-bank-transfer additions.
 
-**Alias:** `/api/latest/` is an alias that rewrites to `/api/v1/`. Any request to `/api/latest/<path>` is transparently forwarded to `/api/v1/<path>`. Frontend applications may use `/api/latest/` to always target the newest stable version.
+**Sunset of v1 and v2:** the prior `/api/v1/` and `/api/v2/` prefixes have been retired. Any request to `/api/v1/*` or `/api/v2/*` returns HTTP 404. Clients must update their base path to `/api/v3/`.
 
-**Relation to `/api/` (unversioned):** The `/api/v1/` surface mirrors every route from the unversioned `/api/` surface, plus v1-only additions (changelog endpoints, transfer preview, biometric verification, and limit blueprints). The unversioned `/api/` routes remain available and functional but are considered legacy; new frontend work should use `/api/v1/`.
+**Adding a v4 (future):** when a breaking change is required, a new explicit `router_v4.go` will be added alongside `router_v3.go`. The two will run side-by-side — there is no transparent fallback. See `api-gateway/internal/router/router_versioning.md` for the per-version pattern and sunset policy.
 
 ---
 
@@ -25,8 +25,8 @@ Authorization: Bearer <access_token>
 ```
 
 There are two token types:
-- **Employee token** -- issued via `POST /api/v1/auth/login` when the principal is an employee, required for employee-protected routes
-- **Client token** -- issued via `POST /api/v1/auth/login` when the principal is a client, required for client-protected routes
+- **Employee token** -- issued via `POST /api/v3/auth/login` when the principal is an employee, required for employee-protected routes
+- **Client token** -- issued via `POST /api/v3/auth/login` when the principal is a client, required for client-protected routes
 
 The unified login endpoint auto-detects whether the principal is an employee or a client based on the stored account record in auth-service and issues the appropriate JWT (`system_type: "employee"` or `system_type: "client"`).
 
@@ -70,18 +70,19 @@ Access tokens expire after 15 minutes. Use the refresh token to obtain a new pai
 30. [Actuaries](#30-actuaries)
 31. [Tax](#31-tax)
 32. [Blueprints](#32-blueprints)
-33. [Changelog](#33-changelog)
+33. [Changelog (Audit Trail)](#33-changelog-audit-trail)
 34. [Sessions & Login History](#34-sessions--login-history)
 35. [Notifications](#35-notifications)
-36. [Error Response Format](#error-response-format)
-36. [Password Requirements](#password-requirements)
-37. [Notes for Frontend Developers](#notes-for-frontend-developers)
+36. [Stock Data Source](#36-stock-data-source)
+37. [Error Response Format](#error-response-format)
+38. [Password Requirements](#password-requirements)
+39. [Notes for Frontend Developers](#notes-for-frontend-developers)
 
 ---
 
 ## 1. Auth
 
-### POST /api/v1/auth/login
+### POST /api/v3/auth/login
 
 Authenticate an employee or bank client with email and password. The endpoint auto-detects whether the principal is an employee or a client based on the stored account record in auth-service and issues the appropriate JWT. Employees receive a token with `system_type: "employee"` and their roles/permissions; clients receive a token with `system_type: "client"` and `role: "client"`.
 
@@ -123,7 +124,7 @@ Authenticate an employee or bank client with email and password. The endpoint au
 
 ---
 
-### POST /api/v1/auth/refresh
+### POST /api/v3/auth/refresh
 
 Exchange a valid refresh token for a new access/refresh token pair.
 
@@ -155,7 +156,7 @@ Exchange a valid refresh token for a new access/refresh token pair.
 
 ---
 
-### POST /api/v1/auth/logout
+### POST /api/v3/auth/logout
 
 Revoke the current refresh token to end the session.
 
@@ -183,7 +184,7 @@ Revoke the current refresh token to end the session.
 
 ---
 
-### POST /api/v1/auth/password/reset-request
+### POST /api/v3/auth/password/reset-request
 
 Send a password reset link to the given email. Always returns 200 to avoid leaking whether an email is registered.
 
@@ -211,7 +212,7 @@ Send a password reset link to the given email. Always returns 200 to avoid leaki
 
 ---
 
-### POST /api/v1/auth/password/reset
+### POST /api/v3/auth/password/reset
 
 Reset the password using a token received in the reset email link.
 
@@ -245,7 +246,7 @@ Reset the password using a token received in the reset email link.
 
 ---
 
-### POST /api/v1/auth/activate
+### POST /api/v3/auth/activate
 
 Activate a new employee account by setting a password using the token from the activation email.
 
@@ -279,7 +280,7 @@ Activate a new employee account by setting a password using the token from the a
 
 ---
 
-### POST /api/v1/auth/resend-activation
+### POST /api/v3/auth/resend-activation
 
 Resend the activation email for a pending account. Always returns 200 to avoid leaking whether an email is registered and pending activation.
 
@@ -321,7 +322,7 @@ All employee endpoints require an employee JWT. Read endpoints require `employee
 
 ---
 
-### GET /api/v1/employees
+### GET /api/v3/employees
 
 List all employees with optional filters.
 
@@ -365,7 +366,7 @@ List all employees with optional filters.
 
 ---
 
-### POST /api/v1/employees
+### POST /api/v3/employees
 
 Create a new employee. Triggers an activation email to the employee's address.
 
@@ -415,7 +416,7 @@ Create a new employee. Triggers an activation email to the employee's address.
 
 ---
 
-### GET /api/v1/employees/:id
+### GET /api/v3/employees/:id
 
 Get a single employee by ID.
 
@@ -432,7 +433,7 @@ Get a single employee by ID.
 
 ---
 
-### PUT /api/v1/employees/:id
+### PUT /api/v3/employees/:id
 
 Partially update an employee. Cannot edit EmployeeAdmin employees.
 
@@ -470,7 +471,7 @@ Role and permission management endpoints require an employee JWT with `employees
 
 ---
 
-### GET /api/v1/roles
+### GET /api/v3/roles
 
 List all roles with their associated permissions.
 
@@ -492,7 +493,7 @@ List all roles with their associated permissions.
 
 ---
 
-### GET /api/v1/roles/:id
+### GET /api/v3/roles/:id
 
 Get a single role by ID.
 
@@ -509,7 +510,7 @@ Get a single role by ID.
 
 ---
 
-### POST /api/v1/roles
+### POST /api/v3/roles
 
 Create a new role with the given permission codes.
 
@@ -536,7 +537,7 @@ Create a new role with the given permission codes.
 
 ---
 
-### PUT /api/v1/roles/:id/permissions
+### PUT /api/v3/roles/:id/permissions
 
 Replace all permissions for a role.
 
@@ -558,7 +559,58 @@ Replace all permissions for a role.
 
 ---
 
-### GET /api/v1/permissions
+### POST /api/v3/roles/:id/permissions
+
+Grant a single permission to a role (granular). The permission code is validated against the codegened catalog (`contract/permissions/catalog.yaml`); unknown codes are rejected with 400. Idempotent — granting a permission already held is a no-op success.
+
+**Authentication:** Employee JWT + `roles.permissions.assign` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | uint64 | Role ID (numeric) |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `permission` | string | Yes | Permission code to grant (e.g. `clients.read.all`) |
+
+**Response 204:** No content
+
+**Error Responses:**
+- `400` — `id` is not a valid integer, `permission` missing from request body, or permission not found in catalog
+- `401` — missing or invalid JWT
+- `403` — caller lacks `roles.permissions.assign`
+- `404` — role with the given ID does not exist
+
+---
+
+### DELETE /api/v3/roles/:id/permissions/:permission
+
+Revoke a single permission grant from a role (granular). Idempotent — revoking a permission not currently held is a no-op success.
+
+**Authentication:** Employee JWT + `roles.permissions.revoke` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | uint64 | Role ID (numeric) |
+| `permission` | string | Permission code to revoke (e.g. `clients.read.all`) |
+
+**Response 204:** No content
+
+**Error Responses:**
+- `400` — `id` is not a valid integer
+- `401` — missing or invalid JWT
+- `403` — caller lacks `roles.permissions.revoke`
+- `404` — role with the given ID does not exist
+
+---
+
+### GET /api/v3/permissions
 
 List all available permission codes in the system.
 
@@ -576,7 +628,7 @@ List all available permission codes in the system.
 
 ---
 
-### PUT /api/v1/employees/:id/roles
+### PUT /api/v3/employees/:id/roles
 
 Set (replace) all roles for an employee.
 
@@ -599,7 +651,7 @@ Set (replace) all roles for an employee.
 
 ---
 
-### PUT /api/v1/employees/:id/permissions
+### PUT /api/v3/employees/:id/permissions
 
 Set (replace) the additional per-employee permissions. These are granted on top of the employee's role-based permissions.
 
@@ -628,7 +680,7 @@ Client management endpoints require an employee JWT with `clients.read` permissi
 
 ---
 
-### POST /api/v1/clients
+### POST /api/v3/clients
 
 Create a new bank client.
 
@@ -680,7 +732,7 @@ Create a new bank client.
 
 ---
 
-### GET /api/v1/clients
+### GET /api/v3/clients
 
 List clients with optional filters.
 
@@ -705,7 +757,7 @@ List clients with optional filters.
 
 ---
 
-### GET /api/v1/clients/:id
+### GET /api/v3/clients/:id
 
 Get a single client by ID.
 
@@ -722,7 +774,7 @@ Get a single client by ID.
 
 ---
 
-### PUT /api/v1/clients/:id
+### PUT /api/v3/clients/:id
 
 Partially update a client record.
 
@@ -756,7 +808,7 @@ Account endpoints require an employee JWT with `accounts.read` permission (Emplo
 
 ---
 
-### POST /api/v1/accounts
+### POST /api/v3/accounts
 
 Create a new bank account.
 
@@ -796,9 +848,43 @@ Create a new bank account.
 
 ---
 
-### GET /api/v1/accounts
+### GET /api/v3/clients/:id/accounts
 
-List all accounts with optional filters. Pass `client_id` to filter by owner. Clients looking for their own accounts should use `GET /api/v1/me/accounts` instead.
+List all accounts belonging to a specific client. Replaces the former `GET /api/v3/accounts?client_id=X` pattern.
+
+**Authentication:** Employee JWT + `accounts.read.all` or `accounts.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Client ID |
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `page` | int | Page number (default: 1) |
+| `page_size` | int | Items per page (default: 20) |
+
+**Response 200:**
+```json
+{
+  "accounts": [ /* array of account objects */ ],
+  "total": 3
+}
+```
+
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — client not found
+
+---
+
+### GET /api/v3/accounts
+
+List all accounts with optional filters. This is the supervisor's "find any account" view. To look up accounts belonging to a specific client, use `GET /api/v3/clients/:id/accounts` instead. Clients looking for their own accounts should use `GET /api/v3/me/accounts`.
 
 **Authentication:** Employee JWT + `accounts.read` permission
 
@@ -808,10 +894,11 @@ List all accounts with optional filters. Pass `client_id` to filter by owner. Cl
 |---|---|---|
 | `page` | int | Page number (default: 1) |
 | `page_size` | int | Items per page (default: 20) |
-| `name_filter` | string | Filter by account name |
-| `account_number_filter` | string | Filter by account number |
+| `name_filter` | string | Filter by account name (partial match) |
+| `account_number` | string | Look up a single account by exact account number; returns an array of 0 or 1 items (never 404) |
 | `type_filter` | string | Filter by account type |
-| `client_id` | int | Filter accounts belonging to a specific client |
+
+> **Note:** `account_number` is mutually exclusive with `name_filter` and `type_filter`. Providing more than one filter at the same time returns 400. `client_id` is no longer accepted on this endpoint — use `GET /api/v3/clients/:id/accounts` for client-scoped lookups.
 
 **Response 200:**
 ```json
@@ -847,7 +934,7 @@ List all accounts with optional filters. Pass `client_id` to filter by owner. Cl
 
 ---
 
-### GET /api/v1/accounts/:id
+### GET /api/v3/accounts/:id
 
 Get a single account by ID.
 
@@ -864,24 +951,14 @@ Get a single account by ID.
 
 ---
 
-### GET /api/v1/accounts/by-number/:account_number
+<!-- NOTE: GET /api/v3/accounts/by-number/:account_number was removed in the v3 route
+     standardization (2026-04-28). Use GET /api/v3/accounts?account_number=<number> instead.
+     That endpoint returns an array of 0 or 1 items; it never returns 404 for a missing account.
+-->
 
-Get an account by its account number.
 
-**Authentication:** Any JWT (Employee or Client)
 
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `account_number` | string | Full account number |
-
-**Response 200:** Account object
-**Response 404:** `{"error": "account not found"}`
-
----
-
-### PUT /api/v1/accounts/:id/name
+### PUT /api/v3/accounts/:id/name
 
 Update the display name of an account.
 
@@ -904,7 +981,7 @@ Update the display name of an account.
 
 ---
 
-### PUT /api/v1/accounts/:id/limits
+### PUT /api/v3/accounts/:id/limits
 
 Update the daily/monthly spending limits of an account. Requires a verification code for authorization.
 
@@ -946,11 +1023,11 @@ Update the daily/monthly spending limits of an account. Requires a verification 
 
 ---
 
-### PUT /api/v1/accounts/:id/status
+### POST /api/v3/accounts/:id/activate
 
-Update the status of an account (activate, block, close, etc.).
+Activate a previously inactive account. No request body required.
 
-**Authentication:** Employee JWT + `accounts.update` permission
+**Authentication:** Employee JWT + `accounts.deactivate.any` permission
 
 **Path Parameters:**
 
@@ -958,17 +1035,45 @@ Update the status of an account (activate, block, close, etc.).
 |---|---|---|
 | `id` | int | Account ID |
 
-**Request Body:**
+**Response 200:**
+```json
+{ "status": "active" }
+```
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `status` | string | Yes | `"active"` or `"inactive"` |
-
-**Response 200:** Updated account object
+**Error Responses:**
+- `400` — invalid account ID
+- `401` — missing or invalid JWT
+- `403` — caller lacks `accounts.deactivate.any`
+- `404` — account not found
 
 ---
 
-### GET /api/v1/currencies
+### POST /api/v3/accounts/:id/deactivate
+
+Deactivate an active account. No request body required.
+
+**Authentication:** Employee JWT + `accounts.deactivate.any` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Account ID |
+
+**Response 200:**
+```json
+{ "status": "inactive" }
+```
+
+**Error Responses:**
+- `400` — invalid account ID
+- `401` — missing or invalid JWT
+- `403` — caller lacks `accounts.deactivate.any`
+- `404` — account not found
+
+---
+
+### GET /api/v3/currencies
 
 List all supported currencies.
 
@@ -994,7 +1099,7 @@ List all supported currencies.
 
 ---
 
-### POST /api/v1/companies
+### POST /api/v3/companies
 
 Create a new company record.
 
@@ -1032,7 +1137,7 @@ Card endpoints require specific employee permissions (see per-endpoint notes). C
 
 ---
 
-### POST /api/v1/cards
+### POST /api/v3/cards
 
 Issue a new payment card linked to an account.
 
@@ -1081,11 +1186,11 @@ Issue a new payment card linked to an account.
 
 ---
 
-### GET /api/v1/cards/:id
+### GET /api/v3/cards/:id
 
 Get a card by ID.
 
-**Authentication:** Employee JWT only (`AuthMiddleware` + `cards.read` permission). Clients must use `GET /api/v1/me/cards/:id` instead.
+**Authentication:** Employee JWT only (`AuthMiddleware` + `cards.read` permission). Clients must use `GET /api/v3/me/cards/:id` instead.
 
 **Path Parameters:**
 
@@ -1098,18 +1203,29 @@ Get a card by ID.
 
 ---
 
-### GET /api/v1/cards
+<!-- NOTE: GET /api/v3/cards (bare collection) was removed in the v3 route standardization
+     (2026-04-28). Card lists are now scoped to a parent resource:
+       - By client:  GET /api/v3/clients/:id/cards   (requires cards.read.all or cards.read.own)
+       - By account: GET /api/v3/accounts/:id/cards  (requires cards.read.all or cards.read.own)
+     See the "Client-Scoped Sub-Collections" and "Account-Scoped Sub-Collections" sections below.
+-->
 
-List cards with optional filters. Employees can filter by `client_id` or `account_number`. Exactly one filter should be provided; if neither is provided, all cards visible to the employee are returned.
+### GET /api/v3/clients/:id/cards
 
-**Authentication:** Employee JWT + `cards.manage` permission
+List all cards belonging to a specific client.
+
+**Authentication:** Employee JWT + `cards.read.all` or `cards.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Client ID |
 
 **Query Parameters:**
 
 | Parameter | Type | Description |
 |---|---|---|
-| `client_id` | int | Filter cards belonging to a specific client |
-| `account_number` | string | Filter cards linked to a specific account number |
 | `page` | int | Page number (default: 1) |
 | `page_size` | int | Items per page (default: 20) |
 
@@ -1121,9 +1237,48 @@ List cards with optional filters. Employees can filter by `client_id` or `accoun
 }
 ```
 
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — client not found
+
 ---
 
-### POST /api/v1/cards/:id/block
+### GET /api/v3/accounts/:id/cards
+
+List all cards linked to a specific account (identified by account numeric ID).
+
+**Authentication:** Employee JWT + `cards.read.all` or `cards.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Account ID (numeric, not account number string) |
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `page` | int | Page number (default: 1) |
+| `page_size` | int | Items per page (default: 20) |
+
+**Response 200:**
+```json
+{
+  "cards": [ /* array of card objects */ ],
+  "total": 5
+}
+```
+
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — account not found
+
+---
+
+### POST /api/v3/cards/:id/block
 
 Block a card (e.g., reported as lost or stolen).
 
@@ -1141,7 +1296,7 @@ Block a card (e.g., reported as lost or stolen).
 
 ---
 
-### POST /api/v1/cards/:id/unblock
+### POST /api/v3/cards/:id/unblock
 
 Unblock a previously blocked card. Only employees can unblock cards.
 
@@ -1157,7 +1312,7 @@ Unblock a previously blocked card. Only employees can unblock cards.
 
 ---
 
-### POST /api/v1/cards/:id/deactivate
+### POST /api/v3/cards/:id/deactivate
 
 Permanently deactivate a card.
 
@@ -1173,7 +1328,7 @@ Permanently deactivate a card.
 
 ---
 
-### POST /api/v1/cards/authorized-person
+### POST /api/v3/cards/authorized-persons
 
 Create an authorized person who can also hold a card linked to an existing account.
 
@@ -1209,9 +1364,9 @@ Create an authorized person who can also hold a card linked to an existing accou
 
 ---
 
-### POST /api/v1/me/cards/virtual
+### POST /api/v3/me/cards/virtual
 
-Create a virtual card for a client account. Virtual cards can be single-use or multi-use and expire after 1-3 months.
+Create a virtual card for a client account. Virtual cards can be single-use or multi-use and expire after 1-3 months. The card owner is derived from the JWT — the `owner_id` field in the request body is ignored; the JWT `user_id` is used as the owner.
 
 **Authentication:** Any JWT (AnyAuthMiddleware -- identity scoped to the token principal)
 
@@ -1267,9 +1422,9 @@ Create a virtual card for a client account. Virtual cards can be single-use or m
 
 ---
 
-### POST /api/v1/me/cards/:id/pin
+### POST /api/v3/me/cards/:id/pin
 
-Set the 4-digit PIN for a card.
+Set the 4-digit PIN for a card. Ownership is derived from the JWT — if the card does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1309,9 +1464,9 @@ Set the 4-digit PIN for a card.
 
 ---
 
-### POST /api/v1/me/cards/:id/verify-pin
+### POST /api/v3/me/cards/:id/verify-pin
 
-Verify the 4-digit PIN for a card. The card is permanently blocked after 3 consecutive failed attempts.
+Verify the 4-digit PIN for a card. The card is permanently blocked after 3 consecutive failed attempts. Ownership is derived from the JWT — if the card does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1351,9 +1506,9 @@ Verify the 4-digit PIN for a card. The card is permanently blocked after 3 conse
 
 ---
 
-### POST /api/v1/me/cards/:id/temporary-block
+### POST /api/v3/me/cards/:id/temporary-block
 
-Temporarily block a card for a specified duration in hours. The card is automatically unblocked by a background job when the duration expires.
+Temporarily block a card for a specified duration in hours. The card is automatically unblocked by a background job when the duration expires. Ownership is derived from the JWT — if the card does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1395,7 +1550,7 @@ Payments are domestic/foreign transfers from one account to another with optiona
 
 ---
 
-### POST /api/v1/me/payments
+### POST /api/v3/me/payments
 
 Initiate a new payment from a client account.
 
@@ -1444,11 +1599,11 @@ Initiate a new payment from a client account.
 }
 ```
 
-> **Note:** Payment is created in `pending_verification` status. The browser must create a verification challenge via `POST /api/v1/verifications` and then poll `GET /api/v1/verifications/:id/status` until verified. Once verified, call `POST /api/v1/me/payments/:id/execute` with the `challenge_id`. Users with `verification.skip` permission skip verification entirely.
+> **Note:** Payment is created in `pending_verification` status. The browser must create a verification challenge via `POST /api/v3/verifications` and then poll `GET /api/v3/verifications/:id/status` until verified. Once verified, call `POST /api/v3/me/payments/:id/execute` with the `challenge_id`. Users with `verification.skip` permission skip verification entirely.
 
 ---
 
-### GET /api/v1/payments/:id
+### GET /api/v3/payments/:id
 
 Get a payment by ID.
 
@@ -1465,18 +1620,62 @@ Get a payment by ID.
 
 ---
 
-### GET /api/v1/payments
+<!-- NOTE: GET /api/v3/payments?client_id=X and GET /api/v3/payments?account_number=X were
+     removed in the v3 route standardization (2026-04-28). Use the scoped endpoints:
+       - By client:  GET /api/v3/clients/:id/payments
+       - By account: GET /api/v3/accounts/:id/payments
+-->
 
-List payments with optional filters. For employees, pass `client_id` or `account_number` to filter.
+### GET /api/v3/clients/:id/payments
 
-**Authentication:** Employee JWT + `payments.read` permission
+List all payments where the specified client's accounts appear as sender or recipient.
+
+**Authentication:** Employee JWT + `accounts.read.all` or `accounts.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Client ID |
 
 **Query Parameters:**
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `client_id` | integer | -- | Filter payments where the client's accounts appear as sender or recipient |
-| `account_number` | string | -- | Filter payments for a specific account number |
+| `page` | integer | 1 | Page number |
+| `page_size` | integer | 20 | Items per page |
+
+**Response 200:**
+```json
+{
+  "payments": [ /* array of payment objects */ ],
+  "total": 87
+}
+```
+
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — client not found
+
+---
+
+### GET /api/v3/accounts/:id/payments
+
+List payments for a specific account, identified by account numeric ID. Supports rich date, status, and amount filters.
+
+**Authentication:** Employee JWT + `accounts.read.all` or `accounts.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Account ID (numeric, not account number string) |
+
+**Query Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
 | `page` | integer | 1 | Page number |
 | `page_size` | integer | 20 | Items per page |
 | `date_from` | string | -- | Start date filter (RFC3339 or YYYY-MM-DD) |
@@ -1493,11 +1692,16 @@ List payments with optional filters. For employees, pass `client_id` or `account
 }
 ```
 
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — account not found
+
 ---
 
-### POST /api/v1/me/payments/:id/execute
+### POST /api/v3/me/payments/:id/execute
 
-Execute a pending payment after verification. The payment must have been created previously via `POST /api/v1/me/payments`. Verification is handled by the verification-service -- pass the `challenge_id` from the completed verification challenge.
+Execute a pending payment after verification. The payment must have been created previously via `POST /api/v3/me/payments`. Verification is handled by the verification-service -- pass the `challenge_id` from the completed verification challenge.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1555,7 +1759,7 @@ Transfers are inter-account currency exchanges (can be same currency or cross-cu
 
 ---
 
-### POST /api/v1/me/transfers
+### POST /api/v3/me/transfers
 
 Initiate a currency transfer between accounts.
 
@@ -1593,11 +1797,11 @@ Initiate a currency transfer between accounts.
 }
 ```
 
-> **Note:** Transfer is created in `pending_verification` status. The browser must create a verification challenge via `POST /api/v1/verifications` and then poll `GET /api/v1/verifications/:id/status` until verified. Once verified, call `POST /api/v1/me/transfers/:id/execute` with the `challenge_id`. Users with `verification.skip` permission skip verification entirely.
+> **Note:** Transfer is created in `pending_verification` status. The browser must create a verification challenge via `POST /api/v3/verifications` and then poll `GET /api/v3/verifications/:id/status` until verified. Once verified, call `POST /api/v3/me/transfers/:id/execute` with the `challenge_id`. Users with `verification.skip` permission skip verification entirely.
 
 ---
 
-### POST /api/v1/me/transfers/preview
+### POST /api/v3/me/transfers/preview
 
 **v1-only endpoint.** Preview transfer costs (fees and exchange rate) without creating the transfer.
 
@@ -1660,7 +1864,7 @@ For same-currency transfers, `converted_amount` equals `input_amount`, `exchange
 
 ---
 
-### GET /api/v1/transfers/:id
+### GET /api/v3/transfers/:id
 
 Get a transfer by ID.
 
@@ -1677,17 +1881,26 @@ Get a transfer by ID.
 
 ---
 
-### GET /api/v1/transfers
+<!-- NOTE: GET /api/v3/transfers?client_id=X was removed in the v3 route standardization
+     (2026-04-28). Use GET /api/v3/clients/:id/transfers instead.
+-->
 
-List transfers with optional filters. Pass `client_id` to filter by owner.
+### GET /api/v3/clients/:id/transfers
 
-**Authentication:** Employee JWT + `payments.read` permission
+List all currency transfers where the specified client's accounts appear as sender or recipient.
+
+**Authentication:** Employee JWT + `accounts.read.all` or `accounts.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Client ID |
 
 **Query Parameters:**
 
 | Parameter | Type | Description |
 |---|---|---|
-| `client_id` | int | Filter transfers belonging to a specific client |
 | `page` | int | Page number (default: 1) |
 | `page_size` | int | Items per page (default: 20) |
 
@@ -1699,11 +1912,16 @@ List transfers with optional filters. Pass `client_id` to filter by owner.
 }
 ```
 
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — client not found
+
 ---
 
-### POST /api/v1/me/transfers/:id/execute
+### POST /api/v3/me/transfers/:id/execute
 
-Execute a pending transfer after verification. The transfer must have been created previously via `POST /api/v1/me/transfers`. Verification is handled by the verification-service -- pass the `challenge_id` from the completed verification challenge.
+Execute a pending transfer after verification. The transfer must have been created previously via `POST /api/v3/me/transfers`. Verification is handled by the verification-service -- pass the `challenge_id` from the completed verification challenge.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1758,7 +1976,7 @@ Saved payment recipients (favorites) for a client.
 
 ---
 
-### POST /api/v1/me/payment-recipients
+### POST /api/v3/me/payment-recipients
 
 Save a new payment recipient.
 
@@ -1794,7 +2012,7 @@ Save a new payment recipient.
 
 ---
 
-### GET /api/v1/me/payment-recipients
+### GET /api/v3/me/payment-recipients
 
 List all saved recipients for the authenticated principal.
 
@@ -1809,9 +2027,9 @@ List all saved recipients for the authenticated principal.
 
 ---
 
-### PUT /api/v1/me/payment-recipients/:id
+### PUT /api/v3/me/payment-recipients/:id
 
-Update a saved recipient.
+Update a saved recipient. Ownership is derived from the JWT — if the recipient does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1832,9 +2050,9 @@ Update a saved recipient.
 
 ---
 
-### DELETE /api/v1/me/payment-recipients/:id
+### DELETE /api/v3/me/payment-recipients/:id
 
-Delete a saved recipient.
+Delete a saved recipient. Ownership is derived from the JWT — if the recipient does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1856,7 +2074,7 @@ Supported currencies: `RSD`, `EUR`, `USD`, `CHF`, `GBP`, `JPY`, `CAD`, `AUD`.
 
 ---
 
-### GET /api/v1/exchange/rates
+### GET /api/v3/exchange/rates
 
 List all current exchange rates.
 
@@ -1879,7 +2097,7 @@ List all current exchange rates.
 
 ---
 
-### GET /api/v1/exchange/rates/:from/:to
+### GET /api/v3/exchange/rates/:from/:to
 
 Get the exchange rate between two specific currencies.
 
@@ -1907,7 +2125,7 @@ Get the exchange rate between two specific currencies.
 
 ---
 
-### POST /api/v1/exchange/calculate
+### POST /api/v3/exchange/calculate
 
 Calculate a currency conversion including the bank's commission. Informational only -- no transaction is created.
 
@@ -1953,13 +2171,13 @@ Calculate a currency conversion including the bank's commission. Informational o
 
 ## 11. Loans
 
-Loan management endpoints. Employees can view all loans and approve/reject loan requests. Clients should use `GET /api/v1/me/loans` and related `/api/v1/me/*` routes to view and manage their own loans.
+Loan management endpoints. Employees can view all loans and approve/reject loan requests. Clients should use `GET /api/v3/me/loans` and related `/api/v3/me/*` routes to view and manage their own loans.
 
 ---
 
-### POST /api/v1/me/loan-requests
+### POST /api/v3/me/loan-requests
 
-Submit a new loan application.
+Submit a new loan application. The `client_id` field in the request body is ignored; the JWT `user_id` is used as the applicant. Ownership is enforced at the gateway.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1967,7 +2185,7 @@ Submit a new loan application.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `client_id` | uint64 | Yes | Client ID making the request |
+| `client_id` | uint64 | No | Ignored — JWT `user_id` is used as the applicant |
 | `loan_type` | string | Yes | `"PERSONAL"`, `"MORTGAGE"`, `"AUTO"`, `"STUDENT"`, `"BUSINESS"` |
 | `interest_type` | string | Yes | `"FIXED"` or `"VARIABLE"` |
 | `amount` | float64 | Yes | Requested loan amount |
@@ -2021,11 +2239,49 @@ Submit a new loan application.
 
 ---
 
-### GET /api/v1/loans
+<!-- NOTE: GET /api/v3/loans?client_id=X was removed in the v3 route standardization
+     (2026-04-28). Use GET /api/v3/clients/:id/loans instead.
+-->
 
-List loans (employee view). Pass `client_id` to filter loans for a specific client. Clients should use `GET /api/v1/me/loans`.
+### GET /api/v3/clients/:id/loans
 
-**Authentication:** Employee JWT + `credits.read` permission
+List all loans belonging to a specific client.
+
+**Authentication:** Employee JWT + `credits.read.all` or `credits.read.own` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Client ID |
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `page` | int | Page number (default: 1) |
+| `page_size` | int | Items per page (default: 20) |
+
+**Response 200:**
+```json
+{
+  "loans": [ /* array of loan objects */ ],
+  "total": 12
+}
+```
+
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing required permission
+- `404` — client not found
+
+---
+
+### GET /api/v3/loans
+
+List all loans (employee view). This endpoint no longer accepts `?client_id` — use `GET /api/v3/clients/:id/loans` for client-scoped lookups. Clients should use `GET /api/v3/me/loans`.
+
+**Authentication:** Employee JWT + `credits.read.all` or `credits.read.own` permission
 
 **Query Parameters:**
 
@@ -2036,7 +2292,6 @@ List loans (employee view). Pass `client_id` to filter loans for a specific clie
 | `loan_type_filter` | string | Filter by loan type |
 | `account_number_filter` | string | Filter by account number |
 | `status_filter` | string | Filter by status |
-| `client_id` | int | Filter loans belonging to a specific client |
 
 **Response 200:**
 ```json
@@ -2048,11 +2303,11 @@ List loans (employee view). Pass `client_id` to filter loans for a specific clie
 
 ---
 
-### GET /api/v1/loans/:id
+### GET /api/v3/loans/:id
 
-Get a single loan by ID.
+Get a single loan by ID (employee view). Clients should use `GET /api/v3/me/loans/:id` instead.
 
-**Authentication:** Any JWT (Employee or Client)
+**Authentication:** Employee JWT + `credits.read` permission
 
 **Path Parameters:**
 
@@ -2065,7 +2320,7 @@ Get a single loan by ID.
 
 ---
 
-### GET /api/v1/loans/:id/installments
+### GET /api/v3/loans/:id/installments
 
 Get all installment records for a loan.
 
@@ -2099,11 +2354,11 @@ Get all installment records for a loan.
 
 ## 12. Loan Requests
 
-Loan request management endpoints (employee-facing). Clients should use the `/api/v1/me/loan-requests` routes instead.
+Loan request management endpoints (employee-facing). Clients should use the `/api/v3/me/loan-requests` routes instead.
 
 ---
 
-### GET /api/v1/loan-requests
+### GET /api/v3/loan-requests
 
 List all loan requests (employee view).
 
@@ -2130,7 +2385,7 @@ List all loan requests (employee view).
 
 ---
 
-### GET /api/v1/loan-requests/:id
+### GET /api/v3/loan-requests/:id
 
 Get a single loan request by ID.
 
@@ -2147,7 +2402,7 @@ Get a single loan request by ID.
 
 ---
 
-### POST /api/v1/loan-requests/:id/approve
+### POST /api/v3/loan-requests/:id/approve
 
 Approve a loan request. Creates a loan and sends an approval email to the client.
 
@@ -2188,7 +2443,7 @@ Approve a loan request. Creates a loan and sends an approval email to the client
 
 ---
 
-### POST /api/v1/loan-requests/:id/reject
+### POST /api/v3/loan-requests/:id/reject
 
 Reject a loan request. Sends a rejection email to the client.
 
@@ -2216,7 +2471,7 @@ All monetary values are decimal strings (e.g., `"50000.0000"`).
 
 ---
 
-### GET /api/v1/employees/:id/limits
+### GET /api/v3/employees/:id/limits
 
 Retrieve the current transaction and approval limits for an employee.
 
@@ -2228,7 +2483,7 @@ Retrieve the current transaction and approval limits for an employee.
 
 **Example request:**
 ```
-GET /api/v1/employees/42/limits
+GET /api/v3/employees/42/limits
 Authorization: Bearer <token>
 ```
 
@@ -2254,7 +2509,7 @@ Authorization: Bearer <token>
 
 ---
 
-### PUT /api/v1/employees/:id/limits
+### PUT /api/v3/employees/:id/limits
 
 Set or update transaction and approval limits for an employee. If no limits exist for this employee, they are created.
 
@@ -2297,7 +2552,7 @@ Set or update transaction and approval limits for an employee. If no limits exis
 
 ---
 
-### POST /api/v1/employees/:id/limits/template
+### POST /api/v3/employees/:id/limits/template
 
 Apply a named limit template to an employee. Copies the template's values to the employee's limit record.
 
@@ -2336,13 +2591,13 @@ Apply a named limit template to an employee. Copies the template's values to the
 
 ---
 
-### GET /api/v1/limits/templates
+### GET /api/v3/limits/templates
 
 List all predefined and custom limit templates.
 
 **Example request:**
 ```
-GET /api/v1/limits/templates
+GET /api/v3/limits/templates
 Authorization: Bearer <token>
 ```
 
@@ -2372,7 +2627,7 @@ Authorization: Bearer <token>
 
 ---
 
-### POST /api/v1/limits/templates
+### POST /api/v3/limits/templates
 
 Create a new named limit template.
 
@@ -2412,7 +2667,7 @@ Create a new named limit template.
 
 ---
 
-### GET /api/v1/clients/:id/limits
+### GET /api/v3/clients/:id/limits
 
 Retrieve the current transaction limits for a client.
 
@@ -2424,7 +2679,7 @@ Retrieve the current transaction limits for a client.
 
 **Example request:**
 ```
-GET /api/v1/clients/7/limits
+GET /api/v3/clients/7/limits
 Authorization: Bearer <token>
 ```
 
@@ -2449,7 +2704,7 @@ Authorization: Bearer <token>
 
 ---
 
-### PUT /api/v1/clients/:id/limits
+### PUT /api/v3/clients/:id/limits
 
 Set or update transaction limits for a client. The employee's own limits constrain the maximum values they may assign (daily and monthly). Requires the authenticated employee's `max_client_daily_limit` >= requested `daily_limit` and `max_client_monthly_limit` >= requested `monthly_limit`.
 
@@ -2497,7 +2752,7 @@ Bank account management endpoints allow administrators to manage internal bank-o
 
 ---
 
-### GET /api/v1/bank-accounts
+### GET /api/v3/bank-accounts
 
 List all bank-owned accounts.
 
@@ -2529,7 +2784,7 @@ List all bank-owned accounts.
 
 ---
 
-### POST /api/v1/bank-accounts
+### POST /api/v3/bank-accounts
 
 Create a new bank-owned account.
 
@@ -2574,7 +2829,7 @@ Create a new bank-owned account.
 
 ---
 
-### DELETE /api/v1/bank-accounts/:id
+### DELETE /api/v3/bank-accounts/:id
 
 Delete a bank-owned account by ID.
 
@@ -2619,7 +2874,7 @@ Fee calculation is DB-backed: if the fee service is unavailable, the transaction
 
 ---
 
-### GET /api/v1/fees
+### GET /api/v3/fees
 
 List all transfer fee rules.
 
@@ -2649,7 +2904,7 @@ List all transfer fee rules.
 
 ---
 
-### POST /api/v1/fees
+### POST /api/v3/fees
 
 Create a new transfer fee rule.
 
@@ -2686,7 +2941,7 @@ Create a new transfer fee rule.
 
 ---
 
-### PUT /api/v1/fees/:id
+### PUT /api/v3/fees/:id
 
 Update an existing fee rule.
 
@@ -2718,9 +2973,9 @@ Update an existing fee rule.
 
 ---
 
-### DELETE /api/v1/fees/:id
+### DELETE /api/v3/fees/:id
 
-Deactivate a fee rule. The rule is not deleted from the database -- it is soft-deactivated and will no longer apply to new transactions. It can be reactivated via `PUT /api/v1/fees/{id}` with `"active": true`.
+Deactivate a fee rule. The rule is not deleted from the database -- it is soft-deactivated and will no longer apply to new transactions. It can be reactivated via `PUT /api/v3/fees/{id}` with `"active": true`.
 
 **Authentication:** Employee JWT with `fees.manage` permission
 
@@ -2751,7 +3006,7 @@ Interest rate tier management for loan interest rate configuration. Each tier de
 
 ---
 
-### GET /api/v1/interest-rate-tiers
+### GET /api/v3/interest-rate-tiers
 
 List all interest rate tiers.
 
@@ -2783,7 +3038,7 @@ List all interest rate tiers.
 
 ---
 
-### POST /api/v1/interest-rate-tiers
+### POST /api/v3/interest-rate-tiers
 
 Create a new interest rate tier.
 
@@ -2831,7 +3086,7 @@ Create a new interest rate tier.
 
 ---
 
-### PUT /api/v1/interest-rate-tiers/:id
+### PUT /api/v3/interest-rate-tiers/:id
 
 Update an existing interest rate tier.
 
@@ -2874,7 +3129,7 @@ Update an existing interest rate tier.
 
 ---
 
-### DELETE /api/v1/interest-rate-tiers/:id
+### DELETE /api/v3/interest-rate-tiers/:id
 
 Delete an interest rate tier.
 
@@ -2903,7 +3158,7 @@ Delete an interest rate tier.
 
 ---
 
-### POST /api/v1/interest-rate-tiers/:id/apply
+### POST /api/v3/interest-rate-tiers/:id/apply
 
 Apply a variable rate update to all active variable-rate loans whose amount falls within this tier's range. This recalculates the interest rate for affected loans based on the tier's current `variable_base` plus the bank margin.
 
@@ -2940,7 +3195,7 @@ Bank margin management for loan interest rate calculation. Each loan type has a 
 
 ---
 
-### GET /api/v1/bank-margins
+### GET /api/v3/bank-margins
 
 List all bank margins.
 
@@ -2978,7 +3233,7 @@ List all bank margins.
 
 ---
 
-### PUT /api/v1/bank-margins/:id
+### PUT /api/v3/bank-margins/:id
 
 Update the margin for a specific loan type.
 
@@ -3031,7 +3286,7 @@ Card requests allow clients to request a card for one of their accounts. Employe
 
 ---
 
-### POST /api/v1/me/cards/requests
+### POST /api/v3/me/cards/requests
 
 Client submits a request to obtain a card for one of their accounts.
 
@@ -3082,7 +3337,7 @@ Client submits a request to obtain a card for one of their accounts.
 
 ---
 
-### GET /api/v1/me/cards/requests
+### GET /api/v3/me/cards/requests
 
 Returns all card requests submitted by the authenticated principal.
 
@@ -3111,7 +3366,7 @@ Returns all card requests submitted by the authenticated principal.
 
 ---
 
-### GET /api/v1/cards/requests
+### GET /api/v3/cards/requests
 
 Returns all card requests, optionally filtered by status.
 
@@ -3143,7 +3398,7 @@ Returns all card requests, optionally filtered by status.
 
 ---
 
-### GET /api/v1/cards/requests/:id
+### GET /api/v3/cards/requests/:id
 
 Returns a single card request by ID.
 
@@ -3168,7 +3423,7 @@ Returns a single card request by ID.
 
 ---
 
-### POST /api/v1/cards/requests/:id/approve
+### POST /api/v3/cards/requests/:id/approve
 
 Employee approves a pending card request. This creates the actual card.
 
@@ -3200,7 +3455,7 @@ Employee approves a pending card request. This creates the actual card.
 
 ---
 
-### POST /api/v1/cards/requests/:id/reject
+### POST /api/v3/cards/requests/:id/reject
 
 Employee rejects a pending card request with a reason.
 
@@ -3241,11 +3496,11 @@ Employee rejects a pending card request with a reason.
 
 ## 19. Me (Self-Service)
 
-The `/api/v1/me/*` route group provides self-service access for both employees and bank clients. All routes in this group are protected by `AnyAuthMiddleware`, which accepts any valid JWT (employee or client). Results are automatically scoped to the authenticated principal -- no `client_id` path segment is needed.
+The `/api/v3/me/*` route group provides self-service access for both employees and bank clients. All routes in this group are protected by `AnyAuthMiddleware`, which accepts any valid JWT (employee or client). Results are automatically scoped to the authenticated principal -- no `client_id` path segment is needed.
 
 ---
 
-### GET /api/v1/me
+### GET /api/v3/me
 
 Get the currently authenticated principal's profile.
 
@@ -3257,7 +3512,7 @@ Get the currently authenticated principal's profile.
 
 ---
 
-### GET /api/v1/me/accounts
+### GET /api/v3/me/accounts
 
 List accounts belonging to the authenticated principal.
 
@@ -3280,7 +3535,7 @@ List accounts belonging to the authenticated principal.
 
 ---
 
-### GET /api/v1/me/accounts/:id
+### GET /api/v3/me/accounts/:id
 
 Get a single account by ID, scoped to the authenticated principal.
 
@@ -3292,12 +3547,19 @@ Get a single account by ID, scoped to the authenticated principal.
 |---|---|---|
 | `id` | int | Account ID |
 
-**Response 200:** Account object
+**Response 200:** Account object. Key balance fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `balance` | string (decimal) | Total on-account balance |
+| `reserved_balance` | string (decimal) | Amount held by active securities-order reservations (Phase 2) |
+| `available_balance` | string (decimal) | Stored field; equals `balance - reserved_balance` after every reservation mutation |
+
 **Response 404:** `{"error": {"code": "not_found", "message": "account not found"}}`
 
 ---
 
-### GET /api/v1/me/cards
+### GET /api/v3/me/cards
 
 List all cards belonging to the authenticated principal.
 
@@ -3319,7 +3581,7 @@ List all cards belonging to the authenticated principal.
 
 ---
 
-### GET /api/v1/me/cards/:id
+### GET /api/v3/me/cards/:id
 
 Get a single card by ID, scoped to the authenticated principal.
 
@@ -3336,20 +3598,20 @@ Get a single card by ID, scoped to the authenticated principal.
 
 ---
 
-### POST /api/v1/me/payments
+### POST /api/v3/me/payments
 
 Initiate a new payment. The authenticated principal must be the owner of the source account.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
-**Request Body:** Same as [Section 7: Payments - POST /api/v1/me/payments](#post-apiv1mepayments).
+**Request Body:** Same as [Section 7: Payments - POST /api/v3/me/payments](#post-apiv1mepayments).
 
 **Response 201:** Payment object
 **Response 400:** Validation error
 
 ---
 
-### GET /api/v1/me/payments
+### GET /api/v3/me/payments
 
 List payments for the authenticated principal.
 
@@ -3372,9 +3634,9 @@ List payments for the authenticated principal.
 
 ---
 
-### GET /api/v1/me/payments/:id
+### GET /api/v3/me/payments/:id
 
-Get a single payment by ID, scoped to the authenticated principal.
+Get a single payment by ID, scoped to the authenticated principal. Ownership is derived from the JWT — if the payment does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -3385,10 +3647,11 @@ Get a single payment by ID, scoped to the authenticated principal.
 | `id` | int | Payment ID |
 
 **Response 200:** Payment object
+**Response 404:** `{"error": {"code": "not_found", "message": "payment not found"}}` (also returned when the payment exists but belongs to another user)
 
 ---
 
-### POST /api/v1/me/payments/:id/execute
+### POST /api/v3/me/payments/:id/execute
 
 Execute a pending payment after verification.
 
@@ -3410,19 +3673,19 @@ Execute a pending payment after verification.
 
 ---
 
-### POST /api/v1/me/transfers
+### POST /api/v3/me/transfers
 
 Initiate a currency transfer between accounts.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
-**Request Body:** Same as [Section 8: Transfers - POST /api/v1/me/transfers](#post-apiv1metransfers).
+**Request Body:** Same as [Section 8: Transfers - POST /api/v3/me/transfers](#post-apiv1metransfers).
 
 **Response 201:** Transfer object
 
 ---
 
-### GET /api/v1/me/transfers
+### GET /api/v3/me/transfers
 
 List transfers for the authenticated principal.
 
@@ -3445,9 +3708,9 @@ List transfers for the authenticated principal.
 
 ---
 
-### GET /api/v1/me/transfers/:id
+### GET /api/v3/me/transfers/:id
 
-Get a single transfer by ID.
+Get a single transfer by ID, scoped to the authenticated principal. Ownership is derived from the JWT — if the transfer does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -3458,10 +3721,11 @@ Get a single transfer by ID.
 | `id` | int | Transfer ID |
 
 **Response 200:** Transfer object
+**Response 404:** `{"error": {"code": "not_found", "message": "transfer not found"}}` (also returned when the transfer exists but belongs to another user)
 
 ---
 
-### POST /api/v1/me/transfers/:id/execute
+### POST /api/v3/me/transfers/:id/execute
 
 Execute a pending transfer after verification.
 
@@ -3483,19 +3747,19 @@ Execute a pending transfer after verification.
 
 ---
 
-### POST /api/v1/me/payment-recipients
+### POST /api/v3/me/payment-recipients
 
 Save a new payment recipient.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
-**Request Body:** Same as [Section 9: Payment Recipients - POST /api/v1/me/payment-recipients](#post-apiv1mepayment-recipients).
+**Request Body:** Same as [Section 9: Payment Recipients - POST /api/v3/me/payment-recipients](#post-apiv1mepayment-recipients).
 
 **Response 201:** Recipient object
 
 ---
 
-### GET /api/v1/me/payment-recipients
+### GET /api/v3/me/payment-recipients
 
 List all saved recipients for the authenticated principal.
 
@@ -3510,19 +3774,19 @@ List all saved recipients for the authenticated principal.
 
 ---
 
-### POST /api/v1/me/loan-requests
+### POST /api/v3/me/loan-requests
 
 Submit a new loan application.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
-**Request Body:** Same as [Section 11: Loans - POST /api/v1/me/loan-requests](#post-apiv1meloan-requests).
+**Request Body:** Same as [Section 11: Loans - POST /api/v3/me/loan-requests](#post-apiv1meloan-requests).
 
 **Response 201:** Loan request object
 
 ---
 
-### GET /api/v1/me/loan-requests
+### GET /api/v3/me/loan-requests
 
 List all loan requests submitted by the authenticated principal.
 
@@ -3545,7 +3809,7 @@ List all loan requests submitted by the authenticated principal.
 
 ---
 
-### GET /api/v1/me/loans
+### GET /api/v3/me/loans
 
 List all loans belonging to the authenticated principal.
 
@@ -3568,9 +3832,9 @@ List all loans belonging to the authenticated principal.
 
 ---
 
-### GET /api/v1/me/loans/:id
+### GET /api/v3/me/loans/:id
 
-Get a single loan by ID, scoped to the authenticated principal.
+Get a single loan by ID, scoped to the authenticated principal. Ownership is derived from the JWT — if the loan does not belong to the caller, responds with `404 not_found`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -3581,11 +3845,11 @@ Get a single loan by ID, scoped to the authenticated principal.
 | `id` | int | Loan ID |
 
 **Response 200:** Loan object
-**Response 404:** `{"error": {"code": "not_found", "message": "loan not found"}}`
+**Response 404:** `{"error": {"code": "not_found", "message": "loan not found"}}` (also returned when the loan exists but belongs to another user)
 
 ---
 
-### GET /api/v1/me/loans/:id/installments
+### GET /api/v3/me/loans/:id/installments
 
 Get all installment records for a loan belonging to the authenticated principal.
 
@@ -3606,55 +3870,55 @@ Get all installment records for a loan belonging to the authenticated principal.
 
 ---
 
-### POST /api/v1/me/orders
+### POST /api/v3/me/orders
 
 Create a new stock order. See [Section 27: Orders](#27-orders) for full request/response details.
 
 ---
 
-### GET /api/v1/me/orders
+### GET /api/v3/me/orders
 
 List authenticated user's orders. See [Section 27: Orders](#27-orders) for full request/response details.
 
 ---
 
-### GET /api/v1/me/orders/:id
+### GET /api/v3/me/orders/:id
 
 Get a specific order. See [Section 27: Orders](#27-orders) for full request/response details.
 
 ---
 
-### POST /api/v1/me/orders/:id/cancel
+### POST /api/v3/me/orders/:id/cancel
 
 Cancel a pending order. See [Section 27: Orders](#27-orders) for full request/response details.
 
 ---
 
-### GET /api/v1/me/portfolio
+### GET /api/v3/me/portfolio
 
 List authenticated user's holdings. See [Section 28: Portfolio](#28-portfolio) for full request/response details.
 
 ---
 
-### GET /api/v1/me/portfolio/summary
+### GET /api/v3/me/portfolio/summary
 
 Get portfolio summary. See [Section 28: Portfolio](#28-portfolio) for full request/response details.
 
 ---
 
-### POST /api/v1/me/portfolio/:id/make-public
+### POST /api/v3/me/portfolio/:id/make-public
 
 Make a holding available on the OTC market. See [Section 28: Portfolio](#28-portfolio) for full request/response details.
 
 ---
 
-### POST /api/v1/me/portfolio/:id/exercise
+### POST /api/v3/me/portfolio/:id/exercise
 
 Exercise an options contract. See [Section 28: Portfolio](#28-portfolio) for full request/response details.
 
 ---
 
-### GET /api/v1/me/tax
+### GET /api/v3/me/tax
 
 Returns paginated capital gains tax records for the authenticated user. See [Section 31: Tax](#31-tax) for full request/response details.
 
@@ -3666,7 +3930,7 @@ Mobile device authentication for the EXBanka mobile app. These endpoints are pub
 
 ---
 
-### POST /api/v1/mobile/auth/request-activation
+### POST /api/v3/mobile/auth/request-activation
 
 Request a 6-digit activation code sent to the user's email.
 
@@ -3701,7 +3965,7 @@ Request a 6-digit activation code sent to the user's email.
 
 ---
 
-### POST /api/v1/mobile/auth/activate
+### POST /api/v3/mobile/auth/activate
 
 Activate a mobile device with the emailed code. Returns device credentials.
 
@@ -3745,7 +4009,7 @@ Activate a mobile device with the emailed code. Returns device credentials.
 
 ---
 
-### POST /api/v1/mobile/auth/refresh
+### POST /api/v3/mobile/auth/refresh
 
 Refresh mobile access token.
 
@@ -3792,7 +4056,7 @@ Manage the authenticated mobile device. Requires `MobileAuthMiddleware`.
 
 ---
 
-### GET /api/v1/mobile/device
+### GET /api/v3/mobile/device
 
 Get info about the current device.
 
@@ -3811,7 +4075,7 @@ Get info about the current device.
 
 ---
 
-### POST /api/v1/mobile/device/deactivate
+### POST /api/v3/mobile/device/deactivate
 
 Deactivate the current mobile device. The device will need to go through activation again to reconnect.
 
@@ -3826,7 +4090,7 @@ Deactivate the current mobile device. The device will need to go through activat
 
 ---
 
-### POST /api/v1/mobile/device/transfer
+### POST /api/v3/mobile/device/transfer
 
 Deactivate the current device and send a new activation code to the specified email.
 
@@ -3861,7 +4125,7 @@ Biometric authentication settings for the mobile device. Requires `MobileAuthMid
 
 ---
 
-### POST /api/v1/mobile/device/biometrics
+### POST /api/v3/mobile/device/biometrics
 
 Enable or disable biometric authentication for the current device.
 
@@ -3895,7 +4159,7 @@ Enable or disable biometric authentication for the current device.
 
 ---
 
-### GET /api/v1/mobile/device/biometrics
+### GET /api/v3/mobile/device/biometrics
 
 Get current biometric authentication status for the device.
 
@@ -3930,12 +4194,12 @@ The verification service provides two-factor authentication for payments and tra
 
 **Recommended usage order:**
 
-1. `POST /api/v1/me/payments` or `POST /api/v1/me/transfers` -- creates the transaction in `pending_verification` status
-2. `POST /api/v1/verifications` -- creates a verification challenge for the pending transaction
-3. `GET /api/v1/verifications/:id/status` -- browser polls until `status = "verified"`
-4. On mobile: `GET /api/v1/mobile/verifications/pending` -- mobile app polls for pending challenges
-5. Client submits code via `POST /api/v1/verifications/:id/code` (browser) or `POST /api/v1/mobile/verifications/:challenge_id/submit` (mobile) or `POST /api/v1/mobile/verifications/:id/biometric` (biometric)
-6. `POST /api/v1/me/payments/:id/execute` or `POST /api/v1/me/transfers/:id/execute` -- executes the transaction with the verified `challenge_id`
+1. `POST /api/v3/me/payments` or `POST /api/v3/me/transfers` -- creates the transaction in `pending_verification` status
+2. `POST /api/v3/verifications` -- creates a verification challenge for the pending transaction
+3. `GET /api/v3/verifications/:id/status` -- browser polls until `status = "verified"`
+4. On mobile: `GET /api/v3/mobile/verifications/pending` -- mobile app polls for pending challenges
+5. Client submits code via `POST /api/v3/verifications/:id/code` (browser) or `POST /api/v3/mobile/verifications/:challenge_id/submit` (mobile) or `POST /api/v3/mobile/verifications/:id/biometric` (biometric)
+6. `POST /api/v3/me/payments/:id/execute` or `POST /api/v3/me/transfers/:id/execute` -- executes the transaction with the verified `challenge_id`
 
 **VerificationChallenge model:**
 
@@ -3953,7 +4217,7 @@ The verification service provides two-factor authentication for payments and tra
 
 ---
 
-### POST /api/v1/verifications
+### POST /api/v3/verifications
 
 Create a new verification challenge for a pending transaction.
 
@@ -3995,7 +4259,7 @@ Create a new verification challenge for a pending transaction.
 
 ---
 
-### GET /api/v1/verifications/:id/status
+### GET /api/v3/verifications/:id/status
 
 Poll the status of a verification challenge until `verified`.
 
@@ -4021,7 +4285,7 @@ Possible `status` values: `pending`, `verified`, `expired`, `failed`.
 
 ---
 
-### POST /api/v1/verifications/:id/code
+### POST /api/v3/verifications/:id/code
 
 Submit a verification code from the browser (for `code_pull` method).
 
@@ -4063,7 +4327,7 @@ Submit a verification code from the browser (for `code_pull` method).
 
 ---
 
-### GET /api/v1/mobile/verifications/pending
+### GET /api/v3/mobile/verifications/pending
 
 Poll for pending verification challenges delivered to this device.
 
@@ -4089,9 +4353,9 @@ Poll for pending verification challenges delivered to this device.
 
 ---
 
-### POST /api/v1/mobile/verifications/:id/ack
+### POST /api/v3/mobile/verifications/:id/ack
 
-Acknowledge a mobile inbox item, marking it as delivered. Acknowledged items no longer appear in `GET /api/v1/mobile/verifications/pending`.
+Acknowledge a mobile inbox item, marking it as delivered. Acknowledged items no longer appear in `GET /api/v3/mobile/verifications/pending`.
 
 **Authentication:** MobileAuthMiddleware + RequireDeviceSignature
 
@@ -4115,7 +4379,7 @@ Acknowledge a mobile inbox item, marking it as delivered. Acknowledged items no 
 
 ---
 
-### POST /api/v1/mobile/verifications/:id/submit
+### POST /api/v3/mobile/verifications/:id/submit
 
 Submit a verification response from the mobile app.
 
@@ -4157,13 +4421,13 @@ Submit a verification response from the mobile app.
 
 ---
 
-### POST /api/v1/mobile/verifications/:id/biometric
+### POST /api/v3/mobile/verifications/:id/biometric
 
 **v1-only endpoint.** Verify a pending challenge using the device's biometric authentication. No request body is needed -- the device signature (passed via the `RequireDeviceSignature` middleware) IS the biometric proof of authentication.
 
 **Authentication:** Mobile JWT + `X-Device-ID` + Device Signature (MobileAuthMiddleware + RequireDeviceSignature)
 
-**Prerequisites:** Biometrics must be enabled on the device via `POST /api/v1/mobile/device/biometrics`. If biometrics are not enabled, the endpoint returns 403.
+**Prerequisites:** Biometrics must be enabled on the device via `POST /api/v3/mobile/device/biometrics`. If biometrics are not enabled, the endpoint returns 403.
 
 **Path Parameters:**
 
@@ -4196,7 +4460,7 @@ If the biometric verification fails (e.g., challenge already verified or expired
 
 ---
 
-### POST /api/v1/verify/:challenge_id
+### POST /api/v3/verify/:challenge_id
 
 > **Not available.** This endpoint is for the `qr_scan` method which is not yet implemented.
 
@@ -4238,7 +4502,7 @@ Real-time push notifications for mobile devices.
 
 ---
 
-### GET /api/v1/ws/mobile
+### GET /api/v3/ws/mobile
 
 Establish a WebSocket connection for real-time verification challenge delivery.
 
@@ -4246,7 +4510,7 @@ Establish a WebSocket connection for real-time verification challenge delivery.
 
 **Connection:**
 ```
-GET /api/v1/ws/mobile
+GET /api/v3/ws/mobile
 Authorization: Bearer <mobile_jwt>
 X-Device-ID: <device_id>
 ```
@@ -4264,13 +4528,13 @@ X-Device-ID: <device_id>
 
 **Keepalive:** Server sends ping every 30s. Client must respond with pong. Connections with no pong for 60s are closed.
 
-**Reconnection:** If the WebSocket disconnects, fall back to polling `GET /api/v1/mobile/verifications/pending` every 2s (foreground) or 30s (background).
+**Reconnection:** If the WebSocket disconnects, fall back to polling `GET /api/v3/mobile/verifications/pending` every 2s (foreground) or 30s (background).
 
 ---
 
 ## 25. Stock Exchanges
 
-### GET /api/v1/stock-exchanges
+### GET /api/v3/stock-exchanges
 
 List all stock exchanges with pagination.
 
@@ -4294,7 +4558,7 @@ List all stock exchanges with pagination.
 
 ---
 
-### GET /api/v1/stock-exchanges/:id
+### GET /api/v3/stock-exchanges/:id
 
 Get a specific stock exchange by ID.
 
@@ -4310,7 +4574,7 @@ Get a specific stock exchange by ID.
 
 ---
 
-### POST /api/v1/stock-exchanges/testing-mode
+### POST /api/v3/stock-exchanges/testing-mode
 
 Enable or disable testing mode for stock exchanges.
 
@@ -4331,7 +4595,7 @@ Enable or disable testing mode for stock exchanges.
 
 ---
 
-### GET /api/v1/stock-exchanges/testing-mode
+### GET /api/v3/stock-exchanges/testing-mode
 
 Get current testing mode status.
 
@@ -4350,7 +4614,7 @@ Get current testing mode status.
 
 All securities endpoints require any valid JWT (AnyAuthMiddleware).
 
-### GET /api/v1/securities/stocks
+### GET /api/v3/securities/stocks
 
 List stocks with filtering and sorting.
 
@@ -4379,7 +4643,7 @@ List stocks with filtering and sorting.
 
 ---
 
-### GET /api/v1/securities/stocks/:id
+### GET /api/v3/securities/stocks/:id
 
 Get details of a specific stock.
 
@@ -4391,7 +4655,7 @@ Get details of a specific stock.
 
 ---
 
-### GET /api/v1/securities/stocks/:id/history
+### GET /api/v3/securities/stocks/:id/history
 
 Get stock price history.
 
@@ -4419,7 +4683,7 @@ Get stock price history.
 
 ---
 
-### GET /api/v1/securities/futures
+### GET /api/v3/securities/futures
 
 List futures contracts.
 
@@ -4448,7 +4712,7 @@ List futures contracts.
 
 ---
 
-### GET /api/v1/securities/futures/:id
+### GET /api/v3/securities/futures/:id
 
 Get a specific futures contract.
 
@@ -4460,13 +4724,13 @@ Get a specific futures contract.
 
 ---
 
-### GET /api/v1/securities/futures/:id/history
+### GET /api/v3/securities/futures/:id/history
 
 Get futures price history. Same query parameters as stocks history.
 
 ---
 
-### GET /api/v1/securities/forex
+### GET /api/v3/securities/forex
 
 List forex currency pairs.
 
@@ -4493,7 +4757,7 @@ List forex currency pairs.
 
 ---
 
-### GET /api/v1/securities/forex/:id
+### GET /api/v3/securities/forex/:id
 
 Get a specific forex pair.
 
@@ -4505,13 +4769,13 @@ Get a specific forex pair.
 
 ---
 
-### GET /api/v1/securities/forex/:id/history
+### GET /api/v3/securities/forex/:id/history
 
 Get forex pair price history. Same query parameters as stocks history.
 
 ---
 
-### GET /api/v1/securities/options
+### GET /api/v3/securities/options
 
 List options contracts for a stock.
 
@@ -4537,7 +4801,7 @@ List options contracts for a stock.
 
 ---
 
-### GET /api/v1/securities/options/:id
+### GET /api/v3/securities/options/:id
 
 Get a specific options contract.
 
@@ -4549,7 +4813,7 @@ Get a specific options contract.
 
 ---
 
-### GET /api/v1/securities/candles
+### GET /api/v3/securities/candles
 
 Get OHLCV candle chart data for a security from InfluxDB time-series storage.
 
@@ -4566,7 +4830,7 @@ Get OHLCV candle chart data for a security from InfluxDB time-series storage.
 
 **Example Request:**
 ```
-GET /api/v1/securities/candles?listing_id=42&interval=1h&from=2026-04-01T00:00:00Z&to=2026-04-02T00:00:00Z
+GET /api/v3/securities/candles?listing_id=42&interval=1h&from=2026-04-01T00:00:00Z&to=2026-04-02T00:00:00Z
 ```
 
 **Response 200:**
@@ -4596,9 +4860,9 @@ GET /api/v1/securities/candles?listing_id=42&interval=1h&from=2026-04-01T00:00:0
 
 ## 27. Orders
 
-### POST /api/v1/me/orders
+### POST /api/v3/me/orders
 
-Create a new stock order.
+Create a new stock / futures / forex / option order. Ownership is derived from the JWT — the `account_id` (and `base_account_id`, when provided) must belong to the JWT caller. Mismatches return `403 forbidden`.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -4606,16 +4870,18 @@ Create a new stock order.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
+| `security_type` | string | Optional | `stock`, `futures`, `forex`, or `option`. Required on the client for forex-specific gateway validation; stock-service otherwise derives it from the listing. |
 | `listing_id` | uint64 | Yes (buy) | Listing ID (required for buy orders) |
 | `holding_id` | uint64 | Yes (sell) | Holding ID (required for sell orders) |
-| `direction` | string | Yes | `buy` or `sell` |
+| `direction` | string | Yes | `buy` or `sell` (forex orders MUST be `buy`) |
 | `order_type` | string | Yes | `market`, `limit`, `stop`, or `stop_limit` |
 | `quantity` | int64 | Yes | Must be positive |
 | `limit_value` | string | Conditional | Required for `limit` or `stop_limit` orders |
 | `stop_value` | string | Conditional | Required for `stop` or `stop_limit` orders |
 | `all_or_none` | boolean | No | Default: false |
 | `margin` | boolean | No | Default: false |
-| `account_id` | uint64 | Yes (buy) | Account to debit (required for buy orders) |
+| `account_id` | uint64 | Yes (buy) | Account to debit; must belong to the JWT caller |
+| `base_account_id` | uint64 | Yes (forex) | Required when `security_type=forex`. Account that will be credited with the base currency on fill. MUST differ from `account_id`; MUST be owned by the JWT caller. Ignored for non-forex orders. |
 
 **Example Request (buy market order):**
 ```json
@@ -4628,16 +4894,31 @@ Create a new stock order.
 }
 ```
 
+**Example Request (forex buy):**
+```json
+{
+  "security_type": "forex",
+  "listing_id": 501,
+  "direction": "buy",
+  "order_type": "market",
+  "quantity": 1000,
+  "account_id": 3,
+  "base_account_id": 7
+}
+```
+
 **Response 201:** Order object.
 
 | Status | Description |
 |---|---|
 | 201 | Order created |
-| 400 | Validation error |
+| 400 | Validation error — including: `forex orders must be direction=buy`, `forex orders require base_account_id`, `base_account_id must differ from account_id` |
+| 403 | Account (or base account) does not belong to JWT caller |
+| 409 | Business rule violation (e.g., insufficient available balance) |
 
 ---
 
-### GET /api/v1/me/orders
+### GET /api/v3/me/orders
 
 List authenticated user's orders.
 
@@ -4663,7 +4944,7 @@ List authenticated user's orders.
 
 ---
 
-### GET /api/v1/me/orders/:id
+### GET /api/v3/me/orders/:id
 
 Get a specific order.
 
@@ -4675,9 +4956,24 @@ Get a specific order.
 |---|---|---|
 | `id` | int | Order ID |
 
+**Response 200:** Order object. Phase 2 reservation/audit fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `reservation_amount` | string (decimal, nullable) | Amount reserved on `reservation_account_id` at placement (buy orders only) |
+| `reservation_currency` | string (3, nullable) | Currency of the reservation |
+| `reservation_account_id` | uint64 (nullable) | Account whose funds are reserved |
+| `base_account_id` | uint64 (nullable) | Forex only: base-currency account credited on fill |
+| `placement_rate` | string (decimal, nullable) | FX rate snapshot at placement for cross-currency orders |
+| `saga_id` | string (UUID) | Links the order to its saga_logs rows |
+
+Nested `order_transactions` (when returned) include cross-currency audit fields: `native_amount`, `native_currency`, `converted_amount`, `account_currency`, `fx_rate` (all nullable; populated for cross-currency fills).
+
+**Response 404:** `{"error": {"code": "not_found", "message": "order not found"}}`
+
 ---
 
-### POST /api/v1/me/orders/:id/cancel
+### POST /api/v3/me/orders/:id/cancel
 
 Cancel a pending order.
 
@@ -4693,7 +4989,7 @@ Cancel a pending order.
 
 ---
 
-### GET /api/v1/orders
+### GET /api/v3/orders
 
 List all orders (admin/supervisor view for approval).
 
@@ -4720,7 +5016,7 @@ List all orders (admin/supervisor view for approval).
 
 ---
 
-### POST /api/v1/orders/:id/approve
+### POST /api/v3/orders/:id/approve
 
 Approve a pending order.
 
@@ -4736,11 +5032,11 @@ Approve a pending order.
 
 ---
 
-### POST /api/v1/orders/:id/decline
+### POST /api/v3/orders/:id/reject
 
-Decline a pending order.
+Reject a pending order that requires supervisor approval. Renamed from `/decline` in the v3 route standardization (2026-04-28) for verb consistency.
 
-**Authentication:** Employee JWT + `orders.approve` permission
+**Authentication:** Employee JWT + `orders.cancel.all` permission
 
 **Path Parameters:**
 
@@ -4750,11 +5046,64 @@ Decline a pending order.
 
 **Response 200:** Updated order object.
 
+**Error Responses:**
+- `401` — missing or invalid JWT
+- `403` — missing `orders.cancel.all`
+- `404` — order not found
+- `409` — order already in a terminal state
+
+---
+
+### POST /api/v3/orders
+
+Place a stock/futures/forex/option order on behalf of a named client. The gateway verifies that the specified `account_id` belongs to the specified `client_id` before forwarding to stock-service. The order is recorded with `acting_employee_id` set to the caller's employee ID.
+
+**Authentication:** Employee JWT + `orders.place-on-behalf` permission
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `client_id` | uint64 | Yes | Client for whom the order is placed |
+| `account_id` | uint64 | Yes | Account to debit; must belong to `client_id` |
+| `security_type` | string | Optional | `stock`, `futures`, `forex`, or `option`. Required for forex-specific gateway validation. |
+| `listing_id` | uint64 | Yes (buy) | Listing ID (required for buy orders) |
+| `holding_id` | uint64 | Yes (sell) | Holding ID (required for sell orders) |
+| `direction` | string | Yes | `buy` or `sell` (forex orders MUST be `buy`) |
+| `order_type` | string | Yes | `market`, `limit`, `stop`, or `stop_limit` |
+| `quantity` | int64 | Yes | Must be positive |
+| `limit_value` | string | Conditional | Required for `limit` or `stop_limit` orders |
+| `stop_value` | string | Conditional | Required for `stop` or `stop_limit` orders |
+| `all_or_none` | boolean | No | Default: false |
+| `margin` | boolean | No | Default: false |
+| `base_account_id` | uint64 | Yes (forex) | Required when `security_type=forex`. Must belong to `client_id` and differ from `account_id`. |
+
+**Example Request:**
+```json
+{
+  "client_id": 5,
+  "account_id": 12,
+  "listing_id": 42,
+  "direction": "buy",
+  "order_type": "market",
+  "quantity": 10
+}
+```
+
+**Response 201:** Order object.
+
+| Status | Description |
+|---|---|
+| 201 | Order created |
+| 400 | Validation error — including forex direction/`base_account_id` mismatches |
+| 403 | Account (or base account) does not belong to the specified client |
+| 403 | Missing `orders.place-on-behalf` permission |
+
 ---
 
 ## 28. Portfolio
 
-### GET /api/v1/me/portfolio
+### GET /api/v3/me/portfolio
 
 List authenticated user's holdings.
 
@@ -4769,6 +5118,9 @@ List authenticated user's holdings.
 | `security_type` | string | `stock`, `futures`, or `option` |
 
 **Response 200:**
+
+Holdings aggregate per `(user_id, system_type, security_type, security_id)` — buying the same stock from two different accounts returns a single row with the combined quantity. Per-purchase price, profit, and FX details are available at [GET /me/holdings/{id}/transactions](#get-apiv1meholdingsidtransactions).
+
 ```json
 {
   "holdings": [
@@ -4778,9 +5130,6 @@ List authenticated user's holdings.
       "ticker": "AAPL",
       "name": "Apple Inc.",
       "quantity": 10,
-      "average_price": "150.25",
-      "current_price": "175.00",
-      "profit": "247.50",
       "public_quantity": 3,
       "account_id": 42,
       "last_modified": "2026-04-01T12:00:00Z"
@@ -4798,17 +5147,66 @@ List authenticated user's holdings.
 | `security_type` | string | `stock`, `futures`, or `option` |
 | `ticker` | string | Security ticker symbol |
 | `name` | string | Security name |
-| `quantity` | int64 | Total units owned |
-| `average_price` | string | Average purchase price (decimal) |
-| `current_price` | string | Current market price (decimal) |
-| `profit` | string | Unrealized profit/loss (decimal) |
+| `quantity` | int64 | Total units owned (aggregated across every account used) |
 | `public_quantity` | int64 | Units listed on OTC market |
-| `account_id` | uint64 | Associated account ID |
+| `account_id` | uint64 | Last-used account (audit pointer, not authoritative) |
 | `last_modified` | string | ISO 8601 timestamp of last update |
+
+### GET /api/v3/me/holdings/{id}/transactions
+
+Returns the OrderTransactions that contributed to a holding — per-purchase price, native vs account currency, FX rate, commission, and which account was used. Use this after fetching `/me/portfolio` when the UI needs per-trade breakdown.
+
+**Authentication:** Any JWT (AnyAuthMiddleware)
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Holding ID |
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `direction` | string | `buy` or `sell`; empty returns both |
+| `page` | int | Page number (default: 1) |
+| `page_size` | int | Items per page (default: 10) |
+
+**Response 200:**
+
+```json
+{
+  "transactions": [
+    {
+      "id": 42,
+      "order_id": 7,
+      "executed_at": "2026-04-20T09:15:00Z",
+      "direction": "buy",
+      "quantity": 5,
+      "price_per_unit": "155.0000",
+      "native_amount": "775.0000",
+      "native_currency": "USD",
+      "converted_amount": "85050.0000",
+      "account_currency": "RSD",
+      "fx_rate": "109.7419",
+      "commission": "1.9400",
+      "account_id": 42,
+      "ticker": "AAPL"
+    }
+  ],
+  "total_count": 3
+}
+```
+
+**Responses:**
+- `200 OK` — transactions list
+- `400 validation_error` — `direction` not one of `buy`/`sell`
+- `401 unauthorized`
+- `404 not_found` — holding does not exist or does not belong to caller
 
 ---
 
-### GET /api/v1/me/portfolio/summary
+### GET /api/v3/me/portfolio/summary
 
 Get portfolio summary (total value, gains/losses, allocation).
 
@@ -4818,7 +5216,7 @@ Get portfolio summary (total value, gains/losses, allocation).
 
 ---
 
-### POST /api/v1/me/portfolio/:id/make-public
+### POST /api/v3/me/portfolio/:id/make-public
 
 Make a holding available on the OTC market.
 
@@ -4840,7 +5238,7 @@ Make a holding available on the OTC market.
 
 ---
 
-### POST /api/v1/me/portfolio/:id/exercise
+### POST /api/v3/me/portfolio/:id/exercise
 
 Exercise an options contract.
 
@@ -4858,7 +5256,7 @@ Exercise an options contract.
 
 ## 29. OTC Offers
 
-### GET /api/v1/otc/offers
+### GET /api/v3/otc/offers
 
 List OTC trading offers.
 
@@ -4883,9 +5281,9 @@ List OTC trading offers.
 
 ---
 
-### POST /api/v1/otc/offers/:id/buy
+### POST /api/v3/otc/offers/:id/buy
 
-Purchase an OTC offer.
+Purchase an OTC offer. Ownership is derived from the JWT — the account must belong to the JWT caller.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -4900,15 +5298,58 @@ Purchase an OTC offer.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `quantity` | int64 | Yes | Number of units to buy (must be positive) |
-| `account_id` | uint64 | Yes | Account to debit |
+| `account_id` | uint64 | Yes | Account to debit; must belong to the JWT caller |
 
 **Response 200:** Transaction object.
 
 ---
 
+### POST /api/v3/otc/offers/:id/buy-on-behalf
+
+Purchase an OTC offer on behalf of a named client. The gateway verifies that the specified `account_id` belongs to the specified `client_id` before forwarding to stock-service. The resulting order is recorded with `acting_employee_id` set to the caller's employee ID.
+
+Renamed from `POST /api/v3/otc/admin/offers/:id/buy` in the v3 route standardization (2026-04-28): the `/admin/` namespace was dropped and the action verb-suffix `buy-on-behalf` was added to distinguish it from the self-service `POST /otc/offers/:id/buy`.
+
+**Authentication:** Employee JWT + `otc.trade.accept` or `orders.place-on-behalf` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Offer ID |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `client_id` | uint64 | Yes | Client for whom the offer is purchased |
+| `account_id` | uint64 | Yes | Account to debit; must belong to `client_id` |
+| `quantity` | int64 | Yes | Number of units to buy (must be positive) |
+
+**Example Request:**
+```json
+{
+  "client_id": 5,
+  "account_id": 12,
+  "quantity": 3
+}
+```
+
+**Response 200:** Transaction object.
+
+| Status | Description |
+|---|---|
+| 200 | OTC offer purchased |
+| 400 | Validation error |
+| 403 | Account does not belong to the specified client |
+| 403 | Missing required permission |
+| 404 | Offer not found |
+
+---
+
 ## 30. Actuaries
 
-### GET /api/v1/actuaries
+### GET /api/v3/actuaries
 
 List all actuaries (trading agents).
 
@@ -4933,7 +5374,7 @@ List all actuaries (trading agents).
 
 ---
 
-### PUT /api/v1/actuaries/:id/limit
+### PUT /api/v3/actuaries/:id/limit
 
 Set trading limit for an actuary.
 
@@ -4955,7 +5396,7 @@ Set trading limit for an actuary.
 
 ---
 
-### POST /api/v1/actuaries/:id/reset-limit
+### POST /api/v3/actuaries/:id/reset-limit
 
 Reset used trading limit for an actuary back to zero.
 
@@ -4971,11 +5412,11 @@ Reset used trading limit for an actuary back to zero.
 
 ---
 
-### PUT /api/v1/actuaries/:id/approval
+### POST /api/v3/actuaries/:id/require-approval
 
-Set whether an actuary's orders require supervisor approval.
+Require supervisor approval for all orders placed by this actuary. No request body required. Replaces `PUT /api/v3/actuaries/:id/approval` with `{"need_approval": true}`.
 
-**Authentication:** Employee JWT + `agents.manage` permission
+**Authentication:** Employee JWT + `employees.update.any` permission
 
 **Path Parameters:**
 
@@ -4983,19 +5424,41 @@ Set whether an actuary's orders require supervisor approval.
 |---|---|---|
 | `id` | int | Actuary (employee) ID |
 
-**Request Body:**
+**Response 200:** Updated actuary object.
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `need_approval` | boolean | Yes | Whether orders need approval |
+**Error Responses:**
+- `400` — invalid actuary ID
+- `401` — missing or invalid JWT
+- `403` — missing `employees.update.any`
+- `404` — actuary not found
+
+---
+
+### POST /api/v3/actuaries/:id/skip-approval
+
+Remove the supervisor approval requirement for this actuary (orders go straight to the market). No request body required. Replaces `PUT /api/v3/actuaries/:id/approval` with `{"need_approval": false}`.
+
+**Authentication:** Employee JWT + `employees.update.any` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int | Actuary (employee) ID |
 
 **Response 200:** Updated actuary object.
+
+**Error Responses:**
+- `400` — invalid actuary ID
+- `401` — missing or invalid JWT
+- `403` — missing `employees.update.any`
+- `404` — actuary not found
 
 ---
 
 ## 31. Tax
 
-### GET /api/v1/tax
+### GET /api/v3/tax
 
 List all tax records.
 
@@ -5020,7 +5483,7 @@ List all tax records.
 
 ---
 
-### POST /api/v1/tax/collect
+### POST /api/v3/tax/collect
 
 Collect/process taxes for all users.
 
@@ -5039,7 +5502,7 @@ Collect/process taxes for all users.
 
 ---
 
-### GET /api/v1/me/tax
+### GET /api/v3/me/tax
 
 Returns paginated capital gains tax records for the authenticated user (client or employee/actuary). Ownership is derived from the JWT `user_id`.
 
@@ -5055,7 +5518,7 @@ Returns paginated capital gains tax records for the authenticated user (client o
 **Example Request:**
 
 ```
-GET /api/v1/me/tax?page=1&page_size=10
+GET /api/v3/me/tax?page=1&page_size=10
 Authorization: Bearer <token>
 ```
 
@@ -5101,7 +5564,7 @@ Authorization: Bearer <token>
 
 ---
 
-### GET /api/v1/blueprints
+### GET /api/v3/blueprints
 
 List all limit blueprints, optionally filtered by type.
 
@@ -5137,7 +5600,7 @@ List all limit blueprints, optionally filtered by type.
 
 ---
 
-### POST /api/v1/blueprints
+### POST /api/v3/blueprints
 
 Create a new limit blueprint.
 
@@ -5194,7 +5657,7 @@ Create a new limit blueprint.
 
 ---
 
-### GET /api/v1/blueprints/:id
+### GET /api/v3/blueprints/:id
 
 Get a single blueprint by ID.
 
@@ -5218,7 +5681,7 @@ Get a single blueprint by ID.
 
 ---
 
-### PUT /api/v1/blueprints/:id
+### PUT /api/v3/blueprints/:id
 
 Update an existing blueprint's name, description, or values. The `type` field cannot be changed after creation.
 
@@ -5265,7 +5728,7 @@ Update an existing blueprint's name, description, or values. The `type` field ca
 
 ---
 
-### DELETE /api/v1/blueprints/:id
+### DELETE /api/v3/blueprints/:id
 
 Delete a blueprint by ID. Does not affect limits that have already been applied from this blueprint.
 
@@ -5289,7 +5752,7 @@ Delete a blueprint by ID. Does not affect limits that have already been applied 
 
 ---
 
-### POST /api/v1/blueprints/:id/apply
+### POST /api/v3/blueprints/:id/apply
 
 Apply a blueprint's limit values to a target entity. The target type is determined by the blueprint's `type` field (employee, actuary, or client).
 
@@ -5331,19 +5794,66 @@ Apply a blueprint's limit values to a target entity. The target type is determin
 
 ---
 
-## 33. Changelog
+## 33. Changelog (Audit Trail)
 
-**v1-only section.** Field-level change history for core entities. All changelog endpoints currently return **501 Not Implemented** and will be backed by audit trail infrastructure in a future release.
+Field-level change history for core entities. All five changelog endpoints are **fully implemented** — they return paginated audit log entries from each service's own changelog table, recording every field mutation with old value, new value, and the employee who made the change.
 
-Each endpoint requires the same permission as the parent resource's read permission.
+Each endpoint requires the same permission as the parent resource's read-all permission.
+
+**Common Query Parameters:**
+
+| Parameter | Type | Default | Max | Description |
+|---|---|---|---|---|
+| `page` | int | 1 | — | Page number |
+| `page_size` | int | 20 | 200 | Items per page |
+
+**Common Response Shape (200):**
+
+```json
+{
+  "entries": [
+    {
+      "id": 123,
+      "entity_type": "account",
+      "entity_id": 42,
+      "action": "update",
+      "field_name": "status",
+      "old_value": "\"active\"",
+      "new_value": "\"inactive\"",
+      "changed_by": 7,
+      "changed_at": "2026-04-28T14:32:11Z",
+      "reason": "Manual deactivation by supervisor"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+Fields:
+- `id` — changelog entry ID
+- `entity_type` — resource type (`"account"`, `"card"`, `"client"`, `"loan"`, `"employee"`)
+- `entity_id` — numeric ID of the changed entity
+- `action` — `"create"`, `"update"`, or `"delete"`
+- `field_name` — name of the changed field
+- `old_value` / `new_value` — JSON-encoded previous and current values (strings are wrapped in quotes)
+- `changed_by` — employee ID who performed the change (0 if system-initiated)
+- `changed_at` — RFC3339 timestamp
+- `reason` — free-text reason if the change came via a supervisor action (may be empty)
+
+**Common Error Responses:**
+- `400` — `id` is not a positive integer, or `page_size` > 200
+- `401` — missing or invalid JWT
+- `403` — missing required permission
 
 ---
 
-### GET /api/v1/accounts/:id/changelog
+### GET /api/v3/accounts/:id/changelog
 
 Get the field-level change history for an account.
 
-**Authentication:** Employee JWT + `accounts.read` permission
+**Authentication:** Employee JWT + `accounts.read.all`
 
 **Path Parameters:**
 
@@ -5351,24 +5861,15 @@ Get the field-level change history for an account.
 |---|---|---|
 | `id` | int | Account ID |
 
-**Response:** `501 Not Implemented`
-
-```json
-{
-  "error": {
-    "code": "not_implemented",
-    "message": "this endpoint is coming in a future release"
-  }
-}
-```
+**Response 200:** Common changelog shape (see above), `entity_type: "account"`.
 
 ---
 
-### GET /api/v1/employees/:id/changelog
+### GET /api/v3/employees/:id/changelog
 
 Get the field-level change history for an employee.
 
-**Authentication:** Employee JWT + `employees.read` permission
+**Authentication:** Employee JWT + `employees.read.all`
 
 **Path Parameters:**
 
@@ -5376,24 +5877,15 @@ Get the field-level change history for an employee.
 |---|---|---|
 | `id` | int | Employee ID |
 
-**Response:** `501 Not Implemented`
-
-```json
-{
-  "error": {
-    "code": "not_implemented",
-    "message": "this endpoint is coming in a future release"
-  }
-}
-```
+**Response 200:** Common changelog shape (see above), `entity_type: "employee"`.
 
 ---
 
-### GET /api/v1/clients/:id/changelog
+### GET /api/v3/clients/:id/changelog
 
 Get the field-level change history for a client.
 
-**Authentication:** Employee JWT + `clients.read` permission
+**Authentication:** Employee JWT + `clients.read.all`
 
 **Path Parameters:**
 
@@ -5401,24 +5893,15 @@ Get the field-level change history for a client.
 |---|---|---|
 | `id` | int | Client ID |
 
-**Response:** `501 Not Implemented`
-
-```json
-{
-  "error": {
-    "code": "not_implemented",
-    "message": "this endpoint is coming in a future release"
-  }
-}
-```
+**Response 200:** Common changelog shape (see above), `entity_type: "client"`.
 
 ---
 
-### GET /api/v1/cards/:id/changelog
+### GET /api/v3/cards/:id/changelog
 
-Get the field-level change history for a card.
+Get the field-level change history for a payment card.
 
-**Authentication:** Employee JWT + `cards.read` permission
+**Authentication:** Employee JWT + `cards.read.all`
 
 **Path Parameters:**
 
@@ -5426,24 +5909,15 @@ Get the field-level change history for a card.
 |---|---|---|
 | `id` | int | Card ID |
 
-**Response:** `501 Not Implemented`
-
-```json
-{
-  "error": {
-    "code": "not_implemented",
-    "message": "this endpoint is coming in a future release"
-  }
-}
-```
+**Response 200:** Common changelog shape (see above), `entity_type: "card"`.
 
 ---
 
-### GET /api/v1/loans/:id/changelog
+### GET /api/v3/loans/:id/changelog
 
 Get the field-level change history for a loan.
 
-**Authentication:** Employee JWT + `credits.read` permission
+**Authentication:** Employee JWT + `credits.read.all`
 
 **Path Parameters:**
 
@@ -5451,16 +5925,7 @@ Get the field-level change history for a loan.
 |---|---|---|
 | `id` | int | Loan ID |
 
-**Response:** `501 Not Implemented`
-
-```json
-{
-  "error": {
-    "code": "not_implemented",
-    "message": "this endpoint is coming in a future release"
-  }
-}
-```
+**Response 200:** Common changelog shape (see above), `entity_type: "loan"`.
 
 ---
 
@@ -5470,7 +5935,7 @@ Manage active sessions and view login history for the authenticated user.
 
 ---
 
-### GET /api/v1/me/sessions
+### GET /api/v3/me/sessions
 
 List all active sessions for the authenticated user.
 
@@ -5502,23 +5967,22 @@ List all active sessions for the authenticated user.
 
 ---
 
-### POST /api/v1/me/sessions/revoke
+### DELETE /api/v3/me/sessions/:id
 
-Revoke a specific session by ID, logging out the device associated with it.
+Revoke a specific session by ID, logging out the device associated with it. Renamed from `POST /api/v3/me/sessions/revoke` (which read the session ID from the request body) in the v3 route standardization (2026-04-28). No request body required.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
-**Request Body:**
+**Path Parameters:**
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `session_id` | int64 | Yes | ID of the session to revoke |
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | int64 | Session ID to revoke |
 
 **Example Request:**
-```json
-{
-  "session_id": 42
-}
+```
+DELETE /api/v3/me/sessions/42
+Authorization: Bearer <token>
 ```
 
 **Response 200:**
@@ -5531,13 +5995,13 @@ Revoke a specific session by ID, logging out the device associated with it.
 | Status | Description |
 |---|---|
 | 200 | Session revoked |
-| 400 | Invalid input |
+| 400 | Invalid or missing session ID |
 | 401 | Unauthorized |
 | 404 | Session not found |
 
 ---
 
-### POST /api/v1/me/sessions/revoke-others
+### POST /api/v3/me/sessions/revoke-others
 
 Revoke all sessions except the current one. The current session is identified by the provided refresh token.
 
@@ -5571,7 +6035,7 @@ Revoke all sessions except the current one. The current session is identified by
 
 ---
 
-### GET /api/v1/me/login-history
+### GET /api/v3/me/login-history
 
 Get recent login attempts for the authenticated user.
 
@@ -5627,7 +6091,7 @@ Notification types generated by the system:
 
 ---
 
-### GET /api/v1/me/notifications
+### GET /api/v3/me/notifications
 
 List notifications for the authenticated user, ordered by creation date (newest first).
 
@@ -5668,7 +6132,7 @@ List notifications for the authenticated user, ordered by creation date (newest 
 
 ---
 
-### GET /api/v1/me/notifications/unread-count
+### GET /api/v3/me/notifications/unread-count
 
 Get the number of unread notifications for the authenticated user.
 
@@ -5689,7 +6153,7 @@ Get the number of unread notifications for the authenticated user.
 
 ---
 
-### POST /api/v1/me/notifications/:id/read
+### POST /api/v3/me/notifications/:id/read
 
 Mark a single notification as read.
 
@@ -5717,7 +6181,7 @@ Mark a single notification as read.
 
 ---
 
-### POST /api/v1/me/notifications/read-all
+### POST /api/v3/me/notifications/read-all
 
 Mark all unread notifications as read for the authenticated user.
 
@@ -5738,6 +6202,70 @@ Mark all unread notifications as read for the authenticated user.
 |---|---|
 | 200 | All marked as read |
 | 401 | Unauthorized |
+
+---
+
+## 36. Stock Data Source
+
+Admin-only endpoints for managing the stock-service data source. Switching sources is **destructive** — it wipes every securities row, listing, option, order, holding, capital gain, tax collection, and order transaction, then reseeds from the new source. Use with care.
+
+Routes were moved from `/api/v3/admin/stock-source` to `/api/v3/stock-sources` in the v3 route standardization (2026-04-28).
+
+**Authentication:** `AuthMiddleware` + permission `securities.manage.catalog` (seeded on `EmployeeAdmin` only)
+
+---
+
+### POST /api/v3/stock-sources
+
+Switch the active stock data source and reseed the database. For `generated`, the reseed runs synchronously (response returns after the DB is ready). For `external` and `simulator`, the reseed runs in a background goroutine and the response returns immediately with `status: "reseeding"`; poll `GET /api/v3/stock-sources/active` to watch for `status: "idle"`.
+
+**Request Body:**
+
+```json
+{ "source": "external" | "generated" | "simulator" }
+```
+
+**Response 202 Accepted:**
+
+```json
+{
+  "source": "generated",
+  "status": "idle",
+  "started_at": "2026-04-13T12:34:56Z",
+  "last_error": ""
+}
+```
+
+**Possible statuses:** `idle` | `reseeding` | `failed`.
+
+**Error Responses:**
+
+- `400 validation_error` — unknown `source` value
+- `403 forbidden` — missing `securities.manage.catalog` permission
+- `409 conflict` — another switch is already in progress
+- `500 internal_error` — wipe or reseed failed; check `last_error` via GET
+- `503 unavailable` — simulator unreachable (when `source=simulator`)
+
+---
+
+### GET /api/v3/stock-sources/active
+
+Return the current active source and the most recent switch status.
+
+**Authentication:** `AuthMiddleware` + permission `securities.manage.catalog`
+
+**Response 200:**
+
+```json
+{
+  "source": "simulator",
+  "status": "reseeding",
+  "started_at": "2026-04-13T12:34:56Z",
+  "last_error": ""
+}
+```
+
+When `status=failed`, `last_error` contains the failure reason. The admin can retry by issuing a new POST.
 
 ---
 
@@ -5801,7 +6329,7 @@ Passwords for both employees and clients must satisfy:
 
 1. **Token expiry:** Access tokens expire after 15 minutes. Implement automatic refresh using the refresh token before expiry.
 
-2. **Client vs Employee routes:** Employee routes require an employee JWT with specific permissions. Client self-service routes are under `/api/v1/me/*` and accept any valid JWT (employee or client). Do not use a client token to call employee-only endpoints.
+2. **Client vs Employee routes:** Employee routes require an employee JWT with specific permissions. Client self-service routes are under `/api/v3/me/*` and accept any valid JWT (employee or client). Do not use a client token to call employee-only endpoints.
 
 3. **Error format:** All error responses are structured objects: `{"error": {"code": "...", "message": "..."}}`. Parse `error.code` for programmatic error handling and `error.message` for display.
 
@@ -5817,10 +6345,10 @@ Passwords for both employees and clients must satisfy:
 
 9. **CORS:** The API Gateway allows all origins with `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` methods and `Authorization`, `Content-Type` headers.
 
-10. **Version alias:** `/api/latest/` rewrites to `/api/v1/`. You may use either prefix; `/api/latest/` will always point to the newest stable version.
+10. **Version alias:** `/api/latest/` rewrites to `/api/v3/`. You may use either prefix; `/api/latest/` will always point to the newest stable version.
 
-11. **Mobile auth flow:** Mobile devices use a separate auth flow (`POST /api/v1/mobile/auth/request-activation` -> `POST /api/v1/mobile/auth/activate`). Mobile JWT tokens include `system_type: "mobile"` and require `X-Device-ID` header for all authenticated requests.
+11. **Mobile auth flow:** Mobile devices use a separate auth flow (`POST /api/v3/mobile/auth/request-activation` -> `POST /api/v3/mobile/auth/activate`). Mobile JWT tokens include `system_type: "mobile"` and require `X-Device-ID` header for all authenticated requests.
 
 12. **Verification flow:** Payments and transfers require two-factor verification. Create the transaction, then create a verification challenge, wait for mobile approval, then execute. Users with `verification.skip` permission bypass this flow.
 
-13. **Biometric verification:** If biometrics are enabled on a mobile device, challenges can be verified via `POST /api/v1/mobile/verifications/:id/biometric` without entering a code. The signed device request itself serves as the biometric proof.
+13. **Biometric verification:** If biometrics are enabled on a mobile device, challenges can be verified via `POST /api/v3/mobile/verifications/:id/biometric` without entering a code. The signed device request itself serves as the biometric proof.

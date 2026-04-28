@@ -5,11 +5,13 @@ import {
   usePortfolioSummary,
   useMakePublic,
   useExerciseOption,
+  useHoldingTransactions,
 } from '@/hooks/usePortfolio'
 import * as portfolioApi from '@/lib/api/portfolio'
 import {
   createMockHolding,
   createMockPortfolioSummary,
+  createMockHoldingTransaction,
 } from '@/__tests__/fixtures/portfolio-fixtures'
 
 jest.mock('@/lib/api/portfolio')
@@ -60,7 +62,7 @@ describe('usePortfolioSummary', () => {
 
 describe('useMakePublic', () => {
   it('calls makeHoldingPublic', async () => {
-    const holding = createMockHolding({ is_public: true, public_quantity: 5 })
+    const holding = createMockHolding({ public_quantity: 5 })
     jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue(holding)
 
     const { result } = renderHook(() => useMakePublic(), {
@@ -89,5 +91,30 @@ describe('useExerciseOption', () => {
     })
 
     expect(portfolioApi.exerciseOption).toHaveBeenCalledWith(1)
+  })
+})
+
+describe('useHoldingTransactions', () => {
+  it('fetches transactions for a holding', async () => {
+    const txn = createMockHoldingTransaction()
+    const response = { transactions: [txn], total_count: 1 }
+    jest.mocked(portfolioApi.getHoldingTransactions).mockResolvedValue(response)
+
+    const { result } = renderHook(() => useHoldingTransactions(5), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data).toEqual(response)
+    expect(portfolioApi.getHoldingTransactions).toHaveBeenCalledWith(5, {})
+  })
+
+  it('does not fetch when holdingId is 0', async () => {
+    const { result } = renderHook(() => useHoldingTransactions(0), {
+      wrapper: createQueryWrapper(),
+    })
+
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(portfolioApi.getHoldingTransactions).not.toHaveBeenCalled()
   })
 })

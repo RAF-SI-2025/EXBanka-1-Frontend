@@ -11,11 +11,19 @@ import type { Holding } from '@/types/portfolio'
 
 interface HoldingTableProps {
   holdings: Holding[]
+  onRowClick: (id: number) => void
+  onSell: (id: number) => void
   onMakePublic: (id: number) => void
   onExercise: (id: number) => void
 }
 
-export function HoldingTable({ holdings, onMakePublic, onExercise }: HoldingTableProps) {
+export function HoldingTable({
+  holdings,
+  onRowClick,
+  onSell,
+  onMakePublic,
+  onExercise,
+}: HoldingTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -24,33 +32,32 @@ export function HoldingTable({ holdings, onMakePublic, onExercise }: HoldingTabl
           <TableHead>Name</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Quantity</TableHead>
-          <TableHead>Avg Price</TableHead>
-          <TableHead>Current</TableHead>
-          <TableHead>P&L</TableHead>
-          <TableHead>P&L%</TableHead>
-          <TableHead>Public</TableHead>
+          <TableHead>Public Qty</TableHead>
+          <TableHead>Account</TableHead>
+          <TableHead>Last Modified</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {holdings.map((holding) => (
-          <TableRow key={holding.id}>
+          <TableRow
+            key={holding.id}
+            className="cursor-pointer"
+            onClick={() => onRowClick(holding.id)}
+          >
             <TableCell className="font-mono font-semibold">{holding.ticker}</TableCell>
-            <TableCell>{holding.security_name}</TableCell>
+            <TableCell>{holding.name}</TableCell>
             <TableCell>{holding.security_type}</TableCell>
             <TableCell>{holding.quantity}</TableCell>
-            <TableCell>{holding.average_price}</TableCell>
-            <TableCell>{holding.current_price}</TableCell>
-            <TableCell
-              className={Number(holding.profit_loss) >= 0 ? 'text-green-600' : 'text-red-600'}
-            >
-              {holding.profit_loss}
-            </TableCell>
-            <TableCell>{holding.profit_loss_percent}%</TableCell>
-            <TableCell>{holding.is_public ? `${holding.public_quantity}` : 'No'}</TableCell>
+            <TableCell>{holding.public_quantity}</TableCell>
+            <TableCell>{holding.account_id}</TableCell>
+            <TableCell>{new Date(holding.last_modified).toLocaleDateString()}</TableCell>
             <TableCell>
-              <div className="flex gap-2">
-                {!holding.is_public && (
+              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                <Button size="sm" variant="outline" onClick={() => onSell(holding.id)}>
+                  Sell
+                </Button>
+                {holding.security_type !== 'option' && (
                   <Button size="sm" variant="outline" onClick={() => onMakePublic(holding.id)}>
                     Make Public
                   </Button>
