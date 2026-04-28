@@ -42,7 +42,6 @@ export interface AccountFilters {
   name_filter?: string
   account_number_filter?: string
   type_filter?: string
-  client_id?: number
   page?: number
   page_size?: number
 }

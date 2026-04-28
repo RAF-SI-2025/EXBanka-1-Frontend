@@ -11,39 +11,39 @@ describe('Celina3 - Orderi-Review', () => {
    * endpoints that MyOrdersPage (the post-submit destination) also needs.
    */
   const stubCreateOrderPageForClient = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       fixture: 'home-accounts.json',
     }).as('getClientAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
   }
 
   const stubCreateOrderPageForEmployee = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', {
       fixture: 'home-accounts.json',
     }).as('getBankAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/me/accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
   }
 
   /** Stubs listing-map endpoints that AdminOrdersPage fires on mount. */
   const stubAdminOrdersPage = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
   }
 
   // ── Scenario 48: Client order auto-approves ───────────────────────────────
 
   it('Scenario 48 — Client order receives status "approved" automatically without supervisor action', () => {
     stubCreateOrderPageForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 100, status: 'approved', state: 'approved', direction: 'buy', order_type: 'market', quantity: 5 },
     }).as('clientOrder')
@@ -62,7 +62,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 49 — Employee order with Need Approval=true receives status "pending"', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 101, status: 'pending', state: 'pending', direction: 'buy', order_type: 'market', quantity: 10 },
     }).as('agentPendingOrder')
@@ -79,7 +79,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 49 — Pending order appears on admin orders portal awaiting supervisor action', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', {
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: {
         orders: [{
           id: 101, listing_id: 1, holding_id: null, direction: 'buy',
@@ -106,7 +106,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 50 — Agent order whose value exceeds remaining daily limit receives status "pending"', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       // Agent has used 90.000 RSD; this order costs 20.000 → exceeds 100.000 limit
       body: { id: 102, status: 'pending', state: 'pending', direction: 'buy', order_type: 'market', quantity: 200 },
@@ -126,7 +126,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 51 — Agent order that exactly meets the limit (80.000 used + 20.000 = 100.000) is auto-approved', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 103, status: 'approved', state: 'approved', direction: 'buy', order_type: 'market', quantity: 5 },
     }).as('boundaryOrder')
@@ -145,8 +145,8 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 52 — Supervisor clicks Approve; POST /orders/:id/approve is called and returns approved status', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', 'https://bytenity.com/api/v1/orders/60/approve', {
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', '**/api/v3/orders/60/approve', {
       statusCode: 200,
       body: { id: 60, status: 'approved', state: 'approved' },
     }).as('approveOrder')
@@ -161,10 +161,10 @@ describe('Celina3 - Orderi-Review', () => {
 
   // ── Scenario 53: Supervisor declines pending order ────────────────────────
 
-  it('Scenario 53 — Supervisor clicks Decline; POST /orders/:id/decline is called and returns declined status', () => {
+  it('Scenario 53 — Supervisor clicks Decline; POST /orders/:id/reject is called and returns declined status', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', 'https://bytenity.com/api/v1/orders/60/decline', {
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', '**/api/v3/orders/60/reject', {
       statusCode: 200,
       body: { id: 60, status: 'declined', state: 'declined' },
     }).as('declineOrder')
@@ -185,8 +185,8 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 54 — Decline is always available and accepted for a pending order with expired settlement date', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', 'https://bytenity.com/api/v1/orders/60/decline', {
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', '**/api/v3/orders/60/reject', {
       statusCode: 200,
       body: { id: 60, status: 'declined', state: 'declined' },
     }).as('declineExpired')
@@ -204,7 +204,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 55 — Order Approval portal shows all required table columns', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
 
     cy.loginAsEmployee('/admin/orders')
     cy.wait('@getOrders')
@@ -233,7 +233,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 56 — Pending orders are shown with Approve and Decline action buttons', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', {
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: {
         orders: [{
           id: 60, listing_id: 1, holding_id: null, direction: 'buy',
@@ -261,7 +261,7 @@ describe('Celina3 - Orderi-Review', () => {
     // but not from filterValues.search, so typing in Search does not trigger a new API call.
     // The field is present in the UI but status-based filtering is enforced server-side.
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', '**/api/v3/orders*', { fixture: 'admin-orders-list.json' }).as('getOrders')
 
     cy.loginAsEmployee('/admin/orders')
     cy.wait('@getOrders')
@@ -273,7 +273,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 57 — Filled (isDone=true) orders are shown without Approve or Decline buttons', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', {
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: {
         orders: [{
           id: 70, listing_id: 1, holding_id: null, direction: 'buy',
@@ -303,7 +303,7 @@ describe('Celina3 - Orderi-Review', () => {
 
   it('Scenario 58 — Unfilled order (remaining portions > 0) can be declined by supervisor', () => {
     stubAdminOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', {
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: {
         orders: [{
           id: 60, listing_id: 1, holding_id: null, direction: 'buy',
@@ -316,7 +316,7 @@ describe('Celina3 - Orderi-Review', () => {
         total_count: 1,
       },
     }).as('getUnfilledOrder')
-    cy.intercept('POST', 'https://bytenity.com/api/v1/orders/60/decline', {
+    cy.intercept('POST', '**/api/v3/orders/60/reject', {
       statusCode: 200,
       body: { id: 60, status: 'declined', state: 'declined' },
     }).as('declineUnfilled')
@@ -328,7 +328,7 @@ describe('Celina3 - Orderi-Review', () => {
     cy.contains('td', '0 / 100').should('be.visible')
     cy.contains('button', 'Decline').click()
     cy.wait('@declineUnfilled')
-    cy.get('@declineUnfilled').its('request.url').should('include', '/orders/60/decline')
+    cy.get('@declineUnfilled').its('request.url').should('include', '/orders/60/reject')
     cy.get('@declineUnfilled').its('response.body').should('have.property', 'status', 'declined')
   })
 })

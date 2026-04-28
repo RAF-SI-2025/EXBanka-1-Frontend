@@ -27,11 +27,11 @@ export function useCards() {
   })
 }
 
-export function useAccountCards(accountNumber: string) {
+export function useAccountCards(accountId: number) {
   return useQuery({
-    queryKey: ['cards', 'account', accountNumber],
-    queryFn: () => getAccountCards(accountNumber),
-    enabled: !!accountNumber,
+    queryKey: ['cards', 'account', accountId],
+    queryFn: () => getAccountCards(accountId),
+    enabled: accountId > 0,
   })
 }
 
@@ -165,7 +165,7 @@ export function useCreateCard() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['cards', 'account', variables.account.account_number],
+        queryKey: ['cards', 'account', variables.account.id],
       })
     },
   })

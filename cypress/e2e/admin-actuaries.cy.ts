@@ -1,6 +1,6 @@
 describe('Admin Actuaries Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/actuaries*', { fixture: 'actuaries-list.json' }).as('getActuaries')
+    cy.intercept('GET', '**/api/v3/actuaries*', { fixture: 'actuaries-list.json' }).as('getActuaries')
   })
 
   // ── Scenario 1: Supervisor opens actuaries management portal ─────────────
@@ -47,7 +47,7 @@ describe('Admin Actuaries Page', () => {
     cy.wait('@getActuaries')
 
     // Register filtered intercept AFTER initial load so it wins the next request (LIFO)
-    cy.intercept('GET', 'https://bytenity.com/api/v2/actuaries*', {
+    cy.intercept('GET', '**/api/v3/actuaries*', {
       body: { actuaries: [], total_count: 0 },
     }).as('getFilteredActuaries')
 
@@ -82,7 +82,7 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should submit new limit and close dialog on save (Scenario 3)', () => {
-    cy.intercept('PUT', 'https://bytenity.com/api/v2/actuaries/1/limit', {
+    cy.intercept('PUT', '**/api/v3/actuaries/1/limit', {
       statusCode: 200,
       body: { id: 1, employee_id: 1, limit: '150000' },
     }).as('setLimit')
@@ -109,7 +109,7 @@ describe('Admin Actuaries Page', () => {
   // any value and the API is responsible for rejecting invalid inputs.
 
   it('should submit zero limit to API which rejects it (Scenario 4)', () => {
-    cy.intercept('PUT', 'https://bytenity.com/api/v2/actuaries/1/limit', {
+    cy.intercept('PUT', '**/api/v3/actuaries/1/limit', {
       statusCode: 400,
       body: { message: 'Limit must be greater than 0' },
     }).as('setInvalidLimit')
@@ -129,7 +129,7 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should submit negative limit to API which rejects it (Scenario 4)', () => {
-    cy.intercept('PUT', 'https://bytenity.com/api/v2/actuaries/1/limit', {
+    cy.intercept('PUT', '**/api/v3/actuaries/1/limit', {
       statusCode: 400,
       body: { message: 'Limit must be greater than 0' },
     }).as('setNegativeLimit')
@@ -152,7 +152,7 @@ describe('Admin Actuaries Page', () => {
   // Note: Current UI resets immediately on click without a confirmation modal.
 
   it('should reset an actuary usedLimit to 0 on Reset click (Scenario 5)', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v2/actuaries/1/reset-limit', {
+    cy.intercept('POST', '**/api/v3/actuaries/1/reset-limit', {
       statusCode: 200,
       body: { id: 1, employee_id: 1, used_limit: '0' },
     }).as('resetLimit')
@@ -167,7 +167,7 @@ describe('Admin Actuaries Page', () => {
   // ── Scenario 6: Limit equal to current usedLimit is allowed ──────────────
 
   it('should allow setting limit equal to current usedLimit (Scenario 6)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/actuaries*', {
+    cy.intercept('GET', '**/api/v3/actuaries*', {
       body: {
         actuaries: [
           {
@@ -188,7 +188,7 @@ describe('Admin Actuaries Page', () => {
       },
     }).as('getActuaryWith50k')
 
-    cy.intercept('PUT', 'https://bytenity.com/api/v2/actuaries/1/limit', {
+    cy.intercept('PUT', '**/api/v3/actuaries/1/limit', {
       statusCode: 200,
       body: { id: 1, employee_id: 1, limit: '50000' },
     }).as('setLimitEqualToUsed')
@@ -243,21 +243,24 @@ describe('Admin Actuaries Page', () => {
   })
 
   it('should toggle approval for an actuary', () => {
-    cy.intercept('PUT', 'https://bytenity.com/api/v2/actuaries/1/approval', {
+    cy.intercept('POST', '**/api/v3/actuaries/1/require-approval', {
       statusCode: 200,
       body: { id: 1, employee_id: 1, need_approval: true },
     }).as('setApproval')
+    cy.intercept('POST', '**/api/v3/actuaries/1/skip-approval', {
+      statusCode: 200,
+      body: { id: 1, employee_id: 1, need_approval: false },
+    }).as('skipApproval')
 
     cy.loginAsEmployee('/admin/actuaries')
     cy.wait('@getActuaries')
 
     cy.contains('button', 'Toggle Approval').first().click()
     cy.wait('@setApproval')
-    cy.get('@setApproval').its('request.body').should('have.property', 'need_approval', true)
   })
 
   it('should show empty state when no actuaries', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/actuaries*', {
+    cy.intercept('GET', '**/api/v3/actuaries*', {
       body: { actuaries: [], total_count: 0 },
     }).as('getEmptyActuaries')
 
