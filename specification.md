@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-28 (notifications bell + selectHasPermission grants all permissions to EmployeeAdmin)_
+_Last updated: 2026-04-29 (standardized error handling + notifications bell + selectHasPermission grants all permissions to EmployeeAdmin)_
 
 ---
 
@@ -144,6 +144,12 @@ src/
 │   │   ├── NotificationItem.tsx + .test.tsx       # Single row with unread dot + relative time
 │   │   ├── NotificationDropdown.tsx + .test.tsx   # Popover content: list, empty/loading/error states, Mark all as read
 │   │   └── NotificationBell.tsx + .test.tsx       # Bell icon + unread badge ("9+" cap); base-ui Popover
+│   ├── shared/
+│   │   ├── AppErrorBoundary.tsx + .test.tsx       # Class boundary at router root; toasts + renders ErrorFallback
+│   │   ├── ErrorFallback.tsx + .test.tsx          # Stateless fallback page used by the boundary
+│   │   ├── LoadingSpinner.tsx                     # Existing
+│   │   ├── PaginationControls.tsx                 # Existing
+│   │   └── ProtectedRoute.tsx + .test.tsx         # Existing
 │   ├── otc/
 │   │   ├── OtcOffersTable.tsx + .test.tsx     # OTC offers list with Buy action
 │   │   └── BuyOtcDialog.tsx + .test.tsx       # Dialog to buy an OTC offer
@@ -934,6 +940,22 @@ interface AuthState {
 | `selectIsAdmin` | `user.role === 'EmployeeAdmin'` |
 | `selectCurrentUser` | `AuthUser \| null` |
 | `selectHasPermission(state, perm)` | `boolean` — returns `true` for `EmployeeAdmin` (bypass); otherwise prefix-matches against `user.permissions[]` |
+
+### Error Handling (`lib/errors/`, `lib/queryClient.ts`, `components/shared/AppErrorBoundary.tsx`)
+
+Errors are surfaced to the user through one canonical pipeline. **No silent failures.** See [Error Handling — Developer Guide](/docs/error-handling.md) and the policy in `CLAUDE.md`.
+
+| Layer | File | Responsibility |
+|---|---|---|
+| Parser | `lib/errors/parseApiError.ts` | Pure `unknown -> AppError`. Maps `AxiosError` (4xx/5xx, network, timeout), `Error`, `string`, unknown. |
+| Notifier | `lib/errors/notify.ts` | `notifyError(err)` parses + `toast.error`. `notifySuccess(msg)` for happy paths. |
+| Global query fallback | `lib/queryClient.ts` | `createQueryClient()` configures `queryCache.onError` and `mutationCache.onError`. Queries/mutations without their own `onError` automatically toast. |
+| Render boundary | `components/shared/AppErrorBoundary.tsx` | Class boundary at the router root; catches render exceptions, toasts, shows `ErrorFallback`. |
+| Toaster mount | `main.tsx` | One `<Toaster richColors position="top-right" />` at the providers root. |
+
+**Per-call opt-outs:**
+- Query: `meta: { suppressGlobalError: true }` to suppress the global toast for an "expected to fail" query (e.g., polling).
+- Mutation: defining ANY `onError` callback suppresses the global toast — you own the error UX. Recommended pattern is to still call `notifyError(err)` inside that callback.
 
 ---
 

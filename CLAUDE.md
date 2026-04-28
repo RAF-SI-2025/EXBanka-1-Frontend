@@ -23,6 +23,8 @@ This file provides guidance to Claude Code when working on the banking platform 
 ### Workflows
 - [Post-Implementation Quality Gates](/docs/workflows/post-implementation-quality-gates.md)
 - [Pre-Deployment Checklist](/docs/workflows/pre-deployment-checklist.md)
+- [Error Handling — Developer Guide](/docs/error-handling.md) - **MANDATORY** for every feature
+- [Environments & Testing](/docs/environments-and-testing.md) - localhost vs. bytenity
 
 ### Skills
 - [TDD Skill](/docs/skills/tdd-skill.md) - Component test patterns, render helpers, fixtures
@@ -119,6 +121,50 @@ All code changes MUST follow Test-Driven Development:
 - Documentation
 
 **NO CODE WITHOUT TESTS. NO EXCEPTIONS.**
+
+---
+
+## Standardized Error Handling (MANDATORY)
+
+**Every feature must surface its errors through the project's error-handling system.** No silent failures. No bespoke `try/catch + setLocalError` plumbing. See [Error Handling — Developer Guide](/docs/error-handling.md) for the full API.
+
+### The rule
+
+For any failure path your code introduces — backend 4xx/5xx, network outage, render exception, raw axios call — there are exactly **two acceptable outcomes**:
+
+1. **A toast** (the default; the app does this for you automatically).
+2. **Feature-specific UX you intentionally designed** (inline form error, dialog, redirect, etc.).
+
+A failure that produces *neither* is a bug. Pull requests that swallow errors with empty `catch`, empty `onError: () => {}`, or `console.error` without a user-visible surface MUST be rejected during review.
+
+### What to do (in order of preference)
+
+| Situation | What you write |
+|---|---|
+| New `useQuery` | Nothing. Global `queryCache.onError` toasts on failure. |
+| New `useMutation` that should toast | Nothing. Global `mutationCache.onError` toasts when you don't define an `onError`. |
+| Mutation with custom error UX | Define `onError`. Inside it, call `notifyError(err)` from `@/lib/errors` unless your custom UX fully replaces the toast. |
+| Polling / "expected to fail" query | Add `meta: { suppressGlobalError: true }` to the `useQuery` call. |
+| Non–React-Query async (Redux thunk, raw axios, file upload xhr) | Wrap in `try/catch` and call `notifyError(err)` in the catch. |
+| Redux `createAsyncThunk` rejection | The reducer can `setError(action.payload)` for inline display, but ALSO call `notifyError` in the thunk's catch. |
+| Render exception | Already covered by `<AppErrorBoundary>` at the router root. |
+
+### Forbidden patterns
+
+- `catch (e) { /* ignore */ }`
+- `onError: () => {}` with no toast/UX
+- Custom HTTP-status switching to build error messages — use `parseApiError` if you really need the parsed shape
+- Mounting a second `<Toaster>` somewhere — exactly one in `main.tsx`
+- Replacing `createQueryClient()` with a bare `new QueryClient(...)` in `main.tsx` — this disables the global onError fallback
+
+### Verification before requesting review
+
+For each new query, mutation, or async path you added:
+
+- [ ] If it has no `onError`, the global toast is acceptable for this UX.
+- [ ] If it has an `onError`, you EITHER call `notifyError(err)` inside it OR have a deliberate inline error display (not a placeholder).
+- [ ] No empty catch blocks; no `console.error` as the only side effect.
+- [ ] If the feature renders inline errors, those have RTL coverage.
 
 ---
 
