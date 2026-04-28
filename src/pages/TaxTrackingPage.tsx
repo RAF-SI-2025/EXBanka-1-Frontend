@@ -10,12 +10,14 @@ import {
 } from '@/components/ui/select'
 import { TaxTrackingTable } from '@/components/tax/TaxTrackingTable'
 import { useTaxRecords, useCollectTaxes } from '@/hooks/useTax'
+import { usePiggy } from '@/hooks/usePiggy'
 import type { TaxFilters } from '@/types/tax'
 
 export function TaxTrackingPage() {
   const [filters, setFilters] = useState<TaxFilters>({})
   const { data, isLoading } = useTaxRecords(filters)
   const { mutate: collectTaxes, isPending: isCollecting } = useCollectTaxes()
+  const { triggerMrKrabs } = usePiggy()
 
   if (isLoading) return <p>Loading...</p>
 
@@ -25,7 +27,10 @@ export function TaxTrackingPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Tax Tracking</h1>
-        <Button onClick={() => collectTaxes()} disabled={isCollecting}>
+        <Button
+          onClick={() => collectTaxes(undefined, { onSuccess: () => triggerMrKrabs() })}
+          disabled={isCollecting}
+        >
           {isCollecting ? 'Collecting...' : 'Collect Taxes'}
         </Button>
       </div>

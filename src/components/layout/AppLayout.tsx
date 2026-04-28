@@ -7,10 +7,10 @@ import { TopProgressBar } from '@/components/shared/TopProgressBar'
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen flex">
+    <div className="h-screen flex overflow-hidden">
       <TopProgressBar />
       <Sidebar />
-      <main className="flex-1 p-6">
+      <main className="flex-1 p-6 overflow-y-auto">
         <div className="flex justify-end items-center gap-3 mb-4">
           <NotificationBell />
           <RoleSwitcher />

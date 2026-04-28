@@ -45,6 +45,8 @@ import {
   selectUserType,
 } from '@/store/selectors/authSelectors'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useCapybara } from '@/hooks/useCapybara'
+import { MenuStolenOverlay } from '@/components/animations/MenuStolenOverlay'
 
 const navLinkClass =
   'group relative flex items-center gap-2 pl-4 pr-3 py-2 rounded-md text-sm text-sidebar-foreground/85 ' +
@@ -286,13 +288,14 @@ export function Sidebar() {
   const canReadBankFundPositions = useAppSelector((state) =>
     selectHasPermission(state, 'funds.bank-position-read')
   )
+  const { stolen } = useCapybara()
 
   const handleLogout = () => {
     dispatch(logoutThunk())
   }
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col p-4">
+    <aside className="relative w-64 bg-sidebar text-sidebar-foreground flex flex-col p-4 h-full">
       <div className="text-lg font-bold mb-6 text-accent-2">EXBanka</div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {isClient ? (
@@ -329,6 +332,7 @@ export function Sidebar() {
           Log Out
         </Button>
       </div>
+      {stolen && <MenuStolenOverlay onDismiss={() => {}} />}
     </aside>
   )
 }

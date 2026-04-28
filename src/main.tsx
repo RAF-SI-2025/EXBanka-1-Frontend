@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { Toaster } from '@/components/ui/sonner'
 import { AppErrorBoundary } from '@/components/shared/AppErrorBoundary'
 import { PiggyProvider } from '@/contexts/PiggyContext'
+import { CapybaraProvider } from '@/contexts/CapybaraContext'
 import { createQueryClient } from '@/lib/queryClient'
 import './index.css'
 
@@ -22,7 +23,9 @@ createRoot(document.getElementById('root')!).render(
           <BrowserRouter>
             <AppErrorBoundary>
               <PiggyProvider>
-                <App />
+                <CapybaraProvider>
+                  <App />
+                </CapybaraProvider>
               </PiggyProvider>
             </AppErrorBoundary>
           </BrowserRouter>
