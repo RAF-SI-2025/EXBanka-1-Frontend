@@ -120,6 +120,25 @@
     --radius-4xl: calc(var(--radius) * 2.6);
     --color-accent-2: var(--accent-2);
     --color-accent-2-foreground: var(--accent-2-foreground);
+
+    --animate-progress-slide: progress-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    --animate-pulse-soft: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    --animate-badge-pop: badge-pop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    @keyframes progress-slide {
+        0%   { transform: translateX(-100%) scaleX(0.6); }
+        50%  { transform: translateX(60%) scaleX(1.2); }
+        100% { transform: translateX(220%) scaleX(0.5); }
+    }
+    @keyframes pulse-soft {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%      { opacity: 0.55; transform: scale(1.15); }
+    }
+    @keyframes badge-pop {
+        0%   { transform: scale(0); opacity: 0; }
+        60%  { transform: scale(1.25); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
 }
 
 @layer base {
