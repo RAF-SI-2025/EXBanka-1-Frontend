@@ -121,11 +121,11 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 1: Supervisor sets agent limit ────────────────────────────────────
 
   it('DEO 1 — Supervisor sets Marko Markovic agent limit to 200,000 RSD', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/actuaries*', {
+    cy.intercept('GET', '**/api/v3/actuaries*', {
       body: { actuaries: [MARKO_ACTUARY], total_count: 1 },
     }).as('getActuaries')
 
-    cy.intercept('PUT', 'https://bytenity.com/api/v2/actuaries/10/limit', {
+    cy.intercept('PUT', '**/api/v3/actuaries/10/limit', {
       statusCode: 200,
       body: { id: 10, employee_id: 10, limit: '200000' },
     }).as('setLimit')
@@ -151,11 +151,11 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 2: Agent browses securities and views MSFT detail ─────────────────
 
   it('DEO 2 — Agent finds MSFT in securities list and views stock detail with options chain', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: { stocks: [MSFT_STOCK], total_count: 1 },
     }).as('getStocks')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
 
     cy.loginAsEmployee('/securities')
     cy.wait('@getStocks')
@@ -166,11 +166,11 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.contains('400.00').should('be.visible')
 
     // Navigate to MSFT detail (simulating row/button click)
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/5', { body: MSFT_STOCK }).as('getMsft')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/5/history*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks/5', { body: MSFT_STOCK }).as('getMsft')
+    cy.intercept('GET', '**/api/v3/securities/stocks/5/history*', {
       body: { history: [], total_count: 0 },
     }).as('getMsftHistory')
-    cy.intercept('GET', 'https://bytenity.com/api/v2/securities/options*', {
+    cy.intercept('GET', '**/api/v3/securities/options*', {
       body: {
         options: [
           {
@@ -211,17 +211,17 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 3: Agent creates BUY market order for 10 MSFT ────────────────────
 
   it('DEO 3 — Agent places BUY market order for 10 MSFT shares using USD account', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       body: { accounts: [USD_BANK_ACCOUNT], total: 1 },
     })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', {
       body: { accounts: [USD_BANK_ACCOUNT] },
     }).as('getBankAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
 
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 200,
       body: PENDING_BUY_ORDER,
     }).as('createBuyOrder')
@@ -249,13 +249,13 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 4: Supervisor approves BUY order ─────────────────────────────────
 
   it('DEO 4 — Supervisor approves pending BUY order for 10 MSFT (status: pending → approved)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: { orders: [PENDING_BUY_ORDER], total_count: 1 },
     }).as('getOrders')
-    cy.intercept('POST', 'https://bytenity.com/api/v1/orders/70/approve', {
+    cy.intercept('POST', '**/api/v3/orders/70/approve', {
       statusCode: 200,
       body: { id: 70, status: 'approved', state: 'approved' },
     }).as('approveBuyOrder')
@@ -276,10 +276,10 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 5-6: Portfolio shows 10 MSFT after order fills ───────────────────
 
   it('DEO 5-6 — Agent views portfolio: 10 MSFT shares with unrealized profit, marked private', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: { holdings: [MSFT_HOLDING_10], total_count: 1 },
     }).as('getPortfolio')
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio/summary*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {
         total_profit: '250.00',
         total_profit_rsd: '29250.00',
@@ -323,19 +323,19 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 7: Agent sells 5 MSFT ────────────────────────────────────────────
 
   it('DEO 7 — Agent places SELL market order for 5 MSFT shares (via sell order page)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       body: { accounts: [USD_BANK_ACCOUNT], total: 1 },
     })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', {
       body: { accounts: [USD_BANK_ACCOUNT] },
     }).as('getBankAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: { stocks: [MSFT_STOCK], total_count: 1 },
     }).as('getStocksForListing')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
 
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 200,
       body: PENDING_SELL_ORDER,
     }).as('createSellOrder')
@@ -366,13 +366,13 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 8: Supervisor approves SELL order ────────────────────────────────
 
   it('DEO 8 — Supervisor approves pending SELL order for 5 MSFT (status: pending → approved)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/orders*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/orders*', {
       body: { orders: [PENDING_SELL_ORDER], total_count: 1 },
     }).as('getOrders')
-    cy.intercept('POST', 'https://bytenity.com/api/v1/orders/71/approve', {
+    cy.intercept('POST', '**/api/v3/orders/71/approve', {
       statusCode: 200,
       body: { id: 71, status: 'approved', state: 'approved' },
     }).as('approveSellOrder')
@@ -391,10 +391,10 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 9: Portfolio shows 5 MSFT with realized profit ───────────────────
 
   it('DEO 9 — Agent views portfolio after sale: 5 MSFT remaining, realized profit visible, unpaid tax > 0', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: { holdings: [MSFT_HOLDING_5], total_count: 1 },
     }).as('getPortfolio')
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio/summary*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {
         total_profit: '375.00',
         total_profit_rsd: '43875.00',
@@ -434,7 +434,7 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 10: Supervisor triggers tax collection ────────────────────────────
 
   it('DEO 10 — Supervisor views tax tracking: Marko has debt of 3937.50 RSD, triggers collection', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', {
+    cy.intercept('GET', '**/api/v3/tax*', {
       body: {
         tax_records: [
           {
@@ -449,7 +449,7 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
         total_count: 1,
       },
     }).as('getTaxRecords')
-    cy.intercept('POST', 'https://bytenity.com/api/v2/tax/collect', {
+    cy.intercept('POST', '**/api/v3/tax/collect', {
       statusCode: 200,
       body: { collected_count: 1, total_collected_rsd: '3937.50', failed_count: 0 },
     }).as('collectTaxes')
@@ -469,10 +469,10 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 11: Agent verifies final state ───────────────────────────────────
 
   it('DEO 11 — Agent verifies final state: 5 MSFT remain, tax_paid_this_year updated to 3937.50 RSD', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: { holdings: [MSFT_HOLDING_5], total_count: 1 },
     }).as('getPortfolio')
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio/summary*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {
         total_profit: '125.00',
         total_profit_rsd: '14625.00',

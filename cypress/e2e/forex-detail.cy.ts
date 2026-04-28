@@ -1,9 +1,9 @@
 describe('Forex Detail Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex/20', { fixture: 'forex-detail.json' }).as(
+    cy.intercept('GET', '**/api/v3/securities/forex/20', { fixture: 'forex-detail.json' }).as(
       'getForex'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex/20/history*', {
+    cy.intercept('GET', '**/api/v3/securities/forex/20/history*', {
       fixture: 'forex-history.json',
     }).as('getForexHistory')
   })
@@ -39,10 +39,10 @@ describe('Forex Detail Page', () => {
   })
 
   it('should show not found for invalid forex id', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex/999', { statusCode: 200, body: null }).as(
+    cy.intercept('GET', '**/api/v3/securities/forex/999', { statusCode: 200, body: null }).as(
       'getForexNotFound'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex/999/history*', {
+    cy.intercept('GET', '**/api/v3/securities/forex/999/history*', {
       body: { history: [], total_count: 0 },
     }).as('getEmptyHistory')
 

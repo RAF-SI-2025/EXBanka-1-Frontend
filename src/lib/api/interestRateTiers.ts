@@ -10,12 +10,12 @@ export interface ApplyTierResponse {
 }
 
 export async function getInterestRateTiers(): Promise<TierListResponse> {
-  const { data } = await apiClient.get<TierListResponse>('/api/v1/interest-rate-tiers')
+  const { data } = await apiClient.get<TierListResponse>('/interest-rate-tiers')
   return { ...data, tiers: data.tiers ?? [] }
 }
 
 export async function createTier(payload: CreateTierPayload): Promise<InterestRateTier> {
-  const { data } = await apiClient.post<InterestRateTier>('/api/v1/interest-rate-tiers', payload)
+  const { data } = await apiClient.post<InterestRateTier>('/interest-rate-tiers', payload)
   return data
 }
 
@@ -23,20 +23,15 @@ export async function updateTier(
   id: number,
   payload: CreateTierPayload
 ): Promise<InterestRateTier> {
-  const { data } = await apiClient.put<InterestRateTier>(
-    `/api/v1/interest-rate-tiers/${id}`,
-    payload
-  )
+  const { data } = await apiClient.put<InterestRateTier>(`/interest-rate-tiers/${id}`, payload)
   return data
 }
 
 export async function deleteTier(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/interest-rate-tiers/${id}`)
+  await apiClient.delete(`/interest-rate-tiers/${id}`)
 }
 
 export async function applyTier(id: number): Promise<ApplyTierResponse> {
-  const { data } = await apiClient.post<ApplyTierResponse>(
-    `/api/v1/interest-rate-tiers/${id}/apply`
-  )
+  const { data } = await apiClient.post<ApplyTierResponse>(`/interest-rate-tiers/${id}/apply`)
   return data
 }

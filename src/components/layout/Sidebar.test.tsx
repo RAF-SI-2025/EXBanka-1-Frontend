@@ -5,37 +5,56 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
 describe('Sidebar', () => {
-  it('shows Employees link when user has employees.read permission', () => {
+  it('shows Employees link when role is EmployeeAdmin', () => {
     renderWithProviders(<Sidebar />, {
       preloadedState: {
         auth: createMockAuthState({
-          user: createMockAuthUser({ permissions: ['employees.read'] }),
+          user: createMockAuthUser({ role: 'EmployeeAdmin' }),
         }),
       },
     })
     expect(screen.getByRole('link', { name: /employees/i })).toHaveAttribute('href', '/employees')
   })
 
-  it('shows Employees link regardless of role when employees.read permission is present', () => {
+  it('hides Employees link for non-admin employee roles', () => {
     renderWithProviders(<Sidebar />, {
       preloadedState: {
         auth: createMockAuthState({
-          user: createMockAuthUser({ role: 'EmployeeBasic', permissions: ['employees.read'] }),
-        }),
-      },
-    })
-    expect(screen.getByRole('link', { name: /employees/i })).toHaveAttribute('href', '/employees')
-  })
-
-  it('hides Employees link when user lacks employees.read permission', () => {
-    renderWithProviders(<Sidebar />, {
-      preloadedState: {
-        auth: createMockAuthState({
-          user: createMockAuthUser({ role: 'EmployeeBasic', permissions: [] }),
+          user: createMockAuthUser({ role: 'EmployeeBasic' }),
         }),
       },
     })
     expect(screen.queryByRole('link', { name: /employees/i })).not.toBeInTheDocument()
+  })
+
+  it('shows Actuaries and Order Approval for EmployeeSupervisor', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeSupervisor' }),
+        }),
+      },
+    })
+    expect(screen.getByRole('link', { name: /actuaries/i })).toHaveAttribute(
+      'href',
+      '/admin/actuaries'
+    )
+    expect(screen.getByRole('link', { name: /order approval/i })).toHaveAttribute(
+      'href',
+      '/admin/orders'
+    )
+  })
+
+  it('hides Actuaries and Order Approval for EmployeeAgent', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeAgent' }),
+        }),
+      },
+    })
+    expect(screen.queryByRole('link', { name: /actuaries/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /order approval/i })).not.toBeInTheDocument()
   })
 
   it('shows logout button', () => {

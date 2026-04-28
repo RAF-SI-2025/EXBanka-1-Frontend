@@ -1,7 +1,7 @@
 describe('Celina 0.2: Upravljanje zaposlenima', () => {
   // Scenario 11: Admin vidi listu svih zaposlenih
   it('should display employee list with all columns (Scenario 11)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees*', { fixture: 'employees-list.json' }).as('getEmployees')
+    cy.intercept('GET', '**/api/v3/employees*', { fixture: 'employees-list.json' }).as('getEmployees')
 
     cy.loginAsEmployee('/employees')
     cy.wait('@getEmployees')
@@ -26,13 +26,13 @@ describe('Celina 0.2: Upravljanje zaposlenima', () => {
 
   // Scenario 12: Admin pretražuje zaposlene
   it('should filter employee list by name (Scenario 12)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees*', { fixture: 'employees-list.json' }).as('getEmployees')
+    cy.intercept('GET', '**/api/v3/employees*', { fixture: 'employees-list.json' }).as('getEmployees')
 
     cy.loginAsEmployee('/employees')
     cy.wait('@getEmployees')
 
     // Register filtered intercept AFTER initial load
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees*', (req) => {
+    cy.intercept('GET', '**/api/v3/employees*', (req) => {
       const url = new URL(req.url, 'http://localhost')
       if (url.searchParams.get('name')) {
         req.reply({
@@ -74,9 +74,9 @@ describe('Celina 0.2: Upravljanje zaposlenima', () => {
   // Note: spec says "prikazuje potvrdu o uspešnoj izmeni" but EditEmployeePage has no
   // success message — it redirects to /employees on success (useMutationWithRedirect).
   it('should edit employee phone and department (Scenario 13)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees*', { fixture: 'employees-list.json' }).as('getEmployeesList')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees/7', { fixture: 'employee-detail.json' }).as('getEmployee')
-    cy.intercept('PUT', 'https://bytenity.com/api/v1/employees/7', {
+    cy.intercept('GET', '**/api/v3/employees*', { fixture: 'employees-list.json' }).as('getEmployeesList')
+    cy.intercept('GET', '**/api/v3/employees/7', { fixture: 'employee-detail.json' }).as('getEmployee')
+    cy.intercept('PUT', '**/api/v3/employees/7', {
       statusCode: 200,
       body: {
         id: 7,
@@ -136,9 +136,9 @@ describe('Celina 0.2: Upravljanje zaposlenima', () => {
   // Note: spec says "klikne na opciju 'Deaktiviraj'" but there is no Deactivate button.
   // Deactivation is done by changing the Status Select from Active to Inactive and clicking Save.
   it('should deactivate employee by changing Status to Inactive (Scenario 14)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees*', { fixture: 'employees-list.json' }).as('getEmployeesList')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees/7', { fixture: 'employee-detail.json' }).as('getEmployee')
-    cy.intercept('PUT', 'https://bytenity.com/api/v1/employees/7', {
+    cy.intercept('GET', '**/api/v3/employees*', { fixture: 'employees-list.json' }).as('getEmployeesList')
+    cy.intercept('GET', '**/api/v3/employees/7', { fixture: 'employee-detail.json' }).as('getEmployee')
+    cy.intercept('PUT', '**/api/v3/employees/7', {
       statusCode: 200,
       body: {
         id: 7,
@@ -193,7 +193,7 @@ describe('Celina 0.2: Upravljanje zaposlenima', () => {
     // employee-auth.json JWT has user_id: 5
     // employee 10 has role: "EmployeeAdmin" and id: 10 ≠ 5
     // → isOtherAdmin = true → readOnly prop passed to EmployeeEditForm
-    cy.intercept('GET', 'https://bytenity.com/api/v1/employees/10', {
+    cy.intercept('GET', '**/api/v3/employees/10', {
       fixture: 'employee-admin-detail.json',
     }).as('getAdminEmployee')
 

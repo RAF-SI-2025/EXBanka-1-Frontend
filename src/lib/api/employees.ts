@@ -8,19 +8,19 @@ import type {
 } from '@/types/employee'
 
 export async function getEmployees(filters: EmployeeFilters = {}): Promise<EmployeeListResponse> {
-  const { data } = await apiClient.get<EmployeeListResponse>('/api/v1/employees', {
+  const { data } = await apiClient.get<EmployeeListResponse>('/employees', {
     params: filters,
   })
   return data
 }
 
 export async function getEmployee(id: number): Promise<Employee> {
-  const { data } = await apiClient.get<Employee>(`/api/v1/employees/${id}`)
+  const { data } = await apiClient.get<Employee>(`/employees/${id}`)
   return data
 }
 
 export async function createEmployee(payload: CreateEmployeeRequest): Promise<Employee> {
-  const { data } = await apiClient.post<Employee>('/api/v1/employees', payload)
+  const { data } = await apiClient.post<Employee>('/employees', payload)
   return data
 }
 
@@ -28,6 +28,6 @@ export async function updateEmployee(
   id: number,
   payload: UpdateEmployeeRequest
 ): Promise<Employee> {
-  const { data } = await apiClient.put<Employee>(`/api/v1/employees/${id}`, payload)
+  const { data } = await apiClient.put<Employee>(`/employees/${id}`, payload)
   return data
 }

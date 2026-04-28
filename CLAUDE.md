@@ -267,3 +267,27 @@ After every commit that introduces functional changes (new features, new pages, 
 - Refactors with no visible behavior change
 - Style/formatting-only changes
 - Config-only changes (`vite.config.ts`, `.eslintrc`, etc.)
+
+---
+
+## Cypress Maintenance on API Changes (MANDATORY)
+
+**Every API change MUST be reflected in the Cypress suite in the same commit.**
+
+This includes — but is not limited to:
+
+1. **API version bump** (e.g. v2 → v3): update every `cy.intercept(...)` URL in `cypress/e2e/**/*.cy.ts` to the new version. Prefer the host-agnostic `**/api/<version>/...` glob so tests work against both `localhost` and remote backends.
+2. **Endpoint path / method change**: update the matching intercept's URL and method.
+3. **Request payload change**: update fixtures in `cypress/fixtures/` and any inline request-body assertions.
+4. **Response shape change**: update fixtures in `cypress/fixtures/` so the mocked response matches what the real backend now returns.
+5. **JWT / auth shape change**: regenerate `cypress/fixtures/employee-auth.json` and `cypress/fixtures/client-auth.json` — the encoded payload must match the real backend's JWT (field names, types, role/permission values).
+6. **New endpoint**: add intercepts and fixtures for any test path that exercises it.
+7. **Removed endpoint**: delete the orphan intercepts/fixtures.
+
+**Verification before committing an API change:**
+
+- `grep -rE "/api/v[0-9]" cypress/` returns nothing for stale versions.
+- Decode each updated fixture JWT and confirm it matches the live backend's payload.
+- All `cy.intercept` URLs in changed test files use the new version/path.
+
+A successful frontend code change with an outdated Cypress suite is treated as an incomplete change.

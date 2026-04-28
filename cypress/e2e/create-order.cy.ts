@@ -1,9 +1,9 @@
 describe('Create Order Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
+    cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
   })
 
   it('should display the create order form with query params', () => {
@@ -61,7 +61,7 @@ describe('Create Order Page', () => {
   })
 
   it('should submit an order', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 200,
       body: {
         id: 100,
@@ -82,7 +82,7 @@ describe('Create Order Page', () => {
       },
     }).as('createOrder')
     // Mock the orders page that we redirect to
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getOrders')
 

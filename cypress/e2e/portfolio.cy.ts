@@ -1,9 +1,9 @@
 describe('Portfolio Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', { fixture: 'portfolio-holdings.json' }).as(
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', { fixture: 'portfolio-holdings.json' }).as(
       'getPortfolio'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio/summary*', { fixture: 'portfolio-summary.json' }).as(
+    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', { fixture: 'portfolio-summary.json' }).as(
       'getSummary'
     )
   })
@@ -66,7 +66,7 @@ describe('Portfolio Page', () => {
   })
 
   it('should make a holding public', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v2/me/portfolio/30/make-public', {
+    cy.intercept('POST', '**/api/v3/me/portfolio/30/make-public', {
       statusCode: 200,
       body: { id: 30, is_public: true, public_quantity: 1 },
     }).as('makePublic')
@@ -87,7 +87,7 @@ describe('Portfolio Page', () => {
   })
 
   it('should show empty state when no holdings', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: { holdings: [], total_count: 0 },
     }).as('getEmptyPortfolio')
 
@@ -150,7 +150,7 @@ describe('Portfolio Page', () => {
   })
 
   it('Scenario 69 — Summary reflects zero unpaid tax when all tax is settled', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio/summary*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {
         total_profit: '100.00',
         total_profit_rsd: '11700.00',
@@ -187,7 +187,7 @@ describe('Portfolio Page', () => {
   })
 
   it('Scenario 70 — Make Public button is shown for stock and futures holdings but not for options', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
         holdings: [
           {
@@ -215,7 +215,7 @@ describe('Portfolio Page', () => {
   // ── Scenario 71: Aktuar može da iskoristi opciju in-the-money ────────────
 
   it('Scenario 71 — Exercise button is shown for option holdings', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
         holdings: [{
           id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
@@ -231,8 +231,8 @@ describe('Portfolio Page', () => {
     cy.contains('button', 'Exercise').should('be.visible')
   })
 
-  it('Scenario 71 — Clicking Exercise calls POST /api/v2/me/portfolio/:id/exercise', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+  it('Scenario 71 — Clicking Exercise calls POST /api/v3/me/portfolio/:id/exercise', () => {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
         holdings: [{
           id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
@@ -241,7 +241,7 @@ describe('Portfolio Page', () => {
         total_count: 1,
       },
     }).as('getOptionHolding')
-    cy.intercept('POST', 'https://bytenity.com/api/v2/me/portfolio/32/exercise', {
+    cy.intercept('POST', '**/api/v3/me/portfolio/32/exercise', {
       statusCode: 200,
       body: { id: 32, security_type: 'option', quantity: 0 },
     }).as('exerciseOption')
@@ -255,7 +255,7 @@ describe('Portfolio Page', () => {
   })
 
   it('Scenario 71 — Backend rejects exercise for out-of-the-money option with 400', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
         holdings: [{
           id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
@@ -264,7 +264,7 @@ describe('Portfolio Page', () => {
         total_count: 1,
       },
     }).as('getOptionHolding')
-    cy.intercept('POST', 'https://bytenity.com/api/v2/me/portfolio/32/exercise', {
+    cy.intercept('POST', '**/api/v3/me/portfolio/32/exercise', {
       statusCode: 400,
       body: { message: 'Option is not in-the-money' },
     }).as('rejectExercise')
@@ -296,7 +296,7 @@ describe('Portfolio Page', () => {
   // ── Scenario 73: Hartija prelazi u portfolio nakon izvršenog BUY ordera ───
 
   it('Scenario 73 — Newly acquired holding appears in portfolio with public_quantity=0 (private by default)', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/me/portfolio?*', {
+    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
         holdings: [{
           id: 33, security_type: 'stock', ticker: 'MSFT', name: 'Microsoft Corp.',

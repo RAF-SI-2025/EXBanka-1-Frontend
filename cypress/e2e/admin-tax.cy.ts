@@ -1,6 +1,6 @@
 describe('Admin Tax Management Page', () => {
   it('should display tax records table', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
+    cy.intercept('GET', '**/api/v3/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
 
     cy.loginAsEmployee('/admin/tax')
     cy.wait('@getTaxRecords')
@@ -27,8 +27,8 @@ describe('Admin Tax Management Page', () => {
   })
 
   it('should trigger tax collection', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
-    cy.intercept('POST', 'https://bytenity.com/api/v2/tax/collect', {
+    cy.intercept('GET', '**/api/v3/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
+    cy.intercept('POST', '**/api/v3/tax/collect', {
       statusCode: 200,
       body: { collected_count: 5, total_collected_rsd: '15000.00', failed_count: 0 },
     }).as('collectTaxes')
@@ -41,7 +41,7 @@ describe('Admin Tax Management Page', () => {
   })
 
   it('should show empty state when no tax records', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', {
+    cy.intercept('GET', '**/api/v3/tax*', {
       body: { tax_records: [], total_count: 0 },
     }).as('getEmptyTax')
 

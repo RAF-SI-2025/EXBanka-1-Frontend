@@ -1,10 +1,10 @@
 describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
   describe('Exchange Rate List (Scenario 24)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates', { fixture: 'exchange-rates.json' }).as(
+      cy.intercept('GET', '**/api/v3/exchange/rates', { fixture: 'exchange-rates.json' }).as(
         'getExchangeRates'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
+      cy.intercept('GET', '**/api/v3/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -54,10 +54,10 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
   describe('Equivalence Calculator (Scenario 25)', () => {
     beforeEach(() => {
       // The calculator page also fetches all rates for local fallback
-      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates', { fixture: 'exchange-rates.json' }).as(
+      cy.intercept('GET', '**/api/v3/exchange/rates', { fixture: 'exchange-rates.json' }).as(
         'getExchangeRates'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
+      cy.intercept('GET', '**/api/v3/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -71,7 +71,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
     // Scenario 25: Provera ekvivalentnosti valute
     it('should calculate equivalence without executing a transaction (Scenario 25)', () => {
       // Stub the specific rate lookup (called by convertCurrency)
-      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates/RSD/EUR', {
+      cy.intercept('GET', '**/api/v3/exchange/rates/RSD/EUR', {
         body: {
           from_currency: 'RSD',
           to_currency: 'EUR',
@@ -106,7 +106,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
     })
 
     it('should allow changing currencies and recalculating (Scenario 25 — different pair)', () => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/exchange/rates/EUR/USD', {
+      cy.intercept('GET', '**/api/v3/exchange/rates/EUR/USD', {
         body: {
           from_currency: 'EUR',
           to_currency: 'USD',
@@ -152,10 +152,10 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
 
   describe('Currency Conversion During Transfer (Scenario 26)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'transfer-accounts.json' }).as(
+      cy.intercept('GET', '**/api/v3/me/accounts', { fixture: 'transfer-accounts.json' }).as(
         'getAccounts'
       )
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
+      cy.intercept('GET', '**/api/v3/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -163,7 +163,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           email: 'marko@example.com',
         },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
+      cy.intercept('GET', '**/api/v3/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
       cy.loginAsClient('/transfers/new')
@@ -171,7 +171,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
 
     // Scenario 26: Konverzija valute tokom transfera
     it('should display exchange rate and commission on cross-currency transfer (Scenario 26)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/preview', {
+      cy.intercept('POST', '**/api/v3/me/transfers/preview', {
         statusCode: 200,
         body: {
           from_currency: 'RSD',
@@ -184,7 +184,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           exchange_commission_rate: '0',
         },
       }).as('previewTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers', {
+      cy.intercept('POST', '**/api/v3/me/transfers', {
         statusCode: 201,
         body: {
           id: 205,
@@ -197,7 +197,7 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('createTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/v1/me/transfers/205/execute', {
+      cy.intercept('POST', '**/api/v3/me/transfers/205/execute', {
         statusCode: 200,
         body: {
           id: 205,
@@ -210,15 +210,15 @@ describe('Celina 5: Menjačnica — Provera kursa i konverzija valuta', () => {
           timestamp: '2026-03-26T12:00:00Z',
         },
       }).as('executeTransfer')
-      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications', {
+      cy.intercept('POST', '**/api/v3/verifications', {
         statusCode: 200,
         body: { challenge_id: 1 },
       }).as('createChallenge')
-      cy.intercept('POST', 'https://bytenity.com/api/v1/verifications/1/code', {
+      cy.intercept('POST', '**/api/v3/verifications/1/code', {
         statusCode: 200,
         body: { success: true, remaining_attempts: 0 },
       }).as('submitCode')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/verifications/1/status', {
+      cy.intercept('GET', '**/api/v3/verifications/1/status', {
         statusCode: 200,
         body: { status: 'pending' },
       }).as('challengeStatus')
