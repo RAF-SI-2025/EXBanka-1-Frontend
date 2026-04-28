@@ -79,6 +79,9 @@ function ClientNav() {
         <NavLink to="/securities" className={navLinkClass}>
           Securities
         </NavLink>
+        <NavLink to="/otc" className={navLinkClass}>
+          OTC Market
+        </NavLink>
         <NavLink to="/orders" className={navLinkClass}>
           My Orders
         </NavLink>
@@ -129,6 +132,9 @@ function EmployeeNav({
       </NavLink>
       <NavLink to="/securities" className={navLinkClass}>
         Securities
+      </NavLink>
+      <NavLink to="/otc" className={navLinkClass}>
+        OTC Market
       </NavLink>
       <NavLink to="/orders" className={navLinkClass}>
         My Orders

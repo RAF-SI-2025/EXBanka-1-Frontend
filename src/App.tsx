@@ -53,6 +53,7 @@ import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
 import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
 import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
 import { AdminFeesPage } from '@/pages/AdminFeesPage'
+import { OtcPortalPage } from '@/pages/OtcPortalPage'
 
 export default function App() {
   return (
@@ -326,6 +327,7 @@ export default function App() {
         <Route path="/securities/options/:id" element={<OptionDetailPage />} />
         <Route path="/securities/order/new" element={<CreateOrderPage />} />
         <Route path="/orders" element={<MyOrdersPage />} />
+        <Route path="/otc" element={<OtcPortalPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsPage />} />
 
