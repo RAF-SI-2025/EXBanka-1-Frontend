@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { statusTone } from '@/lib/utils/statusTone'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { LOAN_TYPES } from '@/lib/constants/banking'
 import type { Loan } from '@/types/loan'
@@ -10,10 +11,10 @@ const STATUS_LABELS: Record<string, string> = {
   DELINQUENT: 'Delinquent',
 }
 
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  ACTIVE: 'default',
-  PAID_OFF: 'secondary',
-  DELINQUENT: 'destructive',
+// PAID_OFF -> neutral (dim), DELINQUENT -> danger; ACTIVE handled by tone map
+const LOAN_TONE_OVERRIDES: Record<string, ReturnType<typeof statusTone>> = {
+  PAID_OFF: 'neutral',
+  DELINQUENT: 'danger',
 }
 
 export interface LoanCardProps {
@@ -46,9 +47,12 @@ export function LoanCard({ loan, onClick }: LoanCardProps) {
         </div>
         <div className="text-right space-y-1">
           <p className="text-lg font-bold">{formatCurrency(loan.amount, 'RSD')}</p>
-          <Badge variant={STATUS_VARIANT[loan.status] ?? 'secondary'}>
+          <StatusBadge
+            status={loan.status}
+            tone={LOAN_TONE_OVERRIDES[loan.status] ?? statusTone(loan.status)}
+          >
             {STATUS_LABELS[loan.status] ?? loan.status}
-          </Badge>
+          </StatusBadge>
         </div>
       </CardContent>
     </Card>

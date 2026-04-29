@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { OtcOptionStatusBadge } from './OtcOptionStatusBadge'
+import { DirectionBadge } from '@/components/shared/DirectionBadge'
 import type { OtcOffer } from '@/types/otcOption'
 
 interface Props {
@@ -44,9 +45,9 @@ export function OtcOptionOffersTable({ offers }: Props) {
                 />
               )}
             </TableCell>
-            <TableCell className="font-medium">
-              <Link to={`/otc/offers/${o.id}`} className="hover:underline">
-                {o.direction === 'sell_initiated' ? 'Sell' : 'Buy'}
+            <TableCell>
+              <Link to={`/otc/offers/${o.id}`}>
+                <DirectionBadge direction={o.direction === 'sell_initiated' ? 'sell' : 'buy'} />
               </Link>
             </TableCell>
             <TableCell>#{o.stock_id}</TableCell>

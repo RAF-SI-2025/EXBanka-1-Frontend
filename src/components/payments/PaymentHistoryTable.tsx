@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -18,12 +18,6 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Completed',
   PENDING: 'Processing',
   FAILED: 'Rejected',
-}
-
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  COMPLETED: 'default',
-  FAILED: 'destructive',
-  PENDING: 'secondary',
 }
 
 interface PaymentHistoryTableProps {
@@ -56,9 +50,7 @@ export function PaymentHistoryTable({ payments }: PaymentHistoryTableProps) {
               <TableCell>{p.recipient_name}</TableCell>
               <TableCell>{formatCurrency(p.initial_amount, 'RSD')}</TableCell>
               <TableCell>
-                <Badge variant={STATUS_VARIANT[p.status] ?? 'secondary'}>
-                  {STATUS_LABELS[p.status] ?? p.status}
-                </Badge>
+                <StatusBadge status={p.status}>{STATUS_LABELS[p.status] ?? p.status}</StatusBadge>
               </TableCell>
               <TableCell>
                 <Button
