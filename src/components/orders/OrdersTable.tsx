@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
+import { DirectionBadge } from '@/components/shared/DirectionBadge'
 import type { Order } from '@/types/order'
 
 interface Props {
@@ -40,7 +41,9 @@ export function OrdersTable({ orders, onApprove, onDecline }: Props) {
         {orders.map((order) => (
           <TableRow key={order.id}>
             <TableCell className="font-medium">{order.ticker}</TableCell>
-            <TableCell className="capitalize">{order.direction}</TableCell>
+            <TableCell>
+              <DirectionBadge direction={order.direction} />
+            </TableCell>
             <TableCell className="capitalize">{order.order_type.replace('_', ' ')}</TableCell>
             <TableCell className="text-right">{order.quantity}</TableCell>
             <TableCell>

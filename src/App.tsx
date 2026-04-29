@@ -53,6 +53,16 @@ import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
 import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
 import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
 import { AdminFeesPage } from '@/pages/AdminFeesPage'
+import { OtcPortalPage } from '@/pages/OtcPortalPage'
+import { FundsDiscoveryPage } from '@/pages/FundsDiscoveryPage'
+import { FundDetailsPage } from '@/pages/FundDetailsPage'
+import { CreateFundPage } from '@/pages/CreateFundPage'
+import { ActuaryPerformancePage } from '@/pages/ActuaryPerformancePage'
+import { BankFundPositionsPage } from '@/pages/BankFundPositionsPage'
+import { OtcOffersPage } from '@/pages/OtcOffersPage'
+import { OtcOfferDetailPage } from '@/pages/OtcOfferDetailPage'
+import { OtcContractsPage } from '@/pages/OtcContractsPage'
+import { OtcContractDetailPage } from '@/pages/OtcContractDetailPage'
 
 export default function App() {
   return (
@@ -77,7 +87,7 @@ export default function App() {
         <Route
           path="/employees"
           element={
-            <ProtectedRoute requiredPermission="employees.read">
+            <ProtectedRoute requireAdmin>
               <EmployeeListPage />
             </ProtectedRoute>
           }
@@ -85,7 +95,7 @@ export default function App() {
         <Route
           path="/employees/new"
           element={
-            <ProtectedRoute requiredPermission="employees.create">
+            <ProtectedRoute requireAdmin>
               <CreateEmployeePage />
             </ProtectedRoute>
           }
@@ -93,7 +103,7 @@ export default function App() {
         <Route
           path="/employees/:id"
           element={
-            <ProtectedRoute requiredPermission="employees.update">
+            <ProtectedRoute requireAdmin>
               <EditEmployeePage />
             </ProtectedRoute>
           }
@@ -101,7 +111,7 @@ export default function App() {
         <Route
           path="/accounts/new"
           element={
-            <ProtectedRoute requiredPermission="accounts.create">
+            <ProtectedRoute requiredRole="Employee">
               <CreateAccountPage />
             </ProtectedRoute>
           }
@@ -173,7 +183,7 @@ export default function App() {
         <Route
           path="/admin/actuaries"
           element={
-            <ProtectedRoute requiredPermission="agents.manage">
+            <ProtectedRoute requireSupervisorOrAdmin>
               <ActuaryListPage />
             </ProtectedRoute>
           }
@@ -326,6 +336,21 @@ export default function App() {
         <Route path="/securities/options/:id" element={<OptionDetailPage />} />
         <Route path="/securities/order/new" element={<CreateOrderPage />} />
         <Route path="/orders" element={<MyOrdersPage />} />
+        <Route path="/otc" element={<OtcPortalPage />} />
+        <Route path="/otc/offers" element={<OtcOffersPage />} />
+        <Route path="/otc/offers/:id" element={<OtcOfferDetailPage />} />
+        <Route path="/otc/contracts" element={<OtcContractsPage />} />
+        <Route path="/otc/contracts/:id" element={<OtcContractDetailPage />} />
+        <Route path="/funds" element={<FundsDiscoveryPage />} />
+        <Route
+          path="/funds/new"
+          element={
+            <ProtectedRoute requiredPermission="funds.manage">
+              <CreateFundPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/funds/:id" element={<FundDetailsPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsPage />} />
 
@@ -333,7 +358,7 @@ export default function App() {
         <Route
           path="/admin/orders"
           element={
-            <ProtectedRoute requiredPermission="orders.approve">
+            <ProtectedRoute requireSupervisorOrAdmin>
               <AdminOrdersPage />
             </ProtectedRoute>
           }
@@ -341,8 +366,24 @@ export default function App() {
         <Route
           path="/admin/tax"
           element={
-            <ProtectedRoute requiredPermission="tax.manage">
+            <ProtectedRoute requireAdmin>
               <TaxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profit/actuaries"
+          element={
+            <ProtectedRoute requiredPermission="actuaries.read.all">
+              <ActuaryPerformancePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profit/funds"
+          element={
+            <ProtectedRoute requiredPermission="funds.bank-position-read">
+              <BankFundPositionsPage />
             </ProtectedRoute>
           }
         />
@@ -351,7 +392,7 @@ export default function App() {
         <Route
           path="/admin/roles"
           element={
-            <ProtectedRoute requiredPermission="employees.permissions">
+            <ProtectedRoute requireAdmin>
               <AdminRolesPage />
             </ProtectedRoute>
           }
@@ -359,7 +400,7 @@ export default function App() {
         <Route
           path="/admin/limits/employees"
           element={
-            <ProtectedRoute requiredPermission="limits.manage">
+            <ProtectedRoute requireAdmin>
               <AdminEmployeeLimitsPage />
             </ProtectedRoute>
           }
@@ -367,7 +408,7 @@ export default function App() {
         <Route
           path="/admin/limits/clients"
           element={
-            <ProtectedRoute requiredPermission="limits.manage">
+            <ProtectedRoute requireAdmin>
               <AdminClientLimitsPage />
             </ProtectedRoute>
           }
@@ -375,7 +416,7 @@ export default function App() {
         <Route
           path="/admin/interest-rates"
           element={
-            <ProtectedRoute requiredPermission="interest-rates.manage">
+            <ProtectedRoute requireAdmin>
               <AdminInterestRatesPage />
             </ProtectedRoute>
           }
@@ -383,7 +424,7 @@ export default function App() {
         <Route
           path="/admin/fees"
           element={
-            <ProtectedRoute requiredPermission="fees.manage">
+            <ProtectedRoute requireAdmin>
               <AdminFeesPage />
             </ProtectedRoute>
           }

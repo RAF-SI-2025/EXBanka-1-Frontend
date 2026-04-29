@@ -17,18 +17,18 @@ describe('OrderStatusBadge', () => {
     expect(screen.getByText('Declined')).toBeInTheDocument()
   })
 
-  it('applies yellow variant for pending', () => {
+  it('applies subtle warning tone for pending', () => {
     const { container } = render(<OrderStatusBadge status="pending" />)
-    expect(container.firstChild).toHaveClass('bg-yellow-100')
+    expect(container.firstChild).toHaveClass('bg-amber-500/10')
   })
 
-  it('applies green variant for approved', () => {
+  it('applies subtle success tone for approved', () => {
     const { container } = render(<OrderStatusBadge status="approved" />)
-    expect(container.firstChild).toHaveClass('bg-green-100')
+    expect(container.firstChild).toHaveClass('bg-emerald-500/10')
   })
 
-  it('applies red variant for declined', () => {
+  it('applies subtle danger tone for declined', () => {
     const { container } = render(<OrderStatusBadge status="declined" />)
-    expect(container.firstChild).toHaveClass('bg-red-100')
+    expect(container.firstChild).toHaveClass('bg-rose-500/10')
   })
 })

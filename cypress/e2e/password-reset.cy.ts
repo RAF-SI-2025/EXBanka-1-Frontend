@@ -9,7 +9,7 @@ describe('Password Reset Page', () => {
   })
 
   it('should submit new password successfully', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/password/reset', { statusCode: 200, body: {} }).as(
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 200, body: {} }).as(
       'resetPassword'
     )
 
@@ -44,7 +44,7 @@ describe('Password Reset Page', () => {
   })
 
   it('should show error message on API failure', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/password/reset', { statusCode: 400, body: {} }).as(
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 400, body: {} }).as(
       'resetPasswordFail'
     )
 

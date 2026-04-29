@@ -11,6 +11,7 @@ import { RenameAccountDialog } from '@/components/accounts/RenameAccountDialog'
 import { ChangeLimitsDialog } from '@/components/accounts/ChangeLimitsDialog'
 import { BusinessAccountInfo } from '@/components/accounts/BusinessAccountInfo'
 import { LimitsUsageCard } from '@/components/accounts/LimitsUsageCard'
+import { AccountActivityPanel } from '@/components/accounts/AccountActivityPanel'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils/format'
@@ -84,20 +85,28 @@ export function AccountDetailsPage() {
 
       <BusinessAccountInfo company={account.company} />
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button variant="outline" onClick={() => navigate('/payments/new')}>
           New Payment
         </Button>
         <Button variant="outline" onClick={() => setRenameOpen(true)}>
           Rename Account
         </Button>
+        {account.daily_limit !== undefined && (
+          <Button variant="outline" onClick={() => setLimitsOpen(true)}>
+            Change Limits
+          </Button>
+        )}
       </div>
 
-      {account.daily_limit !== undefined && (
-        <Button variant="outline" onClick={() => setLimitsOpen(true)}>
-          Change Limits
-        </Button>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AccountActivityPanel accountId={account.id} />
+        </CardContent>
+      </Card>
 
       <RenameAccountDialog
         open={renameOpen}

@@ -13,26 +13,26 @@ export async function getClients(filters?: ClientFilters): Promise<ClientListRes
   if (filters?.email) params.append('email_filter', filters.email)
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
-  const response = await apiClient.get<ClientListResponse>('/api/v1/clients', { params })
+  const response = await apiClient.get<ClientListResponse>('/clients', { params })
   return response.data
 }
 
 export async function getClient(id: number): Promise<Client> {
-  const response = await apiClient.get<Client>(`/api/v1/clients/${id}`)
+  const response = await apiClient.get<Client>(`/clients/${id}`)
   return response.data
 }
 
 export async function getClientMe(): Promise<Client> {
-  const response = await apiClient.get<Client>('/api/v1/me')
+  const response = await apiClient.get<Client>('/me')
   return response.data
 }
 
 export async function createClient(payload: CreateClientRequest): Promise<Client> {
-  const response = await apiClient.post<Client>('/api/v1/clients', payload)
+  const response = await apiClient.post<Client>('/clients', payload)
   return response.data
 }
 
 export async function updateClient(id: number, payload: UpdateClientRequest): Promise<Client> {
-  const response = await apiClient.put<Client>(`/api/v1/clients/${id}`, payload)
+  const response = await apiClient.put<Client>(`/clients/${id}`, payload)
   return response.data
 }

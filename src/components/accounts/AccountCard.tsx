@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatCurrency, formatAccountNumber } from '@/lib/utils/format'
 import type { Account } from '@/types/account'
 
@@ -8,13 +8,6 @@ const STATUS_LABELS: Record<string, string> = {
   INACTIVE: 'Neaktivan',
   BLOCKED: 'Blokiran',
   CLOSED: 'Zatvoren',
-}
-
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  ACTIVE: 'default',
-  INACTIVE: 'secondary',
-  BLOCKED: 'destructive',
-  CLOSED: 'secondary',
 }
 
 interface AccountCardProps {
@@ -43,9 +36,9 @@ export function AccountCard({ account, onClick }: AccountCardProps) {
             <p className="text-lg font-bold">
               {formatCurrency(account.available_balance, account.currency_code)}
             </p>
-            <Badge variant={STATUS_VARIANT[account.status] ?? 'secondary'}>
+            <StatusBadge status={account.status}>
               {STATUS_LABELS[account.status] ?? account.status}
-            </Badge>
+            </StatusBadge>
           </div>
         </div>
       </CardContent>

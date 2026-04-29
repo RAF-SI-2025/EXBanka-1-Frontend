@@ -46,6 +46,7 @@ beforeEach(() => {
     .mockResolvedValue({ accounts: [clientAccount], total: 1 })
   jest.mocked(accountsApi.getBankAccounts).mockResolvedValue({ accounts: [bankAccount], total: 1 })
   jest.mocked(accountsApi.getAllAccounts).mockResolvedValue({ accounts: [], total: 0 })
+  jest.mocked(accountsApi.getAccountsByClient).mockResolvedValue({ accounts: [], total: 0 })
   jest.mocked(clientsApi.getClients).mockResolvedValue({ clients: [], total: 0 })
   jest.mocked(securitiesApi.getStocks).mockResolvedValue({ stocks: [], total_count: 0 })
   jest.mocked(securitiesApi.getFutures).mockResolvedValue({ futures: [], total_count: 0 })
@@ -142,7 +143,7 @@ describe('CreateOrderPage', () => {
       })
       jest.mocked(clientsApi.getClients).mockResolvedValue({ clients: [mockClient], total: 1 })
       jest
-        .mocked(accountsApi.getAllAccounts)
+        .mocked(accountsApi.getAccountsByClient)
         .mockResolvedValue({ accounts: [anaAccount], total: 1 })
 
       renderWithProviders(<CreateOrderPage />, {
@@ -159,7 +160,7 @@ describe('CreateOrderPage', () => {
       fireEvent.click(screen.getByText(/Ana Anić/))
 
       await waitFor(() => {
-        expect(accountsApi.getAllAccounts).toHaveBeenCalledWith({ client_id: 7 })
+        expect(accountsApi.getAccountsByClient).toHaveBeenCalledWith(7)
       })
       await waitFor(() => {
         expect(screen.getByText(/CLIENT-ANA-001/)).toBeInTheDocument()
@@ -189,7 +190,7 @@ describe('CreateOrderPage', () => {
       const anaAccount = createMockAccount({ id: 55, account_number: 'CLIENT-ANA-001' })
       jest.mocked(clientsApi.getClients).mockResolvedValue({ clients: [mockClient], total: 1 })
       jest
-        .mocked(accountsApi.getAllAccounts)
+        .mocked(accountsApi.getAccountsByClient)
         .mockResolvedValue({ accounts: [anaAccount], total: 1 })
 
       renderWithProviders(<CreateOrderPage />, {

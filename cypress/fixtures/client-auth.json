@@ -1,4 +1,4 @@
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0MiwiZW1haWwiOiJtYXJrb0BleGFtcGxlLmNvbSIsInJvbGUiOiJjbGllbnQiLCJwZXJtaXNzaW9ucyI6W10sInN5c3RlbV90eXBlIjoiY2xpZW50In0.mock-signature",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcmluY2lwYWxfaWQiOjQyLCJlbWFpbCI6Im1hcmtvQGV4YW1wbGUuY29tIiwicm9sZXMiOlsiY2xpZW50Il0sInBlcm1pc3Npb25zIjpbXSwicHJpbmNpcGFsX3R5cGUiOiJjbGllbnQifQ.mock-signature",
   "refresh_token": "mock-refresh-token-client"
 }

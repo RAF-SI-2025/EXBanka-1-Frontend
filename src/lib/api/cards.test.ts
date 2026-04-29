@@ -36,7 +36,7 @@ const mockCard: Card = {
 beforeEach(() => jest.clearAllMocks())
 
 describe('createAuthorizedPerson', () => {
-  it('posts payload to /api/cards/authorized-person and returns response data', async () => {
+  it('posts payload to /api/cards/authorized-persons and returns response data', async () => {
     const payload: CreateAuthorizedPersonPayload = {
       first_name: 'Ana',
       last_name: 'Anić',
@@ -47,7 +47,7 @@ describe('createAuthorizedPerson', () => {
 
     const result = await createAuthorizedPerson(payload)
 
-    expect(apiClient.post).toHaveBeenCalledWith('/api/v1/cards/authorized-person', payload)
+    expect(apiClient.post).toHaveBeenCalledWith('/cards/authorized-persons', payload)
     expect(result).toEqual(mockAuthorizedPerson)
   })
 })
@@ -65,7 +65,7 @@ describe('createCard', () => {
 
     const result = await createCard(payload)
 
-    expect(apiClient.post).toHaveBeenCalledWith('/api/v1/cards', payload)
+    expect(apiClient.post).toHaveBeenCalledWith('/cards', payload)
     expect(result).toEqual(mockCard)
   })
 })

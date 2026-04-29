@@ -7,6 +7,7 @@ import {
   updateAccountName,
   updateAccountLimits,
   getAllAccounts,
+  getAccountsByClient,
   getBankAccounts,
   getAccountActivity,
 } from '@/lib/api/accounts'
@@ -90,7 +91,7 @@ export function useBankAccounts() {
 export function useAccountsByClient(clientId: number) {
   return useQuery({
     queryKey: ['accounts', 'client', clientId],
-    queryFn: () => getAllAccounts({ client_id: clientId }),
+    queryFn: () => getAccountsByClient(clientId),
     enabled: clientId > 0,
   })
 }

@@ -16,7 +16,7 @@ describe('getLoan', () => {
 
     const result = await getLoan(5)
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/me/loans/5')
+    expect(mockGet).toHaveBeenCalledWith('/me/loans/5')
     expect(result).toEqual(mockLoan)
   })
 })

@@ -1,8 +1,8 @@
 describe('Home Page — Client Dashboard', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', { fixture: 'home-payments.json' }).as('getPayments')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/payment-recipients*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
+    cy.intercept('GET', '**/api/v3/me/payments*', { fixture: 'home-payments.json' }).as('getPayments')
+    cy.intercept('GET', '**/api/v3/me/payment-recipients*', {
       fixture: 'home-recipients.json',
     }).as('getRecipients')
   })
@@ -45,12 +45,13 @@ describe('Home Page — Client Dashboard', () => {
     cy.wait('@getAccounts')
     cy.wait('@getPayments')
 
-    // The first account is selected by default
-    cy.contains('Recent Transactions').should('be.visible')
+    // The first account is selected by default — Recent Transactions is below the
+    // Accounts list so we scroll the heading into view before asserting visibility.
+    cy.contains('Recent Transactions').scrollIntoView().should('be.visible')
   })
 
   it('should show empty state when no accounts', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { body: { accounts: [], total: 0 } }).as(
+    cy.intercept('GET', '**/api/v3/me/accounts*', { body: { accounts: [], total: 0 } }).as(
       'getEmptyAccounts'
     )
     cy.loginAsClient('/home')

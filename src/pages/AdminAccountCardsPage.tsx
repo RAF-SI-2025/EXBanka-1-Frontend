@@ -38,7 +38,7 @@ export function AdminAccountCardsPage() {
   const navigate = useNavigate()
   const accountId = Number(id)
   const { data: account } = useAccount(accountId)
-  const { data: cards, isLoading } = useAccountCards(account?.account_number ?? '')
+  const { data: cards, isLoading } = useAccountCards(accountId)
   const blockCard = useBlockCard()
   const unblockCard = useUnblockCard()
   const deactivateCard = useDeactivateCard()

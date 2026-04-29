@@ -1,8 +1,8 @@
 describe('Celina 7: Krediti — Upravljanje kreditima', () => {
   describe('Client: Loan Application & Viewing (Scenarios 33–34)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me', {
+      cy.intercept('GET', '**/api/v3/me/accounts', { fixture: 'accounts.json' }).as('getAccounts')
+      cy.intercept('GET', '**/api/v3/me', {
         body: {
           id: 42,
           first_name: 'Marko',
@@ -10,14 +10,14 @@ describe('Celina 7: Krediti — Upravljanje kreditima', () => {
           email: 'marko@example.com',
         },
       }).as('getMe')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me/payments*', {
+      cy.intercept('GET', '**/api/v3/me/payments*', {
         body: { payments: [], total: 0 },
       }).as('getPayments')
     })
 
     // Scenario 33: Podnošenje zahteva za kredit
     it('should submit a loan application (Scenario 33)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/v1/me/loan-requests', {
+      cy.intercept('POST', '**/api/v3/me/loan-requests', {
         statusCode: 201,
         fixture: 'loan-request-created.json',
       }).as('submitLoan')
@@ -77,7 +77,7 @@ describe('Celina 7: Krediti — Upravljanje kreditima', () => {
 
     // Scenario 34: Pregled kredita klijenta
     it('should display loan list with status badges (Scenario 34)', () => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me/loans', { fixture: 'loans-list.json' }).as('getLoans')
+      cy.intercept('GET', '**/api/v3/me/loans', { fixture: 'loans-list.json' }).as('getLoans')
 
       cy.loginAsClient('/loans')
       cy.wait('@getLoans')
@@ -100,10 +100,10 @@ describe('Celina 7: Krediti — Upravljanje kreditima', () => {
 
   describe('Employee: Loan Request Management (Scenarios 35–36)', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/loan-requests*', {
+      cy.intercept('GET', '**/api/v3/loan-requests*', {
         fixture: 'loan-requests-pending.json',
       }).as('getLoanRequests')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/clients*', {
+      cy.intercept('GET', '**/api/v3/clients*', {
         body: {
           clients: [
             {
@@ -125,13 +125,13 @@ describe('Celina 7: Krediti — Upravljanje kreditima', () => {
 
     // Scenario 35: Odobravanje kredita
     it('should approve a pending loan request (Scenario 35)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/v1/loan-requests/10/approve', {
+      cy.intercept('POST', '**/api/v3/loan-requests/10/approve', {
         statusCode: 200,
         body: {},
       }).as('approveRequest')
 
       // Register updated intercept AFTER initial load to avoid LIFO conflict
-      cy.intercept('GET', 'https://bytenity.com/api/v1/loan-requests*', {
+      cy.intercept('GET', '**/api/v3/loan-requests*', {
         body: { requests: [], total: 0 },
       }).as('getLoanRequestsUpdated')
 
@@ -152,13 +152,13 @@ describe('Celina 7: Krediti — Upravljanje kreditima', () => {
 
     // Scenario 36: Odbijanje zahteva za kredit
     it('should reject a pending loan request (Scenario 36)', () => {
-      cy.intercept('POST', 'https://bytenity.com/api/v1/loan-requests/10/reject', {
+      cy.intercept('POST', '**/api/v3/loan-requests/10/reject', {
         statusCode: 200,
         body: {},
       }).as('rejectRequest')
 
       // Register updated intercept AFTER initial load to avoid LIFO conflict
-      cy.intercept('GET', 'https://bytenity.com/api/v1/loan-requests*', {
+      cy.intercept('GET', '**/api/v3/loan-requests*', {
         body: { requests: [], total: 0 },
       }).as('getLoanRequestsUpdated')
 

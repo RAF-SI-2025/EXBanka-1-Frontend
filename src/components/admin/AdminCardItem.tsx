@@ -1,8 +1,8 @@
 import type { Card } from '@/types/card'
 import { CardVisual } from '@/components/cards/CardVisual'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
-import { CARD_STATUS_LABELS, CARD_STATUS_VARIANT } from '@/lib/constants/banking'
+import { CARD_STATUS_LABELS } from '@/lib/constants/banking'
 
 interface AdminCardItemProps {
   card: Card
@@ -16,9 +16,9 @@ export function AdminCardItem({ card, onBlock, onUnblock, onDeactivate }: AdminC
     <div className="flex flex-col items-center gap-3">
       <CardVisual card={card} />
       <div className="flex items-center gap-3 w-full max-w-sm justify-between">
-        <Badge variant={CARD_STATUS_VARIANT[card.status] ?? 'secondary'}>
+        <StatusBadge status={card.status}>
           {CARD_STATUS_LABELS[card.status] ?? card.status}
-        </Badge>
+        </StatusBadge>
         <div className="flex gap-2">
           {card.status === 'ACTIVE' && (
             <Button size="sm" variant="destructive" onClick={() => onBlock(card.id)}>

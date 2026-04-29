@@ -1,7 +1,9 @@
 import type { CardBrand } from '@/types/card'
 
 interface CardBrandLogoProps {
-  brand: CardBrand
+  // Accept any string so callers can pass a backend value in any case;
+  // the switch below uppercases before matching.
+  brand: CardBrand | string
   className?: string
 }
 
@@ -105,7 +107,7 @@ function AmexLogo({ className }: { className?: string }) {
 }
 
 export function CardBrandLogo({ brand, className = 'h-10 w-auto' }: CardBrandLogoProps) {
-  switch (brand) {
+  switch ((brand ?? '').toUpperCase()) {
     case 'VISA':
       return <VisaLogo className={className} />
     case 'MASTERCARD':

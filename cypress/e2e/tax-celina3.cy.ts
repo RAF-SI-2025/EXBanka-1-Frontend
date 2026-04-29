@@ -1,11 +1,11 @@
 describe('Celina3 - Takse', () => {
   const stubTaxPage = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
+    cy.intercept('GET', '**/api/v3/tax*', { fixture: 'tax-records.json' }).as('getTaxRecords')
   }
 
   const stubExchangesPage = () => {
     // Register wildcard first so the more-specific testing-mode intercept (registered last) wins
-    cy.intercept('GET', 'https://bytenity.com/api/v1/stock-exchanges*', {
+    cy.intercept('GET', '**/api/v3/stock-exchanges*', {
       body: {
         exchanges: [
           {
@@ -20,7 +20,7 @@ describe('Celina3 - Takse', () => {
         total_count: 2,
       },
     }).as('getExchanges')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/stock-exchanges/testing-mode', {
+    cy.intercept('GET', '**/api/v3/stock-exchanges/testing-mode', {
       body: { testing_mode: false },
     }).as('getTestingMode')
   }
@@ -67,9 +67,10 @@ describe('Celina3 - Takse', () => {
     cy.loginAsEmployee('/admin/tax')
     cy.wait('@getTaxRecords')
 
-    // fixture includes one client and one actuary
-    cy.contains('Client').should('be.visible')
-    cy.contains('Actuary').should('be.visible')
+    // fixture includes one client and one actuary — scope to table to avoid the
+    // RoleSwitcher tabs in AppLayout's header
+    cy.get('table').contains('Client').should('be.visible')
+    cy.get('table').contains('Actuary').should('be.visible')
   })
 
   // ── Scenario 77: Filtriranje korisnika po imenu na portalu za porez ───────
@@ -80,7 +81,7 @@ describe('Celina3 - Takse', () => {
     cy.wait('@getTaxRecords')
 
     // Register filtered intercept after initial load so LIFO does not affect initial request
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', {
+    cy.intercept('GET', '**/api/v3/tax*', {
       body: {
         tax_records: [
           { id: 1, first_name: 'Marko', last_name: 'Jovanović', user_type: 'client', unpaid_tax: '138.75', last_collection: null },
@@ -114,7 +115,7 @@ describe('Celina3 - Takse', () => {
 
   it('Scenario 79 — Supervisor manually triggers tax collection via "Collect Taxes" button', () => {
     stubTaxPage()
-    cy.intercept('POST', 'https://bytenity.com/api/v2/tax/collect', {
+    cy.intercept('POST', '**/api/v3/tax/collect', {
       statusCode: 200,
       body: { collected_count: 2, total_collected_rsd: '918.75', failed_count: 0 },
     }).as('collectTaxes')
@@ -146,7 +147,7 @@ describe('Celina3 - Takse', () => {
   // ── Scenario 81: Nema poreza ako nije ostvarena dobit ────────────────────
 
   it('Scenario 81 — User with zero profit has 0.00 tax debt', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v2/tax*', {
+    cy.intercept('GET', '**/api/v3/tax*', {
       body: {
         tax_records: [
           { id: 5, first_name: 'Ana', last_name: 'Petrović', user_type: 'client', unpaid_tax: '0.00', last_collection: null },
@@ -183,14 +184,17 @@ describe('Celina3 - Takse', () => {
     cy.contains('2 exchanges').should('be.visible')
   })
 
-  it('Scenario 82 — Testing mode toggle requires exchanges.manage permission (absent from employee fixture)', () => {
-    // The employee-auth.json JWT does not include the exchanges.manage permission,
-    // so the toggle button is not rendered. This test documents that behaviour.
+  it('Scenario 82 — EmployeeAdmin sees the Testing mode toggle (admin role grants all permissions)', () => {
+    // selectHasPermission returns true for any permission when the user's role is
+    // EmployeeAdmin (see src/store/selectors/authSelectors.ts), so the toggle is
+    // rendered for the admin fixture even though `exchanges.manage` is absent
+    // from the JWT permission list. The not-rendered case is exercised by clients
+    // (Scenario 75 — they cannot reach the page at all).
     stubExchangesPage()
     cy.loginAsEmployee('/admin/stock-exchanges')
     cy.wait('@getExchanges')
 
-    cy.contains('button', 'Enable Testing Mode').should('not.exist')
-    cy.contains('button', 'Disable Testing Mode').should('not.exist')
+    // testing_mode = false (from getTestingMode stub) → button reads "Enable Testing Mode"
+    cy.contains('button', 'Enable Testing Mode').should('be.visible')
   })
 })

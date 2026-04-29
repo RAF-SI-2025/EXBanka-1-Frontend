@@ -1,10 +1,10 @@
 describe('Securities Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { fixture: 'stocks-list.json' }).as('getStocks')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { fixture: 'futures-list.json' }).as(
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { fixture: 'stocks-list.json' }).as('getStocks')
+    cy.intercept('GET', '**/api/v3/securities/futures*', { fixture: 'futures-list.json' }).as(
       'getFutures'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { fixture: 'forex-list.json' }).as('getForex')
+    cy.intercept('GET', '**/api/v3/securities/forex*', { fixture: 'forex-list.json' }).as('getForex')
   })
 
   it('should display the securities page with stocks tab by default', () => {
@@ -59,7 +59,7 @@ describe('Securities Page', () => {
   })
 
   it('should show empty state for stocks', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: { stocks: [], total_count: 0 },
     }).as('getEmptyStocks')
 

@@ -1,6 +1,6 @@
 import type { LoanRequest } from '@/types/loan'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import { LOAN_TYPES } from '@/lib/constants/banking'
@@ -9,12 +9,6 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: 'Pending',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
-}
-
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  PENDING: 'secondary',
-  APPROVED: 'default',
-  REJECTED: 'destructive',
 }
 
 const INTEREST_TYPE_LABELS: Record<string, string> = {
@@ -61,9 +55,9 @@ export function LoanRequestCard({
       <TableCell>{request.phone ?? '—'}</TableCell>
       <TableCell>{formatDate(request.created_at)}</TableCell>
       <TableCell>
-        <Badge variant={STATUS_VARIANT[request.status] ?? 'secondary'}>
+        <StatusBadge status={request.status}>
           {STATUS_LABELS[request.status] ?? request.status}
-        </Badge>
+        </StatusBadge>
       </TableCell>
       <TableCell>
         {isPending && (

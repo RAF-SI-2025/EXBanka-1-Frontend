@@ -1,12 +1,13 @@
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 
 interface EmployeeStatusBadgeProps {
   active: boolean
 }
 
 export function EmployeeStatusBadge({ active }: EmployeeStatusBadgeProps) {
-  if (active) {
-    return <Badge className="bg-accent text-accent-foreground hover:bg-accent/90">Active</Badge>
-  }
-  return <Badge variant="secondary">Inactive</Badge>
+  return (
+    <StatusBadge tone={active ? 'success' : 'neutral'}>
+      {active ? 'Active' : 'Inactive'}
+    </StatusBadge>
+  )
 }

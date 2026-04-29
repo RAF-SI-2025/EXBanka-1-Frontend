@@ -1,12 +1,12 @@
 describe('My Orders Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
   })
 
   it('should display orders list with table', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', '**/api/v3/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
 
     cy.loginAsClient('/orders')
     cy.wait('@getOrders')
@@ -24,19 +24,19 @@ describe('My Orders Page', () => {
     cy.contains('th', 'Actions').should('be.visible')
 
     // Order data
-    cy.contains('AAPL').should('be.visible')
-    cy.contains('Apple Inc.').should('be.visible')
-    cy.contains('buy').should('be.visible')
-    cy.contains('market').should('be.visible')
+    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('td', 'Apple Inc.').should('be.visible')
+    cy.contains('td', 'Buy').should('be.visible')
+    cy.contains('td', 'market').should('be.visible')
 
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('Microsoft Corp').should('be.visible')
+    cy.contains('td', 'MSFT').should('be.visible')
+    cy.contains('td', 'Microsoft Corp').should('be.visible')
 
     cy.contains('2 orders').should('be.visible')
   })
 
   it('should show Cancel button only for pending orders', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
+    cy.intercept('GET', '**/api/v3/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
 
     cy.loginAsClient('/orders')
     cy.wait('@getOrders')
@@ -46,8 +46,8 @@ describe('My Orders Page', () => {
   })
 
   it('should cancel a pending order', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
-    cy.intercept('POST', 'https://bytenity.com/api/v2/me/orders/50/cancel', {
+    cy.intercept('GET', '**/api/v3/me/orders*', { fixture: 'my-orders-list.json' }).as('getOrders')
+    cy.intercept('POST', '**/api/v3/me/orders/50/cancel', {
       statusCode: 200,
       body: { id: 50, status: 'cancelled', state: 'cancelled', is_done: true },
     }).as('cancelOrder')
@@ -60,7 +60,7 @@ describe('My Orders Page', () => {
   })
 
   it('should show empty state when no orders', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: { orders: [], total_count: 0 },
     }).as('getEmptyOrders')
 

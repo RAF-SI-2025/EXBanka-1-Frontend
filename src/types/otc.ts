@@ -18,6 +18,12 @@ export interface OtcBuyRequest {
   account_id: number
 }
 
+export interface OtcBuyOnBehalfRequest {
+  client_id: number
+  account_id: number
+  quantity: number
+}
+
 export interface OtcFilters {
   page?: number
   page_size?: number

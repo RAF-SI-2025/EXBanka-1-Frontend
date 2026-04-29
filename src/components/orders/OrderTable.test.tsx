@@ -58,7 +58,7 @@ describe('OrderTable', () => {
     expect(screen.getByText('Type')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
     expect(screen.getByText('Status')).toBeInTheDocument()
-    expect(screen.getByText('Filled')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Filled' })).toBeInTheDocument()
     expect(screen.getByText('Actions')).toBeInTheDocument()
   })
 
@@ -106,6 +106,6 @@ describe('OrderTable', () => {
 
   it('displays state in the Status column', () => {
     renderWithProviders(<OrderTable orders={[approvedOrder]} onCancel={jest.fn()} />)
-    expect(screen.getByText('approved')).toBeInTheDocument()
+    expect(screen.getByText('Approved')).toBeInTheDocument()
   })
 })

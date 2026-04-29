@@ -1,14 +1,14 @@
 describe('Celina 0: Autentifikacija — Logovanje i reset lozinke', () => {
   // Scenario 1: Uspešno logovanje zaposlenog
   it('should log in an employee and redirect to admin dashboard (Scenario 1)', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/login', {
+    cy.intercept('POST', '**/api/v3/auth/login', {
       statusCode: 200,
       fixture: 'employee-auth.json',
     }).as('login')
 
     // Intercept destination page requests to prevent errors after redirect
-    cy.intercept('GET', 'https://bytenity.com/api/v2/accounts*', { body: { accounts: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/clients*', { body: { clients: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/accounts*', { body: { accounts: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/clients*', { body: { clients: [], total: 0 } })
 
     cy.visit('/login')
     cy.contains('Log In').should('be.visible')
@@ -35,7 +35,7 @@ describe('Celina 0: Autentifikacija — Logovanje i reset lozinke', () => {
 
   // Scenario 2: Neuspešno logovanje zbog pogrešne lozinke
   it('should show error on wrong password (Scenario 2)', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/login', {
+    cy.intercept('POST', '**/api/v3/auth/login', {
       statusCode: 401,
       body: { message: 'Invalid credentials' },
     }).as('login')
@@ -57,7 +57,7 @@ describe('Celina 0: Autentifikacija — Logovanje i reset lozinke', () => {
 
   // Scenario 3: Neuspešno logovanje zbog nepostojećeg korisnika
   it('should show error for non-existent user (Scenario 3)', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/login', {
+    cy.intercept('POST', '**/api/v3/auth/login', {
       statusCode: 404,
       body: { message: 'User not found' },
     }).as('login')
@@ -79,7 +79,7 @@ describe('Celina 0: Autentifikacija — Logovanje i reset lozinke', () => {
 
   // Scenario 4: Reset lozinke putem email-a
   it('should send password reset email (Scenario 4)', () => {
-    cy.intercept('POST', 'https://bytenity.com/api/v1/auth/password/reset-request', {
+    cy.intercept('POST', '**/api/v3/auth/password/reset-request', {
       statusCode: 200,
       body: {},
     }).as('resetRequest')

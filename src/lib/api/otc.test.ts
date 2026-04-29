@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/axios'
-import { getOtcOffers, buyOtcOffer } from '@/lib/api/otc'
+import { getOtcOffers, buyOtcOffer, buyOtcOfferOnBehalf } from '@/lib/api/otc'
 import type { OtcOfferListResponse } from '@/types/otc'
 
 jest.mock('@/lib/api/axios', () => ({
@@ -18,7 +18,7 @@ describe('getOtcOffers', () => {
 
     const result = await getOtcOffers()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/otc/offers', {
+    expect(mockGet).toHaveBeenCalledWith('/otc/offers', {
       params: expect.any(URLSearchParams),
     })
     expect(result).toEqual(mockData)
@@ -39,9 +39,23 @@ describe('buyOtcOffer', () => {
 
     await buyOtcOffer(3, { quantity: 2, account_id: 42 })
 
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/otc/offers/3/buy', {
+    expect(mockPost).toHaveBeenCalledWith('/otc/offers/3/buy', {
       quantity: 2,
       account_id: 42,
+    })
+  })
+})
+
+describe('buyOtcOfferOnBehalf', () => {
+  it('POST /api/otc/offers/:id/buy-on-behalf with payload', async () => {
+    mockPost.mockResolvedValue({ data: {} })
+
+    await buyOtcOfferOnBehalf(7, { client_id: 5, account_id: 12, quantity: 3 })
+
+    expect(mockPost).toHaveBeenCalledWith('/otc/offers/7/buy-on-behalf', {
+      client_id: 5,
+      account_id: 12,
+      quantity: 3,
     })
   })
 })

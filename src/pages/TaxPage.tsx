@@ -5,6 +5,7 @@ import { PaginationControls } from '@/components/shared/PaginationControls'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Button } from '@/components/ui/button'
 import { useTaxRecords, useCollectTaxes } from '@/hooks/useTax'
+import { notifySuccess } from '@/lib/errors'
 import type { TaxFilters } from '@/types/tax'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 
@@ -36,7 +37,14 @@ export function TaxPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Tax Management</h1>
-        <Button onClick={() => collectMutation.mutate()} disabled={collectMutation.isPending}>
+        <Button
+          onClick={() =>
+            collectMutation.mutate(undefined, {
+              onSuccess: () => notifySuccess('Taxes collected.'),
+            })
+          }
+          disabled={collectMutation.isPending}
+        >
           {collectMutation.isPending ? 'Collecting...' : 'Collect Taxes'}
         </Button>
       </div>

@@ -1,25 +1,37 @@
-import type { OrderStatus } from '@/types/order'
+import type { OrderStatus, OrderState } from '@/types/order'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import type { StatusTone } from '@/lib/utils/statusTone'
 
 interface Props {
-  status: OrderStatus
+  /** Backend may surface either `status` (legacy) or `state` (new) — accept either. */
+  status: OrderStatus | OrderState | string
 }
 
-const config: Record<OrderStatus, { label: string; classes: string }> = {
-  pending: { label: 'Pending', classes: 'bg-yellow-100 text-yellow-800' },
-  approved: { label: 'Approved', classes: 'bg-green-100 text-green-800' },
-  declined: { label: 'Declined', classes: 'bg-red-100 text-red-800' },
-  cancelled: { label: 'Cancelled', classes: 'bg-gray-100 text-gray-800' },
-  filled: { label: 'Filled', classes: 'bg-blue-100 text-blue-800' },
-  partial: { label: 'Partial', classes: 'bg-orange-100 text-orange-800' },
+const TONE: Record<string, StatusTone> = {
+  pending: 'warning',
+  approved: 'success',
+  declined: 'danger',
+  cancelled: 'neutral',
+  filled: 'success',
+  partial: 'warning',
+  filling: 'warning',
+}
+
+const LABEL: Record<string, string> = {
+  pending: 'Pending',
+  approved: 'Approved',
+  declined: 'Declined',
+  cancelled: 'Cancelled',
+  filled: 'Filled',
+  partial: 'Partial',
+  filling: 'Filling',
 }
 
 export function OrderStatusBadge({ status }: Props) {
-  const { label, classes } = config[status]
+  const key = (status ?? '').toString().toLowerCase()
   return (
-    <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${classes}`}
-    >
-      {label}
-    </span>
+    <StatusBadge tone={TONE[key] ?? 'neutral'} status={key}>
+      {LABEL[key] ?? status}
+    </StatusBadge>
   )
 }

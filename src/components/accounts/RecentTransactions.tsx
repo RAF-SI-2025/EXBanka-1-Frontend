@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { formatCurrency, formatDate } from '@/lib/utils/format'
 import type { Payment } from '@/types/payment'
 
@@ -14,12 +14,6 @@ const STATUS_LABELS: Record<string, string> = {
   COMPLETED: 'Completed',
   PENDING: 'Processing',
   FAILED: 'Rejected',
-}
-
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  COMPLETED: 'default',
-  FAILED: 'destructive',
-  PENDING: 'secondary',
 }
 
 interface RecentTransactionsProps {
@@ -50,9 +44,7 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
               {formatCurrency(tx.initial_amount, 'RSD')}
             </TableCell>
             <TableCell>
-              <Badge variant={STATUS_VARIANT[tx.status] ?? 'secondary'}>
-                {STATUS_LABELS[tx.status] ?? tx.status}
-              </Badge>
+              <StatusBadge status={tx.status}>{STATUS_LABELS[tx.status] ?? tx.status}</StatusBadge>
             </TableCell>
           </TableRow>
         ))}

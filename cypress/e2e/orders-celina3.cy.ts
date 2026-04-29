@@ -15,26 +15,26 @@ describe('Celina3 - Orderi', () => {
    * test-specific intercept wins.
    */
   const stubAccountsForClient = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       fixture: 'home-accounts.json',
     }).as('getClientAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
   }
 
   const stubAccountsForEmployee = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', {
       fixture: 'home-accounts.json',
     }).as('getBankAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/me/accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
   }
 
   /** Stubs the orders list page so navigation after success doesn't hang. */
   const stubOrdersPage = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: { orders: [], total_count: 0 },
     })
   }
@@ -54,7 +54,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 26 — Place Order button is the confirmation step for the market order', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 1, direction: 'buy', order_type: 'market', quantity: 5, listing_id: 1 },
     }).as('createMarketOrder')
@@ -79,7 +79,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 27 — Submitting quantity 0 sends the request and backend rejects it with 400', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 400,
       body: { message: 'Quantity must be at least 1' },
     }).as('rejectMinQty')
@@ -100,7 +100,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 28 — Backend returns 404 when listing does not exist; user stays on form', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 404,
       body: { message: 'Security not found' },
     }).as('rejectNotFound')
@@ -130,7 +130,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 29 — Submitting a Limit order sends order_type=limit and limit_value in body', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 10, direction: 'buy', order_type: 'limit', quantity: 5 },
     }).as('createLimitOrder')
@@ -167,7 +167,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 30 — Submitting a Stop order sends order_type=stop and stop_value in body', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 11, direction: 'buy', order_type: 'stop', quantity: 3 },
     }).as('createStopOrder')
@@ -204,7 +204,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 31 — Submitting Stop-Limit order sends both stop_value and limit_value in body', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 12, direction: 'buy', order_type: 'stop_limit', quantity: 2 },
     }).as('createStopLimitOrder')
@@ -233,7 +233,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 32 — Backend rejects order for expired futures contract with 400; user stays on form', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 400,
       body: { message: 'Futures contract has expired' },
     }).as('rejectExpiredFutures')
@@ -254,7 +254,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 33 — Placing order sends direction, order_type, quantity and listing_id in request', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 20, direction: 'buy', order_type: 'market', quantity: 10, listing_id: 1 },
     }).as('createOrderConfirm')
@@ -279,7 +279,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 34 — Place Order button is disabled while the POST request is in flight', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', (req) => {
+    cy.intercept('POST', '**/api/v3/me/orders', (req) => {
       req.reply({ delay: 3000, statusCode: 201, body: { id: 21 } })
     }).as('slowOrder')
 
@@ -296,7 +296,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 35 — Backend returns 401 for expired session; user does not proceed to orders', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 401,
       body: { message: 'Unauthorized' },
     }).as('unauthorizedOrder')
@@ -316,10 +316,10 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 36 — Sell order page shows "Sell Order" heading and listing dropdown', () => {
     stubAccountsForClient()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: { stocks: [], total_count: 0 },
     })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', {
+    cy.intercept('GET', '**/api/v3/securities/futures*', {
       body: { futures: [], total_count: 0 },
     })
 
@@ -333,7 +333,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 36 — Listing dropdown is populated from available stock venues', () => {
     stubAccountsForClient()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: {
         stocks: [{
           id: 1, listing_id: 5, ticker: 'AAPL', name: 'Apple Inc.',
@@ -345,7 +345,7 @@ describe('Celina3 - Orderi', () => {
         total_count: 1,
       },
     }).as('getSellListings')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', {
+    cy.intercept('GET', '**/api/v3/securities/futures*', {
       body: { futures: [], total_count: 0 },
     })
 
@@ -360,7 +360,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 37 — Backend returns 400 when sell quantity exceeds held quantity; user stays on form', () => {
     stubAccountsForClient()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: {
         stocks: [{
           id: 1, listing_id: 5, ticker: 'AAPL', name: 'Apple Inc.',
@@ -372,10 +372,10 @@ describe('Celina3 - Orderi', () => {
         total_count: 1,
       },
     })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', {
+    cy.intercept('GET', '**/api/v3/securities/futures*', {
       body: { futures: [], total_count: 0 },
     })
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 400,
       body: { message: 'Insufficient holdings quantity' },
     }).as('rejectOverSell')
@@ -397,7 +397,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 38 — Selling exactly the held quantity succeeds and navigates to orders list', () => {
     stubAccountsForClient()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+    cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: {
         stocks: [{
           id: 1, listing_id: 5, ticker: 'AAPL', name: 'Apple Inc.',
@@ -409,10 +409,10 @@ describe('Celina3 - Orderi', () => {
         total_count: 1,
       },
     })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', {
+    cy.intercept('GET', '**/api/v3/securities/futures*', {
       body: { futures: [], total_count: 0 },
     })
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 50, direction: 'sell', order_type: 'market', quantity: 10, listing_id: 5 },
     }).as('exactSellOrder')
@@ -438,7 +438,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 39 — Market BUY order is submitted; backend applies commission min(14% * price, $7)', () => {
     stubAccountsForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 60, direction: 'buy', order_type: 'market', quantity: 1, listing_id: 1 },
     }).as('marketOrderWithFee')
@@ -462,7 +462,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 40 — Limit BUY order is submitted; backend applies commission min(24% * price, $12)', () => {
     stubAccountsForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 61, direction: 'buy', order_type: 'limit', quantity: 1, listing_id: 1 },
     }).as('limitOrderWithFee')
@@ -499,7 +499,7 @@ describe('Celina3 - Orderi', () => {
   // ── Scenario 42: Invalid account currency ────────────────────────────────
 
   it('Scenario 42 — Backend returns 422 when selected account currency is unsupported; user stays on form', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       body: {
         accounts: [{
           id: 99, account_number: '265000000000000099', account_name: 'Crypto Wallet',
@@ -511,10 +511,10 @@ describe('Celina3 - Orderi', () => {
         total: 1,
       },
     }).as('getBTCAccount')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 422,
       body: { message: 'Account currency is not supported for this security' },
     }).as('rejectCurrency')
@@ -532,7 +532,7 @@ describe('Celina3 - Orderi', () => {
   // ── Scenario 43: Insufficient funds ──────────────────────────────────────
 
   it('Scenario 43 — Backend returns 400 when account has insufficient funds; user stays on form', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       body: {
         accounts: [{
           id: 1, account_number: '265000000000000011', account_name: 'Prazan račun',
@@ -544,10 +544,10 @@ describe('Celina3 - Orderi', () => {
         total: 1,
       },
     }).as('getEmptyAccount')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 400,
       body: { message: 'Insufficient funds' },
     }).as('rejectInsufficient')
@@ -585,7 +585,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 44 — Employee order does not include base_account_id (no client conversion fee)', () => {
     stubAccountsForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 30, direction: 'buy', order_type: 'market', quantity: 5 },
     }).as('employeeOrder')
@@ -605,7 +605,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 45 — Order form renders and allows submission regardless of exchange hours; backend enforces market status', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 70, direction: 'buy', order_type: 'market', quantity: 1, listing_id: 1 },
     }).as('orderDuringClosed')
@@ -626,7 +626,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 46 — Order submitted while exchange is closed is accepted by backend; frontend does not restrict it', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 71, direction: 'buy', order_type: 'market', quantity: 2, listing_id: 1 },
     }).as('closedMarketOrder')
@@ -648,7 +648,7 @@ describe('Celina3 - Orderi', () => {
 
   it('Scenario 47 — Order submitted during after-hours period goes through; backend handles execution timing', () => {
     stubAccountsForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 72, direction: 'buy', order_type: 'market', quantity: 3, listing_id: 1 },
     }).as('afterHoursOrder')

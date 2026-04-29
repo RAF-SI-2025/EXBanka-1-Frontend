@@ -11,39 +11,39 @@ describe('Celina3 - Orderi-Execution', () => {
    * endpoints needed when the app navigates to /orders on success.
    */
   const stubCreateOrderPageForClient = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', {
+    cy.intercept('GET', '**/api/v3/me/accounts*', {
       fixture: 'home-accounts.json',
     }).as('getClientAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
   }
 
   const stubCreateOrderPageForEmployee = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', {
+    cy.intercept('GET', '**/api/v3/bank-accounts*', {
       fixture: 'home-accounts.json',
     }).as('getBankAccounts')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/me/accounts*', { body: { accounts: [] } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
   }
 
   /** All endpoints MyOrdersPage fires on mount (orders + listing-map). */
   const stubMyOrdersPage = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
   }
 
   // ── Scenario 59: Market order executes in partial fills ───────────────────
 
   it('Scenario 59 — Partially filled order shows filled_quantity/quantity in the Filled column', () => {
     stubMyOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: {
         orders: [
           {
@@ -69,7 +69,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 59 — Fully filled order (isDone=true) shows 10/10 in Filled column and no Cancel button', () => {
     stubMyOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: {
         orders: [
           {
@@ -97,7 +97,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 60 — AON BUY order is submitted with all_or_none=true', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 82, status: 'pending', state: 'pending', direction: 'buy', order_type: 'market', quantity: 20, all_or_none: true },
     }).as('aonOrder')
@@ -119,7 +119,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 60 — Backend returns Pending when full AON quantity is not yet available', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       // Only 15 of 20 available — backend keeps order pending
       body: { id: 82, status: 'pending', state: 'pending', all_or_none: true, quantity: 20, filled_quantity: 0 },
@@ -138,7 +138,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 60 — Pending AON order is visible in order list without Cancel restrictions', () => {
     stubMyOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: {
         orders: [{
           id: 82, listing_id: 1, holding_id: null, direction: 'buy',
@@ -156,7 +156,7 @@ describe('Celina3 - Orderi-Execution', () => {
     cy.wait('@getPendingAON')
 
     cy.contains('td', '0 / 20').should('be.visible')
-    cy.contains('td', 'pending').should('be.visible')
+    cy.contains('td', 'Pending').should('be.visible')
     // Unfilled order → Cancel button is available
     cy.contains('button', 'Cancel').should('be.visible')
   })
@@ -165,7 +165,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 61 — AON order is approved when full quantity is available on the market', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 83, status: 'approved', state: 'approved', all_or_none: true, quantity: 10, filled_quantity: 0 },
     }).as('aonApprovedOrder')
@@ -188,7 +188,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 62 — Stop-Limit order is submitted with stop_value=120 and limit_value=125', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 84, status: 'pending', order_type: 'stop_limit', stop_value: '120', limit_value: '125', quantity: 5 },
     }).as('stopLimitOrder')
@@ -214,7 +214,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 62 — Stop-Limit order appears in order list with order_type=stop_limit until stop is triggered', () => {
     stubMyOrdersPage()
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', {
+    cy.intercept('GET', '**/api/v3/me/orders*', {
       body: {
         orders: [{
           id: 84, listing_id: 1, holding_id: null, direction: 'buy',
@@ -232,7 +232,7 @@ describe('Celina3 - Orderi-Execution', () => {
     cy.wait('@getStopLimitOrder')
 
     cy.contains('td', 'stop_limit').should('be.visible')
-    cy.contains('td', 'pending').should('be.visible')
+    cy.contains('td', 'Pending').should('be.visible')
   })
 
   // ── Scenario 63: Margin order rejected without margin permission ───────────
@@ -247,7 +247,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 63 — Submitting with Margin checked sends margin=true; backend rejects without permission', () => {
     stubCreateOrderPageForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 403,
       body: { message: 'Margin trading is not permitted for this account' },
     }).as('rejectMarginOrder')
@@ -270,11 +270,11 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 64 — Margin BUY order with client credit is accepted; margin=true in request body', () => {
     stubCreateOrderPageForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 85, status: 'approved', margin: true, direction: 'buy', order_type: 'market', quantity: 5 },
     }).as('marginApprovedOrder')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/me/orders*', { body: { orders: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
 
     cy.loginAsClient('/securities/order/new?listingId=1&direction=buy')
     cy.wait('@getClientAccounts')
@@ -296,7 +296,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 65 — Margin BUY order with sufficient account funds is accepted by backend', () => {
     stubCreateOrderPageForEmployee()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 86, status: 'approved', margin: true, direction: 'buy', order_type: 'market', quantity: 3 },
     }).as('marginFundsOrder')
@@ -317,7 +317,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 66 — Checking All or None sends all_or_none=true in the order request body', () => {
     stubCreateOrderPageForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 87, status: 'pending', all_or_none: true, quantity: 8, direction: 'buy' },
     }).as('aonFlagOrder')
@@ -339,7 +339,7 @@ describe('Celina3 - Orderi-Execution', () => {
 
   it('Scenario 66 — All or None checkbox is unchecked by default (all_or_none=false when not selected)', () => {
     stubCreateOrderPageForClient()
-    cy.intercept('POST', 'https://bytenity.com/api/v1/me/orders', {
+    cy.intercept('POST', '**/api/v3/me/orders', {
       statusCode: 201,
       body: { id: 88, status: 'pending', all_or_none: false, quantity: 4, direction: 'buy' },
     }).as('noAonOrder')

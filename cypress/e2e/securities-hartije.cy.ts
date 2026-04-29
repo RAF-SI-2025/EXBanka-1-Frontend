@@ -7,9 +7,9 @@ describe('Hartije od vrednosti — Securities', () => {
   // ── Shared helpers ───────────────────────────────────────────────────────
 
   const stubAllSecurities = () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { fixture: 'stocks-list.json' }).as('getStocks')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { fixture: 'futures-list.json' }).as('getFutures')
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { fixture: 'forex-list.json' }).as('getForex')
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { fixture: 'stocks-list.json' }).as('getStocks')
+    cy.intercept('GET', '**/api/v3/securities/futures*', { fixture: 'futures-list.json' }).as('getFutures')
+    cy.intercept('GET', '**/api/v3/securities/forex*', { fixture: 'forex-list.json' }).as('getForex')
   }
 
   // ── Securities List ──────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getStocks')
 
       // Register filtered intercept AFTER initial load (LIFO)
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+      cy.intercept('GET', '**/api/v3/securities/stocks*', {
         body: {
           stocks: [{
             id: 2, listing_id: 2, ticker: 'MSFT', name: 'Microsoft Corp',
@@ -74,7 +74,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.loginAsEmployee('/securities')
       cy.wait('@getStocks')
 
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+      cy.intercept('GET', '**/api/v3/securities/stocks*', {
         body: { stocks: [], total_count: 0 },
       }).as('getEmptyStocks')
 
@@ -90,7 +90,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.loginAsEmployee('/securities')
       cy.wait('@getStocks')
 
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+      cy.intercept('GET', '**/api/v3/securities/stocks*', {
         body: {
           stocks: [{
             id: 3, listing_id: 3, ticker: 'GS', name: 'Goldman Sachs',
@@ -118,7 +118,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.loginAsEmployee('/securities')
       cy.wait('@getStocks')
 
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', {
+      cy.intercept('GET', '**/api/v3/securities/stocks*', {
         body: { stocks: [], total_count: 0 },
       }).as('getInvalidRangeStocks')
 
@@ -140,9 +140,9 @@ describe('Hartije od vrednosti — Securities', () => {
     // Scenario 18: Clicking a stock row opens the detail page
     it('Scenario 18 — Clicking a stock row navigates to detail page with chart and info table', () => {
       stubAllSecurities()
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/1', { fixture: 'stock-detail.json' }).as('getStockDetail')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/1/history*', { fixture: 'stock-history.json' }).as('getHistory')
-      cy.intercept('GET', 'https://bytenity.com/api/v2/securities/options*', { body: { options: [], total_count: 0 } })
+      cy.intercept('GET', '**/api/v3/securities/stocks/1', { fixture: 'stock-detail.json' }).as('getStockDetail')
+      cy.intercept('GET', '**/api/v3/securities/stocks/1/history*', { fixture: 'stock-history.json' }).as('getHistory')
+      cy.intercept('GET', '**/api/v3/securities/options*', { body: { options: [], total_count: 0 } })
 
       cy.loginAsEmployee('/securities')
       cy.wait('@getStocks')
@@ -173,9 +173,9 @@ describe('Hartije od vrednosti — Securities', () => {
 
   describe('Stock Detail', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/1', { fixture: 'stock-detail.json' }).as('getStock')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/1/history*', { fixture: 'stock-history.json' }).as('getHistory')
-      cy.intercept('GET', 'https://bytenity.com/api/v2/securities/options*', { fixture: 'stock-options.json' }).as('getOptions')
+      cy.intercept('GET', '**/api/v3/securities/stocks/1', { fixture: 'stock-detail.json' }).as('getStock')
+      cy.intercept('GET', '**/api/v3/securities/stocks/1/history*', { fixture: 'stock-history.json' }).as('getHistory')
+      cy.intercept('GET', '**/api/v3/securities/options*', { fixture: 'stock-options.json' }).as('getOptions')
     })
 
     // Scenario 19: Period change triggers new history fetch
@@ -197,7 +197,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getHistory')
 
       // Register override intercept AFTER initial load (LIFO)
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/1/history*', {
+      cy.intercept('GET', '**/api/v3/securities/stocks/1/history*', {
         fixture: 'stock-history.json',
       }).as('getWeekHistory')
 
@@ -211,7 +211,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getStock')
       cy.wait('@getHistory')
 
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks/1/history*', {
+      cy.intercept('GET', '**/api/v3/securities/stocks/1/history*', {
         fixture: 'stock-history.json',
       }).as('getYearHistory')
 
@@ -226,8 +226,9 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getStock')
       cy.wait('@getOptions')
 
-      cy.contains('h2', 'Options Chain').should('be.visible')
-      cy.contains('th', 'CALLS').should('be.visible')
+      // Options chain renders below the chart and info table — scroll into view
+      cy.contains('h2', 'Options Chain').scrollIntoView().should('be.visible')
+      cy.contains('th', 'CALLS').scrollIntoView().should('be.visible')
       cy.contains('th', 'PUTS').should('be.visible')
       cy.contains('th', 'Strike').should('be.visible')
       cy.contains('th', 'Bid').should('be.visible')
@@ -235,7 +236,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.contains('th', 'Vol').should('be.visible')
       cy.contains('th', 'OI').should('be.visible')
       cy.contains('th', 'Premium').should('be.visible')
-      cy.contains('Market Price: $178.50').should('be.visible')
+      cy.contains('Market Price: $178.50').scrollIntoView().should('be.visible')
       // Settlement date selector
       cy.contains('Settlement Date').should('be.visible')
       cy.contains('Strikes shown').should('be.visible')
@@ -246,7 +247,7 @@ describe('Hartije od vrednosti — Securities', () => {
       // AAPL market price = 178.50
       // Call 170.00 (< 178.50) → ITM → bg-green-50
       // Call 185.00 (> 178.50) → OTM → no green bg
-      cy.intercept('GET', 'https://bytenity.com/api/v2/securities/options*', {
+      cy.intercept('GET', '**/api/v3/securities/options*', {
         body: {
           options: [
             {
@@ -290,7 +291,8 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getStock')
       cy.wait('@getOptions')
 
-      cy.contains('Market Price: $178.50').should('be.visible')
+      // Header is below the chart + info table on stock detail; scroll to it first
+      cy.contains('Market Price: $178.50').scrollIntoView().should('be.visible')
     })
 
     // Scenario 22: Strike count filter limits displayed rows
@@ -298,7 +300,7 @@ describe('Hartije od vrednosti — Securities', () => {
       // 7 options across strikes 160-190; AAPL at 178.50
       // sharedIdx = index of first strike >= 178.50 = index of 180 = 4
       // strikeCount=1: start=max(0,4-1)=3, end=min(7,4+1+1)=6 → [175,180,185] = 3 rows
-      cy.intercept('GET', 'https://bytenity.com/api/v2/securities/options*', {
+      cy.intercept('GET', '**/api/v3/securities/options*', {
         body: {
           options: [
             { id: 310, ticker: 'C160', name: 'Call 160', stock_listing_id: 1, option_type: 'call', strike_price: '160.00', implied_volatility: '0.35', premium: '20.00', open_interest: 1000, settlement_date: '2026-06-21', price: '20.00', ask: '20.20', bid: '19.80', volume: 100 },
@@ -336,9 +338,9 @@ describe('Hartije od vrednosti — Securities', () => {
   describe('Futures', () => {
 
     it('Scenario 23 — Settlement date range filter sends correct params and narrows futures results', () => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { fixture: 'futures-list.json' }).as('getFutures')
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+      cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+      cy.intercept('GET', '**/api/v3/securities/futures*', { fixture: 'futures-list.json' }).as('getFutures')
+      cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
 
       cy.loginAsEmployee('/securities')
       cy.wait('@getFutures')
@@ -346,7 +348,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.contains('button', 'Futures').click()
 
       // Register filtered intercept AFTER switching tab (LIFO)
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', {
+      cy.intercept('GET', '**/api/v3/securities/futures*', {
         body: { futures: [], total: 0 },
       }).as('getFilteredFutures')
 
@@ -365,10 +367,10 @@ describe('Hartije od vrednosti — Securities', () => {
 
   describe('Create Order', () => {
     beforeEach(() => {
-      cy.intercept('GET', 'https://bytenity.com/api/v1/me/accounts*', { fixture: 'home-accounts.json' })
-      cy.intercept('GET', 'https://bytenity.com/api/v1/bank-accounts*', { body: { accounts: [] } })
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-      cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures*', { body: { futures: [], total: 0 } })
+      cy.intercept('GET', '**/api/v3/me/accounts*', { fixture: 'home-accounts.json' })
+      cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
+      cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+      cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
     })
 
     it('Scenario 24 — Quantity input has min=1 constraint and type=number', () => {

@@ -29,7 +29,7 @@ describe('getBankMargins', () => {
 
     const result = await getBankMargins()
 
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/bank-margins')
+    expect(mockGet).toHaveBeenCalledWith('/bank-margins')
     expect(result).toEqual(mockData)
   })
 })
@@ -48,7 +48,7 @@ describe('updateBankMargin', () => {
 
     const result = await updateBankMargin(1, 3.0)
 
-    expect(mockPut).toHaveBeenCalledWith('/api/v1/bank-margins/1', { margin: 3.0 })
+    expect(mockPut).toHaveBeenCalledWith('/bank-margins/1', { margin: 3.0 })
     expect(result).toEqual(updated)
   })
 })

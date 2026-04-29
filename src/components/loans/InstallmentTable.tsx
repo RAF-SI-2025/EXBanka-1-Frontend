@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { statusTone, type StatusTone } from '@/lib/utils/statusTone'
 import {
   Table,
   TableBody,
@@ -21,10 +22,8 @@ const INSTALLMENT_STATUS_LABELS: Record<string, string> = {
   OVERDUE: 'Overdue',
 }
 
-const INSTALLMENT_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  PAID: 'default',
-  PENDING: 'secondary',
-  OVERDUE: 'destructive',
+const INSTALLMENT_TONE_OVERRIDES: Record<string, StatusTone> = {
+  OVERDUE: 'danger',
 }
 
 export function InstallmentTable({ installments }: InstallmentTableProps) {
@@ -63,9 +62,12 @@ export function InstallmentTable({ installments }: InstallmentTableProps) {
                 <TableCell>{formatDate(inst.expected_date)}</TableCell>
                 <TableCell>{formatCurrency(inst.amount, inst.currency_code ?? 'RSD')}</TableCell>
                 <TableCell>
-                  <Badge variant={INSTALLMENT_VARIANT[inst.status] ?? 'secondary'}>
+                  <StatusBadge
+                    status={inst.status}
+                    tone={INSTALLMENT_TONE_OVERRIDES[inst.status] ?? statusTone(inst.status)}
+                  >
                     {INSTALLMENT_STATUS_LABELS[inst.status] ?? inst.status}
-                  </Badge>
+                  </StatusBadge>
                 </TableCell>
               </TableRow>
             ))}

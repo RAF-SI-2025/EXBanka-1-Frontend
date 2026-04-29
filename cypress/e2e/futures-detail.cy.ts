@@ -1,9 +1,9 @@
 describe('Futures Detail Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures/10', { fixture: 'future-detail.json' }).as(
+    cy.intercept('GET', '**/api/v3/securities/futures/10', { fixture: 'future-detail.json' }).as(
       'getFuture'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures/10/history*', {
+    cy.intercept('GET', '**/api/v3/securities/futures/10/history*', {
       fixture: 'future-history.json',
     }).as('getFutureHistory')
   })
@@ -38,10 +38,10 @@ describe('Futures Detail Page', () => {
   })
 
   it('should show not found for invalid futures id', () => {
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures/999', { statusCode: 200, body: null }).as(
+    cy.intercept('GET', '**/api/v3/securities/futures/999', { statusCode: 200, body: null }).as(
       'getFutureNotFound'
     )
-    cy.intercept('GET', 'https://bytenity.com/api/v1/securities/futures/999/history*', {
+    cy.intercept('GET', '**/api/v3/securities/futures/999/history*', {
       body: { history: [], total_count: 0 },
     }).as('getEmptyHistory')
 
