@@ -75,9 +75,10 @@ Access tokens expire after 15 minutes. Use the refresh token to obtain a new pai
 35. [Sessions & Login History](#35-sessions--login-history)
 36. [Notifications](#36-notifications)
 37. [Stock Data Source](#37-stock-data-source)
-38. [Error Response Format](#error-response-format)
-39. [Password Requirements](#password-requirements)
-40. [Notes for Frontend Developers](#notes-for-frontend-developers)
+38. [Peer Banks (Admin) — SI-TX cross-bank registry (Celina 5)](#38-peer-banks-admin--si-tx-cross-bank-registry-celina-5)
+39. [Error Response Format](#error-response-format)
+40. [Password Requirements](#password-requirements)
+41. [Notes for Frontend Developers](#notes-for-frontend-developers)
 
 ---
 
@@ -1799,6 +1800,8 @@ Initiate a currency transfer between accounts.
 ```
 
 > **Note:** Transfer is created in `pending_verification` status. The browser must create a verification challenge via `POST /api/v3/verifications` and then poll `GET /api/v3/verifications/:id/status` until verified. Once verified, call `POST /api/v3/me/transfers/:id/execute` with the `challenge_id`. Users with `verification.skip` permission skip verification entirely.
+
+> **Inter-bank dispatch (Phase 3):** When `to_account_number`'s 3-digit prefix differs from this bank's `OWN_BANK_CODE`, the request is dispatched to `PeerTxService.InitiateOutboundTx` via gRPC and returns `202 Accepted` with `{transaction_id, poll_url, status}`. Poll the returned URL for SI-TX completion status. Intra-bank receivers (own prefix) keep the legacy `201 Created` shape above.
 
 ---
 
@@ -6930,6 +6933,295 @@ Return the current active source and the most recent switch status.
 ```
 
 When `status=failed`, `last_error` contains the failure reason. The admin can retry by issuing a new POST.
+
+---
+
+## 38. Peer Banks (Admin) — SI-TX cross-bank registry (Celina 5)
+
+Runtime registry of cross-bank peer banks. Backs the SI-TX `POST /api/v3/interbank` middleware, which looks up peer authentication credentials in this table. EmployeeAdmin only (`peer_banks.manage.any` permission).
+
+> **Phase 2 status:** the table + admin CRUD is fully wired. The `POST /api/v3/interbank` endpoint exists but returns `501 Not Implemented` because the underlying TX execution is implemented in Phase 3. The `X-Api-Key` auth path on `/api/v3/interbank` is also stubbed in Phase 2 — Phase 3 introduces a dedicated internal RPC for plaintext-token lookup.
+
+### GET /api/v3/peer-banks
+
+List all registered peer banks.
+
+**Authentication:** Employee JWT + `peer_banks.manage.any` permission
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `active_only` | bool | When `true`, hide inactive peers |
+
+**Response 200:**
+```json
+{
+  "peer_banks": [
+    {
+      "id": 1,
+      "bank_code": "222",
+      "routing_number": 222,
+      "base_url": "http://peer-222/api/v3",
+      "api_token_preview": "…-222",
+      "hmac_enabled": false,
+      "active": true,
+      "created_at": 1714345200,
+      "updated_at": 1714345200
+    }
+  ]
+}
+```
+
+`api_token_preview` returns only the last 4 characters of the token. The full token is never exposed via this endpoint.
+
+---
+
+### GET /api/v3/peer-banks/:id
+
+Read one peer bank by ID.
+
+**Authentication:** Employee JWT + `peer_banks.manage.any` permission
+
+**Response 200:** Peer bank object (same shape as List).
+**Response 404:** When the peer bank doesn't exist.
+
+---
+
+### POST /api/v3/peer-banks
+
+Register a new peer bank.
+
+**Authentication:** Employee JWT + `peer_banks.manage.any` permission
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `bank_code` | string | Yes | 3-digit prefix (e.g. "222") |
+| `routing_number` | int64 | Yes | Numeric form of bank_code |
+| `base_url` | string | Yes | Peer's `/api/v3` base URL |
+| `api_token` | string | Yes | Plaintext API token issued by peer; bcrypt-hashed before persist |
+| `hmac_inbound_key` | string | No | HMAC key to verify inbound HMAC-mode requests from this peer |
+| `hmac_outbound_key` | string | No | HMAC key to sign outbound requests to this peer |
+| `active` | bool | Yes | Whether this peer accepts traffic |
+
+**Example Request:**
+```json
+{
+  "bank_code": "222",
+  "routing_number": 222,
+  "base_url": "http://peer-222/api/v3",
+  "api_token": "secret-token-from-peer-222",
+  "active": true
+}
+```
+
+**Response 201:** Peer bank object (`api_token_preview` returned, never the full token).
+**Response 400:** Validation error (missing required field).
+
+---
+
+### PUT /api/v3/peer-banks/:id
+
+Update mutable fields. Only fields present in the body are updated.
+
+**Authentication:** Employee JWT + `peer_banks.manage.any` permission
+
+**Request Body (all fields optional):**
+
+| Field | Type | Description |
+|---|---|---|
+| `base_url` | string | New base URL |
+| `api_token` | string | New plaintext token (bcrypt re-hashed on persist) |
+| `hmac_inbound_key` | string | New inbound HMAC key |
+| `hmac_outbound_key` | string | New outbound HMAC key |
+| `active` | bool | Toggle peer on/off |
+
+**Response 200:** Updated peer bank object.
+**Response 404:** When the peer bank doesn't exist.
+
+---
+
+### DELETE /api/v3/peer-banks/:id
+
+Remove a peer bank.
+
+**Authentication:** Employee JWT + `peer_banks.manage.any` permission
+
+**Response 204:** Success, no body.
+
+---
+
+### POST /api/v3/interbank
+
+Receives the SI-TX `Message<Type>` envelope from peer banks. Phase 3 implementation is fully wired: `NEW_TX` validates postings (UNBALANCED_TX check + per-posting account/asset/active checks), reserves credit-postings via `account-service.ReserveIncoming`, and emits `TransactionVote`. `COMMIT_TX` finalises reservations; `ROLLBACK_TX` releases them. Idempotence-key replay returns the cached vote.
+
+**Authentication:** Hybrid `PeerAuth` middleware. Either:
+- `X-Api-Key: <token>` — looked up against `peer_banks.api_token_plaintext` via the internal `ResolvePeerByAPIToken` RPC.
+- `X-Bank-Code: <code>` + `X-Bank-Signature: <hex SHA-256>` + `X-Timestamp: <RFC3339, ±5min>` + `X-Nonce: <single-use>` — verified against `peer_banks.hmac_inbound_key` via `ResolvePeerByBankCode`.
+
+**Request Body:** SI-TX `Message<Type>` envelope. Shape verbatim from the cohort spec at https://arsen.srht.site/si-tx-proto/.
+
+```json
+{
+  "idempotenceKey": {
+    "routingNumber": 222,
+    "locallyGeneratedKey": "abc-123"
+  },
+  "messageType": "NEW_TX",
+  "message": {
+    "postings": [
+      {"routingNumber": 222, "accountId": "222000001", "assetId": "RSD", "amount": "100.00", "direction": "DEBIT"},
+      {"routingNumber": 111, "accountId": "111000001", "assetId": "RSD", "amount": "100.00", "direction": "CREDIT"}
+    ]
+  }
+}
+```
+
+**Responses:**
+- **200 OK** for `NEW_TX` — body is a `TransactionVote` (`{type: "YES", transactionId: "..."}` or `{type: "NO", noVotes: [...]}` with one or more of the 8 SI-TX reasons: `UNBALANCED_TX`, `NO_SUCH_ACCOUNT`, `NO_SUCH_ASSET`, `UNACCEPTABLE_ASSET`, `INSUFFICIENT_ASSET`, `OPTION_AMOUNT_INCORRECT`, `OPTION_USED_OR_EXPIRED`, `OPTION_NEGOTIATION_NOT_FOUND`).
+- **204 No Content** for `COMMIT_TX` / `ROLLBACK_TX` (both idempotent).
+- **401 Unauthorized** with empty body when auth fails (constant-time compare; no info leak).
+
+---
+
+### GET /api/v3/public-stock
+
+Peer-facing OTC discovery — returns stock holdings on this bank flagged for OTC public trading. Used by peer banks to populate their OTC discovery pages.
+
+**Authentication:** PeerAuth (X-Api-Key or HMAC bundle).
+
+**Response 200:**
+```json
+{
+  "stocks": [
+    {
+      "ownerId": {"routingNumber": 111, "id": "client-7"},
+      "ticker": "AAPL",
+      "amount": 50,
+      "pricePerStock": "180.50",
+      "currency": "USD"
+    }
+  ]
+}
+```
+
+---
+
+### POST /api/v3/negotiations
+
+Peer initiates a cross-bank OTC negotiation against a publicly-listed holding on this bank. The peer's offer is persisted in `peer_otc_negotiations` and gets a fresh negotiation ID owned by this bank.
+
+**Authentication:** PeerAuth.
+
+**Request Body:**
+```json
+{
+  "offer": {
+    "ticker": "AAPL",
+    "amount": 50,
+    "pricePerStock": "180.50",
+    "currency": "USD",
+    "premium": "700",
+    "premiumCurrency": "USD",
+    "settlementDate": "2026-12-31",
+    "lastModifiedBy": {"routingNumber": 222, "id": "user-1"}
+  },
+  "buyerId":  {"routingNumber": 222, "id": "buyer-1"},
+  "sellerId": {"routingNumber": 111, "id": "seller-1"}
+}
+```
+
+**Response 201:**
+```json
+{ "negotiationId": {"routingNumber": 111, "id": "neg-uuid"} }
+```
+
+---
+
+### PUT /api/v3/negotiations/:rid/:id
+
+Counter-offer on an existing negotiation. The negotiation must have been created via `POST /api/v3/negotiations` first.
+
+**Authentication:** PeerAuth.
+
+**Path Parameters:**
+- `rid` — peer's routing number (int64)
+- `id` — peer's negotiation id (string)
+
+**Request Body:** Same `offer` shape as POST.
+
+**Response 200:** Empty body on success.
+
+---
+
+### GET /api/v3/negotiations/:rid/:id
+
+Read a negotiation's current state.
+
+**Authentication:** PeerAuth.
+
+**Response 200:**
+```json
+{
+  "id":       {"routingNumber": 111, "id": "neg-uuid"},
+  "buyerId":  {"routingNumber": 222, "id": "buyer-1"},
+  "sellerId": {"routingNumber": 111, "id": "seller-1"},
+  "offer":    { /* same shape as POST.offer */ },
+  "status":   "ongoing",
+  "updatedAt": "2026-04-29T12:00:00Z"
+}
+```
+
+**Response 404:** Negotiation not found.
+
+---
+
+### DELETE /api/v3/negotiations/:rid/:id
+
+Cancel a negotiation. Either side may delete; status flips to `cancelled`.
+
+**Authentication:** PeerAuth.
+**Response 204:** Success, no body.
+
+---
+
+### GET /api/v3/negotiations/:rid/:id/accept
+
+Accept a negotiation. Composes a 4-posting `Transaction` (premium money debit-buyer/credit-seller + 1× `OptionDescription` debit-seller/credit-buyer) and dispatches via `PeerTxService.InitiateOutboundTxWithPostings`. The resulting SI-TX TX runs through the normal `NEW_TX` → `COMMIT_TX` flow.
+
+**Authentication:** PeerAuth.
+
+**Response 200:**
+```json
+{ "transactionId": "tx-uuid", "status": "pending" }
+```
+
+The `transactionId` is the same idempotence-key the OutboundReplayCron uses; clients can poll `/api/v3/me/transfers/{transactionId}` for terminal status (transfer endpoints recognise OTC tx ids by id format).
+
+---
+
+### GET /api/v3/user/:rid/:id
+
+Returns identity info for a counterparty user. Peers call this when displaying user names alongside OTC negotiations or transfer history.
+
+**Authentication:** PeerAuth.
+
+**Path Parameters:**
+- `rid` — must match `OWN_BANK_CODE`'s routing number; otherwise 404 (we don't proxy lookups across banks).
+- `id` — `client-<n>` or `employee-<n>` format; routes to client-service or user-service accordingly.
+
+**Response 200:**
+```json
+{
+  "id":        {"routingNumber": 111, "id": "client-7"},
+  "firstName": "Marko",
+  "lastName":  "Marković"
+}
+```
+
+**Response 404:** Foreign rid or unknown user id.
 
 ---
 
