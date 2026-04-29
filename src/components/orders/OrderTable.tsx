@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { DirectionBadge } from '@/components/shared/DirectionBadge'
+import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import type { Order } from '@/types/order'
 
 interface OrderTableProps {
@@ -47,7 +48,9 @@ export function OrderTable({ orders, onCancel, onApprove, onDecline }: OrderTabl
               <TableCell>
                 {order.filled_quantity ?? 0} / {order.quantity}
               </TableCell>
-              <TableCell>{order.state ?? order.status}</TableCell>
+              <TableCell>
+                <OrderStatusBadge status={order.state ?? order.status} />
+              </TableCell>
               <TableCell>
                 <div className="flex gap-2">
                   {onCancel && isCancellable && (

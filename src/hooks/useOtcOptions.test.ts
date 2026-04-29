@@ -91,12 +91,10 @@ describe('useCounterOtcOptionOffer', () => {
 
 describe('useAcceptOtcOptionOffer', () => {
   it('calls acceptOtcOptionOffer', async () => {
-    jest
-      .mocked(otcOptionApi.acceptOtcOptionOffer)
-      .mockResolvedValue({
-        offer: createMockOtcOptionOffer(),
-        contract: createMockOptionContract(),
-      })
+    jest.mocked(otcOptionApi.acceptOtcOptionOffer).mockResolvedValue({
+      offer: createMockOtcOptionOffer(),
+      contract: createMockOptionContract(),
+    })
     const { result } = renderHook(() => useAcceptOtcOptionOffer(1001), {
       wrapper: createQueryWrapper(),
     })
