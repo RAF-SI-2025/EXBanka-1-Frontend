@@ -3,10 +3,10 @@ import type { Card as CardType } from '@/types/card'
 import { CardBrandLogo } from './CardBrandLogo'
 
 const BRAND_GRADIENTS: Record<string, string> = {
-  VISA: 'from-[#0c2d8e] via-[#1751e9] to-[#3d8bff]',
-  MASTERCARD: 'from-[#1a1a1a] via-[#3a1410] to-[#7a1f12]',
-  DINACARD: 'from-[#0c1a4a] via-[#7a1320] to-[#c8102e]',
-  AMEX: 'from-[#0a3d62] via-[#0f6f8b] to-[#62a8ad]',
+  VISA: 'from-blue-950 via-blue-700 to-blue-400',
+  MASTERCARD: 'from-zinc-900 via-red-900 to-red-600',
+  DINACARD: 'from-blue-950 via-red-800 to-red-500',
+  AMEX: 'from-cyan-900 via-cyan-700 to-cyan-400',
 }
 
 function formatExpiry(expiresAt: string): string {
@@ -103,10 +103,20 @@ function BrandPattern({ brand }: { brand: string }) {
 }
 
 export function CardVisual({ card, holderName, className = '' }: CardVisualProps) {
-  const gradient = BRAND_GRADIENTS[card.brand] ?? 'from-gray-800 to-gray-600'
+  // Backend may return brand in any case ("visa" vs "VISA") — normalise
+  // before the gradient + pattern lookup so we don't silently fall back to
+  // the generic gray treatment.
+  const brand = (card.brand ?? '').toUpperCase()
+  const gradient = BRAND_GRADIENTS[brand] ?? 'from-gray-800 to-gray-600'
   const status = card.status?.toUpperCase()
   const isInactive = status !== 'ACTIVE'
-  const isVirtual = Boolean(card.is_virtual)
+  // Heuristic: a card is virtual if the backend says so OR the type/name
+  // implies it (some payloads omit is_virtual but use card_type='virtual'
+  // or include the substring in card_name).
+  const isVirtual =
+    Boolean(card.is_virtual) ||
+    (typeof card.card_type === 'string' && card.card_type.toLowerCase() === 'virtual') ||
+    (typeof card.card_name === 'string' && /virtual/i.test(card.card_name))
   const usageLabel =
     card.usage_type === 'single_use'
       ? 'Single use'
@@ -118,7 +128,7 @@ export function CardVisual({ card, holderName, className = '' }: CardVisualProps
     <div
       className={`relative w-full max-w-sm aspect-[1.586/1] rounded-2xl bg-gradient-to-br ${gradient} p-6 shadow-xl text-white select-none overflow-hidden ${className}`}
     >
-      <BrandPattern brand={card.brand} />
+      <BrandPattern brand={brand} />
 
       {/* Decorative circles (kept on top of pattern but below content) */}
       <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-white/5" />
@@ -166,7 +176,7 @@ export function CardVisual({ card, holderName, className = '' }: CardVisualProps
 
       {/* Brand logo — top right */}
       <div className="absolute top-5 right-6">
-        <CardBrandLogo brand={card.brand} className="h-10 w-auto" />
+        <CardBrandLogo brand={brand} className="h-10 w-auto" />
       </div>
 
       {/* Card number — center */}

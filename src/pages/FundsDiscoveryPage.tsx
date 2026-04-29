@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,9 +40,9 @@ export function FundsDiscoveryPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Funds</h1>
         {canManageFunds && (
-          <Button asChild>
-            <Link to="/funds/new">Create fund</Link>
-          </Button>
+          <Link to="/funds/new" className={cn(buttonVariants())}>
+            Create fund
+          </Link>
         )}
       </div>
 
