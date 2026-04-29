@@ -24,13 +24,13 @@ describe('My Orders Page', () => {
     cy.contains('th', 'Actions').should('be.visible')
 
     // Order data
-    cy.contains('AAPL').should('be.visible')
-    cy.contains('Apple Inc.').should('be.visible')
-    cy.contains('buy').should('be.visible')
-    cy.contains('market').should('be.visible')
+    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('td', 'Apple Inc.').should('be.visible')
+    cy.contains('td', 'Buy').should('be.visible')
+    cy.contains('td', 'market').should('be.visible')
 
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('Microsoft Corp').should('be.visible')
+    cy.contains('td', 'MSFT').should('be.visible')
+    cy.contains('td', 'Microsoft Corp').should('be.visible')
 
     cy.contains('2 orders').should('be.visible')
   })

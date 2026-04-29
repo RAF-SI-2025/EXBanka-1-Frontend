@@ -30,7 +30,7 @@ describe('Portfolio Page', () => {
     cy.wait('@getPortfolio')
 
     // Table headers
-    cy.contains('th', 'Ticker').should('be.visible')
+    cy.contains('th', 'Ticker').scrollIntoView().should('be.visible')
     cy.contains('th', 'Name').should('be.visible')
     cy.contains('th', 'Type').should('be.visible')
     cy.contains('th', 'Quantity').should('be.visible')
@@ -40,29 +40,29 @@ describe('Portfolio Page', () => {
     cy.contains('th', 'Actions').should('be.visible')
 
     // Holding data
-    cy.contains('AAPL').should('be.visible')
-    cy.contains('Apple Inc.').should('be.visible')
-    cy.contains('stock').should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
+    cy.contains('td', 'Apple Inc.').should('be.visible')
+    cy.contains('td', 'stock').should('be.visible')
 
-    cy.contains('ESM26').should('be.visible')
-    cy.contains('E-mini S&P 500 Jun 2026').should('be.visible')
-    cy.contains('futures').should('be.visible')
+    cy.contains('td', 'ESM26').should('be.visible')
+    cy.contains('td', 'E-mini S&P 500 Jun 2026').should('be.visible')
+    cy.contains('td', 'futures').should('be.visible')
 
-    cy.contains('2 holdings').should('be.visible')
+    cy.contains('2 holdings').scrollIntoView().should('be.visible')
   })
 
   it('should show Sell button for all holdings', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
-    cy.contains('button', 'Sell').should('be.visible')
+    cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
   })
 
   it('should show Make Public button for non-option holdings', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
-    cy.contains('button', 'Make Public').should('be.visible')
+    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
   })
 
   it('should make a holding public', () => {
@@ -104,7 +104,7 @@ describe('Portfolio Page', () => {
     cy.wait('@getPortfolio')
 
     // AAPL stock row
-    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
     cy.contains('td', 'Apple Inc.').should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
     cy.contains('td', '50').should('be.visible')
@@ -181,9 +181,9 @@ describe('Portfolio Page', () => {
     cy.wait('@getPortfolio')
 
     // AAPL: public_quantity=0; ESM26: public_quantity=2
-    cy.contains('th', 'Public Qty').should('be.visible')
-    cy.get('tbody tr').eq(0).contains('td', '0').should('be.visible')
-    cy.get('tbody tr').eq(1).contains('td', '2').should('be.visible')
+    cy.contains('th', 'Public Qty').scrollIntoView().should('be.visible')
+    cy.get('tbody tr').eq(0).contains('td', '0').scrollIntoView().should('be.visible')
+    cy.get('tbody tr').eq(1).contains('td', '2').scrollIntoView().should('be.visible')
   })
 
   it('Scenario 70 — Make Public button is shown for stock and futures holdings but not for options', () => {
@@ -207,9 +207,9 @@ describe('Portfolio Page', () => {
     cy.wait('@getMixedHoldings')
 
     // Stock row has Make Public; option row has Exercise instead
-    cy.get('tbody tr').eq(0).contains('button', 'Make Public').should('be.visible')
+    cy.get('tbody tr').eq(0).contains('button', 'Make Public').scrollIntoView().should('be.visible')
     cy.get('tbody tr').eq(1).contains('button', 'Make Public').should('not.exist')
-    cy.get('tbody tr').eq(1).contains('button', 'Exercise').should('be.visible')
+    cy.get('tbody tr').eq(1).contains('button', 'Exercise').scrollIntoView().should('be.visible')
   })
 
   // ── Scenario 71: Aktuar može da iskoristi opciju in-the-money ────────────
@@ -228,7 +228,7 @@ describe('Portfolio Page', () => {
     cy.loginAsEmployee('/portfolio')
     cy.wait('@getOptionHolding')
 
-    cy.contains('button', 'Exercise').should('be.visible')
+    cy.contains('button', 'Exercise').scrollIntoView().should('be.visible')
   })
 
   it('Scenario 71 — Clicking Exercise calls POST /api/v3/me/portfolio/:id/exercise', () => {
@@ -289,8 +289,8 @@ describe('Portfolio Page', () => {
 
     // Default fixture has stock + futures holdings — no option type → no Exercise button
     cy.contains('button', 'Exercise').should('not.exist')
-    cy.contains('button', 'Sell').should('be.visible')
-    cy.contains('button', 'Make Public').should('be.visible')
+    cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
+    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
   })
 
   // ── Scenario 73: Hartija prelazi u portfolio nakon izvršenog BUY ordera ───
@@ -310,11 +310,11 @@ describe('Portfolio Page', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getNewHolding')
 
-    cy.contains('td', 'MSFT').should('be.visible')
+    cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
     cy.contains('td', 'Microsoft Corp.').should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
     // public_quantity=0 → holding is private by default
     cy.get('tbody tr').eq(0).find('td').eq(4).should('have.text', '0')
-    cy.contains('button', 'Make Public').should('be.visible')
+    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
   })
 })

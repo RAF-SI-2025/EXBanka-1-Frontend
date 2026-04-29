@@ -97,7 +97,7 @@ describe('Celina3 - Orderi-Review', () => {
     cy.wait('@getPendingOrder')
 
     cy.contains('h1', 'Order Approval').should('be.visible')
-    cy.contains('td', 'pending').should('be.visible')
+    cy.contains('td', 'Pending').should('be.visible')
     cy.contains('button', 'Approve').should('be.visible')
     cy.contains('button', 'Decline').should('be.visible')
   })
@@ -222,7 +222,7 @@ describe('Celina3 - Orderi-Review', () => {
     // Order data rows are rendered
     cy.contains('td', 'AAPL').should('be.visible')
     cy.contains('td', 'Apple Inc.').should('be.visible')
-    cy.contains('td', 'buy').should('be.visible')
+    cy.contains('td', 'Buy').should('be.visible')
     cy.contains('td', 'market').should('be.visible')
   })
 
@@ -250,7 +250,7 @@ describe('Celina3 - Orderi-Review', () => {
     cy.loginAsEmployee('/admin/orders')
     cy.wait('@getPendingOrders')
 
-    cy.contains('td', 'pending').should('be.visible')
+    cy.contains('td', 'Pending').should('be.visible')
     cy.contains('button', 'Approve').should('be.visible')
     cy.contains('button', 'Decline').should('be.visible')
     cy.contains('1 orders').should('be.visible')
@@ -291,7 +291,7 @@ describe('Celina3 - Orderi-Review', () => {
     cy.wait('@getDoneOrders')
 
     // status !== 'pending' → no Approve/Decline buttons rendered
-    cy.contains('td', 'filled').should('be.visible')
+    cy.contains('td', 'Filled').should('be.visible')
     cy.contains('button', 'Approve').should('not.exist')
     cy.contains('button', 'Decline').should('not.exist')
     cy.contains('1 orders').should('be.visible')

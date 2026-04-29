@@ -19,10 +19,10 @@ describe('Notifications bell', () => {
     cy.loginAsClient('/home')
     cy.wait('@getUnread')
 
-    cy.findByLabelText(/notifications/i).should('contain.text', '2').click()
+    cy.get('[aria-label="Notifications"]').should('contain.text', '2').click()
     cy.wait('@getList')
 
-    cy.findByText('Money Received').should('be.visible').click()
+    cy.contains('Money Received').should('be.visible').click()
     cy.wait('@markRead').its('request.url').should('include', '/notifications/1/read')
   })
 })

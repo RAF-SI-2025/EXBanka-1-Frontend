@@ -45,8 +45,9 @@ describe('Home Page — Client Dashboard', () => {
     cy.wait('@getAccounts')
     cy.wait('@getPayments')
 
-    // The first account is selected by default
-    cy.contains('Recent Transactions').should('be.visible')
+    // The first account is selected by default — Recent Transactions is below the
+    // Accounts list so we scroll the heading into view before asserting visibility.
+    cy.contains('Recent Transactions').scrollIntoView().should('be.visible')
   })
 
   it('should show empty state when no accounts', () => {

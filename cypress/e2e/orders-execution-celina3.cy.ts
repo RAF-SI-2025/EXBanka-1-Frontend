@@ -156,7 +156,7 @@ describe('Celina3 - Orderi-Execution', () => {
     cy.wait('@getPendingAON')
 
     cy.contains('td', '0 / 20').should('be.visible')
-    cy.contains('td', 'pending').should('be.visible')
+    cy.contains('td', 'Pending').should('be.visible')
     // Unfilled order → Cancel button is available
     cy.contains('button', 'Cancel').should('be.visible')
   })
@@ -232,7 +232,7 @@ describe('Celina3 - Orderi-Execution', () => {
     cy.wait('@getStopLimitOrder')
 
     cy.contains('td', 'stop_limit').should('be.visible')
-    cy.contains('td', 'pending').should('be.visible')
+    cy.contains('td', 'Pending').should('be.visible')
   })
 
   // ── Scenario 63: Margin order rejected without margin permission ───────────

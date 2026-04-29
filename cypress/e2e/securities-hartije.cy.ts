@@ -226,8 +226,9 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getStock')
       cy.wait('@getOptions')
 
-      cy.contains('h2', 'Options Chain').should('be.visible')
-      cy.contains('th', 'CALLS').should('be.visible')
+      // Options chain renders below the chart and info table — scroll into view
+      cy.contains('h2', 'Options Chain').scrollIntoView().should('be.visible')
+      cy.contains('th', 'CALLS').scrollIntoView().should('be.visible')
       cy.contains('th', 'PUTS').should('be.visible')
       cy.contains('th', 'Strike').should('be.visible')
       cy.contains('th', 'Bid').should('be.visible')
@@ -235,7 +236,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.contains('th', 'Vol').should('be.visible')
       cy.contains('th', 'OI').should('be.visible')
       cy.contains('th', 'Premium').should('be.visible')
-      cy.contains('Market Price: $178.50').should('be.visible')
+      cy.contains('Market Price: $178.50').scrollIntoView().should('be.visible')
       // Settlement date selector
       cy.contains('Settlement Date').should('be.visible')
       cy.contains('Strikes shown').should('be.visible')
@@ -290,7 +291,8 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.wait('@getStock')
       cy.wait('@getOptions')
 
-      cy.contains('Market Price: $178.50').should('be.visible')
+      // Header is below the chart + info table on stock detail; scroll to it first
+      cy.contains('Market Price: $178.50').scrollIntoView().should('be.visible')
     })
 
     // Scenario 22: Strike count filter limits displayed rows

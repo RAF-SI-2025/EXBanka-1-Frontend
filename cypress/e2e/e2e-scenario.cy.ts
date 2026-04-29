@@ -264,10 +264,10 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.wait('@getOrders')
 
     cy.contains('h1', 'Order Approval').should('be.visible')
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('Microsoft Corp').should('be.visible')
-    cy.contains('buy').should('be.visible')
-    cy.contains('market').should('be.visible')
+    cy.contains('td', 'MSFT').should('be.visible')
+    cy.contains('td', 'Microsoft Corp').should('be.visible')
+    cy.contains('td', 'Buy').should('be.visible')
+    cy.contains('td', 'market').should('be.visible')
 
     cy.contains('button', 'Approve').click()
     cy.wait('@approveBuyOrder')
@@ -301,23 +301,23 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
 
     cy.contains('h1', 'Portfolio').should('be.visible')
 
-    // Holdings table
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('Microsoft Corp').should('be.visible')
-    cy.contains('stock').should('be.visible')
-    cy.contains('1 holdings').should('be.visible')
-
-    // Summary card
+    // Summary card (top of page)
     cy.contains('Unrealized P&L').should('be.visible')
     cy.contains('250.00').should('be.visible')
     cy.contains('Open Positions').should('be.visible')
     cy.contains('Tax Paid (Year)').should('be.visible')
     cy.contains('0.00 RSD').should('be.visible')
 
+    // Holdings table — scroll into view (charts render between summary and table)
+    cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
+    cy.contains('td', 'Microsoft Corp').should('be.visible')
+    cy.contains('td', 'stock').should('be.visible')
+    cy.contains('1 holdings').scrollIntoView().should('be.visible')
+
     // Holding is private — Make Public button visible
-    cy.contains('button', 'Make Public').should('be.visible')
+    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
     // Sell button also present
-    cy.contains('button', 'Sell').should('be.visible')
+    cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
   })
 
   // ── DEO 7: Agent sells 5 MSFT ────────────────────────────────────────────
@@ -381,8 +381,8 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.wait('@getOrders')
 
     cy.contains('h1', 'Order Approval').should('be.visible')
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('sell').should('be.visible')
+    cy.contains('td', 'MSFT').should('be.visible')
+    cy.contains('td', 'Sell').should('be.visible')
 
     cy.contains('button', 'Approve').click()
     cy.wait('@approveSellOrder')
@@ -415,9 +415,8 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.wait('@getSummary')
 
     cy.contains('h1', 'Portfolio').should('be.visible')
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('1 holdings').should('be.visible')
 
+    // Summary card (top of page)
     // Unrealized profit still positive (remaining 5 shares)
     cy.contains('Unrealized P&L').should('be.visible')
     cy.contains('125.00').should('be.visible')
@@ -429,6 +428,10 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     // Tax is not yet paid
     cy.contains('Tax Paid (Year)').should('be.visible')
     cy.contains('0.00 RSD').should('be.visible')
+
+    // Holdings table — scroll into view (below charts)
+    cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
+    cy.contains('1 holdings').scrollIntoView().should('be.visible')
   })
 
   // ── DEO 10: Supervisor triggers tax collection ────────────────────────────
@@ -458,9 +461,9 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.wait('@getTaxRecords')
 
     cy.contains('h1', 'Tax Management').should('be.visible')
-    cy.contains('Marko Markovic').should('be.visible')
-    cy.contains('3937.50').should('be.visible')
-    cy.contains('Actuary').should('be.visible')
+    cy.contains('td', 'Marko Markovic').should('be.visible')
+    cy.contains('td', '3937.50').should('be.visible')
+    cy.contains('td', 'Actuary').should('be.visible')
 
     cy.contains('button', 'Collect Taxes').click()
     cy.wait('@collectTaxes')
@@ -494,16 +497,16 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
 
     cy.contains('h1', 'Portfolio').should('be.visible')
 
-    // 5 MSFT shares remain
-    cy.contains('MSFT').should('be.visible')
-    cy.contains('1 holdings').should('be.visible')
-
-    // Realized (Lifetime) profit persists
+    // Summary card (top of page) — Realized (Lifetime) profit persists
     cy.contains('Realized (Lifetime)').should('be.visible')
     cy.contains('29250.00 RSD').should('be.visible')
 
     // Tax paid is now updated — tax collection succeeded
     cy.contains('Tax Paid (Year)').should('be.visible')
     cy.contains('3937.50 RSD').should('be.visible')
+
+    // 5 MSFT shares remain — table is below charts, scroll into view
+    cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
+    cy.contains('1 holdings').scrollIntoView().should('be.visible')
   })
 })

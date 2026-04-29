@@ -184,14 +184,17 @@ describe('Celina3 - Takse', () => {
     cy.contains('2 exchanges').should('be.visible')
   })
 
-  it('Scenario 82 — Testing mode toggle requires exchanges.manage permission (absent from employee fixture)', () => {
-    // The employee-auth.json JWT does not include the exchanges.manage permission,
-    // so the toggle button is not rendered. This test documents that behaviour.
+  it('Scenario 82 — EmployeeAdmin sees the Testing mode toggle (admin role grants all permissions)', () => {
+    // selectHasPermission returns true for any permission when the user's role is
+    // EmployeeAdmin (see src/store/selectors/authSelectors.ts), so the toggle is
+    // rendered for the admin fixture even though `exchanges.manage` is absent
+    // from the JWT permission list. The not-rendered case is exercised by clients
+    // (Scenario 75 — they cannot reach the page at all).
     stubExchangesPage()
     cy.loginAsEmployee('/admin/stock-exchanges')
     cy.wait('@getExchanges')
 
-    cy.contains('button', 'Enable Testing Mode').should('not.exist')
-    cy.contains('button', 'Disable Testing Mode').should('not.exist')
+    // testing_mode = false (from getTestingMode stub) → button reads "Enable Testing Mode"
+    cy.contains('button', 'Enable Testing Mode').should('be.visible')
   })
 })
