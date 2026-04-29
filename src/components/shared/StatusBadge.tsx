@@ -18,7 +18,7 @@ export function StatusBadge({ status, tone, children, className = '' }: StatusBa
   const text = children ?? status ?? ''
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium tracking-wide ${TONE_CLASSES[resolved]} ${className}`}
+      className={`inline-flex items-center justify-center h-7 px-2.5 rounded-lg text-xs font-medium tracking-wide ${TONE_CLASSES[resolved]} ${className}`}
     >
       {text}
     </span>

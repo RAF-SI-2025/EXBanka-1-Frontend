@@ -15,7 +15,7 @@ export function DirectionBadge({ direction, className = '' }: DirectionBadgeProp
 
   return (
     <span
-      className={`inline-flex items-center justify-center w-12 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider ${tone} ${className}`}
+      className={`inline-flex items-center justify-center h-7 w-16 rounded-lg text-xs font-semibold uppercase tracking-wider ${tone} ${className}`}
     >
       {lower === 'buy' ? 'Buy' : lower === 'sell' ? 'Sell' : direction}
     </span>

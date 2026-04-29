@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { CardVisual } from './CardVisual'
 import { formatAccountNumber } from '@/lib/utils/format'
-import { CARD_STATUS_LABELS, CARD_STATUS_VARIANT } from '@/lib/constants/banking'
+import { CARD_STATUS_LABELS } from '@/lib/constants/banking'
 import type { Card as CardType } from '@/types/card'
 
 interface CardItemProps {
@@ -33,9 +33,7 @@ export function CardItem({
           </p>
         )}
         <div className="flex items-center flex-wrap gap-2">
-          <Badge variant={CARD_STATUS_VARIANT[status] ?? 'secondary'}>
-            {CARD_STATUS_LABELS[status] ?? card.status}
-          </Badge>
+          <StatusBadge status={status}>{CARD_STATUS_LABELS[status] ?? card.status}</StatusBadge>
           {onShowPin && (
             <Button variant="outline" size="sm" onClick={() => onShowPin(card)}>
               Show details

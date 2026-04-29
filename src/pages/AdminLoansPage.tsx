@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAllLoans } from '@/hooks/useLoans'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
+import { statusTone, type StatusTone } from '@/lib/utils/statusTone'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import {
@@ -23,10 +24,9 @@ const STATUS_LABELS: Record<string, string> = {
   PAID_OFF: 'Paid Off',
   DELINQUENT: 'Delinquent',
 }
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  ACTIVE: 'default',
-  PAID_OFF: 'secondary',
-  DELINQUENT: 'destructive',
+const LOAN_TONE_OVERRIDES: Record<string, StatusTone> = {
+  PAID_OFF: 'neutral',
+  DELINQUENT: 'danger',
 }
 const INTEREST_TYPE_LABELS: Record<string, string> = {
   FIXED: 'Fixed',
@@ -119,9 +119,12 @@ export function AdminLoansPage() {
                   <TableCell>{currency}</TableCell>
                   <TableCell>{formatDate(loan.created_at)}</TableCell>
                   <TableCell>
-                    <Badge variant={STATUS_VARIANT[loan.status] ?? 'secondary'}>
+                    <StatusBadge
+                      status={loan.status}
+                      tone={LOAN_TONE_OVERRIDES[loan.status] ?? statusTone(loan.status)}
+                    >
                       {STATUS_LABELS[loan.status] ?? loan.status}
-                    </Badge>
+                    </StatusBadge>
                   </TableCell>
                 </TableRow>
               )

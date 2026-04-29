@@ -6,7 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatAccountNumber } from '@/lib/utils/format'
 import type { Account } from '@/types/account'
@@ -27,13 +27,6 @@ const ACCOUNT_KIND_LABELS: Record<string, string> = {
 const ACCOUNT_CATEGORY_LABELS: Record<string, string> = {
   personal: 'Personal',
   business: 'Business',
-}
-
-const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  ACTIVE: 'default',
-  INACTIVE: 'secondary',
-  BLOCKED: 'destructive',
-  CLOSED: 'secondary',
 }
 
 interface AccountTableProps {
@@ -83,9 +76,9 @@ export function AccountTable({
             <TableCell>{acc.currency_code}</TableCell>
             <TableCell>{formatCurrency(acc.available_balance, acc.currency_code)}</TableCell>
             <TableCell>
-              <Badge variant={STATUS_VARIANT[acc.status] ?? 'secondary'}>
+              <StatusBadge status={acc.status}>
                 {STATUS_LABELS[acc.status] ?? acc.status}
-              </Badge>
+              </StatusBadge>
             </TableCell>
             <TableCell>
               <div className="flex gap-2">
