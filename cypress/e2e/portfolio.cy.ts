@@ -76,10 +76,11 @@ describe('Portfolio Page', () => {
 
     cy.contains('button', 'Make Public').first().click()
 
-    // Dialog opens — set quantity and submit
+    // Dialog opens — set quantity and submit. Use {selectall} so the controlled
+    // number input replaces its current value rather than appending to it.
     cy.get('[role="dialog"]').within(() => {
       cy.contains(/make shares public.*aapl/i).should('be.visible')
-      cy.get('#public-quantity').clear().type('3')
+      cy.get('#public-quantity').type('{selectall}3').should('have.value', '3')
       cy.contains('button', 'Make Public').click()
     })
 
