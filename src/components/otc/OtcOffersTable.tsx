@@ -7,11 +7,27 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import type { OtcOffer } from '@/types/otc'
 
 interface Props {
   offers: OtcOffer[]
   onBuy: (offer: OtcOffer) => void
+}
+
+function offerKey(offer: OtcOffer): string {
+  if (offer.kind === 'local') return `local-${offer.id}`
+  return `remote-${offer.bank_code}-${offer.owner_id}-${offer.ticker}`
+}
+
+function formatPrice(offer: OtcOffer): string {
+  if (offer.kind === 'remote' && offer.price_per_unit === '0') {
+    return 'Quote on request'
+  }
+  if (offer.kind === 'remote') {
+    return `${offer.price_per_unit} ${offer.currency}`
+  }
+  return offer.price_per_unit
 }
 
 export function OtcOffersTable({ offers, onBuy }: Props) {
@@ -26,6 +42,7 @@ export function OtcOffersTable({ offers, onBuy }: Props) {
           <TableHead>Ticker</TableHead>
           <TableHead>Name</TableHead>
           <TableHead>Type</TableHead>
+          <TableHead>Source</TableHead>
           <TableHead className="text-right">Quantity</TableHead>
           <TableHead className="text-right">Price</TableHead>
           <TableHead />
@@ -33,15 +50,22 @@ export function OtcOffersTable({ offers, onBuy }: Props) {
       </TableHeader>
       <TableBody>
         {offers.map((offer) => (
-          <TableRow key={offer.id}>
+          <TableRow key={offerKey(offer)}>
             <TableCell className="font-medium">{offer.ticker}</TableCell>
-            <TableCell>{offer.name}</TableCell>
+            <TableCell>{offer.kind === 'local' ? offer.name : '—'}</TableCell>
             <TableCell>{offer.security_type}</TableCell>
+            <TableCell>
+              {offer.kind === 'local' ? (
+                <Badge variant="secondary">Local · {offer.bank_code}</Badge>
+              ) : (
+                <Badge variant="outline">Peer · {offer.bank_code}</Badge>
+              )}
+            </TableCell>
             <TableCell className="text-right">{offer.quantity}</TableCell>
-            <TableCell className="text-right">{offer.price}</TableCell>
+            <TableCell className="text-right">{formatPrice(offer)}</TableCell>
             <TableCell className="text-right">
               <Button size="sm" variant="outline" onClick={() => onBuy(offer)}>
-                Buy
+                {offer.kind === 'local' ? 'Buy' : 'Negotiate'}
               </Button>
             </TableCell>
           </TableRow>

@@ -16,13 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { OtcOffer, OtcBuyRequest } from '@/types/otc'
+import type { OtcLocalOffer, OtcBuyRequest } from '@/types/otc'
 import type { Account } from '@/types/account'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  offer: OtcOffer
+  offer: OtcLocalOffer
   accounts: Account[]
   onSubmit: (payload: OtcBuyRequest) => void
   loading: boolean
@@ -42,7 +42,7 @@ export function BuyOtcDialog({ open, onOpenChange, offer, accounts, onSubmit, lo
         </DialogHeader>
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            Available: <strong>{offer.quantity}</strong> @ <strong>{offer.price}</strong>
+            Available: <strong>{offer.quantity}</strong> @ <strong>{offer.price_per_unit}</strong>
           </p>
           <div>
             <Label htmlFor="otc-quantity">Quantity</Label>

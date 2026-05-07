@@ -16,14 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { OtcOffer, OtcBuyOnBehalfRequest } from '@/types/otc'
+import type { OtcLocalOffer, OtcBuyOnBehalfRequest } from '@/types/otc'
 import type { Account } from '@/types/account'
 import type { Client } from '@/types/client'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  offer: OtcOffer
+  offer: OtcLocalOffer
   clients: Client[]
   accountsForClient: Account[]
   onClientSelect: (clientId: number) => void
@@ -64,7 +64,7 @@ export function BuyOnBehalfOtcDialog({
         </DialogHeader>
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            Available: <strong>{offer.quantity}</strong> @ <strong>{offer.price}</strong>
+            Available: <strong>{offer.quantity}</strong> @ <strong>{offer.price_per_unit}</strong>
           </p>
           <div>
             <Label htmlFor="otc-onbehalf-client">Client</Label>

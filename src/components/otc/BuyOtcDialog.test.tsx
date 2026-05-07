@@ -4,7 +4,7 @@ import { createMockOtcOffer } from '@/__tests__/fixtures/otc-fixtures'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 
 describe('BuyOtcDialog', () => {
-  const offer = createMockOtcOffer({ ticker: 'AAPL', quantity: 5, price: '175.00' })
+  const offer = createMockOtcOffer({ ticker: 'AAPL', quantity: 5, price_per_unit: '175.00' })
   const accounts = [
     createMockAccount({ id: 1, account_name: 'Main Account', currency_code: 'USD' }),
   ]

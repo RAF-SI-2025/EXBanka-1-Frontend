@@ -1,16 +1,37 @@
-export interface OtcOffer {
+export interface OtcLocalOffer {
+  kind: 'local'
+  bank_code: string
   id: number
+  seller_id: number
+  seller_name: string
+  security_type: 'stock' | 'futures'
   ticker: string
   name: string
-  security_type: 'stock' | 'futures'
   quantity: number
-  price: string
-  seller_id: number
+  price_per_unit: string
+  created_at: string
 }
+
+export interface OtcRemoteOffer {
+  kind: 'remote'
+  bank_code: string
+  owner_id: string
+  security_type: 'stock' | 'futures'
+  ticker: string
+  quantity: number
+  price_per_unit: string
+  currency: string
+}
+
+export type OtcOffer = OtcLocalOffer | OtcRemoteOffer
 
 export interface OtcOfferListResponse {
   offers: OtcOffer[]
   total_count: number
+  peers_total: number
+  peers_reached: number
+  partial: boolean
+  last_refresh: string
 }
 
 export interface OtcBuyRequest {
@@ -27,6 +48,28 @@ export interface OtcBuyOnBehalfRequest {
 export interface OtcFilters {
   page?: number
   page_size?: number
-  security_type?: string
+  security_type?: 'stock' | 'futures'
   ticker?: string
+  kind?: 'local' | 'remote'
+  bank_code?: string
+}
+
+export interface MoneyAmount {
+  amount: string
+  currency: string
+}
+
+export interface PeerOtcNegotiationRequest {
+  seller_bank_code: string
+  seller_id: string
+  stock: { ticker: string }
+  amount: number
+  settlement_date: string
+  price_per_unit: MoneyAmount
+  premium: MoneyAmount
+}
+
+export interface PeerOtcNegotiationResponse {
+  routingNumber: number
+  id: string
 }
