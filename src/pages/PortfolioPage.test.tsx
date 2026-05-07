@@ -1,4 +1,4 @@
-import { screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PortfolioPage } from '@/pages/PortfolioPage'
 import * as portfolioApi from '@/lib/api/portfolio'
@@ -18,7 +18,7 @@ jest.mock('react-router-dom', () => ({
 beforeEach(() => {
   jest.clearAllMocks()
   jest.mocked(portfolioApi.getPortfolio).mockResolvedValue({
-    holdings: [createMockHolding({ id: 1, ticker: 'AAPL' })],
+    holdings: [createMockHolding({ id: 1, ticker: 'AAPL', quantity: 10, public_quantity: 0 })],
     total_count: 1,
   })
   jest.mocked(portfolioApi.getPortfolioSummary).mockResolvedValue(createMockPortfolioSummary())
@@ -69,5 +69,26 @@ describe('PortfolioPage', () => {
     await screen.findByText('AAPL')
     fireEvent.click(screen.getByText('AAPL'))
     expect(mockNavigate).toHaveBeenCalledWith('/portfolio/holdings/1/transactions')
+  })
+
+  it('opens MakePublicDialog with quantity input when Make Public clicked', async () => {
+    renderWithProviders(<PortfolioPage />)
+    const makePublicBtn = await screen.findByRole('button', { name: /make public/i })
+    fireEvent.click(makePublicBtn)
+    expect(await screen.findByText(/make shares public.*aapl/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/quantity to make public/i)).toBeInTheDocument()
+    expect(portfolioApi.makeHoldingPublic).not.toHaveBeenCalled()
+  })
+
+  it('submits make-public mutation with the quantity entered in the dialog', async () => {
+    renderWithProviders(<PortfolioPage />)
+    fireEvent.click(await screen.findByRole('button', { name: /make public/i }))
+    fireEvent.change(await screen.findByLabelText(/quantity to make public/i), {
+      target: { value: '7' },
+    })
+    fireEvent.click(screen.getAllByRole('button', { name: /make public/i }).at(-1)!)
+    await waitFor(() => {
+      expect(portfolioApi.makeHoldingPublic).toHaveBeenCalledWith(1, { quantity: 7 })
+    })
   })
 })

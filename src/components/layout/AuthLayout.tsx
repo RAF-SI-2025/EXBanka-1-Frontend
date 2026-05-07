@@ -7,7 +7,7 @@ export function AuthLayout() {
       className="fixed inset-0 flex items-center justify-center bg-cover bg-center"
       style={{ backgroundImage: `url(${peopleWalkingGif})` }}
     >
-      <div className="w-full max-w-md p-4">
+      <div className="w-full max-w-2xl p-4">
         <Outlet />
       </div>
     </div>

@@ -47,6 +47,11 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument()
   })
 
+  it('renders the backend selector above the login form', () => {
+    renderWithProviders(<LoginPage />, { route: '/login' })
+    expect(screen.getByLabelText(/backend/i)).toBeInTheDocument()
+  })
+
   it('dispatches login on form submit', async () => {
     const tokens = { access_token: 'at', refresh_token: 'rt' }
     const user = {

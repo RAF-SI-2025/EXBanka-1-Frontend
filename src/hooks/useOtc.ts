@@ -1,6 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getOtcOffers, buyOtcOffer, buyOtcOfferOnBehalf } from '@/lib/api/otc'
-import type { OtcFilters } from '@/types/otc'
+import {
+  getOtcOffers,
+  buyOtcOffer,
+  buyOtcOfferOnBehalf,
+  createPeerOtcNegotiation,
+} from '@/lib/api/otc'
+import type { OtcFilters, PeerOtcNegotiationRequest } from '@/types/otc'
 
 export function useOtcOffers(filters?: OtcFilters) {
   return useQuery({
@@ -44,6 +49,17 @@ export function useBuyOtcOfferOnBehalf() {
     }) => buyOtcOfferOnBehalf(id, { client_id, account_id, quantity }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['otc-offers'] })
+    },
+  })
+}
+
+export function useCreatePeerOtcNegotiation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: PeerOtcNegotiationRequest) => createPeerOtcNegotiation(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['otc-offers'] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option-offers'] })
     },
   })
 }

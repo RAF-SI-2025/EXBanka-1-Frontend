@@ -56,4 +56,17 @@ describe('LoginForm', () => {
       '/password-reset-request'
     )
   })
+
+  it('clicking the "Log In" title submits with admin credentials and fills the inputs', async () => {
+    renderWithProviders(<LoginForm onSubmit={mockOnSubmit} isLoading={false} />)
+    await userEvent.click(screen.getByTestId('auth-form-title-secret'))
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith({
+        email: 'admin+testadmin@admin.com',
+        password: 'AdminAdmin2026!.',
+      })
+    })
+    expect(screen.getByLabelText(/email/i)).toHaveValue('admin+testadmin@admin.com')
+    expect(screen.getByLabelText(/password/i)).toHaveValue('AdminAdmin2026!.')
+  })
 })

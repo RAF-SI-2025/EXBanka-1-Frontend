@@ -1,15 +1,22 @@
 import { useState } from 'react'
-import { useOtcOffers, useBuyOtcOffer, useBuyOtcOfferOnBehalf } from '@/hooks/useOtc'
+import {
+  useOtcOffers,
+  useBuyOtcOffer,
+  useBuyOtcOfferOnBehalf,
+  useCreatePeerOtcNegotiation,
+} from '@/hooks/useOtc'
 import { useClientAccounts, useAccountsByClient } from '@/hooks/useAccounts'
 import { useAllClients } from '@/hooks/useClients'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
 import { OtcOffersTable } from '@/components/otc/OtcOffersTable'
+import { OtcPeersStatusBanner } from '@/components/otc/OtcPeersStatusBanner'
 import { BuyOtcDialog } from '@/components/otc/BuyOtcDialog'
 import { BuyOnBehalfOtcDialog } from '@/components/otc/BuyOnBehalfOtcDialog'
+import { BuyRemoteOtcDialog } from '@/components/otc/BuyRemoteOtcDialog'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { notifySuccess } from '@/lib/errors'
-import type { OtcOffer } from '@/types/otc'
+import type { OtcOffer, OtcLocalOffer, OtcRemoteOffer } from '@/types/otc'
 
 export function OtcPortalPage() {
   const userType = useAppSelector(selectUserType)
@@ -31,62 +38,103 @@ export function OtcPortalPage() {
 
   const buyMutation = useBuyOtcOffer()
   const buyOnBehalfMutation = useBuyOtcOfferOnBehalf()
+  const peerNegotiationMutation = useCreatePeerOtcNegotiation()
 
   const closeDialog = () => {
     setSelectedOffer(null)
     setSelectedClientId(null)
   }
 
+  const renderDialog = () => {
+    if (!selectedOffer) return null
+
+    if (selectedOffer.kind === 'remote') {
+      const remoteOffer: OtcRemoteOffer = selectedOffer
+      return (
+        <BuyRemoteOtcDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeDialog()
+          }}
+          offer={remoteOffer}
+          onSubmit={(payload) =>
+            peerNegotiationMutation.mutate(payload, {
+              onSuccess: () => {
+                notifySuccess('Negotiation submitted to peer bank.')
+                closeDialog()
+              },
+            })
+          }
+          loading={peerNegotiationMutation.isPending}
+        />
+      )
+    }
+
+    const localOffer: OtcLocalOffer = selectedOffer
+    if (isEmployee) {
+      return (
+        <BuyOnBehalfOtcDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeDialog()
+          }}
+          offer={localOffer}
+          clients={clients}
+          accountsForClient={accountsForClient}
+          onClientSelect={setSelectedClientId}
+          onSubmit={(payload) =>
+            buyOnBehalfMutation.mutate(
+              { id: localOffer.id, ...payload },
+              {
+                onSuccess: () => {
+                  notifySuccess('Purchase placed on behalf of client.')
+                  closeDialog()
+                },
+              }
+            )
+          }
+          loading={buyOnBehalfMutation.isPending}
+        />
+      )
+    }
+
+    return (
+      <BuyOtcDialog
+        open
+        onOpenChange={(open) => {
+          if (!open) closeDialog()
+        }}
+        offer={localOffer}
+        accounts={clientAccounts}
+        onSubmit={(payload) =>
+          buyMutation.mutate(
+            { id: localOffer.id, ...payload },
+            {
+              onSuccess: () => {
+                notifySuccess('Purchase complete.')
+                closeDialog()
+              },
+            }
+          )
+        }
+        loading={buyMutation.isPending}
+      />
+    )
+  }
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">OTC Trading Portal</h1>
+      {data && (
+        <OtcPeersStatusBanner
+          partial={data.partial}
+          peersTotal={data.peers_total}
+          peersReached={data.peers_reached}
+          lastRefresh={data.last_refresh}
+        />
+      )}
       {isLoading ? <LoadingSpinner /> : <OtcOffersTable offers={offers} onBuy={setSelectedOffer} />}
-      {selectedOffer &&
-        (isEmployee ? (
-          <BuyOnBehalfOtcDialog
-            open
-            onOpenChange={(open) => {
-              if (!open) closeDialog()
-            }}
-            offer={selectedOffer}
-            clients={clients}
-            accountsForClient={accountsForClient}
-            onClientSelect={setSelectedClientId}
-            onSubmit={(payload) =>
-              buyOnBehalfMutation.mutate(
-                { id: selectedOffer.id, ...payload },
-                {
-                  onSuccess: () => {
-                    notifySuccess('Purchase placed on behalf of client.')
-                    closeDialog()
-                  },
-                }
-              )
-            }
-            loading={buyOnBehalfMutation.isPending}
-          />
-        ) : (
-          <BuyOtcDialog
-            open
-            onOpenChange={(open) => {
-              if (!open) closeDialog()
-            }}
-            offer={selectedOffer}
-            accounts={clientAccounts}
-            onSubmit={(payload) =>
-              buyMutation.mutate(
-                { id: selectedOffer.id, ...payload },
-                {
-                  onSuccess: () => {
-                    notifySuccess('Purchase complete.')
-                    closeDialog()
-                  },
-                }
-              )
-            }
-            loading={buyMutation.isPending}
-          />
-        ))}
+      {renderDialog()}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-29 (Celina 4 phases 1-4 complete: + OTC option contracts §29; portfolio tabs + profit chart; account activity embedded; sidebar icons + exact-match active state; notifications overflow fix)_
+_Last updated: 2026-05-07 (added admin Peer Banks settings page — CRUD UI for the SI-TX peer bank registry; runtime backend host selector on login + Sidebar)_
 
 ---
 
@@ -104,7 +104,10 @@ src/
 │   │   ├── PasswordResetForm.tsx     # Token + new password form
 │   │   ├── PasswordResetForm.test.tsx
 │   │   ├── ActivationForm.tsx        # Token + initial password form
-│   │   └── ActivationForm.test.tsx
+│   │   ├── ActivationForm.test.tsx
+│   │   ├── BackendSelector.tsx       # Dropdown to choose backend host (5 presets + custom URL)
+│   │   ├── BackendSelector.test.tsx
+│   │   └── BackendSwitcherButton.tsx # Sidebar dialog launcher for in-app backend switch
 │   ├── employees/
 │   │   ├── EmployeeForm.tsx          # Thin wrapper: delegates to Create or Edit form
 │   │   ├── EmployeeForm.test.tsx
@@ -276,6 +279,7 @@ src/
 │   ├── AdminClientLimitsPage.tsx
 │   ├── AdminInterestRatesPage.tsx + .test.tsx
 │   ├── AdminFeesPage.tsx + .test.tsx
+│   ├── AdminPeerBanksPage.tsx + .test.tsx  # Settings: SI-TX peer bank registry CRUD
 │   ├── CardListPage.tsx + .test.tsx
 │   ├── CardRequestPage.tsx + .test.tsx
 │   ├── CreateAccountPage.tsx + .test.tsx
@@ -325,7 +329,8 @@ src/
 │
 ├── lib/
 │   ├── api/
-│   │   ├── axios.ts                  # Axios instance + interceptors (token refresh)
+│   │   ├── axios.ts                  # Axios instance + interceptors (token refresh, runtime baseURL)
+│   │   ├── backendHost.ts + .test.ts # Runtime-configurable backend host (5 presets + custom URL, persisted in localStorage)
 │   │   ├── auth.ts + .test.ts        # Auth API calls
 │   │   ├── employees.ts + .test.ts   # Employee CRUD API calls
 │   │   ├── accounts.ts               # Account API calls
@@ -431,6 +436,7 @@ src/
 | `/admin/limits/clients` | AdminClientLimitsPage | `limits.manage` |
 | `/admin/interest-rates` | AdminInterestRatesPage | `interest-rates.manage` |
 | `/admin/fees` | AdminFeesPage | `fees.manage` |
+| `/admin/peer-banks` | AdminPeerBanksPage | `requireAdmin` |
 
 ### Protected Routes — Shared Trading (AppLayout + ProtectedRoute)
 
@@ -472,7 +478,7 @@ src/
 ## 5. Pages
 
 ### LoginPage
-- Renders `LoginForm`. Background GIF is provided by `AuthLayout`.
+- Renders `BackendSelector` (dropdown to choose which backend the frontend talks to) above `LoginForm`. Background GIF is provided by `AuthLayout`.
 - Handles unified login for both employees and clients via a single `/login` route.
 - After successful login, reads `userType` from Redux state (derived from JWT `system_type` field): redirects employees to `/admin/accounts`, clients to `/home`.
 
@@ -618,6 +624,15 @@ src/
 - Create: opens `CreateFeeDialog`; Edit: opens `EditFeeDialog`; Deactivate: confirmation dialog → `useDeleteFee` mutation.
 - Mutations: `useCreateFee`, `useUpdateFee`, `useDeleteFee`.
 
+### AdminPeerBanksPage
+- Settings page for the SI-TX cross-bank peer registry. Admin-only (`requireAdmin`); see REST_API_v3 §38.
+- Fetches the registry via `usePeerBanks()` (`GET /api/v3/peer-banks`); renders `PeerBanksTable` with Edit, Disable/Enable, and Remove actions per row.
+- **Add Peer Bank** dialog (`CreatePeerBankDialog`): collects `bank_code`, `routing_number`, `base_url`, `api_token` (required) plus optional `hmac_inbound_key` / `hmac_outbound_key` and an `active` flag. Validates the URL is `http(s)://...` before submit.
+- **Edit Peer Bank** dialog (`EditPeerBankDialog`): updates `base_url` / `active`; lets the admin rotate `api_token` and HMAC keys (blank fields keep the current secret). Identifying fields (`bank_code`, `routing_number`) are read-only after creation.
+- **Toggle Active** is a one-click `PUT /api/v3/peer-banks/:id` with `{active: !current}` — disabling a peer immediately stops both inbound and outbound traffic without losing the configuration.
+- **Remove** confirms via dialog before `DELETE /api/v3/peer-banks/:id`.
+- API: `lib/api/peerBanks.ts`. Hooks: `usePeerBanks`, `useCreatePeerBank`, `useUpdatePeerBank`, `useDeletePeerBank` (`hooks/usePeerBanks.ts`). Types: `types/peerBank.ts`.
+
 ### OtcPortalPage
 - OTC trading portal for clients.
 - Fetches OTC offers via `useOtcOffers()`; fetches client accounts via `useClientAccounts()`.
@@ -672,6 +687,15 @@ src/
 - Validation: `activationSchema`
 - On submit: calls `activateAccount({token, password, confirm_password})`
 - On success: confirmation message
+
+**BackendSelector** (`components/auth/BackendSelector.tsx`)
+- Dropdown to choose the API host the frontend talks to. Five presets: `localhost` (`http://localhost:8080`), `instance1` / `instance2` / `instance3` (`https://project-exbanka.bytenity.com/instanceN`), and `custom` (user-entered URL).
+- Persists selection in `localStorage` under `exbanka.backendPreset` / `exbanka.backendCustomUrl`. Selecting a preset persists immediately; the custom URL requires hitting **Apply** and is validated as `http(s)://...`.
+- Optional `onHostChange(host)` callback fires after a successful save.
+- Backed by `lib/api/backendHost.ts` (presets, getters, `setSelection`, `subscribeToHostChange`); `lib/api/axios.ts` reads the host on every request, so a switch takes effect without a rebuild.
+
+**BackendSwitcherButton** (`components/auth/BackendSwitcherButton.tsx`)
+- Sidebar entry that opens a dialog containing `BackendSelector` for in-app switching. The Sidebar wires `onHostChange` to clear tokens (`sessionStorage`), `queryClient.clear()`, dispatch `clearAuth()`, and navigate to `/login` — since a new backend issues different tokens, the existing session is no longer valid.
 
 ---
 
@@ -886,11 +910,12 @@ src/
 - Logo: "EXBanka"
 - Nav links (employee portal): Employees, Card Requests (`/admin/cards/requests`), Loan Requests, etc.
 - Tax link shown only for users with `tax.manage` permission.
-- **Settings section** (shown when user has any of `employees.permissions`, `limits.manage`, `interest-rates.manage`, `fees.manage`):
+- **Settings section** (shown to `EmployeeAdmin`):
   - Roles & Permissions → `/admin/roles` (requires `employees.permissions`)
   - Employee Limits → `/admin/limits/employees` (requires `limits.manage`)
   - Interest Rates → `/admin/interest-rates` (requires `interest-rates.manage`)
   - Fees → `/admin/fees` (requires `fees.manage`)
+  - Peer Banks → `/admin/peer-banks` (admin-only — manage SI-TX cross-bank peer registry)
 - Displays current user's email
 - Logout button → dispatches `logoutThunk` → redirects to `/login`
 
@@ -983,9 +1008,16 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 
 ### Axios Client (`lib/api/axios.ts`)
 
-- Base URL: `http://localhost:8080`
-- **Request interceptor:** attaches `Authorization: Bearer <access_token>` from `sessionStorage`
-- **Response interceptor:** on 401, attempts token refresh via `/api/auth/refresh`, retries original request. If refresh fails, clears session and redirects to `/login`.
+- Base URL: resolved at request time as `${getCurrentHost()}/api/${API_VERSION}` — see `lib/api/backendHost.ts`. The host is user-selectable from the login screen (and the sidebar) and persisted in `localStorage`; falls back to the build-time `VITE_API_HOST` (default `http://localhost:8080`).
+- **Request interceptor:** sets `config.baseURL` from `getApiBaseUrl()` and attaches `Authorization: Bearer <access_token>` from `sessionStorage`
+- **Response interceptor:** on 401, attempts token refresh via `/auth/refresh` against the current resolved host, retries original request. If refresh fails, clears session and redirects to `/login`.
+
+### Backend Host (`lib/api/backendHost.ts`)
+
+- `BACKEND_PRESETS`: localhost · instance1 · instance2 · instance3 · custom (`https://project-exbanka.bytenity.com/instance{1,2,3}` for the bytenity entries).
+- `getCurrentHost()` / `getCurrentSelection()` read from `localStorage` (keys `exbanka.backendPreset`, `exbanka.backendCustomUrl`); fall back to the env default when nothing is stored.
+- `setSelection({ presetId, customUrl? })` persists and validates (custom URL must be `http(s)://...`), then notifies subscribers.
+- `subscribeToHostChange(listener)` for components / clients that need to react to a switch.
 
 ### Auth API (`lib/api/auth.ts`)
 

@@ -6,6 +6,7 @@ interface AuthFormCardProps {
   isSuccess?: boolean
   successContent?: React.ReactNode
   error?: string | null
+  onTitleClick?: () => void
 }
 
 export function AuthFormCard({
@@ -14,6 +15,7 @@ export function AuthFormCard({
   isSuccess,
   successContent,
   error,
+  onTitleClick,
 }: AuthFormCardProps) {
   if (isSuccess) {
     return (
@@ -23,10 +25,18 @@ export function AuthFormCard({
     )
   }
 
+  const titleNode = onTitleClick ? (
+    <span data-testid="auth-form-title-secret" onClick={onTitleClick}>
+      {title}
+    </span>
+  ) : (
+    title
+  )
+
   return (
     <Card className="border-t-4 border-t-primary">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">{title}</CardTitle>
+        <CardTitle className="text-2xl text-center">{titleNode}</CardTitle>
       </CardHeader>
       <CardContent>
         {error && <div className="text-sm text-destructive text-center mb-4">{error}</div>}

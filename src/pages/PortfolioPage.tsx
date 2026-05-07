@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { HoldingTable } from '@/components/portfolio/HoldingTable'
+import { MakePublicDialog } from '@/components/portfolio/MakePublicDialog'
 import { PortfolioSummaryCard } from '@/components/portfolio/PortfolioSummaryCard'
 import { PortfolioProfitChart } from '@/components/portfolio/PortfolioProfitChart'
 import { PortfolioHoldingsPieChart } from '@/components/portfolio/PortfolioHoldingsPieChart'
@@ -17,7 +18,7 @@ import {
   useExerciseOption,
 } from '@/hooks/usePortfolio'
 import { useMyFundPositions } from '@/hooks/useFunds'
-import type { PortfolioFilters } from '@/types/portfolio'
+import type { Holding, PortfolioFilters } from '@/types/portfolio'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 
 const PAGE_SIZE = 10
@@ -31,6 +32,7 @@ export function PortfolioPage() {
   const [tab, setTab] = useState<'holdings' | 'funds'>(initialTab)
   const [filterValues, setFilterValues] = useState<FilterValues>({})
   const [page, setPage] = useState(1)
+  const [makePublicHolding, setMakePublicHolding] = useState<Holding | null>(null)
 
   const apiFilters: PortfolioFilters = {
     page,
@@ -79,10 +81,20 @@ export function PortfolioPage() {
 
   const handleMakePublic = useCallback(
     (id: number) => {
-      makePublicMutation.mutate({ id, payload: { quantity: 1 } })
+      const holding = data?.holdings.find((h) => h.id === id)
+      if (!holding) return
+      setMakePublicHolding(holding)
     },
-    [makePublicMutation]
+    [data]
   )
+
+  const handleMakePublicSubmit = (quantity: number) => {
+    if (!makePublicHolding) return
+    makePublicMutation.mutate(
+      { id: makePublicHolding.id, payload: { quantity } },
+      { onSuccess: () => setMakePublicHolding(null) }
+    )
+  }
 
   const handleExercise = useCallback(
     (id: number) => {
@@ -155,6 +167,18 @@ export function PortfolioPage() {
           />
         </TabsContent>
       </Tabs>
+
+      {makePublicHolding && (
+        <MakePublicDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setMakePublicHolding(null)
+          }}
+          holding={makePublicHolding}
+          onSubmit={handleMakePublicSubmit}
+          loading={makePublicMutation.isPending}
+        />
+      )}
     </div>
   )
 }

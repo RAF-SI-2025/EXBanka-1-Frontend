@@ -3,9 +3,9 @@ describe('Portfolio Page', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio?*', { fixture: 'portfolio-holdings.json' }).as(
       'getPortfolio'
     )
-    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', { fixture: 'portfolio-summary.json' }).as(
-      'getSummary'
-    )
+    cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
+      fixture: 'portfolio-summary.json',
+    }).as('getSummary')
   })
 
   it('should display portfolio summary card', () => {
@@ -68,14 +68,23 @@ describe('Portfolio Page', () => {
   it('should make a holding public', () => {
     cy.intercept('POST', '**/api/v3/me/portfolio/30/make-public', {
       statusCode: 200,
-      body: { id: 30, is_public: true, public_quantity: 1 },
+      body: { id: 30, is_public: true, public_quantity: 3 },
     }).as('makePublic')
 
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
     cy.contains('button', 'Make Public').first().click()
-    cy.wait('@makePublic')
+
+    // Dialog opens — set quantity and submit. Use {selectall} so the controlled
+    // number input replaces its current value rather than appending to it.
+    cy.get('[role="dialog"]').within(() => {
+      cy.contains(/make shares public.*aapl/i).should('be.visible')
+      cy.get('#public-quantity').type('{selectall}3').should('have.value', '3')
+      cy.contains('button', 'Make Public').click()
+    })
+
+    cy.wait('@makePublic').its('request.body').should('deep.equal', { quantity: 3 })
   })
 
   it('should navigate to holding transactions on row click', () => {
@@ -191,12 +200,24 @@ describe('Portfolio Page', () => {
       body: {
         holdings: [
           {
-            id: 30, security_type: 'stock', ticker: 'AAPL', name: 'Apple Inc.',
-            quantity: 50, public_quantity: 0, account_id: 101, last_modified: '2026-04-20T10:00:00Z',
+            id: 30,
+            security_type: 'stock',
+            ticker: 'AAPL',
+            name: 'Apple Inc.',
+            quantity: 50,
+            public_quantity: 0,
+            account_id: 101,
+            last_modified: '2026-04-20T10:00:00Z',
           },
           {
-            id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
-            quantity: 5, public_quantity: 0, account_id: 103, last_modified: '2026-04-22T08:00:00Z',
+            id: 32,
+            security_type: 'option',
+            ticker: 'AAPL240621C00170000',
+            name: 'AAPL Call 170',
+            quantity: 5,
+            public_quantity: 0,
+            account_id: 103,
+            last_modified: '2026-04-22T08:00:00Z',
           },
         ],
         total_count: 2,
@@ -217,10 +238,18 @@ describe('Portfolio Page', () => {
   it('Scenario 71 — Exercise button is shown for option holdings', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
-        holdings: [{
-          id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
-          quantity: 5, public_quantity: 0, account_id: 103, last_modified: '2026-04-22T08:00:00Z',
-        }],
+        holdings: [
+          {
+            id: 32,
+            security_type: 'option',
+            ticker: 'AAPL240621C00170000',
+            name: 'AAPL Call 170',
+            quantity: 5,
+            public_quantity: 0,
+            account_id: 103,
+            last_modified: '2026-04-22T08:00:00Z',
+          },
+        ],
         total_count: 1,
       },
     }).as('getOptionHolding')
@@ -234,10 +263,18 @@ describe('Portfolio Page', () => {
   it('Scenario 71 — Clicking Exercise calls POST /api/v3/me/portfolio/:id/exercise', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
-        holdings: [{
-          id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
-          quantity: 5, public_quantity: 0, account_id: 103, last_modified: '2026-04-22T08:00:00Z',
-        }],
+        holdings: [
+          {
+            id: 32,
+            security_type: 'option',
+            ticker: 'AAPL240621C00170000',
+            name: 'AAPL Call 170',
+            quantity: 5,
+            public_quantity: 0,
+            account_id: 103,
+            last_modified: '2026-04-22T08:00:00Z',
+          },
+        ],
         total_count: 1,
       },
     }).as('getOptionHolding')
@@ -257,10 +294,18 @@ describe('Portfolio Page', () => {
   it('Scenario 71 — Backend rejects exercise for out-of-the-money option with 400', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
-        holdings: [{
-          id: 32, security_type: 'option', ticker: 'AAPL240621C00170000', name: 'AAPL Call 170',
-          quantity: 5, public_quantity: 0, account_id: 103, last_modified: '2026-04-22T08:00:00Z',
-        }],
+        holdings: [
+          {
+            id: 32,
+            security_type: 'option',
+            ticker: 'AAPL240621C00170000',
+            name: 'AAPL Call 170',
+            quantity: 5,
+            public_quantity: 0,
+            account_id: 103,
+            last_modified: '2026-04-22T08:00:00Z',
+          },
+        ],
         total_count: 1,
       },
     }).as('getOptionHolding')
@@ -298,11 +343,18 @@ describe('Portfolio Page', () => {
   it('Scenario 73 — Newly acquired holding appears in portfolio with public_quantity=0 (private by default)', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio?*', {
       body: {
-        holdings: [{
-          id: 33, security_type: 'stock', ticker: 'MSFT', name: 'Microsoft Corp.',
-          quantity: 10, public_quantity: 0, account_id: 101,
-          last_modified: '2026-04-25T14:00:00Z',
-        }],
+        holdings: [
+          {
+            id: 33,
+            security_type: 'stock',
+            ticker: 'MSFT',
+            name: 'Microsoft Corp.',
+            quantity: 10,
+            public_quantity: 0,
+            account_id: 101,
+            last_modified: '2026-04-25T14:00:00Z',
+          },
+        ],
         total_count: 1,
       },
     }).as('getNewHolding')

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Navigate } from 'react-router-dom'
 import { LoginForm } from '@/components/auth/LoginForm'
+import { BackendSelector } from '@/components/auth/BackendSelector'
 import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { loginThunk } from '@/store/slices/authSlice'
@@ -42,5 +43,12 @@ export function LoginPage() {
     dispatch(loginThunk(data))
   }
 
-  return <LoginForm onSubmit={handleSubmit} isLoading={status === 'loading'} error={error} />
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg bg-card/95 backdrop-blur p-3 shadow-sm border">
+        <BackendSelector />
+      </div>
+      <LoginForm onSubmit={handleSubmit} isLoading={status === 'loading'} error={error} />
+    </div>
+  )
 }

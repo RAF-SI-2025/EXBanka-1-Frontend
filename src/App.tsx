@@ -53,6 +53,7 @@ import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
 import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
 import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
 import { AdminFeesPage } from '@/pages/AdminFeesPage'
+import { AdminPeerBanksPage } from '@/pages/AdminPeerBanksPage'
 import { OtcPortalPage } from '@/pages/OtcPortalPage'
 import { FundsDiscoveryPage } from '@/pages/FundsDiscoveryPage'
 import { FundDetailsPage } from '@/pages/FundDetailsPage'
@@ -426,6 +427,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin>
               <AdminFeesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/peer-banks"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminPeerBanksPage />
             </ProtectedRoute>
           }
         />

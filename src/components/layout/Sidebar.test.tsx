@@ -98,4 +98,57 @@ describe('Sidebar', () => {
       expect(document.documentElement.classList.contains('dark')).toBe(true)
     })
   })
+
+  it('shows the Peer Banks settings link for EmployeeAdmin', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeAdmin' }),
+        }),
+      },
+    })
+    expect(screen.getByRole('link', { name: /peer banks/i })).toHaveAttribute(
+      'href',
+      '/admin/peer-banks'
+    )
+  })
+
+  it('hides the Peer Banks settings link for non-admin employees', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeBasic' }),
+        }),
+      },
+    })
+    expect(screen.queryByRole('link', { name: /peer banks/i })).not.toBeInTheDocument()
+  })
+
+  it('exposes a Backend button that opens the backend selector', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<Sidebar />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await user.click(screen.getByRole('button', { name: /^backend$/i }))
+    expect(await screen.findByText(/switch backend/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^backend$/i)).toBeInTheDocument()
+  })
+
+  it('clears auth and tokens when the backend host is changed mid-session', async () => {
+    const user = userEvent.setup()
+    sessionStorage.setItem('access_token', 'at')
+    sessionStorage.setItem('refresh_token', 'rt')
+    const { store } = renderWithProviders(<Sidebar />, {
+      preloadedState: { auth: createMockAuthState() },
+    })
+    await user.click(screen.getByRole('button', { name: /^backend$/i }))
+    await user.click(await screen.findByRole('combobox'))
+    await user.click(await screen.findByRole('option', { name: /instance 2/i }))
+
+    await waitFor(() => {
+      expect(store.getState().auth.user).toBeNull()
+    })
+    expect(sessionStorage.getItem('access_token')).toBeNull()
+    expect(sessionStorage.getItem('refresh_token')).toBeNull()
+  })
 })

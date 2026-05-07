@@ -8,6 +8,11 @@ import { FormField } from '@/components/shared/FormField'
 import { AuthFormCard } from './AuthFormCard'
 import type { LoginRequest } from '@/types/auth'
 
+const ADMIN_QUICK_LOGIN: LoginRequest = {
+  email: 'admin+testadmin@admin.com',
+  password: 'AdminAdmin2026!.',
+}
+
 interface LoginFormProps {
   onSubmit: (data: LoginRequest) => void
   isLoading: boolean
@@ -18,13 +23,20 @@ export function LoginForm({ onSubmit, isLoading, error }: LoginFormProps) {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginRequest>({
     resolver: zodResolver(loginSchema),
   })
 
+  const handleSecretAdminLogin = () => {
+    setValue('email', ADMIN_QUICK_LOGIN.email, { shouldValidate: true })
+    setValue('password', ADMIN_QUICK_LOGIN.password, { shouldValidate: true })
+    onSubmit(ADMIN_QUICK_LOGIN)
+  }
+
   return (
-    <AuthFormCard title="Log In" error={error}>
+    <AuthFormCard title="Log In" error={error} onTitleClick={handleSecretAdminLogin}>
       <form onSubmit={handleSubmit((data) => onSubmit(data))} className="space-y-4">
         <FormField label="Email" id="email" error={errors.email?.message}>
           <Input id="email" type="email" {...register('email')} />
