@@ -31,6 +31,7 @@ import {
   Gauge,
   Percent,
   Banknote,
+  Network,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -267,6 +268,9 @@ function EmployeeNav({
           </NavItem>
           <NavItem to="/admin/fees" icon={Banknote}>
             Transfer Fees
+          </NavItem>
+          <NavItem to="/admin/peer-banks" icon={Network}>
+            Peer Banks
           </NavItem>
         </NavGroup>
       )}

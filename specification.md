@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-05-07 (added runtime backend host selector: dropdown on login + Sidebar switcher with five presets — localhost, project-exbanka.bytenity.com/instance{1,2,3}, custom URL — persisted in localStorage)_
+_Last updated: 2026-05-07 (added admin Peer Banks settings page — CRUD UI for the SI-TX peer bank registry; runtime backend host selector on login + Sidebar)_
 
 ---
 
@@ -279,6 +279,7 @@ src/
 │   ├── AdminClientLimitsPage.tsx
 │   ├── AdminInterestRatesPage.tsx + .test.tsx
 │   ├── AdminFeesPage.tsx + .test.tsx
+│   ├── AdminPeerBanksPage.tsx + .test.tsx  # Settings: SI-TX peer bank registry CRUD
 │   ├── CardListPage.tsx + .test.tsx
 │   ├── CardRequestPage.tsx + .test.tsx
 │   ├── CreateAccountPage.tsx + .test.tsx
@@ -435,6 +436,7 @@ src/
 | `/admin/limits/clients` | AdminClientLimitsPage | `limits.manage` |
 | `/admin/interest-rates` | AdminInterestRatesPage | `interest-rates.manage` |
 | `/admin/fees` | AdminFeesPage | `fees.manage` |
+| `/admin/peer-banks` | AdminPeerBanksPage | `requireAdmin` |
 
 ### Protected Routes — Shared Trading (AppLayout + ProtectedRoute)
 
@@ -621,6 +623,15 @@ src/
 - Fetches fees via `useFees()`; renders `FeesTable` with Create, Edit, Deactivate actions.
 - Create: opens `CreateFeeDialog`; Edit: opens `EditFeeDialog`; Deactivate: confirmation dialog → `useDeleteFee` mutation.
 - Mutations: `useCreateFee`, `useUpdateFee`, `useDeleteFee`.
+
+### AdminPeerBanksPage
+- Settings page for the SI-TX cross-bank peer registry. Admin-only (`requireAdmin`); see REST_API_v3 §38.
+- Fetches the registry via `usePeerBanks()` (`GET /api/v3/peer-banks`); renders `PeerBanksTable` with Edit, Disable/Enable, and Remove actions per row.
+- **Add Peer Bank** dialog (`CreatePeerBankDialog`): collects `bank_code`, `routing_number`, `base_url`, `api_token` (required) plus optional `hmac_inbound_key` / `hmac_outbound_key` and an `active` flag. Validates the URL is `http(s)://...` before submit.
+- **Edit Peer Bank** dialog (`EditPeerBankDialog`): updates `base_url` / `active`; lets the admin rotate `api_token` and HMAC keys (blank fields keep the current secret). Identifying fields (`bank_code`, `routing_number`) are read-only after creation.
+- **Toggle Active** is a one-click `PUT /api/v3/peer-banks/:id` with `{active: !current}` — disabling a peer immediately stops both inbound and outbound traffic without losing the configuration.
+- **Remove** confirms via dialog before `DELETE /api/v3/peer-banks/:id`.
+- API: `lib/api/peerBanks.ts`. Hooks: `usePeerBanks`, `useCreatePeerBank`, `useUpdatePeerBank`, `useDeletePeerBank` (`hooks/usePeerBanks.ts`). Types: `types/peerBank.ts`.
 
 ### OtcPortalPage
 - OTC trading portal for clients.
@@ -899,11 +910,12 @@ src/
 - Logo: "EXBanka"
 - Nav links (employee portal): Employees, Card Requests (`/admin/cards/requests`), Loan Requests, etc.
 - Tax link shown only for users with `tax.manage` permission.
-- **Settings section** (shown when user has any of `employees.permissions`, `limits.manage`, `interest-rates.manage`, `fees.manage`):
+- **Settings section** (shown to `EmployeeAdmin`):
   - Roles & Permissions → `/admin/roles` (requires `employees.permissions`)
   - Employee Limits → `/admin/limits/employees` (requires `limits.manage`)
   - Interest Rates → `/admin/interest-rates` (requires `interest-rates.manage`)
   - Fees → `/admin/fees` (requires `fees.manage`)
+  - Peer Banks → `/admin/peer-banks` (admin-only — manage SI-TX cross-bank peer registry)
 - Displays current user's email
 - Logout button → dispatches `logoutThunk` → redirects to `/login`
 

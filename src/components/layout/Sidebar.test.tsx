@@ -99,6 +99,31 @@ describe('Sidebar', () => {
     })
   })
 
+  it('shows the Peer Banks settings link for EmployeeAdmin', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeAdmin' }),
+        }),
+      },
+    })
+    expect(screen.getByRole('link', { name: /peer banks/i })).toHaveAttribute(
+      'href',
+      '/admin/peer-banks'
+    )
+  })
+
+  it('hides the Peer Banks settings link for non-admin employees', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeBasic' }),
+        }),
+      },
+    })
+    expect(screen.queryByRole('link', { name: /peer banks/i })).not.toBeInTheDocument()
+  })
+
   it('exposes a Backend button that opens the backend selector', async () => {
     const user = userEvent.setup()
     renderWithProviders(<Sidebar />, {
