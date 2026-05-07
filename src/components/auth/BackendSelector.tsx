@@ -67,7 +67,10 @@ export function BackendSelector({ onHostChange, className }: BackendSelectorProp
             {(value: string) => BACKEND_PRESETS.find((p) => p.id === value)?.label ?? value}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent
+          alignItemWithTrigger={false}
+          className="w-auto max-w-[min(95vw,40rem)] min-w-[min(95vw,32rem)] overflow-x-visible"
+        >
           {BACKEND_PRESETS.map((preset) => (
             <SelectItem key={preset.id} value={preset.id}>
               {preset.label}

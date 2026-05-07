@@ -38,7 +38,7 @@ export function BackendSwitcherButton({ onHostChange }: BackendSwitcherButtonPro
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Switch backend</DialogTitle>
             <DialogDescription>
