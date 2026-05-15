@@ -9,6 +9,27 @@ jest.mock('@/lib/api/auth')
 beforeEach(() => jest.clearAllMocks())
 
 describe('PasswordResetPage', () => {
+  it('reads token from URL path parameter', async () => {
+    jest.mocked(authApi.resetPassword).mockResolvedValue(undefined)
+
+    renderWithProviders(<PasswordResetPage />, {
+      route: '/password-reset/my-path-token',
+      routePath: '/password-reset/:token',
+    })
+
+    await userEvent.type(screen.getByLabelText(/new password/i), 'Password12')
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'Password12')
+    await userEvent.click(screen.getByRole('button', { name: /reset password/i }))
+
+    await waitFor(() => {
+      expect(authApi.resetPassword).toHaveBeenCalledWith({
+        token: 'my-path-token',
+        new_password: 'Password12',
+        confirm_password: 'Password12',
+      })
+    })
+  })
+
   it('calls resetPassword API with token from URL', async () => {
     jest.mocked(authApi.resetPassword).mockResolvedValue(undefined)
 
