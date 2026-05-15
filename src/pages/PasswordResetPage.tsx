@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useParams } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { PasswordResetForm } from '@/components/auth/PasswordResetForm'
 import { resetPassword } from '@/lib/api/auth'
@@ -6,7 +6,8 @@ import type { PasswordResetPayload } from '@/types/auth'
 
 export function PasswordResetPage() {
   const [searchParams] = useSearchParams()
-  const token = searchParams.get('token') ?? ''
+  const { token: pathToken } = useParams<{ token?: string }>()
+  const token = searchParams.get('token') ?? pathToken ?? ''
 
   const mutation = useMutation({
     mutationFn: (data: { new_password: string; confirm_password: string }) =>
