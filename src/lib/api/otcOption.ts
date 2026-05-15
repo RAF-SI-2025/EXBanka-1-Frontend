@@ -7,6 +7,7 @@ import type {
   ExerciseContractPayload,
   OtcOfferDetailResponse,
   MyOffersFilters,
+  AllOffersFilters,
   MyOtcOffersResponse,
   MyContractsFilters,
   MyOtcContractsResponse,
@@ -52,6 +53,15 @@ export async function getMyOtcOptionOffers(
   filters: MyOffersFilters = {}
 ): Promise<MyOtcOffersResponse> {
   const { data } = await apiClient.get<MyOtcOffersResponse>('/me/otc/offers', {
+    params: filters,
+  })
+  return { ...data, offers: data.offers ?? [] }
+}
+
+export async function getAllOtcOptionOffers(
+  filters: AllOffersFilters = {}
+): Promise<MyOtcOffersResponse> {
+  const { data } = await apiClient.get<MyOtcOffersResponse>('/otc/offers', {
     params: filters,
   })
   return { ...data, offers: data.offers ?? [] }

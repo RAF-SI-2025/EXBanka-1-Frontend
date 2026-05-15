@@ -80,6 +80,11 @@ export interface MyOffersFilters {
   page_size?: number
 }
 
+export interface AllOffersFilters {
+  page?: number
+  page_size?: number
+}
+
 export interface MyContractsFilters {
   role?: 'buyer' | 'seller' | 'either'
   page?: number

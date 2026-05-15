@@ -6,6 +6,7 @@ import {
   rejectOtcOptionOffer,
   getOtcOptionOffer,
   getMyOtcOptionOffers,
+  getAllOtcOptionOffers,
   getOtcOptionContract,
   getMyOtcOptionContracts,
   exerciseOtcOptionContract,
@@ -129,6 +130,28 @@ describe('getMyOtcOptionOffers', () => {
     expect(mockGet).toHaveBeenCalledWith('/me/otc/offers', {
       params: { role: 'initiator' },
     })
+  })
+})
+
+describe('getAllOtcOptionOffers', () => {
+  it('GET /otc/offers (no role filter, returns every offer)', async () => {
+    mockGet.mockResolvedValue({ data: { offers: [createMockOtcOptionOffer()], total: 1 } })
+    await getAllOtcOptionOffers()
+    expect(mockGet).toHaveBeenCalledWith('/otc/offers', { params: {} })
+  })
+
+  it('forwards pagination filters', async () => {
+    mockGet.mockResolvedValue({ data: { offers: [], total: 0 } })
+    await getAllOtcOptionOffers({ page: 2, page_size: 50 })
+    expect(mockGet).toHaveBeenCalledWith('/otc/offers', {
+      params: { page: 2, page_size: 50 },
+    })
+  })
+
+  it('defaults offers[] to []', async () => {
+    mockGet.mockResolvedValue({ data: { offers: null, total: 0 } })
+    const result = await getAllOtcOptionOffers()
+    expect(result.offers).toEqual([])
   })
 })
 

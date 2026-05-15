@@ -2,19 +2,13 @@ import { screen, fireEvent } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { OtcOffersPage } from '@/pages/OtcOffersPage'
 import * as useOtcOptionsHook from '@/hooks/useOtcOptions'
-import * as useOtcHook from '@/hooks/useOtc'
 import * as useAccountsHook from '@/hooks/useAccounts'
 import * as usePortfolioHook from '@/hooks/usePortfolio'
 import { createMockOtcOptionOffer } from '@/__tests__/fixtures/otcOption-fixtures'
-import {
-  createMockOtcOffer,
-  createMockOtcOfferListResponse,
-} from '@/__tests__/fixtures/otc-fixtures'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
 jest.mock('@/hooks/useOtcOptions')
-jest.mock('@/hooks/useOtc')
 jest.mock('@/hooks/useAccounts')
 jest.mock('@/hooks/usePortfolio')
 
@@ -30,6 +24,8 @@ const bankAccount = createMockAccount({
   account_name: 'EX Banka RSD',
   account_type: 'bank',
 })
+const allOffer = createMockOtcOptionOffer({ id: 1001 })
+const meOffer = createMockOtcOptionOffer({ id: 2002 })
 
 function clientAuth() {
   return {
@@ -52,19 +48,17 @@ function employeeAuth() {
 beforeEach(() => {
   jest.clearAllMocks()
   mockNavigate.mockClear()
+  jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
+    data: { offers: [allOffer], total: 1 },
+    isLoading: false,
+  } as any)
   jest.mocked(useOtcOptionsHook.useMyOtcOptionOffers).mockReturnValue({
-    data: { offers: [createMockOtcOptionOffer()], total: 1 },
+    data: { offers: [meOffer], total: 1 },
     isLoading: false,
   } as any)
   jest.mocked(useOtcOptionsHook.useCreateOtcOptionOffer).mockReturnValue({
     mutate: jest.fn(),
     isPending: false,
-  } as any)
-  jest.mocked(useOtcHook.useOtcOffers).mockReturnValue({
-    data: createMockOtcOfferListResponse({
-      offers: [createMockOtcOffer({ id: 77, ticker: 'NVDA' })],
-    }),
-    isLoading: false,
   } as any)
   jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
     data: { accounts: [clientAccount], total: 1 },
@@ -78,55 +72,59 @@ beforeEach(() => {
 })
 
 describe('OtcOffersPage', () => {
-  describe('account dropdown source (Fix #1)', () => {
-    it('passes client accounts to the create dialog for client users', () => {
-      jest.mocked(useAccountsHook.useBankAccounts).mockClear()
+  describe('tabs', () => {
+    it('shows only two tabs: All and Me', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
-      fireEvent.click(screen.getByRole('button', { name: /new offer/i }))
-      expect(useAccountsHook.useClientAccounts).toHaveBeenCalled()
+      expect(screen.getByRole('tab', { name: /^all$/i })).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /^me$/i })).toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: /as initiator/i })).not.toBeInTheDocument()
+      expect(screen.queryByRole('tab', { name: /as counterparty/i })).not.toBeInTheDocument()
     })
 
-    it('passes bank accounts to the create dialog for employee users', () => {
-      renderWithProviders(<OtcOffersPage />, { preloadedState: employeeAuth() })
-      fireEvent.click(screen.getByRole('button', { name: /new offer/i }))
-      expect(useAccountsHook.useBankAccounts).toHaveBeenCalled()
-    })
-
-    it('does not fetch the unused account list for the current role', () => {
+    it('defaults to the All tab', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
-      const bankCall = jest.mocked(useAccountsHook.useBankAccounts).mock.results
-      const allDisabled = bankCall.every(
-        (r) => r.value && (r.value as any).data === undefined && (r.value as any).isLoading !== true
-      )
-      // Either the hook isn't called or it's called with enabled:false (no data)
-      expect(useAccountsHook.useClientAccounts).toHaveBeenCalled()
-      void allDisabled
+      expect(screen.getByRole('tab', { name: /^all$/i })).toHaveAttribute('aria-selected', 'true')
     })
   })
 
-  describe('"All" tab combined listing (Fix #2)', () => {
-    it('calls both /me/otc/offers and /otc/offers when "All" tab is active', () => {
+  describe('All tab → /otc/offers', () => {
+    it('calls useAllOtcOptionOffers when on the All tab', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+      expect(useOtcOptionsHook.useAllOtcOptionOffers).toHaveBeenCalled()
+    })
+
+    it('renders option offers from the All endpoint by default', () => {
+      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+      expect(screen.getByText(`#${allOffer.stock_id}`)).toBeInTheDocument()
+    })
+  })
+
+  describe('Me tab → /me/otc/offers', () => {
+    it('switches to the Me-only listing when the Me tab is clicked', () => {
+      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+      fireEvent.click(screen.getByRole('tab', { name: /^me$/i }))
       expect(useOtcOptionsHook.useMyOtcOptionOffers).toHaveBeenCalled()
-      expect(useOtcHook.useOtcOffers).toHaveBeenCalled()
     })
+  })
 
-    it('renders the public market section with offers from /otc/offers on the "All" tab', () => {
+  describe('public market section (removed)', () => {
+    it('does not render a Public market section', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
-      expect(screen.getByText(/public market/i)).toBeInTheDocument()
-      expect(screen.getByText('NVDA')).toBeInTheDocument()
-    })
-
-    it('hides the public market section when switching to "As initiator" tab', () => {
-      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
-      fireEvent.click(screen.getByRole('tab', { name: /as initiator/i }))
       expect(screen.queryByText(/public market/i)).not.toBeInTheDocument()
     })
+  })
 
-    it('hides the public market section when switching to "As counterparty" tab', () => {
+  describe('account dropdown source for create dialog', () => {
+    it('uses client accounts for client users', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
-      fireEvent.click(screen.getByRole('tab', { name: /as counterparty/i }))
-      expect(screen.queryByText(/public market/i)).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /new offer/i }))
+      expect(useAccountsHook.useClientAccounts).toHaveBeenCalled()
+    })
+
+    it('uses bank accounts for employee users', () => {
+      renderWithProviders(<OtcOffersPage />, { preloadedState: employeeAuth() })
+      fireEvent.click(screen.getByRole('button', { name: /new offer/i }))
+      expect(useAccountsHook.useBankAccounts).toHaveBeenCalled()
     })
   })
 })

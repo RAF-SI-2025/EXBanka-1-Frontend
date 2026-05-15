@@ -6,6 +6,7 @@ import {
   rejectOtcOptionOffer,
   getOtcOptionOffer,
   getMyOtcOptionOffers,
+  getAllOtcOptionOffers,
   getOtcOptionContract,
   getMyOtcOptionContracts,
   exerciseOtcOptionContract,
@@ -16,6 +17,7 @@ import type {
   AcceptOtcOfferPayload,
   ExerciseContractPayload,
   MyOffersFilters,
+  AllOffersFilters,
   MyContractsFilters,
 } from '@/types/otcOption'
 
@@ -27,10 +29,25 @@ export function useOtcOptionOffer(id: number | null) {
   })
 }
 
-export function useMyOtcOptionOffers(filters: MyOffersFilters = {}) {
+export function useMyOtcOptionOffers(
+  filters: MyOffersFilters = {},
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ['otc-option', 'me-offers', filters],
     queryFn: () => getMyOtcOptionOffers(filters),
+    enabled: options?.enabled ?? true,
+  })
+}
+
+export function useAllOtcOptionOffers(
+  filters: AllOffersFilters = {},
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['otc-option', 'all-offers', filters],
+    queryFn: () => getAllOtcOptionOffers(filters),
+    enabled: options?.enabled ?? true,
   })
 }
 
