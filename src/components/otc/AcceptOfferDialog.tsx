@@ -27,10 +27,9 @@ interface Props {
 }
 
 export function AcceptOfferDialog({ open, onOpenChange, accounts, onSubmit, loading }: Props) {
-  const [buyerId, setBuyerId] = useState<number | undefined>(undefined)
-  const [sellerId, setSellerId] = useState<number | undefined>(undefined)
+  const [accountId, setAccountId] = useState<number | undefined>(undefined)
 
-  const isValid = buyerId !== undefined && sellerId !== undefined
+  const isValid = accountId !== undefined
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -40,34 +39,16 @@ export function AcceptOfferDialog({ open, onOpenChange, accounts, onSubmit, load
         </DialogHeader>
         <div className="space-y-3 py-2">
           <p className="text-sm text-muted-foreground">
-            On accept, the premium is moved from the buyer to the seller and an option contract is
-            created.
+            On accept, the premium is moved between the parties and an option contract is created.
+            The counterparty's account was bound when the offer was opened.
           </p>
           <div>
-            <Label htmlFor="accept-buyer">Buyer account</Label>
+            <Label htmlFor="accept-account">Your account</Label>
             <Select
-              value={buyerId?.toString() ?? ''}
-              onValueChange={(v) => v && setBuyerId(Number(v))}
+              value={accountId?.toString() ?? ''}
+              onValueChange={(v) => v && setAccountId(Number(v))}
             >
-              <SelectTrigger id="accept-buyer" aria-label="Buyer account">
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.account_name} ({a.currency_code})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="accept-seller">Seller account</Label>
-            <Select
-              value={sellerId?.toString() ?? ''}
-              onValueChange={(v) => v && setSellerId(Number(v))}
-            >
-              <SelectTrigger id="accept-seller" aria-label="Seller account">
+              <SelectTrigger id="accept-account" aria-label="Your account">
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
               <SelectContent>
@@ -86,7 +67,7 @@ export function AcceptOfferDialog({ open, onOpenChange, accounts, onSubmit, load
           </Button>
           <Button
             onClick={() => {
-              if (isValid) onSubmit({ buyer_account_id: buyerId!, seller_account_id: sellerId! })
+              if (isValid) onSubmit({ account_id: accountId! })
             }}
             disabled={!isValid || loading}
           >

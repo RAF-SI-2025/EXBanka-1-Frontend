@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useMyOtcOptionOffers, useCreateOtcOptionOffer } from '@/hooks/useOtcOptions'
+import { useClientAccounts } from '@/hooks/useAccounts'
+import { usePortfolio } from '@/hooks/usePortfolio'
 import { OtcOptionOffersTable } from '@/components/otc/OtcOptionOffersTable'
 import { CreateOptionOfferDialog } from '@/components/otc/CreateOptionOfferDialog'
 import { notifySuccess } from '@/lib/errors'
@@ -14,6 +16,10 @@ export function OtcOffersPage() {
 
   const { data, isLoading } = useMyOtcOptionOffers({ role })
   const offers = data?.offers ?? []
+  const { data: portfolioData } = usePortfolio()
+  const holdings = portfolioData?.holdings ?? []
+  const { data: accountsData } = useClientAccounts()
+  const accounts = accountsData?.accounts ?? []
   const createMutation = useCreateOtcOptionOffer()
 
   return (
@@ -46,6 +52,8 @@ export function OtcOffersPage() {
         <CreateOptionOfferDialog
           open
           onOpenChange={setCreateOpen}
+          holdings={holdings}
+          accounts={accounts}
           loading={createMutation.isPending}
           onSubmit={(payload) =>
             createMutation.mutate(payload, {

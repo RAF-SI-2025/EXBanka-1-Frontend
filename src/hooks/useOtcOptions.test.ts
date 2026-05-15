@@ -62,10 +62,11 @@ describe('useCreateOtcOptionOffer', () => {
     await act(async () => {
       await result.current.mutateAsync({
         direction: 'sell_initiated',
-        stock_id: 42,
+        ticker: 'AAPL',
         quantity: '100',
         strike_price: '5000.00',
         settlement_date: '2026-06-05',
+        account_id: 4242,
       })
     })
     expect(otcOptionApi.createOtcOptionOffer).toHaveBeenCalled()
@@ -99,11 +100,10 @@ describe('useAcceptOtcOptionOffer', () => {
       wrapper: createQueryWrapper(),
     })
     await act(async () => {
-      await result.current.mutateAsync({ buyer_account_id: 5, seller_account_id: 9 })
+      await result.current.mutateAsync({ account_id: 5 })
     })
     expect(otcOptionApi.acceptOtcOptionOffer).toHaveBeenCalledWith(1001, {
-      buyer_account_id: 5,
-      seller_account_id: 9,
+      account_id: 5,
     })
   })
 })
@@ -162,11 +162,8 @@ describe('useExerciseOtcOptionContract', () => {
       wrapper: createQueryWrapper(),
     })
     await act(async () => {
-      await result.current.mutateAsync({ buyer_account_id: 5, seller_account_id: 9 })
+      await result.current.mutateAsync({})
     })
-    expect(otcOptionApi.exerciseOtcOptionContract).toHaveBeenCalledWith(5001, {
-      buyer_account_id: 5,
-      seller_account_id: 9,
-    })
+    expect(otcOptionApi.exerciseOtcOptionContract).toHaveBeenCalledWith(5001, {})
   })
 })

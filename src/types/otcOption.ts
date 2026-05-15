@@ -46,13 +46,15 @@ export interface OptionContract {
 
 export interface CreateOtcOfferPayload {
   direction: OtcOfferDirection
-  stock_id: number
+  ticker: string
   quantity: string
   strike_price: string
   premium?: string
   settlement_date: string
+  account_id: number
   counterparty_user_id?: number
   counterparty_system_type?: 'client' | 'employee'
+  on_behalf_of_client_id?: number
 }
 
 export interface CounterOtcOfferPayload {
@@ -60,16 +62,16 @@ export interface CounterOtcOfferPayload {
   strike_price?: string
   premium?: string
   settlement_date?: string
+  on_behalf_of_client_id?: number
 }
 
 export interface AcceptOtcOfferPayload {
-  buyer_account_id: number
-  seller_account_id: number
+  account_id: number
+  on_behalf_of_client_id?: number
 }
 
 export interface ExerciseContractPayload {
-  buyer_account_id: number
-  seller_account_id: number
+  on_behalf_of_client_id?: number
 }
 
 export interface MyOffersFilters {

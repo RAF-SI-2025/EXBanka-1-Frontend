@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useOtcOptionContract, useExerciseOtcOptionContract } from '@/hooks/useOtcOptions'
-import { useClientAccounts } from '@/hooks/useAccounts'
 import { OtcOptionStatusBadge } from '@/components/otc/OtcOptionStatusBadge'
 import { ExerciseContractDialog } from '@/components/otc/ExerciseContractDialog'
 import { ErrorFallback } from '@/components/shared/ErrorFallback'
@@ -16,8 +15,6 @@ export function OtcContractDetailPage() {
   const navigate = useNavigate()
 
   const { data, isLoading, isError } = useOtcOptionContract(contractId)
-  const { data: accountsData } = useClientAccounts()
-  const accounts = accountsData?.accounts ?? []
 
   const exerciseMutation = useExerciseOtcOptionContract(contractId)
   const [exerciseOpen, setExerciseOpen] = useState(false)
@@ -62,7 +59,6 @@ export function OtcContractDetailPage() {
           open
           onOpenChange={setExerciseOpen}
           contract={contract}
-          accounts={accounts}
           loading={exerciseMutation.isPending}
           onSubmit={(payload) =>
             exerciseMutation.mutate(payload, {

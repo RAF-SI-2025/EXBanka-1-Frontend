@@ -26,19 +26,42 @@ const mockPost = jest.mocked(apiClient.post)
 beforeEach(() => jest.clearAllMocks())
 
 describe('createOtcOptionOffer', () => {
-  it('POST /otc/offers', async () => {
+  it('POST /otc/offers with ticker + account_id (no stock_id in request)', async () => {
     mockPost.mockResolvedValue({ data: { offer: createMockOtcOptionOffer() } })
     await createOtcOptionOffer({
       direction: 'sell_initiated',
-      stock_id: 42,
+      ticker: 'AAPL',
       quantity: '100',
       strike_price: '5000.00',
       premium: '50000.00',
       settlement_date: '2026-06-05',
+      account_id: 4242,
+    })
+    expect(mockPost).toHaveBeenCalledWith('/otc/offers', {
+      direction: 'sell_initiated',
+      ticker: 'AAPL',
+      quantity: '100',
+      strike_price: '5000.00',
+      premium: '50000.00',
+      settlement_date: '2026-06-05',
+      account_id: 4242,
+    })
+  })
+
+  it('forwards on_behalf_of_client_id when supplied (employee acting for client)', async () => {
+    mockPost.mockResolvedValue({ data: { offer: createMockOtcOptionOffer() } })
+    await createOtcOptionOffer({
+      direction: 'buy_initiated',
+      ticker: 'TSLA',
+      quantity: '10',
+      strike_price: '200.00',
+      settlement_date: '2026-07-01',
+      account_id: 99,
+      on_behalf_of_client_id: 7,
     })
     expect(mockPost).toHaveBeenCalledWith(
       '/otc/offers',
-      expect.objectContaining({ direction: 'sell_initiated' })
+      expect.objectContaining({ ticker: 'TSLA', on_behalf_of_client_id: 7 })
     )
   })
 })
@@ -52,14 +75,22 @@ describe('counterOtcOptionOffer', () => {
 })
 
 describe('acceptOtcOptionOffer', () => {
-  it('POST /otc/offers/:id/accept', async () => {
+  it('POST /otc/offers/:id/accept with acceptor account_id only', async () => {
     mockPost.mockResolvedValue({
       data: { offer: createMockOtcOptionOffer(), contract: createMockOptionContract() },
     })
-    await acceptOtcOptionOffer(1001, { buyer_account_id: 5, seller_account_id: 9 })
+    await acceptOtcOptionOffer(1001, { account_id: 5 })
+    expect(mockPost).toHaveBeenCalledWith('/otc/offers/1001/accept', { account_id: 5 })
+  })
+
+  it('forwards on_behalf_of_client_id when supplied', async () => {
+    mockPost.mockResolvedValue({
+      data: { offer: createMockOtcOptionOffer(), contract: createMockOptionContract() },
+    })
+    await acceptOtcOptionOffer(1001, { account_id: 5, on_behalf_of_client_id: 7 })
     expect(mockPost).toHaveBeenCalledWith('/otc/offers/1001/accept', {
-      buyer_account_id: 5,
-      seller_account_id: 9,
+      account_id: 5,
+      on_behalf_of_client_id: 7,
     })
   })
 })
@@ -118,7 +149,7 @@ describe('getMyOtcOptionContracts', () => {
 })
 
 describe('exerciseOtcOptionContract', () => {
-  it('POST /otc/contracts/:id/exercise', async () => {
+  it('POST /otc/contracts/:id/exercise with empty body (accounts read from contract)', async () => {
     mockPost.mockResolvedValue({
       data: {
         contract: createMockOptionContract({ status: 'EXERCISED' }),
@@ -130,10 +161,25 @@ describe('exerciseOtcOptionContract', () => {
         },
       },
     })
-    await exerciseOtcOptionContract(5001, { buyer_account_id: 5, seller_account_id: 9 })
+    await exerciseOtcOptionContract(5001, {})
+    expect(mockPost).toHaveBeenCalledWith('/otc/contracts/5001/exercise', {})
+  })
+
+  it('forwards on_behalf_of_client_id when supplied', async () => {
+    mockPost.mockResolvedValue({
+      data: {
+        contract: createMockOptionContract({ status: 'EXERCISED' }),
+        holding: {
+          id: 9001,
+          stock_id: 42,
+          quantity: '100',
+          owner: { owner_type: 'client', owner_id: 7 },
+        },
+      },
+    })
+    await exerciseOtcOptionContract(5001, { on_behalf_of_client_id: 7 })
     expect(mockPost).toHaveBeenCalledWith('/otc/contracts/5001/exercise', {
-      buyer_account_id: 5,
-      seller_account_id: 9,
+      on_behalf_of_client_id: 7,
     })
   })
 })
