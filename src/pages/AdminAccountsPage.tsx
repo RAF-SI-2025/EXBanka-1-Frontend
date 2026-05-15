@@ -73,7 +73,7 @@ export function AdminAccountsPage() {
           onViewActivity={(id) => {
             const account = accounts.find((a) => a.id === id)
             navigate(
-              account?.is_bank_account
+              account?.account_type === 'bank'
                 ? `/admin/bank-accounts/${id}/activity`
                 : `/accounts/${id}/activity`
             )

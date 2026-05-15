@@ -165,8 +165,8 @@ describe('AdminAccountsPage', () => {
     const bankAccount = createMockAccount({
       id: 99,
       account_number: '999000900000000099',
-      owner_name: 'EXBanka',
-      is_bank_account: true,
+      owner_name: 'EX Banka',
+      account_type: 'bank',
     })
     jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
       data: { accounts: [bankAccount], total: 1 },
@@ -181,7 +181,7 @@ describe('AdminAccountsPage', () => {
     const clientAccount = createMockAccount({
       id: 100,
       account_number: '111000100000000100',
-      is_bank_account: false,
+      account_type: 'standard',
     })
     jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
       data: { accounts: [clientAccount], total: 1 },
