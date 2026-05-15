@@ -77,3 +77,13 @@ export async function getAccountActivity(
   })
   return { ...data, entries: data.entries ?? [] }
 }
+
+export async function getBankAccountActivity(
+  id: number,
+  filters: AccountActivityFilters = {}
+): Promise<AccountActivityResponse> {
+  const { data } = await apiClient.get<AccountActivityResponse>(`/bank-accounts/${id}/activity`, {
+    params: filters,
+  })
+  return { ...data, entries: data.entries ?? [] }
+}

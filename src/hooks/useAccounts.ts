@@ -10,6 +10,7 @@ import {
   getAccountsByClient,
   getBankAccounts,
   getAccountActivity,
+  getBankAccountActivity,
 } from '@/lib/api/accounts'
 import type {
   AccountFilters,
@@ -108,6 +109,14 @@ export function useAccountActivity(id: number, filters: AccountActivityFilters =
   return useQuery({
     queryKey: ['accountActivity', id, filters],
     queryFn: () => getAccountActivity(id, filters),
+    enabled: id > 0,
+  })
+}
+
+export function useBankAccountActivity(id: number, filters: AccountActivityFilters = {}) {
+  return useQuery({
+    queryKey: ['bankAccountActivity', id, filters],
+    queryFn: () => getBankAccountActivity(id, filters),
     enabled: id > 0,
   })
 }

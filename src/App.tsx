@@ -64,6 +64,7 @@ import { OtcOffersPage } from '@/pages/OtcOffersPage'
 import { OtcOfferDetailPage } from '@/pages/OtcOfferDetailPage'
 import { OtcContractsPage } from '@/pages/OtcContractsPage'
 import { OtcContractDetailPage } from '@/pages/OtcContractDetailPage'
+import { BankAccountActivityPage } from '@/pages/BankAccountActivityPage'
 
 export default function App() {
   return (
@@ -131,6 +132,14 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="Employee">
               <AdminAccountCardsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/bank-accounts/:id/activity"
+          element={
+            <ProtectedRoute requiredPermission="bank-accounts.manage">
+              <BankAccountActivityPage />
             </ProtectedRoute>
           }
         />
