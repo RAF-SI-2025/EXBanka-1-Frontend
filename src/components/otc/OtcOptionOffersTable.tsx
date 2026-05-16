@@ -42,7 +42,7 @@ export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
       <TableBody>
         {offers.map((o) => {
           const isOwner =
-            currentUserId !== undefined && o.initiator.owner_id === currentUserId
+            currentUserId !== undefined && o.initiator?.owner_id === currentUserId
           return (
             <TableRow key={o.id} className="cursor-pointer">
               <TableCell>

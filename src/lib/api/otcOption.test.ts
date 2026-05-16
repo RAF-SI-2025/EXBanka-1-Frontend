@@ -149,6 +149,29 @@ describe('getAllOtcOptionOffers', () => {
     const result = await getAllOtcOptionOffers()
     expect(result.offers[0]?.quantity).toBe('10')
   })
+
+  it('parses "client-7" style seller_id into an initiator party', async () => {
+    // /otc/options discovery returns `seller_id` as a string like "client-7"
+    // and no `initiator` object. The Action column needs initiator.owner_id
+    // to gate the Bid button, so synthesise it here.
+    mockGet.mockResolvedValue({
+      data: {
+        offers: [{ offer_id: '42', ticker: 'AAPL', amount: 50, seller_id: 'client-7' }],
+        total_count: 1,
+      },
+    })
+    const result = await getAllOtcOptionOffers()
+    expect(result.offers[0]?.initiator).toEqual({ owner_type: 'client', owner_id: 7 })
+  })
+
+  it('always synthesises an initiator (never undefined) so consumers can rely on it', async () => {
+    mockGet.mockResolvedValue({
+      data: { offers: [{ offer_id: '42', ticker: 'AAPL', amount: 50 }], total_count: 1 },
+    })
+    const result = await getAllOtcOptionOffers()
+    expect(result.offers[0]?.initiator).toBeDefined()
+    expect(result.offers[0]?.initiator.owner_id).toBeNull()
+  })
 })
 
 // -- Negotiation chains -----------------------------------------------------

@@ -37,14 +37,36 @@ export async function getOtcOptionOffer(id: number): Promise<OtcOfferDetailRespo
 /**
  * The two listing endpoints disagree on field names:
  *
- *   /me/otc/options    → { id, status, stock_id, quantity, ... }
- *   /otc/options       → { offer_id, ticker, amount, ... }  (no status)
+ *   /me/otc/options    → { id, status, stock_id, quantity, initiator, ... }
+ *   /otc/options       → { offer_id, ticker, amount, seller_id, ... }
+ *     • no `status` (open-only view)
+ *     • no `initiator` object — instead a `seller_id` string like "client-7"
  *
  * The UI renders both through one `OtcOptionOffersTable`, so we normalize
- * both responses into the same `OtcOffer` shape: numeric `id`, string
- * `quantity`, default `status: 'open'` when absent. Each raw row is passed
+ * both responses into the same `OtcOffer` shape. Each raw row passes
  * through unchanged otherwise.
  */
+function parseSellerId(
+  raw: unknown
+): import('@/types/otcOption').OtcParty | undefined {
+  if (raw == null) return undefined
+  if (typeof raw === 'number') {
+    return { owner_type: 'client', owner_id: raw }
+  }
+  if (typeof raw === 'string') {
+    // Accepts "client-7", "employee-3", or a bare numeric id.
+    const dashIdx = raw.indexOf('-')
+    if (dashIdx > 0) {
+      const type = raw.slice(0, dashIdx) as import('@/types/otcOption').OtcParty['owner_type']
+      const idPart = Number(raw.slice(dashIdx + 1))
+      if (!Number.isNaN(idPart)) return { owner_type: type, owner_id: idPart }
+    }
+    const asNum = Number(raw)
+    if (!Number.isNaN(asNum)) return { owner_type: 'client', owner_id: asNum }
+  }
+  return undefined
+}
+
 function normalizeOtcOffer(raw: Record<string, unknown>): import('@/types/otcOption').OtcOffer {
   const idFromOfferId =
     raw.offer_id != null ? Number(raw.offer_id as string | number) : undefined
@@ -52,7 +74,24 @@ function normalizeOtcOffer(raw: Record<string, unknown>): import('@/types/otcOpt
   const quantity =
     raw.quantity != null ? String(raw.quantity) : raw.amount != null ? String(raw.amount) : ''
   const status = (raw.status as import('@/types/otcOption').OtcOfferStatus | undefined) ?? 'open'
-  return { ...(raw as object), id, quantity, status } as import('@/types/otcOption').OtcOffer
+
+  const initiator =
+    (raw.initiator as import('@/types/otcOption').OtcParty | undefined) ??
+    parseSellerId(raw.seller_id) ?? { owner_type: 'client', owner_id: null }
+  const counterparty =
+    (raw.counterparty as import('@/types/otcOption').OtcParty | undefined) ?? {
+      owner_type: 'client',
+      owner_id: null,
+    }
+
+  return {
+    ...(raw as object),
+    id,
+    quantity,
+    status,
+    initiator,
+    counterparty,
+  } as import('@/types/otcOption').OtcOffer
 }
 
 export async function getMyOtcOptionOffers(
