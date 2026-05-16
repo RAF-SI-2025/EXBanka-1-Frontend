@@ -31,6 +31,7 @@ import {
   Percent,
   Banknote,
   Network,
+  Mail,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -270,6 +271,9 @@ function EmployeeNav({
           </NavItem>
           <NavItem to="/admin/peer-banks" icon={Network}>
             Peer Banks
+          </NavItem>
+          <NavItem to="/admin/notification-templates" icon={Mail}>
+            Notification Templates
           </NavItem>
         </NavGroup>
       )}
