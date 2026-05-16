@@ -4,8 +4,10 @@ import { RoleSwitcher } from '@/components/dev/RoleSwitcher'
 import { NotificationBell } from '@/components/notifications/NotificationBell'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { TopProgressBar } from '@/components/shared/TopProgressBar'
+import { useNotificationSound } from '@/hooks/useNotificationSound'
 
 export function AppLayout() {
+  useNotificationSound()
   return (
     <div className="h-screen flex overflow-hidden">
       <TopProgressBar />

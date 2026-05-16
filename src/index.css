@@ -130,6 +130,7 @@
     --animate-coin-fall: coin-fall 1s cubic-bezier(0.55, 0.06, 0.68, 0.19) forwards;
     --animate-overlay-fade: overlay-fade 1.8s ease-out forwards;
     --animate-capybara-bob: capybara-bob 1.4s ease-in-out infinite;
+    --animate-bell-jiggle: bell-jiggle 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 
     @keyframes progress-slide {
         0%   { transform: translateX(-100%) scaleX(0.6); }
@@ -173,6 +174,14 @@
     @keyframes capybara-bob {
         0%, 100% { transform: translateY(0) rotate(-2deg); }
         50%      { transform: translateY(-3px) rotate(2deg); }
+    }
+    @keyframes bell-jiggle {
+        0%, 100% { transform: rotate(0); }
+        15%      { transform: rotate(-18deg); }
+        30%      { transform: rotate(15deg); }
+        45%      { transform: rotate(-12deg); }
+        60%      { transform: rotate(8deg); }
+        75%      { transform: rotate(-4deg); }
     }
 }
 
