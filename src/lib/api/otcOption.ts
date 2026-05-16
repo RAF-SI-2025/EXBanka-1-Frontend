@@ -131,13 +131,39 @@ export async function placeBidOnOtcOption(
   return data
 }
 
+/**
+ * Backend negotiation rows aren't fully typed in the spec; some come back
+ * without a nested `bidder` / `last_action_by` object. Synthesise sane
+ * defaults so downstream UI code can always rely on these fields existing.
+ */
+function normalizeOtcNegotiation(
+  raw: Record<string, unknown>
+): import('@/types/otcOption').OtcNegotiation {
+  const bidder =
+    (raw.bidder as import('@/types/otcOption').OtcParty | undefined) ??
+    parseSellerId((raw as { bidder_id?: unknown }).bidder_id) ?? {
+      owner_type: 'client',
+      owner_id: null,
+    }
+  const last_action_by =
+    (raw.last_action_by as import('@/types/otcOption').OtcParty | undefined) ?? bidder
+  return {
+    ...(raw as object),
+    bidder,
+    last_action_by,
+  } as import('@/types/otcOption').OtcNegotiation
+}
+
 export async function getOtcOptionNegotiations(
   offerId: number
 ): Promise<OtcNegotiationListResponse> {
   const { data } = await apiClient.get<OtcNegotiationListResponse>(
     `/otc/options/${offerId}/negotiations`
   )
-  return { ...data, negotiations: data.negotiations ?? [] }
+  const negotiations = (data.negotiations ?? []).map((n) =>
+    normalizeOtcNegotiation(n as unknown as Record<string, unknown>)
+  )
+  return { ...data, negotiations }
 }
 
 export async function getMyOtcOptionNegotiations(
@@ -146,7 +172,10 @@ export async function getMyOtcOptionNegotiations(
   const { data } = await apiClient.get<OtcNegotiationListResponse>('/me/otc/options/negotiations', {
     params: filters,
   })
-  return { ...data, negotiations: data.negotiations ?? [] }
+  const negotiations = (data.negotiations ?? []).map((n) =>
+    normalizeOtcNegotiation(n as unknown as Record<string, unknown>)
+  )
+  return { ...data, negotiations }
 }
 
 export async function counterOtcNegotiation(

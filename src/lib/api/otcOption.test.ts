@@ -224,6 +224,25 @@ describe('getOtcOptionNegotiations', () => {
     const result = await getOtcOptionNegotiations(1001)
     expect(result.negotiations).toEqual([])
   })
+
+  it('synthesises a bidder party when the backend omits one', async () => {
+    // OtcOfferDetailPage crashed reading `n.bidder.owner_id` because some
+    // rows arrived without a `bidder` object. Always guarantee one.
+    mockGet.mockResolvedValue({
+      data: { negotiations: [{ id: 1, status: 'open' }], total: 1 },
+    })
+    const result = await getOtcOptionNegotiations(1001)
+    expect(result.negotiations[0]?.bidder).toBeDefined()
+    expect(result.negotiations[0]?.last_action_by).toBeDefined()
+  })
+
+  it('parses flat bidder_id "client-7" into a bidder party', async () => {
+    mockGet.mockResolvedValue({
+      data: { negotiations: [{ id: 1, status: 'open', bidder_id: 'client-7' }], total: 1 },
+    })
+    const result = await getOtcOptionNegotiations(1001)
+    expect(result.negotiations[0]?.bidder).toEqual({ owner_type: 'client', owner_id: 7 })
+  })
 })
 
 describe('getMyOtcOptionNegotiations', () => {

@@ -22,7 +22,7 @@ beforeEach(() => {
     total_count: 1,
   })
   jest.mocked(portfolioApi.getPortfolioSummary).mockResolvedValue(createMockPortfolioSummary())
-  jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue(createMockHolding())
+  jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue({ offer: { id: 1 } })
   jest.mocked(portfolioApi.exerciseOption).mockResolvedValue(createMockHolding())
 })
 

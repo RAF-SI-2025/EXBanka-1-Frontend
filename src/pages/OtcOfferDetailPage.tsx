@@ -76,7 +76,8 @@ export function OtcOfferDetailPage() {
   const isPoster =
     (currentUser?.id != null && offer.initiator.owner_id === currentUser.id) ||
     (isEmployee && offer.initiator.owner_type === 'bank')
-  const myChain = negotiations.find((n) => n.bidder.owner_id === currentUser?.id) ?? null
+  const myChain =
+    negotiations.find((n) => n.bidder?.owner_id === currentUser?.id) ?? null
   const isListingOpen = offer.status === 'open' || offer.status === 'PENDING'
 
   const handleReject = (chain: OtcNegotiation) => {
@@ -153,10 +154,10 @@ export function OtcOfferDetailPage() {
               </TableHeader>
               <TableBody>
                 {negotiations.map((n) => {
-                  const isMyChain = n.bidder.owner_id === currentUser?.id
+                  const isMyChain = n.bidder?.owner_id === currentUser?.id
                   const myTurnToAct =
                     n.status === 'open' || n.status === 'countered'
-                      ? n.last_action_by.owner_id !== currentUser?.id
+                      ? n.last_action_by?.owner_id !== currentUser?.id
                       : false
                   const canActAsPoster =
                     isPoster && (n.status === 'open' || n.status === 'countered')
@@ -167,7 +168,10 @@ export function OtcOfferDetailPage() {
                     <TableRow key={n.id}>
                       <TableCell>{n.id}</TableCell>
                       <TableCell>
-                        {n.bidder_name ?? `${n.bidder.owner_type} #${n.bidder.owner_id ?? '-'}`}
+                        {n.bidder_name ??
+                          (n.bidder
+                            ? `${n.bidder.owner_type} #${n.bidder.owner_id ?? '-'}`
+                            : '—')}
                         {isMyChain && (
                           <span className="ml-1 text-xs text-muted-foreground italic">(you)</span>
                         )}
