@@ -36,6 +36,8 @@ export interface PortfolioFilters {
 
 export interface MakePublicPayload {
   quantity: number
+  /** Decimal price per unit; required by /me/otc/stocks for the sell direction. */
+  price_per_unit?: string
 }
 
 /**

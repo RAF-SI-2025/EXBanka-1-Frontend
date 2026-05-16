@@ -137,7 +137,12 @@ export function OtcPortalPage() {
       {isLoading ? (
         <LoadingSpinner />
       ) : (
-        <OtcOffersTable offers={offers} onBuy={setSelectedOffer} currentUserId={currentUser?.id} />
+        <OtcOffersTable
+          offers={offers}
+          onBuy={setSelectedOffer}
+          currentUserId={currentUser?.id}
+          isCurrentUserEmployee={isEmployee}
+        />
       )}
       {renderDialog()}
     </div>

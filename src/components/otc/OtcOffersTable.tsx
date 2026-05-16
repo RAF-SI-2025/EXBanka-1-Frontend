@@ -13,8 +13,13 @@ import type { OtcOffer } from '@/types/otc'
 interface Props {
   offers: OtcOffer[]
   onBuy: (offer: OtcOffer) => void
-  /** When set, hides the Buy button on local offers whose seller_id matches. */
+  /** When set, hides the Buy button on listings the current user owns. */
   currentUserId?: number
+  /**
+   * When true, also treats bank-owned listings as owned by the current user,
+   * because every employee acts on behalf of the bank.
+   */
+  isCurrentUserEmployee?: boolean
 }
 
 function offerKey(offer: OtcOffer): string {
@@ -32,9 +37,32 @@ function formatPrice(offer: OtcOffer): string {
   return offer.price_per_unit
 }
 
-export function OtcOffersTable({ offers, onBuy, currentUserId }: Props) {
+export function OtcOffersTable({ offers, onBuy, currentUserId, isCurrentUserEmployee }: Props) {
   if (offers.length === 0) {
     return <p className="text-muted-foreground">No offers available.</p>
+  }
+
+  function isOwnedByViewer(offer: OtcOffer): boolean {
+    if (offer.kind !== 'local') return false
+    // Employee/admin: own every bank-typed listing (matches the OTC option
+    // rule). Without an explicit seller_type the backend may legitimately
+    // omit the field, in which case employees can't claim ownership here.
+    if (isCurrentUserEmployee) {
+      if (offer.seller_type === 'bank') return true
+      if (
+        offer.seller_type === 'employee' &&
+        currentUserId !== undefined &&
+        offer.seller_id === currentUserId
+      ) {
+        return true
+      }
+      return false
+    }
+    // Client viewer: only client-typed listings they posted are theirs.
+    // Fall back to a bare id match when seller_type is missing (legacy rows).
+    if (currentUserId === undefined) return false
+    if (offer.seller_type && offer.seller_type !== 'client') return false
+    return offer.seller_id === currentUserId
   }
 
   return (
@@ -66,9 +94,7 @@ export function OtcOffersTable({ offers, onBuy, currentUserId }: Props) {
             <TableCell className="text-right">{offer.quantity}</TableCell>
             <TableCell className="text-right">{formatPrice(offer)}</TableCell>
             <TableCell className="text-right">
-              {offer.kind === 'local' &&
-              currentUserId !== undefined &&
-              offer.seller_id === currentUserId ? (
+              {isOwnedByViewer(offer) ? (
                 <span className="text-sm text-muted-foreground italic">Your offer</span>
               ) : (
                 <Button size="sm" variant="outline" onClick={() => onBuy(offer)}>

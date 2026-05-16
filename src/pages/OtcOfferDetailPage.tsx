@@ -71,11 +71,15 @@ export function OtcOfferDetailPage() {
   const { offer } = offerQuery.data
   const negotiations = negotiationsQuery.data?.negotiations ?? []
 
-  // Bank-owned offers (created by an employee acting as the bank) are
-  // managed by every employee/admin — they get the poster's actions.
-  const isPoster =
-    (currentUser?.id != null && offer.initiator.owner_id === currentUser.id) ||
-    (isEmployee && offer.initiator.owner_type === 'bank')
+  // Posters are owners of the listing. Viewer type must match owner type —
+  // without that gate, a client and an employee sharing an id both see
+  // poster actions on the same listing.
+  const ownerType = offer.initiator?.owner_type
+  const ownerId = offer.initiator?.owner_id
+  const isPoster = isEmployee
+    ? ownerType === 'bank' ||
+      (ownerType === 'employee' && currentUser?.id != null && ownerId === currentUser.id)
+    : ownerType === 'client' && currentUser?.id != null && ownerId === currentUser.id
   const myChain =
     negotiations.find((n) => n.bidder?.owner_id === currentUser?.id) ?? null
   const isListingOpen = offer.status === 'open' || offer.status === 'PENDING'

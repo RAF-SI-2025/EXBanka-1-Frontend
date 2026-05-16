@@ -65,6 +65,17 @@ describe('makeHoldingPublic', () => {
     })
     expect(result).toEqual(offer)
   })
+
+  it('forwards price_per_unit when provided', async () => {
+    mockPost.mockResolvedValue({ data: { offer: { id: 99 } } })
+    await makeHoldingPublic(1, { quantity: 5, price_per_unit: '175.50' })
+    expect(mockPost).toHaveBeenCalledWith('/me/otc/stocks', {
+      direction: 'sell',
+      holding_id: 1,
+      quantity: 5,
+      price_per_unit: '175.50',
+    })
+  })
 })
 
 describe('exerciseOption', () => {

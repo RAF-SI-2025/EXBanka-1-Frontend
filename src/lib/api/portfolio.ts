@@ -37,11 +37,15 @@ export async function makeHoldingPublic(
   id: number,
   payload: MakePublicPayload
 ): Promise<MakePublicResponse> {
-  const { data } = await apiClient.post<MakePublicResponse>('/me/otc/stocks', {
+  const body: Record<string, unknown> = {
     direction: 'sell',
     holding_id: id,
     quantity: payload.quantity,
-  })
+  }
+  if (payload.price_per_unit !== undefined) {
+    body.price_per_unit = payload.price_per_unit
+  }
+  const { data } = await apiClient.post<MakePublicResponse>('/me/otc/stocks', body)
   return data
 }
 

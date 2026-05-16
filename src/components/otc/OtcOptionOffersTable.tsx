@@ -54,9 +54,22 @@ export function OtcOptionOffersTable({
       </TableHeader>
       <TableBody>
         {offers.map((o) => {
+          // A viewer "owns" an offer when both viewer type AND owner identity
+          // line up. Without the type gate, a client and an employee that
+          // happen to share an id both get "Your offer" on the same listing.
+          const ownerType = o.initiator?.owner_type
+          const ownerId = o.initiator?.owner_id
           const isOwner =
-            (currentUserId !== undefined && o.initiator?.owner_id === currentUserId) ||
-            (isCurrentUserEmployee === true && o.initiator?.owner_type === 'bank')
+            isCurrentUserEmployee === true
+              ? // employee/admin: every bank offer, plus their own employee-typed offers
+                ownerType === 'bank' ||
+                (ownerType === 'employee' &&
+                  currentUserId !== undefined &&
+                  ownerId === currentUserId)
+              : // client: only their own client-typed offers
+                ownerType === 'client' &&
+                currentUserId !== undefined &&
+                ownerId === currentUserId
           const detailUrl = `/otc/offers/${o.id}`
           // Click anywhere on the row (except interactive controls) to open
           // the detail page — owners use this to see their incoming bids.

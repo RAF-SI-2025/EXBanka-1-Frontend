@@ -6,6 +6,8 @@ export interface OtcLocalOffer {
   id: number
   seller_id: number
   seller_name: string
+  /** Optional party type so UI can tell client-owned from bank-owned listings. */
+  seller_type?: 'client' | 'bank' | 'employee'
   security_type: 'stock' | 'futures'
   ticker: string
   name: string
