@@ -62,6 +62,7 @@ export function OtcOffersPage() {
             key="all"
             query={allQuery}
             currentUserId={currentUser?.id}
+            isCurrentUserEmployee={isEmployee}
             onBid={setBidTarget}
           />
         </TabsContent>
@@ -70,6 +71,7 @@ export function OtcOffersPage() {
             key="me"
             query={meQuery}
             currentUserId={currentUser?.id}
+            isCurrentUserEmployee={isEmployee}
             onBid={setBidTarget}
           />
         </TabsContent>
@@ -117,10 +119,11 @@ export function OtcOffersPage() {
 interface OffersTabProps {
   query: UseQueryResult<MyOtcOffersResponse, unknown>
   currentUserId?: number
+  isCurrentUserEmployee?: boolean
   onBid: (offer: OtcOffer) => void
 }
 
-function OffersTab({ query, currentUserId, onBid }: OffersTabProps) {
+function OffersTab({ query, currentUserId, isCurrentUserEmployee, onBid }: OffersTabProps) {
   const { data, isLoading } = query
   const offers = data?.offers ?? []
 
@@ -133,5 +136,12 @@ function OffersTab({ query, currentUserId, onBid }: OffersTabProps) {
       </div>
     )
   }
-  return <OtcOptionOffersTable offers={offers} currentUserId={currentUserId} onBid={onBid} />
+  return (
+    <OtcOptionOffersTable
+      offers={offers}
+      currentUserId={currentUserId}
+      isCurrentUserEmployee={isCurrentUserEmployee}
+      onBid={onBid}
+    />
+  )
 }

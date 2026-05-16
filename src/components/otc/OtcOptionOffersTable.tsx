@@ -16,11 +16,23 @@ interface Props {
   offers: OtcOffer[]
   /** When set, hides the Bid button on offers initiated by the current user. */
   currentUserId?: number
+  /**
+   * When true, also treats bank-owned offers (initiator.owner_type === 'bank')
+   * as owned by the current user, because any employee/admin acts on behalf
+   * of the bank — they manage the bank's incoming bids and cannot bid on the
+   * bank's own listings.
+   */
+  isCurrentUserEmployee?: boolean
   /** Open the place-bid dialog for the given offer. */
   onBid?: (offer: OtcOffer) => void
 }
 
-export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
+export function OtcOptionOffersTable({
+  offers,
+  currentUserId,
+  isCurrentUserEmployee,
+  onBid,
+}: Props) {
   const navigate = useNavigate()
   if (offers.length === 0) {
     return <p className="text-muted-foreground">No offers in this view.</p>
@@ -43,7 +55,8 @@ export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
       <TableBody>
         {offers.map((o) => {
           const isOwner =
-            currentUserId !== undefined && o.initiator?.owner_id === currentUserId
+            (currentUserId !== undefined && o.initiator?.owner_id === currentUserId) ||
+            (isCurrentUserEmployee === true && o.initiator?.owner_type === 'bank')
           const detailUrl = `/otc/offers/${o.id}`
           // Click anywhere on the row (except interactive controls) to open
           // the detail page — owners use this to see their incoming bids.

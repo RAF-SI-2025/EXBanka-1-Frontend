@@ -105,5 +105,43 @@ describe('OtcOptionOffersTable', () => {
       const rowLink = screen.getByRole('link', { name: /AAPL/ })
       expect(rowLink).toHaveAttribute('href', '/otc/offers/1001')
     })
+
+    describe('bank-owned offers (employee POV)', () => {
+      it('treats bank-owned offers as owned when viewer is an employee', () => {
+        // Employee posted on behalf of the bank → owner_type='bank'.
+        // Every employee should be allowed to manage incoming bids,
+        // but no employee should be able to bid the bank's own offer.
+        const bankOffer = createMockOtcOptionOffer({
+          ticker: 'AAPL',
+          initiator: { owner_type: 'bank', owner_id: null },
+        })
+        renderWithRouter(
+          <OtcOptionOffersTable
+            offers={[bankOffer]}
+            currentUserId={42}
+            isCurrentUserEmployee
+            onBid={jest.fn()}
+          />
+        )
+        expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
+        expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+      })
+
+      it('still lets a client bid on a bank-owned offer', () => {
+        const bankOffer = createMockOtcOptionOffer({
+          ticker: 'AAPL',
+          initiator: { owner_type: 'bank', owner_id: null },
+        })
+        renderWithRouter(
+          <OtcOptionOffersTable
+            offers={[bankOffer]}
+            currentUserId={42}
+            isCurrentUserEmployee={false}
+            onBid={jest.fn()}
+          />
+        )
+        expect(screen.getByRole('button', { name: /^bid$/i })).toBeInTheDocument()
+      })
+    })
   })
 })

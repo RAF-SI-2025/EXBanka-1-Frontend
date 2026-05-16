@@ -199,6 +199,57 @@ describe('OtcOffersPage', () => {
       expect(screen.getByRole('heading', { name: /place bid/i })).toBeInTheDocument()
     })
 
+    it('treats bank-owned offers as the employee\'s own (no Bid button)', () => {
+      jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
+        data: {
+          offers: [
+            createMockOtcOptionOffer({
+              id: 5,
+              ticker: 'AAPL-BANK',
+              initiator: { owner_type: 'bank', owner_id: null },
+            }),
+          ],
+          total: 1,
+        },
+        isLoading: false,
+      } as any)
+      renderWithProviders(<OtcOffersPage />, {
+        preloadedState: {
+          auth: createMockAuthState({
+            userType: 'employee',
+            user: createMockAuthUser({ id: 42, role: 'EmployeeAgent', system_type: 'employee' }),
+          }),
+        },
+      })
+      expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
+      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+    })
+
+    it('still lets a client bid on a bank-owned offer', () => {
+      jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
+        data: {
+          offers: [
+            createMockOtcOptionOffer({
+              id: 6,
+              ticker: 'AAPL-BANK',
+              initiator: { owner_type: 'bank', owner_id: null },
+            }),
+          ],
+          total: 1,
+        },
+        isLoading: false,
+      } as any)
+      renderWithProviders(<OtcOffersPage />, {
+        preloadedState: {
+          auth: createMockAuthState({
+            userType: 'client',
+            user: createMockAuthUser({ id: 99, role: 'Client', system_type: 'client' }),
+          }),
+        },
+      })
+      expect(screen.getByRole('button', { name: /^bid$/i })).toBeInTheDocument()
+    })
+
     it('does not render a Bid button on the user\'s own offer', () => {
       jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
         data: {
