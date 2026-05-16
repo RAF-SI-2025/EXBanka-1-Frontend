@@ -1,22 +1,16 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useMyOtcOptionContracts, useExerciseOtcOptionContract } from '@/hooks/useOtcOptions'
 import { OtcContractsTable } from '@/components/otc/OtcContractsTable'
 import { ExerciseContractDialog } from '@/components/otc/ExerciseContractDialog'
-import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectCurrentUser } from '@/store/selectors/authSelectors'
 import { notifySuccess } from '@/lib/errors'
-import { isContractBuyer } from '@/pages/otcContractsBuyer'
 import type { MyContractsFilters, OptionContract } from '@/types/otcOption'
 
 export function OtcContractsPage() {
   const [role, setRole] = useState<MyContractsFilters['role']>('either')
-  const user = useAppSelector(selectCurrentUser)
   const { data, isLoading } = useMyOtcOptionContracts({ role })
   const contracts = data?.contracts ?? []
-
-  const isBuyer = useCallback((c: OptionContract) => isContractBuyer(user, c), [user])
 
   const active = contracts.filter((c) => c.status === 'ACTIVE')
   const expiredOrExercised = contracts.filter((c) => c.status !== 'ACTIVE')
@@ -45,19 +39,11 @@ export function OtcContractsPage() {
             <>
               <section className="space-y-2">
                 <h2 className="text-lg font-semibold">Active</h2>
-                <OtcContractsTable
-                  contracts={active}
-                  onExercise={setExerciseTarget}
-                  isBuyer={isBuyer}
-                />
+                <OtcContractsTable contracts={active} onExercise={setExerciseTarget} />
               </section>
               <section className="space-y-2">
                 <h2 className="text-lg font-semibold">Concluded / Expired</h2>
-                <OtcContractsTable
-                  contracts={expiredOrExercised}
-                  onExercise={setExerciseTarget}
-                  isBuyer={isBuyer}
-                />
+                <OtcContractsTable contracts={expiredOrExercised} onExercise={setExerciseTarget} />
               </section>
             </>
           )}

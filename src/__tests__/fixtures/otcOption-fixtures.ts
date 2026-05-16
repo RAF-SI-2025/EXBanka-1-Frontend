@@ -1,10 +1,16 @@
 import type { OptionContract } from '@/types/otcOption'
 
+// NOTE: This mock represents the POST-normalization shape (nested `buyer` /
+// `seller` OtcParty objects, `ticker`, `premium`). The live backend wire
+// shape is FLAT (`buyer_owner_type`, `buyer_owner_id`, `premium_paid`, etc.)
+// — see RawOptionContract in src/lib/api/otcOption.ts. Use this fixture for
+// downstream consumers (components, selectors); raw flat shapes for
+// normalizer tests.
 export function createMockOptionContract(overrides: Partial<OptionContract> = {}): OptionContract {
   return {
     id: 5001,
     status: 'ACTIVE',
-    stock_id: 42,
+    ticker: 'AAPL',
     quantity: '100',
     strike_price: '5000.00',
     premium: '50000.00',

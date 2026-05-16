@@ -14,13 +14,9 @@ import type { OptionContract } from '@/types/otcOption'
 interface Props {
   contracts: OptionContract[]
   onExercise: (contract: OptionContract) => void
-  // Caller-provided predicate. Table stays presentational — it does not
-  // compute buyer-ness itself. Exercise button only shows for ACTIVE rows
-  // where this returns true.
-  isBuyer: (contract: OptionContract) => boolean
 }
 
-export function OtcContractsTable({ contracts, onExercise, isBuyer }: Props) {
+export function OtcContractsTable({ contracts, onExercise }: Props) {
   if (contracts.length === 0) {
     return <p className="text-muted-foreground">No contracts in this view.</p>
   }
@@ -46,7 +42,7 @@ export function OtcContractsTable({ contracts, onExercise, isBuyer }: Props) {
                 #{c.id}
               </Link>
             </TableCell>
-            <TableCell>#{c.stock_id}</TableCell>
+            <TableCell>{c.ticker}</TableCell>
             <TableCell className="text-right">{c.quantity}</TableCell>
             <TableCell className="text-right">{c.strike_price}</TableCell>
             <TableCell className="text-right">{c.premium}</TableCell>
@@ -55,7 +51,7 @@ export function OtcContractsTable({ contracts, onExercise, isBuyer }: Props) {
               <OtcOptionStatusBadge status={c.status} />
             </TableCell>
             <TableCell className="text-right">
-              {c.status === 'ACTIVE' && isBuyer(c) ? (
+              {c.status === 'ACTIVE' ? (
                 <Button size="sm" onClick={() => onExercise(c)}>
                   Exercise
                 </Button>

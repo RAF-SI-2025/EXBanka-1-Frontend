@@ -23,7 +23,7 @@ type ExerciseMutation = UseMutationResult<
 >
 
 const clientUser: AuthUser = {
-  id: 7, // matches the default buyer.owner_id in createMockOptionContract
+  id: 7,
   email: 'client@example.com',
   role: 'client',
   permissions: [],
@@ -34,25 +34,6 @@ const clientAuth = {
   auth: {
     user: clientUser,
     userType: 'client' as const,
-    accessToken: 'tok',
-    refreshToken: 'rt',
-    status: 'authenticated' as const,
-    error: null,
-  },
-}
-
-const employeeUser: AuthUser = {
-  id: 99,
-  email: 'emp@example.com',
-  role: 'EmployeeAdmin',
-  permissions: [],
-  system_type: 'employee',
-}
-
-const employeeAuth = {
-  auth: {
-    user: employeeUser,
-    userType: 'employee' as const,
     accessToken: 'tok',
     refreshToken: 'rt',
     status: 'authenticated' as const,
@@ -113,39 +94,5 @@ describe('OtcContractsPage', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
-  })
-
-  it('renders the Exercise button when a client matches contract.buyer.owner_id', () => {
-    // active.buyer = { owner_type: 'client', owner_id: 7 }; clientUser.id = 7
-    renderWithProviders(<OtcContractsPage />, { preloadedState: clientAuth })
-    expect(screen.getByRole('button', { name: /^exercise$/i })).toBeInTheDocument()
-  })
-
-  it('renders the Exercise button for an employee viewing a bank-owned buyer contract', () => {
-    const bankBuyerActive = createMockOptionContract({
-      id: 201,
-      status: 'ACTIVE',
-      buyer: { owner_type: 'bank', owner_id: 1 },
-    })
-    jest.mocked(useOtcOptionsHook.useMyOtcOptionContracts).mockReturnValue({
-      data: { contracts: [bankBuyerActive], total: 1 },
-      isLoading: false,
-    } as ReturnType<typeof useOtcOptionsHook.useMyOtcOptionContracts>)
-    renderWithProviders(<OtcContractsPage />, { preloadedState: employeeAuth })
-    expect(screen.getByRole('button', { name: /^exercise$/i })).toBeInTheDocument()
-  })
-
-  it('does NOT render the Exercise button for a client whose id does not match the buyer', () => {
-    const notMineActive = createMockOptionContract({
-      id: 301,
-      status: 'ACTIVE',
-      buyer: { owner_type: 'client', owner_id: 999 }, // not 7
-    })
-    jest.mocked(useOtcOptionsHook.useMyOtcOptionContracts).mockReturnValue({
-      data: { contracts: [notMineActive], total: 1 },
-      isLoading: false,
-    } as ReturnType<typeof useOtcOptionsHook.useMyOtcOptionContracts>)
-    renderWithProviders(<OtcContractsPage />, { preloadedState: clientAuth })
-    expect(screen.queryByRole('button', { name: /^exercise$/i })).not.toBeInTheDocument()
   })
 })
