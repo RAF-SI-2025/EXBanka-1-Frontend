@@ -300,6 +300,28 @@ describe('getOtcOptionNegotiations', () => {
     const result = await getOtcOptionNegotiations(1001)
     expect(result.negotiations[0]?.bidder).toEqual({ owner_type: 'client', owner_id: 7 })
   })
+
+  it('canonicalises legacy uppercase statuses (PENDING → open, COUNTERED → countered)', async () => {
+    // Action gating in the page checks lowercase 'open'/'countered'; if the
+    // backend returns the legacy uppercase variants the buttons silently
+    // disappear. Force canonical lowercase form.
+    mockGet.mockResolvedValue({
+      data: {
+        negotiations: [
+          { id: 1, status: 'PENDING' },
+          { id: 2, status: 'COUNTERED' },
+          { id: 3, status: 'open' },
+        ],
+        total: 3,
+      },
+    })
+    const result = await getOtcOptionNegotiations(1001)
+    expect(result.negotiations.map((n) => n.status)).toEqual([
+      'open',
+      'countered',
+      'open',
+    ])
+  })
 })
 
 describe('getMyOtcOptionNegotiations', () => {

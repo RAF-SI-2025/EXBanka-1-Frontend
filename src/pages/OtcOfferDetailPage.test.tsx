@@ -51,8 +51,88 @@ function employeeAuth(id = 42) {
   }
 }
 
+function clientAuth(id = 5) {
+  return {
+    auth: createMockAuthState({
+      userType: 'client',
+      user: createMockAuthUser({ id, role: 'Client', system_type: 'client' }),
+    }),
+  }
+}
+
 describe('OtcOfferDetailPage', () => {
-  it('shows Counter / Accept / Decline buttons for an employee on a bank-owned offer with an open client bid', () => {
+  it('shows Counter / Accept / Decline for the client poster on an open bid from another client', () => {
+    jest.mocked(useOtcOptionsHook.useOtcOptionOffer).mockReturnValue({
+      data: {
+        offer: createMockOtcOptionOffer({
+          id: 1001,
+          status: 'open',
+          initiator: { owner_type: 'client', owner_id: 5 },
+        }),
+      },
+      isLoading: false,
+    } as any)
+    jest.mocked(useOtcOptionsHook.useOtcOptionNegotiations).mockReturnValue({
+      data: {
+        negotiations: [
+          createMockOtcNegotiation({
+            id: 1,
+            status: 'open',
+            bidder: { owner_type: 'client', owner_id: 7 },
+            last_action_by: { owner_type: 'client', owner_id: 7 },
+          }),
+        ],
+        total: 1,
+      },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<OtcOfferDetailPage />, {
+      route: '/otc/offers/1001',
+      routePath: '/otc/offers/:id',
+      preloadedState: clientAuth(5),
+    })
+    expect(screen.getByRole('button', { name: /counter/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^accept$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /decline/i })).toBeInTheDocument()
+  })
+
+  it('shows Counter / Withdraw for the client bidder on their own open chain (counterparty acted last)', () => {
+    jest.mocked(useOtcOptionsHook.useOtcOptionOffer).mockReturnValue({
+      data: {
+        offer: createMockOtcOptionOffer({
+          id: 1001,
+          status: 'open',
+          initiator: { owner_type: 'client', owner_id: 5 },
+        }),
+      },
+      isLoading: false,
+    } as any)
+    jest.mocked(useOtcOptionsHook.useOtcOptionNegotiations).mockReturnValue({
+      data: {
+        negotiations: [
+          createMockOtcNegotiation({
+            id: 1,
+            status: 'countered',
+            bidder: { owner_type: 'client', owner_id: 7 },
+            // Poster just countered — bidder's turn to act.
+            last_action_by: { owner_type: 'client', owner_id: 5 },
+          }),
+        ],
+        total: 1,
+      },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<OtcOfferDetailPage />, {
+      route: '/otc/offers/1001',
+      routePath: '/otc/offers/:id',
+      preloadedState: clientAuth(7),
+    })
+    expect(screen.getByRole('button', { name: /counter/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^accept$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /withdraw/i })).toBeInTheDocument()
+  })
+
+  it('shows Counter / Accept / Decline for an employee on a bank-owned offer with an open client bid', () => {
     jest.mocked(useOtcOptionsHook.useOtcOptionOffer).mockReturnValue({
       data: {
         offer: createMockOtcOptionOffer({

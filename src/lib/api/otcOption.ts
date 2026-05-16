@@ -159,6 +159,33 @@ export async function placeBidOnOtcOption(
 }
 
 /**
+ * Map legacy uppercase negotiation statuses to the new canonical lowercase
+ * form. Action-button gating in OtcOfferDetailPage matches lowercase only,
+ * so without this conversion incoming PENDING/COUNTERED rows silently drop
+ * their Counter/Accept/Decline buttons.
+ */
+function canonicaliseNegotiationStatus(
+  raw: unknown
+): import('@/types/otcOption').OtcNegotiationStatus {
+  if (typeof raw !== 'string') return 'open'
+  const lower = raw.toLowerCase()
+  switch (lower) {
+    case 'pending':
+      return 'open'
+    case 'open':
+    case 'countered':
+    case 'accepted':
+    case 'rejected':
+    case 'cancelled':
+    case 'expired':
+    case 'failed':
+      return lower
+    default:
+      return 'open'
+  }
+}
+
+/**
  * Backend negotiation rows aren't fully typed in the spec; some come back
  * without a nested `bidder` / `last_action_by` object. Synthesise sane
  * defaults so downstream UI code can always rely on these fields existing.
@@ -174,10 +201,12 @@ function normalizeOtcNegotiation(
     }
   const last_action_by =
     (raw.last_action_by as import('@/types/otcOption').OtcParty | undefined) ?? bidder
+  const status = canonicaliseNegotiationStatus(raw.status)
   return {
     ...(raw as object),
     bidder,
     last_action_by,
+    status,
   } as import('@/types/otcOption').OtcNegotiation
 }
 
