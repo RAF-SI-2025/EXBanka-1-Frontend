@@ -52,33 +52,34 @@ Access tokens expire after 15 minutes. Use the refresh token to obtain a new pai
 12. [Loan Requests](#12-loan-requests)
 13. [Limits](#13-limits)
 14. [Bank Accounts](#14-bank-accounts)
-15. [Transfer Fees](#15-transfer-fees)
-16. [Interest Rate Tiers](#16-interest-rate-tiers)
-17. [Bank Margins](#17-bank-margins)
-18. [Card Requests](#18-card-requests)
-19. [Me (Self-Service)](#19-me-self-service)
-20. [Mobile Auth](#20-mobile-auth)
-21. [Mobile Device Management](#21-mobile-device-management)
-22. [Mobile Device Settings](#22-mobile-device-settings)
-23. [Verification](#23-verification)
-24. [Stock Exchanges](#24-stock-exchanges)
-25. [Securities](#25-securities)
-26. [Orders](#26-orders)
-27. [Portfolio](#27-portfolio)
-28. [OTC Offers (Public Stock Listings)](#28-otc-offers-public-stock-listings)
-29. [OTC Option Contracts (Celina 4)](#29-otc-option-contracts-celina-4)
-30. [Investment Funds (Celina 4)](#30-investment-funds-celina-4)
-31. [Actuaries](#31-actuaries)
-32. [Tax](#32-tax)
-33. [Blueprints](#33-blueprints)
-34. [Changelog (Audit Trail)](#34-changelog-audit-trail)
-35. [Sessions & Login History](#35-sessions--login-history)
-36. [Notifications](#36-notifications)
-37. [Stock Data Source](#37-stock-data-source)
-38. [Peer Banks (Admin) — SI-TX cross-bank registry (Celina 5)](#38-peer-banks-admin--si-tx-cross-bank-registry-celina-5)
-39. [Error Response Format](#error-response-format)
-40. [Password Requirements](#password-requirements)
-41. [Notes for Frontend Developers](#notes-for-frontend-developers)
+15. [Notification Templates](#15-notification-templates)
+16. [Transfer Fees](#16-transfer-fees)
+17. [Interest Rate Tiers](#17-interest-rate-tiers)
+18. [Bank Margins](#18-bank-margins)
+19. [Card Requests](#19-card-requests)
+20. [Me (Self-Service)](#20-me-self-service)
+21. [Mobile Auth](#21-mobile-auth)
+22. [Mobile Device Management](#22-mobile-device-management)
+23. [Mobile Device Settings](#23-mobile-device-settings)
+24. [Verification](#24-verification)
+25. [Stock Exchanges](#25-stock-exchanges)
+26. [Securities](#26-securities)
+27. [Orders](#27-orders)
+28. [Portfolio](#28-portfolio)
+29. [OTC Offers (Public Stock Listings)](#29-otc-offers-public-stock-listings)
+30. [OTC Option Contracts (Celina 4)](#30-otc-option-contracts-celina-4)
+31. [Investment Funds (Celina 4)](#31-investment-funds-celina-4)
+32. [Actuaries](#32-actuaries)
+33. [Tax](#33-tax)
+34. [Blueprints](#34-blueprints)
+35. [Changelog (Audit Trail)](#35-changelog-audit-trail)
+36. [Sessions & Login History](#36-sessions--login-history)
+37. [Notifications](#37-notifications)
+38. [Stock Data Source](#38-stock-data-source)
+39. [Peer Banks (Admin) — SI-TX cross-bank registry (Celina 5)](#39-peer-banks-admin--si-tx-cross-bank-registry-celina-5)
+40. [Error Response Format](#error-response-format)
+41. [Password Requirements](#password-requirements)
+42. [Notes for Frontend Developers](#notes-for-frontend-developers)
 
 ---
 
@@ -2788,6 +2789,53 @@ List all bank-owned accounts.
 
 ---
 
+### GET /api/v3/bank-accounts/:id/activity
+
+List the ledger activity (debits/credits) for a bank-owned account.
+
+**Authentication:** Employee token with `bank-accounts.manage` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | uint64 | Bank account ID |
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `page` | int | Page number (default 1) |
+| `page_size` | int | Page size (default 20, max 200) |
+
+**Response 200:**
+```json
+{
+  "entries": [
+    {
+      "id": 1,
+      "entry_type": "credit",
+      "amount": "100.00",
+      "currency": "RSD",
+      "balance_before": "0.00",
+      "balance_after": "100.00",
+      "description": "Transfer fee collection",
+      "reference_id": "...",
+      "reference_type": "transfer",
+      "occurred_at": 1747000000
+    }
+  ],
+  "total_count": 1
+}
+```
+
+**Error Responses:**
+- `400` — invalid id
+- `403` — missing `bank_accounts.manage.any`
+- `404` — account not found, or the id is not a bank account
+
+---
+
 ### POST /api/v3/bank-accounts
 
 Create a new bank-owned account.
@@ -2864,7 +2912,202 @@ Delete a bank-owned account by ID.
 
 ---
 
-## 15. Transfer Fees
+## 15. Notification Templates
+
+Notification template management endpoints allow administrators to customize the subject and body text of notification messages (emails and push notifications).
+
+Each notification template **type** has a fixed, code-defined set of `{{variable}}` placeholders it supports (the registry). Admins customize only the text; the set of supported variables and the template types themselves cannot be changed via the API. A customized template is stored as a DB override; if no override exists, the code-defined registry default is used. The discovery endpoint below lists every template type together with the `{{variables}}` it supports, so a frontend can show which placeholders are valid before saving.
+
+Placeholder substitution syntax is `{{variable_name}}`. At send time, each `{{token}}` is replaced with the corresponding value from the publisher's data map; an unknown or absent token renders as an empty string.
+
+The `channel` path/query value must be `email` or `push`.
+
+**Authentication:** Employee token with `notifications.templates.manage` permission
+
+---
+
+### GET /api/v3/notification-templates
+
+List all notification template types. This is the **discovery endpoint**: for every template type it returns the `{{variables}}` it supports (with descriptions and examples), the code-defined default subject/body, and the current (possibly customized) subject/body.
+
+**Authentication:** Employee token with `notifications.templates.manage` permission
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `channel` | string | Optional. Filter by channel: `email` or `push`. |
+
+**Response 200:**
+```json
+{
+  "templates": [
+    {
+      "type": "CONFIRMATION",
+      "channel": "email",
+      "description": "Sent to a client when an action is confirmed",
+      "variables": [
+        {
+          "name": "first_name",
+          "description": "Client's first name",
+          "example": "Marko"
+        }
+      ],
+      "default_subject": "Confirmation",
+      "default_body": "Hello {{first_name}}, your action is confirmed.",
+      "current_subject": "Confirmation",
+      "current_body": "Hello {{first_name}}, your action is confirmed.",
+      "is_customized": false
+    }
+  ]
+}
+```
+
+**Response 400:** `{"error": "channel must be 'email' or 'push'"}`
+**Response 401:** `{"error": "unauthorized"}`
+**Response 403:** `{"error": "forbidden"}`
+
+---
+
+### GET /api/v3/notification-templates/:channel/:type
+
+Return a single notification template.
+
+**Authentication:** Employee token with `notifications.templates.manage` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `channel` | string | `email` or `push` |
+| `type` | string | Template type (e.g., `CONFIRMATION`) |
+
+**Response 200:** A single template object with the same shape as one element of the `templates` array above:
+```json
+{
+  "type": "CONFIRMATION",
+  "channel": "email",
+  "description": "Sent to a client when an action is confirmed",
+  "variables": [
+    {
+      "name": "first_name",
+      "description": "Client's first name",
+      "example": "Marko"
+    }
+  ],
+  "default_subject": "Confirmation",
+  "default_body": "Hello {{first_name}}, your action is confirmed.",
+  "current_subject": "Confirmation",
+  "current_body": "Hello {{first_name}}, your action is confirmed.",
+  "is_customized": false
+}
+```
+
+**Response 400:** `{"error": "channel must be 'email' or 'push'"}`
+**Response 401:** `{"error": "unauthorized"}`
+**Response 403:** `{"error": "forbidden"}`
+**Response 404:** `{"error": "unknown template type"}`
+
+---
+
+### PUT /api/v3/notification-templates/:channel/:type
+
+Customize a notification template's subject and body. The new text may only reference `{{variables}}` that the template type supports — referencing an unknown variable is rejected with `400`.
+
+**Authentication:** Employee token with `notifications.templates.manage` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `channel` | string | `email` or `push` |
+| `type` | string | Template type (e.g., `CONFIRMATION`) |
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `subject` | string | Yes | Customized subject text. May contain `{{variable}}` placeholders. Must not be empty. |
+| `body` | string | Yes | Customized body text. May contain `{{variable}}` placeholders. Must not be empty. |
+
+**Example Request:** customizing `email/CONFIRMATION`:
+```json
+{
+  "subject": "Hi {{first_name}}!",
+  "body": "Welcome {{first_name}}."
+}
+```
+
+**Response 200:** The updated template object (same shape as `GET /api/v3/notification-templates/:channel/:type`) with `is_customized: true` and the new `current_subject` / `current_body`:
+```json
+{
+  "type": "CONFIRMATION",
+  "channel": "email",
+  "description": "Sent to a client when an action is confirmed",
+  "variables": [
+    {
+      "name": "first_name",
+      "description": "Client's first name",
+      "example": "Marko"
+    }
+  ],
+  "default_subject": "Confirmation",
+  "default_body": "Hello {{first_name}}, your action is confirmed.",
+  "current_subject": "Hi {{first_name}}!",
+  "current_body": "Welcome {{first_name}}.",
+  "is_customized": true
+}
+```
+
+**Response 400:** `{"error": "unknown variable {{account_number}} for template type CONFIRMATION"}` — also returned if `subject` or `body` is empty.
+**Response 401:** `{"error": "unauthorized"}`
+**Response 403:** `{"error": "forbidden"}`
+**Response 404:** `{"error": "unknown template type"}`
+
+---
+
+### DELETE /api/v3/notification-templates/:channel/:type
+
+Revert a notification template to its code-defined default by removing the DB override.
+
+**Authentication:** Employee token with `notifications.templates.manage` permission
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `channel` | string | `email` or `push` |
+| `type` | string | Template type (e.g., `CONFIRMATION`) |
+
+**Response 200:** The template object with `is_customized: false` and `current_subject` / `current_body` back to the registry defaults:
+```json
+{
+  "type": "CONFIRMATION",
+  "channel": "email",
+  "description": "Sent to a client when an action is confirmed",
+  "variables": [
+    {
+      "name": "first_name",
+      "description": "Client's first name",
+      "example": "Marko"
+    }
+  ],
+  "default_subject": "Confirmation",
+  "default_body": "Hello {{first_name}}, your action is confirmed.",
+  "current_subject": "Confirmation",
+  "current_body": "Hello {{first_name}}, your action is confirmed.",
+  "is_customized": false
+}
+```
+
+**Response 400:** `{"error": "channel must be 'email' or 'push'"}`
+**Response 401:** `{"error": "unauthorized"}`
+**Response 403:** `{"error": "forbidden"}`
+**Response 404:** `{"error": "unknown template type"}`
+
+---
+
+## 16. Transfer Fees
 
 Configurable fee rules applied to payments and transfers. Multiple active fee rules can apply to the same transaction -- they stack additively. For example, a percentage fee AND a fixed fee can both apply to the same transaction.
 
@@ -3002,7 +3245,7 @@ Deactivate a fee rule. The rule is not deleted from the database -- it is soft-d
 
 ---
 
-## 16. Interest Rate Tiers
+## 17. Interest Rate Tiers
 
 Interest rate tier management for loan interest rate configuration. Each tier defines the fixed and variable base rates for a loan amount range.
 
@@ -3191,7 +3434,7 @@ Apply a variable rate update to all active variable-rate loans whose amount fall
 
 ---
 
-## 17. Bank Margins
+## 18. Bank Margins
 
 Bank margin management for loan interest rate calculation. Each loan type has a configurable margin that is added to the variable base rate from the interest rate tier.
 
@@ -3284,7 +3527,7 @@ Update the margin for a specific loan type.
 
 ---
 
-## 18. Card Requests
+## 19. Card Requests
 
 Card requests allow clients to request a card for one of their accounts. Employees with `cards.approve` permission can approve or reject these requests.
 
@@ -3498,7 +3741,7 @@ Employee rejects a pending card request with a reason.
 
 ---
 
-## 19. Me (Self-Service)
+## 20. Me (Self-Service)
 
 The `/api/v3/me/*` route group provides self-service access for both employees and bank clients. All routes in this group are protected by `AnyAuthMiddleware`, which accepts any valid JWT (employee or client). Results are automatically scoped to the authenticated principal -- no `client_id` path segment is needed.
 
@@ -3976,7 +4219,7 @@ Returns paginated capital gains tax records for the authenticated user. See [Sec
 
 ---
 
-## 20. Mobile Auth
+## 21. Mobile Auth
 
 Mobile device authentication for the EXBanka mobile app. These endpoints are public (no auth required).
 
@@ -4102,7 +4345,7 @@ Refresh mobile access token.
 
 ---
 
-## 21. Mobile Device Management
+## 22. Mobile Device Management
 
 Manage the authenticated mobile device. Requires `MobileAuthMiddleware`.
 
@@ -4171,7 +4414,7 @@ Deactivate the current device and send a new activation code to the specified em
 
 ---
 
-## 22. Mobile Device Settings
+## 23. Mobile Device Settings
 
 Biometric authentication settings for the mobile device. Requires `MobileAuthMiddleware` + `RequireDeviceSignature`.
 
@@ -4231,7 +4474,7 @@ Get current biometric authentication status for the device.
 
 ---
 
-## 23. Verification
+## 24. Verification
 
 The verification service provides two-factor authentication for payments and transfers. Challenges expire after 5 minutes and allow a maximum of 3 attempts. Employees with `verification.skip` permission bypass verification entirely.
 
@@ -4548,7 +4791,7 @@ QR code verification. The mobile app scans a QR code displayed in the browser, e
 
 ---
 
-## 24. Stock Exchanges
+## 25. Stock Exchanges
 
 ### GET /api/v3/stock-exchanges
 
@@ -4626,7 +4869,7 @@ Get current testing mode status.
 
 ---
 
-## 25. Securities
+## 26. Securities
 
 All securities endpoints require any valid JWT (AnyAuthMiddleware).
 
@@ -4874,7 +5117,7 @@ GET /api/v3/securities/candles?listing_id=42&interval=1h&from=2026-04-01T00:00:0
 
 ---
 
-## 26. Orders
+## 27. Orders
 
 ### POST /api/v3/me/orders
 
@@ -5177,7 +5420,7 @@ Exercise an option by `option_id`. If `holding_id` is omitted, the backend auto-
 
 ---
 
-## 27. Portfolio
+## 28. Portfolio
 
 ### GET /api/v3/me/portfolio
 
@@ -5330,13 +5573,17 @@ Exercise an options contract.
 
 ---
 
-## 28. OTC Offers (Public Stock Listings)
+## 29. OTC Offers (Public Stock Listings)
 
 These three endpoints cover the legacy stock-public-OTC flow — a holding made publicly tradeable via `POST /api/v3/me/portfolio/:id/make-public` and bought outright by another user. For the Celina 4 option-contract negotiations (offer / counter / accept / reject / exercise), see [Section 29](#29-otc-option-contracts-celina-4).
 
 ### GET /api/v3/otc/offers
 
-List public stock OTC offers (publicly listed holdings).
+Unified OTC market view. Returns both **local** offers (publicly listed holdings on this bank) and **remote** offers (publicly listed holdings on every active peer bank). The gateway aggregates the two and serves the merged list from an in-memory cache that a background goroutine rebuilds every ~5 seconds — peer fan-out happens off the request path so a slow or down peer never blocks the client.
+
+Each offer carries a `kind` discriminator so the UI can route purchases to the correct flow:
+- `kind: "local"` → buy via `POST /api/v3/otc/offers/:id/buy` (intra-bank, atomic).
+- `kind: "remote"` → buy via `POST /api/v3/me/peer-otc/negotiations` using the offer's `bank_code` as `seller_bank_code` and `owner_id` as `seller_id` (cross-bank, SI-TX two-phase).
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -5347,15 +5594,80 @@ List public stock OTC offers (publicly listed holdings).
 | `page` | int | Page number (default: 1) |
 | `page_size` | int | Items per page (default: 10) |
 | `security_type` | string | `stock` or `futures` |
-| `ticker` | string | Filter by ticker symbol |
+| `ticker` | string | Filter by ticker symbol (case-insensitive) |
+| `kind` | string | Filter to `local` or `remote` only |
+| `bank_code` | string | Filter to a single bank (e.g. `333`) |
 
 **Response 200:**
 ```json
 {
-  "offers": [ ],
-  "total_count": 8
+  "offers": [
+    {
+      "kind":           "local",
+      "bank_code":      "111",
+      "id":             5,
+      "seller_id":      1,
+      "seller_name":    "Test Client",
+      "security_type":  "stock",
+      "ticker":         "MSFT",
+      "name":           "Microsoft Corporation",
+      "quantity":       1,
+      "price_per_unit": "418.13",
+      "created_at":     "2026-05-07T21:17:44Z"
+    },
+    {
+      "kind":           "remote",
+      "bank_code":      "333",
+      "owner_id":       "1",
+      "security_type":  "stock",
+      "ticker":         "JNJ",
+      "quantity":       3,
+      "price_per_unit": "0",
+      "currency":       "USD"
+    },
+    {
+      "kind":           "remote",
+      "bank_code":      "333",
+      "owner_id":       "0",
+      "security_type":  "stock",
+      "ticker":         "MSFT",
+      "quantity":       1,
+      "price_per_unit": "0",
+      "currency":       "USD"
+    }
+  ],
+  "total_count":   3,
+  "peers_total":   2,
+  "peers_reached": 2,
+  "partial":       false,
+  "last_refresh":  "2026-05-07T21:18:00Z"
 }
 ```
+
+**Field reference:**
+| Field | Local | Remote | Notes |
+|---|:-:|:-:|---|
+| `kind` | ✓ | ✓ | `"local"` or `"remote"` |
+| `bank_code` | ✓ | ✓ | Own bank for local, peer bank for remote |
+| `id` | ✓ | — | Holding ID (use with `/otc/offers/:id/buy`) |
+| `seller_id` | ✓ | — | Numeric client id |
+| `seller_name` | ✓ | — | Display name |
+| `name` | ✓ | — | Security display name |
+| `created_at` | ✓ | — | Holding-listing timestamp |
+| `owner_id` | — | ✓ | SI-TX owner id (`"0"` = bank-owned, `"1+"` = client id at the peer) |
+| `security_type`, `ticker`, `quantity`, `price_per_unit` | ✓ | ✓ | Common across both kinds |
+| `currency` | — | ✓ | Peer-supplied currency code |
+
+**Top-level meta:**
+- `total_count` — number of offers matching filters (across all pages).
+- `peers_total` — number of active peer banks the cache attempted to reach on its last refresh.
+- `peers_reached` — how many returned successfully.
+- `partial` — `true` when `peers_reached < peers_total`; UI should warn the user that the list may be incomplete.
+- `last_refresh` — ISO 8601 timestamp of the most recent cache rebuild. Empty string before the first refresh after boot.
+
+**Caveats:**
+- Remote offers carry `price_per_unit: "0"` because the SI-TX `/public-stock` cohort wire shape doesn't currently transmit a live price; UIs displaying remote offers need to fetch the ticker's market price separately or treat the price as quote-on-request.
+- The cache is per-gateway-instance and rebuilds every ~5 s, so a freshly-published holding becomes visible to other banks within one tick window. There's no push.
 
 ---
 
@@ -5425,15 +5737,17 @@ Renamed from `POST /api/v3/otc/admin/offers/:id/buy` in the v3 route standardiza
 
 ---
 
-## 29. OTC Option Contracts (Celina 4)
+## 30. OTC Option Contracts (Celina 4)
 
 OTC option-contract negotiation flow (Specification §26). Two parties — both clients, both supervisors, or a client and an employee acting for the bank — exchange revisions on a stock-option contract until one side accepts or rejects. Acceptance triggers a premium-payment SAGA that creates an `OptionContract`. The contract can later be exercised before its `settlement_date`.
 
 The URL namespace is shared with [Section 28](#28-otc-offers-public-stock-listings) (`/api/v3/otc/offers`) — the routes here are distinguished by their HTTP verb and action segment (`/counter`, `/accept`, `/reject`, `/exercise`).
 
-**Permissions:** all trading actions (create, counter, accept, reject, exercise) require **both** `securities.trade` **and** `otc.trade` (`RequireAllPermissions`). Read endpoints accept any authenticated principal.
+**Permissions:** clients may call all trading actions (create, counter, accept, reject, exercise) — their access is gated by resource ownership, not permissions. Employees still need **both** `securities.trade` **and** `otc.trade` (`RequirePermissionOrClient`). Read endpoints accept any authenticated principal.
 
 **Identity middleware:** these routes use `OwnerIsBankIfEmployee` — when the caller is an employee, the offer/contract is owned by `bank` (no client `OwnerID`); when the caller is a client, the offer/contract is owned by that client.
+
+**Account ownership & on-behalf:** every account a caller supplies is verified before the gRPC call. A client may only use their own accounts. An employee with no `on_behalf_of_client_id` acts as the bank and must use a bank account; an employee that sets `on_behalf_of_client_id` acts for that client (requires `otc.trade.on_behalf`) and must use that client's account. Each party binds only their own account — the counterparty account is read from the persisted offer/contract.
 
 ---
 
@@ -5441,30 +5755,33 @@ The URL namespace is shared with [Section 28](#28-otc-offers-public-stock-listin
 
 Create a new OTC option offer (open a negotiation thread).
 
-**Authentication:** Any JWT + `securities.trade` AND `otc.trade`
+**Authentication:** Any JWT (clients allowed; employees need `securities.trade` AND `otc.trade`)
 
 **Request Body:**
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `direction` | string | Yes | `sell_initiated` (caller is the seller of the option) or `buy_initiated` (caller is the buyer) |
-| `stock_id` | uint64 | Yes | Stock listing ID the option is on |
+| `ticker` | string | Yes | Ticker of the stock the option is on (resolved to a stock ID server-side; unknown ticker → 400) |
 | `quantity` | string (decimal) | Yes | Number of shares the option covers |
 | `strike_price` | string (decimal) | Yes | Strike price per share, in the seller's account currency |
 | `premium` | string (decimal) | No | Option premium (paid by buyer to seller on accept) |
 | `settlement_date` | string (RFC3339 date) | Yes | Last day the option can be exercised |
+| `account_id` | uint64 | Yes | The initiator's account — pays the premium on `buy_initiated`, receives it on `sell_initiated`. Ownership-verified. |
 | `counterparty_user_id` | int64 | No | Pin the offer to a specific counterparty (1:1 negotiation). Omit for a broadcast offer. |
 | `counterparty_system_type` | string | No | `client` (default) or `employee` — paired with `counterparty_user_id` |
+| `on_behalf_of_client_id` | uint64 | No | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). Omitted → employee acts as the bank. |
 
 **Example Request:**
 ```json
 {
   "direction": "sell_initiated",
-  "stock_id": 42,
+  "ticker": "AAPL",
   "quantity": "100",
   "strike_price": "5000.00",
   "premium": "50000.00",
   "settlement_date": "2026-06-05",
+  "account_id": 4242,
   "counterparty_user_id": 8,
   "counterparty_system_type": "client"
 }
@@ -5490,8 +5807,8 @@ Create a new OTC option offer (open a negotiation thread).
 ```
 
 **Error Responses:**
-- `400` — invalid direction / missing required field
-- `403` — missing `securities.trade` or `otc.trade`
+- `400` — invalid direction / missing required field / unknown ticker
+- `403` — account does not belong to the caller, or employee missing `securities.trade` / `otc.trade` / `otc.trade.on_behalf`
 
 ---
 
@@ -5507,7 +5824,7 @@ Send a counter-offer on an existing negotiation thread. The counterparty becomes
 |---|---|---|
 | `id` | uint64 | Offer ID |
 
-**Request Body:** Any subset of the negotiable terms — fields left blank are unchanged.
+**Request Body:** Any subset of the negotiable terms — fields left blank are unchanged. No account is bound at counter time (each party's account is bound at create / accept).
 
 | Field | Type | Description |
 |---|---|---|
@@ -5515,6 +5832,7 @@ Send a counter-offer on an existing negotiation thread. The counterparty becomes
 | `strike_price` | string (decimal) | New strike per share |
 | `premium` | string (decimal) | New premium |
 | `settlement_date` | string (RFC3339 date) | New settlement date |
+| `on_behalf_of_client_id` | uint64 | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). |
 
 **Response 200:** `{ "offer": <updated offer> }`.
 
@@ -5541,8 +5859,8 @@ Accept the current revision of an offer. Triggers the premium-payment SAGA: rese
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `buyer_account_id` | uint64 | Yes | Account the premium is debited from |
-| `seller_account_id` | uint64 | Yes | Account the premium is credited to |
+| `account_id` | uint64 | Yes | The **acceptor's own** account. Maps to buyer or seller via the offer's `direction`; the counterparty (initiator) account is read from the persisted offer. Ownership-verified. |
+| `on_behalf_of_client_id` | uint64 | No | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). |
 
 **Response 201:**
 ```json
@@ -5563,8 +5881,8 @@ Accept the current revision of an offer. Triggers the premium-payment SAGA: rese
 ```
 
 **Error Responses:**
-- `400` — missing `buyer_account_id` / `seller_account_id`
-- `403` — missing perms
+- `400` — missing `account_id`
+- `403` — account does not belong to the caller, or employee missing perms
 - `409` — insufficient buyer funds, insufficient seller shares, or offer no longer pending
 
 ---
@@ -5664,12 +5982,11 @@ Exercise an active option contract — the buyer pays `quantity * strike_price` 
 |---|---|---|
 | `id` | uint64 | Contract ID |
 
-**Request Body:**
+**Request Body:** Optional. The buyer and seller accounts are read from the contract (bound at accept time), so no account is supplied here.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `buyer_account_id` | uint64 | Yes | Account that pays the strike (and where the holding lands) |
-| `seller_account_id` | uint64 | Yes | Account that receives the strike payment |
+| `on_behalf_of_client_id` | uint64 | No | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). |
 
 **Response 201:**
 ```json
@@ -5680,8 +5997,7 @@ Exercise an active option contract — the buyer pays `quantity * strike_price` 
 ```
 
 **Error Responses:**
-- `400` — missing buyer/seller account IDs
-- `403` — missing perms
+- `403` — caller is not the contract buyer, or employee missing perms
 - `409` — contract already exercised / expired, or insufficient buyer funds
 
 ---
@@ -5804,7 +6120,7 @@ After creation, both banks have a negotiation row. Either side can counter via `
 
 ---
 
-## 30. Investment Funds (Celina 4)
+## 31. Investment Funds (Celina 4)
 
 Supervisor-managed investment funds (Specification §24). Clients and the bank take positions in funds via invest/redeem; supervisors manage the catalog and place on-behalf-of-fund orders. Each fund has one bank-owned RSD account that holds its cash; positions and contributions are tracked in `client_fund_positions` and `fund_contributions`.
 
@@ -6070,7 +6386,7 @@ List the bank's own fund positions (Portal: Profit Banke → Investment Funds Po
 
 ---
 
-## 31. Actuaries
+## 32. Actuaries
 
 ### GET /api/v3/actuaries
 
@@ -6207,7 +6523,7 @@ Remove the supervisor approval requirement for this actuary (orders go straight 
 
 ---
 
-## 32. Tax
+## 33. Tax
 
 ### GET /api/v3/tax
 
@@ -6307,7 +6623,7 @@ Authorization: Bearer <token>
 
 ---
 
-## 33. Blueprints
+## 34. Blueprints
 
 **v1-only section.** Limit blueprints are reusable named templates that define a set of limit values. They can be created for employees, actuaries, or clients. Applying a blueprint copies its values to the target entity's limits.
 
@@ -6545,7 +6861,7 @@ Apply a blueprint's limit values to a target entity. The target type is determin
 
 ---
 
-## 34. Changelog (Audit Trail)
+## 35. Changelog (Audit Trail)
 
 Field-level change history for core entities. All five changelog endpoints are **fully implemented** — they return paginated audit log entries from each service's own changelog table, recording every field mutation with old value, new value, and the employee who made the change.
 
@@ -6680,7 +6996,7 @@ Get the field-level change history for a loan.
 
 ---
 
-## 35. Sessions & Login History
+## 36. Sessions & Login History
 
 Manage active sessions and view login history for the authenticated user.
 
@@ -6821,7 +7137,7 @@ Get recent login attempts for the authenticated user.
 
 ---
 
-## 36. Notifications
+## 37. Notifications
 
 **v1-only section.** General persistent notifications for the authenticated user. Unlike verification notifications (mobile-only, time-limited), these persist indefinitely and track read/unread status. Accessible by both browser and mobile clients.
 
@@ -6956,7 +7272,7 @@ Mark all unread notifications as read for the authenticated user.
 
 ---
 
-## 37. Stock Data Source
+## 38. Stock Data Source
 
 Admin-only endpoints for managing the stock-service data source. Switching sources is **destructive** — it wipes every securities row, listing, option, order, holding, capital gain, tax collection, and order transaction, then reseeds from the new source. Use with care.
 
@@ -7020,7 +7336,7 @@ When `status=failed`, `last_error` contains the failure reason. The admin can re
 
 ---
 
-## 38. Peer Banks (Admin) — SI-TX cross-bank registry (Celina 5)
+## 39. Peer Banks (Admin) — SI-TX cross-bank registry (Celina 5)
 
 Runtime registry of cross-bank peer banks. Backs the SI-TX `POST /api/v3/interbank` middleware, which looks up peer authentication credentials in this table. EmployeeAdmin only (`peer_banks.manage.any` permission).
 
@@ -7308,6 +7624,551 @@ Returns identity info for a counterparty user. Peers call this when displaying u
 ```
 
 **Response 404:** Foreign rid or unknown user id.
+
+---
+
+## 40. Watchlist (Celina 3)
+
+Personal list of tracked listings (stocks, options, futures, forex pairs) per `(owner_type, owner_id)`. Read enriches each item with the current price and daily change pulled from `listings` + the latest price-refresh tick. No notifications, no schedulers — UX feature only.
+
+Owner is resolved from the caller's JWT via `ResolveIdentity(OwnerIsBankIfEmployee)`:
+- Client principal → tracks under their own (`client`, principal_id).
+- Employee principal → tracks under the bank's sentinel (`bank`, NULL).
+
+### GET /api/v3/me/watchlist
+
+List tracked listings with current prices + daily change.
+
+**Authentication:** Any JWT (AnyAuthMiddleware)
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `listing_type` | string | One of `stock`, `option`, `futures`, `forex`. Filters by listing kind. |
+
+**Response 200:**
+```json
+{
+  "items": [
+    {
+      "id": 42,
+      "listing_id": 7,
+      "security_type": "stock",
+      "ticker": "AAPL",
+      "current_price": "187.4500",
+      "daily_change": "1.2500",
+      "daily_change_percent": "0.6720",
+      "added_at_unix": 1731699200
+    }
+  ]
+}
+```
+
+**Response 400:** Invalid `listing_type`.
+
+**Use cases:**
+- Watchlist tab in the securities portal: render rows with live price + daily-change badges.
+- Header widget that previews tracked symbols (use `listing_type=stock`).
+- Decide whether a tracked instrument is in range for a planned order before navigating into the order ticket.
+
+### POST /api/v3/me/watchlist
+
+Add a listing to the caller's watchlist. Idempotent — re-adding an already-tracked listing is a no-op and still returns 201 with the existing row.
+
+**Authentication:** Any JWT
+
+**Request body:**
+```json
+{ "listing_id": 7 }
+```
+
+**Response 201:**
+```json
+{ "item": { /* same shape as the List items */ } }
+```
+
+**Response 404:** `listing_id` does not exist.
+
+**Use cases:**
+- "Add to watchlist" button on a stock / option / futures detail page.
+- Quick-add from the OTC discovery page after viewing a counterparty's offer.
+- "Save for later" button on a price alert that's about to fire on a non-tracked instrument.
+
+### DELETE /api/v3/me/watchlist/:listing_id
+
+Remove a listing from the caller's watchlist.
+
+**Authentication:** Any JWT
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `listing_id` | int | The listing id to remove. |
+
+**Response 204:** No content on success.
+
+**Response 404:** The listing is not on the caller's watchlist.
+
+**Use cases:**
+- "Remove from watchlist" / star-toggle button in the watchlist UI.
+- Bulk-cleanup flow after a user closes a position they no longer want to track.
+
+---
+
+## 41. OTC Negotiation History (Celina 3)
+
+Read-only view of *terminal* OTC offers (accepted, rejected, expired, failed) for the caller. The active `/me/otc/offers` list excludes terminal offers; this endpoint surfaces them with optional status, date-range, and counterparty filters.
+
+### GET /api/v3/me/otc/history
+
+List the caller's terminal OTC negotiations.
+
+**Authentication:** Any JWT
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `status` | string (repeatable) | `ACCEPTED` / `REJECTED` / `EXPIRED` / `FAILED`. Default: all four. |
+| `since` | string (YYYY-MM-DD) | Lower bound on `updated_at`. |
+| `until` | string (YYYY-MM-DD) | Upper bound on `updated_at`. Must be ≥ `since`. |
+| `counterparty_id` | int | Restrict to offers where the OTHER party has this owner id. |
+| `page` | int | 1-based; default 1. |
+| `page_size` | int | 1..100; default 20. |
+
+**Response 200:**
+```json
+{
+  "offers": [
+    { "id": 42, "status": "ACCEPTED", "direction": "sell_initiated", "...": "..." }
+  ],
+  "total": 1
+}
+```
+
+Sorted by `updated_at` descending. Item shape mirrors `/api/v3/me/otc/offers`.
+
+**Response 400:** Invalid `status` value, bad date format, `since > until`.
+
+**Use cases:**
+- "Past trades" / "Negotiation history" tab on the OTC portal.
+- Audit a counterparty before accepting their next offer — filter by `counterparty_id` to pull every past negotiation against the same trader.
+- Year-end / month-end review report — filter by `since` / `until` to scope a reporting window.
+- Resurface a `FAILED` saga so the user can see WHY a previously-attempted OTC accept aborted (the `failure_reason` field on the offer carries the saga's terminal error).
+
+---
+
+## 42. OTC Trader Ratings (Celina 3)
+
+After a terminally-accepted OTC offer, either party may rate the other on a 1..5 scale with an optional comment. Each `(offer, rater)` pair allows at most one rating. Aggregates surface via a public profile endpoint usable for OTC discovery.
+
+### POST /api/v3/me/otc/ratings
+
+Submit a 1..5 rating + optional comment for the counterparty of an ACCEPTED offer.
+
+**Authentication:** Any JWT
+
+**Request body:**
+```json
+{ "offer_id": 42, "score": 5, "comment": "smooth transaction" }
+```
+
+`score` must be `1..5`. `comment` is optional and ≤ 1000 characters. The rated party is derived from the offer — caller submits a rating, the OTHER side gets the score.
+
+**Response 201:**
+```json
+{
+  "rating": {
+    "id": 1,
+    "offer_id": 42,
+    "rater_owner_type": "client",
+    "rater_owner_id": 7,
+    "rated_owner_type": "client",
+    "rated_owner_id": 20,
+    "score": 5,
+    "comment": "smooth transaction",
+    "created_at_unix": 1731699200
+  }
+}
+```
+
+**Response 400:** `score` out of range, `comment` too long, missing `offer_id`.
+**Response 403:** Caller is not a party to the referenced offer.
+**Response 409:** The caller has already rated this offer.
+**Response 412:** Offer is not in `ACCEPTED` status.
+
+**Use cases:**
+- Show a "Rate this counterparty" prompt to the user right after their OTC accept settles.
+- Background prompt 24 h after the option exercise window opens — nudges users who never rated the original contract.
+- Email-link callback that lets users rate from outside the app (link contains `offer_id`).
+
+### GET /api/v3/otc/traders/:owner_type/:owner_id/rating
+
+Public aggregate rating + recent comments for a trader. Visible to all authenticated callers — used by OTC discovery to surface "reputable" counterparties.
+
+**Authentication:** Any JWT
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `owner_type` | string | `client` or `bank`. |
+| `owner_id` | int | Owner id (use `0` for bank). |
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `recent_limit` | int | 1..100, default 20 (number of recent comments to surface). |
+
+**Response 200:**
+```json
+{
+  "owner_type": "client",
+  "owner_id": 20,
+  "average": 4.5,
+  "count": 12,
+  "recent": [ { "score": 5, "comment": "...", "created_at_unix": 1731699200 } ]
+}
+```
+
+**Use cases:**
+- Trader-card hover / popover in the OTC discovery list — show stars + count next to each listed offer.
+- Counterparty risk gate on the accept-offer flow: warn if rating is < 3.0 or `count == 0`.
+- "Top traders" leaderboard on the OTC portal landing page.
+
+### GET /api/v3/me/otc/ratings/received
+
+List ratings the caller has received from past OTC counterparties.
+
+**Authentication:** Any JWT
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `limit` | int | 1..100, default 20. |
+
+**Response 200:**
+```json
+{ "ratings": [ { "id": 1, "score": 5, "comment": "...", "rater_owner_id": 7, "...": "..." } ] }
+```
+
+**Use cases:**
+- "My reputation" widget on the OTC portal — shows the caller their own aggregate score + recent feedback.
+- Profile / settings page section that lets users see who rated them poorly so they can reach out / appeal.
+
+---
+
+## 43. Price Alerts (Celina 3)
+
+Per-owner reactive alerts on a listing's price or daily change %. Conditions: `gte`, `lte`, `daily_change_pct_gte`, `daily_change_pct_lte`. Single-shot alerts (`is_recurring=false`) deactivate themselves on first match; recurring alerts honour `cooldown_seconds`. Evaluation runs on a 30 s cron over active alerts; matches publish a `PRICE_ALERT_TRIGGERED` general notification.
+
+### GET /api/v3/me/price-alerts
+
+List the caller's price alerts.
+
+**Authentication:** Any JWT
+
+**Response 200:**
+```json
+{
+  "alerts": [
+    {
+      "id": 1,
+      "listing_id": 7,
+      "condition": "gte",
+      "threshold": "200.00",
+      "is_recurring": false,
+      "cooldown_seconds": 3600,
+      "email_too": false,
+      "active": true,
+      "last_triggered_unix": 0,
+      "created_at_unix": 1731699200
+    }
+  ]
+}
+```
+
+**Use cases:**
+- "Alerts" tab in the user's account — list active + inactive alerts grouped by listing.
+- Inline indicator on watchlist rows: badge each tracked listing that has ≥ 1 active alert.
+
+### POST /api/v3/me/price-alerts
+
+Create a new alert.
+
+**Authentication:** Any JWT
+
+**Request body:**
+```json
+{
+  "listing_id": 7,
+  "condition": "gte",
+  "threshold": "200.00",
+  "is_recurring": false,
+  "cooldown_seconds": 3600,
+  "email_too": false
+}
+```
+
+`cooldown_seconds` must be 60..86400 when `is_recurring=true`. `email_too` flags the matching notification for an email render in addition to the in-app push.
+
+**Response 201:** `{ "alert": { /* PriceAlertResponse */ } }`
+
+**Response 400:** Invalid `condition`, missing `listing_id` / `threshold`, out-of-range cooldown.
+**Response 404:** `listing_id` does not exist.
+
+**Use cases:**
+- "Alert me when X reaches Y" modal on a stock detail page.
+- Quick-set "+5%" / "-5%" daily-change alerts on the watchlist row context menu.
+- Recurring alert (`is_recurring=true`) for users tracking volatile instruments — re-fires every cooldown window when the condition remains true.
+
+### GET /api/v3/me/price-alerts/:id
+
+Read one alert. 404 if the alert isn't owned by the caller.
+
+**Authentication:** Any JWT
+
+**Use cases:**
+- Edit-alert form prefill.
+- Deep-link from the alert notification email/push back into the app.
+
+### PUT /api/v3/me/price-alerts/:id
+
+Update an alert. Accepts the same fields as create plus an `active` boolean.
+
+**Authentication:** Any JWT
+
+**Response 200:** `{ "alert": { /* PriceAlertResponse */ } }`
+**Response 404:** The alert isn't owned by the caller.
+
+**Use cases:**
+- Edit the threshold/condition from the alert list.
+- Toggle `active=false` to pause an alert without deleting it (useful around earnings announcements).
+
+### DELETE /api/v3/me/price-alerts/:id
+
+Delete an alert permanently.
+
+**Authentication:** Any JWT
+
+**Response 204:** Success.
+**Response 404:** The alert isn't owned by the caller.
+
+**Use cases:**
+- "Remove" / trash icon on the alert list.
+- Cleanup after closing a position — the alert is no longer useful.
+
+---
+
+## 44. Transfer Status (Celina 4 / SI-TX)
+
+Surface the four-state client-facing lifecycle (`INITIATED`, `PENDING`, `COMPLETED`, `FAILED`) so the frontend can poll a single field without tracking the internal `pending`/`pending_verification`/`processing`/`completed`/`failed` enum or the SI-TX cross-bank split.
+
+Per-transition push notifications (`TRANSFER_SENT`, `TRANSFER_RECEIVED`, `TRANSFER_FAILED`) are already emitted by the notification-coverage work; this endpoint is the read counterpart.
+
+### GET /api/v3/me/transfers/:id/status
+
+Get the client-facing status of one of the caller's transfers.
+
+**Authentication:** Any JWT (must own the transfer)
+
+**Response 200:**
+```json
+{
+  "transfer_id": 42,
+  "status": "COMPLETED",
+  "internal_status": "completed",
+  "failure_reason": "",
+  "last_changed_unix": 1731699200
+}
+```
+
+| Internal status | Public `status` |
+|---|---|
+| `pending`, `pending_verification` | `INITIATED` |
+| `processing` | `PENDING` |
+| `completed` | `COMPLETED` |
+| `failed` | `FAILED` |
+
+**Response 403:** Caller does not own the transfer.
+**Response 404:** Transfer not found.
+
+**Use cases:**
+- Polling loop on the transfer-detail screen while the user waits for cross-bank settlement.
+- Inline status pill on the transfer-list row.
+- Decision input for "show retry button" — when `status=FAILED` and `failure_reason` indicates a transient cause.
+- Drive the user-facing toast / banner when WebSocket push isn't connected.
+
+---
+
+## 45. Recurring Securities Orders (Celina 3)
+
+User configures a weekly or monthly Market-order template; a scheduler materialises a real order on each due tick. Insufficient funds skip the tick and notify the owner; pause / resume / cancel are explicit lifecycle controls.
+
+> **Note:** The hourly cron loop currently no-ops on placement until the order-placer integration lands. CRUD + state transitions still operate. Once wired, insufficient-funds skips emit `RECURRING_ORDER_SKIPPED`; successful placements emit `RECURRING_ORDER_EXECUTED`.
+
+### GET /api/v3/me/recurring-orders
+
+List the caller's recurring-order templates.
+
+**Authentication:** Any JWT
+
+**Response 200:** `{ "recurring_orders": [ /* RecurringOrderResponse[] */ ] }`
+
+**Use cases:**
+- "Recurring orders" tab in the trading portal — show next-run timer per template.
+- Dashboard widget: "You have 3 active recurring buys this month".
+
+### POST /api/v3/me/recurring-orders
+
+Create a recurring (weekly or monthly) Market-order template.
+
+**Authentication:** Any JWT
+
+**Request body:**
+```json
+{
+  "listing_id": 7,
+  "side": "buy",
+  "quantity": 10,
+  "account_id": 42,
+  "interval": "monthly",
+  "day_of_month": 15,
+  "start_date_unix": 1731699200,
+  "end_date_unix": 0
+}
+```
+
+Validation:
+- `side` ∈ `buy` / `sell`.
+- `interval` ∈ `weekly` / `monthly`. `day_of_week` (0..6) is required for weekly; `day_of_month` (1..28) is required for monthly.
+- `end_date_unix=0` means "no end".
+
+**Response 201:** `{ "recurring_order": { /* RecurringOrderResponse */ } }`
+
+**Use cases:**
+- "Set up auto-invest" wizard on a stock detail page — preset to monthly + day-of-month-1 for paycheck timing.
+- Treasury / corporate user defining weekly accumulation orders.
+
+### GET /api/v3/me/recurring-orders/:id
+
+Read one recurring order. Caller-scoped.
+
+**Authentication:** Any JWT
+
+**Use cases:** Edit-form prefill; deep-link from the activity feed.
+
+### POST /api/v3/me/recurring-orders/:id/pause
+
+Transition active → paused.
+
+**Authentication:** Any JWT
+
+**Response 200:** `{ "recurring_order": { /* with status=paused */ } }`
+
+**Use cases:**
+- "Hold for now" toggle when the user expects a short-term cash crunch (avoids the SKIPPED notification on the next tick).
+
+### POST /api/v3/me/recurring-orders/:id/resume
+
+Transition paused → active.
+
+**Authentication:** Any JWT
+
+**Use cases:** Resume a previously-paused template; common pattern is pause-while-vacation, resume-after.
+
+### POST /api/v3/me/recurring-orders/:id/cancel
+
+Permanently cancel (terminal state). No further ticks will execute.
+
+**Authentication:** Any JWT
+
+**Use cases:** "I'm done with this strategy" — terminate the template; differs from `delete` in that the audit trail is retained.
+
+---
+
+## 46. Recurring Fund Investments (Celina 4)
+
+Monthly Dollar-Cost-Averaging template — every month on `day_of_month` the cron auto-invests `amount_rsd` from `source_account_id` into `fund_id`. Insufficient funds (or fund-no-longer-eligible) skip the tick with a `FUND_RECURRING_SKIPPED` push; successful contributions emit `FUND_RECURRING_EXECUTED`. The recurrence stays active across skips.
+
+Personal to clients — employee tokens get an empty result list.
+
+### GET /api/v3/me/recurring-funds
+
+List my recurring fund-investment templates.
+
+**Authentication:** Any JWT (client principal returns data; employee returns empty)
+
+**Response 200:** `{ "recurring_funds": [ /* RecurringFundResponse[] */ ] }`
+
+**Use cases:**
+- "My auto-invest plans" page in the fund portal.
+- Pre-investment screen: show existing DCA into the fund the user is about to invest into manually (avoid double-invest confusion).
+
+### POST /api/v3/me/recurring-funds
+
+Create a monthly DCA fund-investment template.
+
+**Authentication:** Any JWT
+
+**Request body:**
+```json
+{
+  "fund_id": 7,
+  "amount_rsd": "1000.0000",
+  "source_account_id": 42,
+  "day_of_month": 15
+}
+```
+
+Validation:
+- `day_of_month` must be 1..28.
+- `fund_id` must point to an open fund OR a closed fund currently in the fundraising window (otherwise no tick can ever fire).
+- `amount_rsd` must be ≥ the fund's `minimum_contribution_rsd`.
+
+**Response 201:** `{ "recurring_fund": { /* RecurringFundResponse */ } }`
+
+**Use cases:**
+- "Auto-invest into this fund every month" CTA on the fund detail page.
+- Closed-end fund onboarding: lock in a DCA during the fundraising window.
+
+### GET /api/v3/me/recurring-funds/:id
+
+Read one recurring fund investment. Caller-scoped.
+
+**Authentication:** Any JWT
+
+**Use cases:** Edit form / detail view.
+
+### POST /api/v3/me/recurring-funds/:id/pause
+
+Toggle `active=false`.
+
+**Authentication:** Any JWT
+
+**Use cases:** Vacation hold; cash-crunch pause without losing the template.
+
+### POST /api/v3/me/recurring-funds/:id/resume
+
+Toggle `active=true`.
+
+**Authentication:** Any JWT
+
+**Use cases:** Resume after a temporary pause.
+
+### DELETE /api/v3/me/recurring-funds/:id
+
+Permanently cancel.
+
+**Authentication:** Any JWT
+
+**Response 204:** Success.
+
+**Use cases:** Wind down a DCA strategy.
 
 ---
 
