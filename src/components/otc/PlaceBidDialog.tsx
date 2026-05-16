@@ -42,14 +42,12 @@ export function PlaceBidDialog({
   const [quantity, setQuantity] = useState(listing.quantity)
   const [strike, setStrike] = useState(listing.strike_price)
   const [premium, setPremium] = useState(listing.premium ?? '')
-  const [settlement, setSettlement] = useState(listing.settlement_date)
 
   const isValid =
     bidderAccountId !== undefined &&
     DECIMAL_RE.test(quantity) &&
     DECIMAL_RE.test(strike) &&
-    DECIMAL_RE.test(premium) &&
-    settlement.length === 10
+    DECIMAL_RE.test(premium)
 
   const handleSubmit = () => {
     if (!isValid || bidderAccountId === undefined) return
@@ -58,7 +56,7 @@ export function PlaceBidDialog({
       quantity,
       strike_price: strike,
       premium,
-      settlement_date: settlement,
+      settlement_date: listing.settlement_date,
     })
   }
 
@@ -70,8 +68,8 @@ export function PlaceBidDialog({
         </DialogHeader>
         <div className="space-y-3 py-2">
           <p className="text-sm text-muted-foreground">
-            Opens a new negotiation chain on this listing. You can counter, accept, or withdraw the
-            chain afterwards.
+            Opens a new negotiation chain on this listing. Settlement date is fixed by the
+            offer: <strong>{listing.settlement_date}</strong>.
           </p>
           <div>
             <Label htmlFor="bid-account">Your account</Label>
@@ -111,25 +109,14 @@ export function PlaceBidDialog({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="bid-premium">Premium</Label>
-              <Input
-                id="bid-premium"
-                inputMode="decimal"
-                value={premium}
-                onChange={(e) => setPremium(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="bid-settlement">Settlement date</Label>
-              <Input
-                id="bid-settlement"
-                type="date"
-                value={settlement}
-                onChange={(e) => setSettlement(e.target.value)}
-              />
-            </div>
+          <div>
+            <Label htmlFor="bid-premium">Premium</Label>
+            <Input
+              id="bid-premium"
+              inputMode="decimal"
+              value={premium}
+              onChange={(e) => setPremium(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>

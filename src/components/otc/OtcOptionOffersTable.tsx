@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Table,
   TableBody,
@@ -21,6 +21,7 @@ interface Props {
 }
 
 export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
+  const navigate = useNavigate()
   if (offers.length === 0) {
     return <p className="text-muted-foreground">No offers in this view.</p>
   }
@@ -43,8 +44,16 @@ export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
         {offers.map((o) => {
           const isOwner =
             currentUserId !== undefined && o.initiator?.owner_id === currentUserId
+          const detailUrl = `/otc/offers/${o.id}`
+          // Click anywhere on the row (except interactive controls) to open
+          // the detail page — owners use this to see their incoming bids.
+          const navigateOnClick = () => navigate(detailUrl)
           return (
-            <TableRow key={o.id} className="cursor-pointer">
+            <TableRow
+              key={o.id}
+              className="cursor-pointer hover:bg-muted/40"
+              onClick={navigateOnClick}
+            >
               <TableCell>
                 {o.unread && (
                   <span
@@ -55,11 +64,17 @@ export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
                 )}
               </TableCell>
               <TableCell>
-                <Link to={`/otc/offers/${o.id}`}>
-                  <DirectionBadge direction={o.direction === 'sell_initiated' ? 'sell' : 'buy'} />
+                <DirectionBadge direction={o.direction === 'sell_initiated' ? 'sell' : 'buy'} />
+              </TableCell>
+              <TableCell className="font-medium">
+                <Link
+                  to={detailUrl}
+                  onClick={(e) => e.stopPropagation()}
+                  className="hover:underline"
+                >
+                  {o.ticker ?? `#${o.stock_id}`}
                 </Link>
               </TableCell>
-              <TableCell className="font-medium">{o.ticker ?? `#${o.stock_id}`}</TableCell>
               <TableCell className="text-right">{o.quantity}</TableCell>
               <TableCell className="text-right">{o.strike_price}</TableCell>
               <TableCell className="text-right">{o.premium ?? '—'}</TableCell>
@@ -67,7 +82,7 @@ export function OtcOptionOffersTable({ offers, currentUserId, onBid }: Props) {
               <TableCell>
                 <OtcOptionStatusBadge status={o.status ?? 'open'} />
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 {isOwner ? (
                   <span className="text-sm text-muted-foreground italic">Your offer</span>
                 ) : onBid ? (

@@ -92,5 +92,18 @@ describe('OtcOptionOffersTable', () => {
       renderWithRouter(<OtcOptionOffersTable offers={[offer]} currentUserId={7} />)
       expect(screen.getByText(/your offer/i)).toBeInTheDocument()
     })
+
+    it('makes the whole row a link to the offer detail page so owners can see bids', () => {
+      // Direction badge alone isn't enough — clicking anywhere on a row
+      // (especially for the owner, who has no Bid button) should navigate.
+      const offer = createMockOtcOptionOffer({
+        id: 1001,
+        ticker: 'AAPL',
+        initiator: { owner_type: 'client', owner_id: 7 },
+      })
+      renderWithRouter(<OtcOptionOffersTable offers={[offer]} currentUserId={7} />)
+      const rowLink = screen.getByRole('link', { name: /AAPL/ })
+      expect(rowLink).toHaveAttribute('href', '/otc/offers/1001')
+    })
   })
 })
