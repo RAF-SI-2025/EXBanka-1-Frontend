@@ -5535,25 +5535,9 @@ Get portfolio summary (total value, gains/losses, allocation).
 
 ---
 
-### POST /api/v3/me/portfolio/:id/make-public
+### ~~POST /api/v3/me/portfolio/:id/make-public~~ — REMOVED in Phase 8
 
-Make a holding available on the OTC market.
-
-**Authentication:** Any JWT (AnyAuthMiddleware)
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | int | Holding ID |
-
-**Request Body:**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `quantity` | int64 | Yes | Number of units to make public (must be positive) |
-
-**Response 200:** Public holding object.
+Use `POST /api/v3/me/otc/stocks` with `direction=sell` instead — see [Section 47.1](#471-stocks-marketplace).
 
 ---
 
@@ -5573,550 +5557,39 @@ Exercise an options contract.
 
 ---
 
-## 29. OTC Offers (Public Stock Listings)
+## 29. OTC Stocks Marketplace — moved to §47.1
 
-These three endpoints cover the legacy stock-public-OTC flow — a holding made publicly tradeable via `POST /api/v3/me/portfolio/:id/make-public` and bought outright by another user. For the Celina 4 option-contract negotiations (offer / counter / accept / reject / exercise), see [Section 29](#29-otc-option-contracts-celina-4).
+**Phase 8 reorganisation.** Routes formerly documented here have been moved to the new `/api/v3/otc/stocks/...` namespace under [Section 47.1](#471-stocks-marketplace). The new section also documents the **buy-direction** offers introduced by the Phase 3 refactor (publish a standing offer to buy at a fixed price, backed by an account-service cash reservation). Mapping:
 
-### GET /api/v3/otc/offers
-
-Unified OTC market view. Returns both **local** offers (publicly listed holdings on this bank) and **remote** offers (publicly listed holdings on every active peer bank). The gateway aggregates the two and serves the merged list from an in-memory cache that a background goroutine rebuilds every ~5 seconds — peer fan-out happens off the request path so a slow or down peer never blocks the client.
-
-Each offer carries a `kind` discriminator so the UI can route purchases to the correct flow:
-- `kind: "local"` → buy via `POST /api/v3/otc/offers/:id/buy` (intra-bank, atomic).
-- `kind: "remote"` → buy via `POST /api/v3/me/peer-otc/negotiations` using the offer's `bank_code` as `seller_bank_code` and `owner_id` as `seller_id` (cross-bank, SI-TX two-phase).
-
-**Authentication:** Any JWT (AnyAuthMiddleware)
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `page` | int | Page number (default: 1) |
-| `page_size` | int | Items per page (default: 10) |
-| `security_type` | string | `stock` or `futures` |
-| `ticker` | string | Filter by ticker symbol (case-insensitive) |
-| `kind` | string | Filter to `local` or `remote` only |
-| `bank_code` | string | Filter to a single bank (e.g. `333`) |
-
-**Response 200:**
-```json
-{
-  "offers": [
-    {
-      "kind":           "local",
-      "bank_code":      "111",
-      "id":             5,
-      "seller_id":      1,
-      "seller_name":    "Test Client",
-      "security_type":  "stock",
-      "ticker":         "MSFT",
-      "name":           "Microsoft Corporation",
-      "quantity":       1,
-      "price_per_unit": "418.13",
-      "created_at":     "2026-05-07T21:17:44Z"
-    },
-    {
-      "kind":           "remote",
-      "bank_code":      "333",
-      "owner_id":       "1",
-      "security_type":  "stock",
-      "ticker":         "JNJ",
-      "quantity":       3,
-      "price_per_unit": "0",
-      "currency":       "USD"
-    },
-    {
-      "kind":           "remote",
-      "bank_code":      "333",
-      "owner_id":       "0",
-      "security_type":  "stock",
-      "ticker":         "MSFT",
-      "quantity":       1,
-      "price_per_unit": "0",
-      "currency":       "USD"
-    }
-  ],
-  "total_count":   3,
-  "peers_total":   2,
-  "peers_reached": 2,
-  "partial":       false,
-  "last_refresh":  "2026-05-07T21:18:00Z"
-}
-```
-
-**Field reference:**
-| Field | Local | Remote | Notes |
-|---|:-:|:-:|---|
-| `kind` | ✓ | ✓ | `"local"` or `"remote"` |
-| `bank_code` | ✓ | ✓ | Own bank for local, peer bank for remote |
-| `id` | ✓ | — | Holding ID (use with `/otc/offers/:id/buy`) |
-| `seller_id` | ✓ | — | Numeric client id |
-| `seller_name` | ✓ | — | Display name |
-| `name` | ✓ | — | Security display name |
-| `created_at` | ✓ | — | Holding-listing timestamp |
-| `owner_id` | — | ✓ | SI-TX owner id (`"0"` = bank-owned, `"1+"` = client id at the peer) |
-| `security_type`, `ticker`, `quantity`, `price_per_unit` | ✓ | ✓ | Common across both kinds |
-| `currency` | — | ✓ | Peer-supplied currency code |
-
-**Top-level meta:**
-- `total_count` — number of offers matching filters (across all pages).
-- `peers_total` — number of active peer banks the cache attempted to reach on its last refresh.
-- `peers_reached` — how many returned successfully.
-- `partial` — `true` when `peers_reached < peers_total`; UI should warn the user that the list may be incomplete.
-- `last_refresh` — ISO 8601 timestamp of the most recent cache rebuild. Empty string before the first refresh after boot.
-
-**Caveats:**
-- Remote offers carry `price_per_unit: "0"` because the SI-TX `/public-stock` cohort wire shape doesn't currently transmit a live price; UIs displaying remote offers need to fetch the ticker's market price separately or treat the price as quote-on-request.
-- The cache is per-gateway-instance and rebuilds every ~5 s, so a freshly-published holding becomes visible to other banks within one tick window. There's no push.
-
----
-
-### POST /api/v3/otc/offers/:id/buy
-
-Purchase an OTC offer. Ownership is derived from the JWT — the account must belong to the JWT caller.
-
-**Authentication:** Any JWT (AnyAuthMiddleware)
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | int | Offer ID |
-
-**Request Body:**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `quantity` | int64 | Yes | Number of units to buy (must be positive) |
-| `account_id` | uint64 | Yes | Account to debit; must belong to the JWT caller |
-
-**Response 200:** Transaction object.
-
----
-
-### POST /api/v3/otc/offers/:id/buy-on-behalf
-
-Purchase an OTC offer on behalf of a named client. The gateway verifies that the specified `account_id` belongs to the specified `client_id` before forwarding to stock-service. The resulting order is recorded with `acting_employee_id` set to the caller's employee ID.
-
-Renamed from `POST /api/v3/otc/admin/offers/:id/buy` in the v3 route standardization (2026-04-28): the `/admin/` namespace was dropped and the action verb-suffix `buy-on-behalf` was added to distinguish it from the self-service `POST /otc/offers/:id/buy`.
-
-**Authentication:** Employee JWT + `otc.trade.accept` or `orders.place-on-behalf` permission
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | int | Offer ID |
-
-**Request Body:**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `client_id` | uint64 | Yes | Client for whom the offer is purchased |
-| `account_id` | uint64 | Yes | Account to debit; must belong to `client_id` |
-| `quantity` | int64 | Yes | Number of units to buy (must be positive) |
-
-**Example Request:**
-```json
-{
-  "client_id": 5,
-  "account_id": 12,
-  "quantity": 3
-}
-```
-
-**Response 200:** Transaction object.
-
-| Status | Description |
+| Old | New |
 |---|---|
-| 200 | OTC offer purchased |
-| 400 | Validation error |
-| 403 | Account does not belong to the specified client |
-| 403 | Missing required permission |
-| 404 | Offer not found |
+| `GET /api/v3/otc/offers` | `GET /api/v3/otc/stocks` |
+| `POST /api/v3/otc/offers/:id/buy` | `POST /api/v3/otc/stocks/:id/buy` |
+| `POST /api/v3/otc/offers/:id/buy-on-behalf` | `POST /api/v3/otc/stocks/:id/buy-on-behalf` |
+| `POST /api/v3/me/portfolio/:id/make-public` | `POST /api/v3/me/otc/stocks` (direction=sell) |
 
 ---
 
-## 30. OTC Option Contracts (Celina 4)
-
-OTC option-contract negotiation flow (Specification §26). Two parties — both clients, both supervisors, or a client and an employee acting for the bank — exchange revisions on a stock-option contract until one side accepts or rejects. Acceptance triggers a premium-payment SAGA that creates an `OptionContract`. The contract can later be exercised before its `settlement_date`.
-
-The URL namespace is shared with [Section 28](#28-otc-offers-public-stock-listings) (`/api/v3/otc/offers`) — the routes here are distinguished by their HTTP verb and action segment (`/counter`, `/accept`, `/reject`, `/exercise`).
-
-**Permissions:** clients may call all trading actions (create, counter, accept, reject, exercise) — their access is gated by resource ownership, not permissions. Employees still need **both** `securities.trade` **and** `otc.trade` (`RequirePermissionOrClient`). Read endpoints accept any authenticated principal.
-
-**Identity middleware:** these routes use `OwnerIsBankIfEmployee` — when the caller is an employee, the offer/contract is owned by `bank` (no client `OwnerID`); when the caller is a client, the offer/contract is owned by that client.
-
-**Account ownership & on-behalf:** every account a caller supplies is verified before the gRPC call. A client may only use their own accounts. An employee with no `on_behalf_of_client_id` acts as the bank and must use a bank account; an employee that sets `on_behalf_of_client_id` acts for that client (requires `otc.trade.on_behalf`) and must use that client's account. Each party binds only their own account — the counterparty account is read from the persisted offer/contract.
-
----
-
-### POST /api/v3/otc/offers
-
-Create a new OTC option offer (open a negotiation thread).
-
-**Authentication:** Any JWT (clients allowed; employees need `securities.trade` AND `otc.trade`)
-
-**Request Body:**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `direction` | string | Yes | `sell_initiated` (caller is the seller of the option) or `buy_initiated` (caller is the buyer) |
-| `ticker` | string | Yes | Ticker of the stock the option is on (resolved to a stock ID server-side; unknown ticker → 400) |
-| `quantity` | string (decimal) | Yes | Number of shares the option covers |
-| `strike_price` | string (decimal) | Yes | Strike price per share, in the seller's account currency |
-| `premium` | string (decimal) | No | Option premium (paid by buyer to seller on accept) |
-| `settlement_date` | string (RFC3339 date) | Yes | Last day the option can be exercised |
-| `account_id` | uint64 | Yes | The initiator's account — pays the premium on `buy_initiated`, receives it on `sell_initiated`. Ownership-verified. |
-| `counterparty_user_id` | int64 | No | Pin the offer to a specific counterparty (1:1 negotiation). Omit for a broadcast offer. |
-| `counterparty_system_type` | string | No | `client` (default) or `employee` — paired with `counterparty_user_id` |
-| `on_behalf_of_client_id` | uint64 | No | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). Omitted → employee acts as the bank. |
-
-**Example Request:**
-```json
-{
-  "direction": "sell_initiated",
-  "ticker": "AAPL",
-  "quantity": "100",
-  "strike_price": "5000.00",
-  "premium": "50000.00",
-  "settlement_date": "2026-06-05",
-  "account_id": 4242,
-  "counterparty_user_id": 8,
-  "counterparty_system_type": "client"
-}
-```
-
-**Response 201:**
-```json
-{
-  "offer": {
-    "id": 1001,
-    "direction": "sell_initiated",
-    "status": "PENDING",
-    "stock_id": 42,
-    "quantity": "100",
-    "strike_price": "5000.00",
-    "premium": "50000.00",
-    "settlement_date": "2026-06-05",
-    "initiator": { "owner_type": "client", "owner_id": 7 },
-    "counterparty": { "owner_type": "client", "owner_id": 8 },
-    "last_modified_at": "2026-04-28T14:20:00Z"
-  }
-}
-```
-
-**Error Responses:**
-- `400` — invalid direction / missing required field / unknown ticker
-- `403` — account does not belong to the caller, or employee missing `securities.trade` / `otc.trade` / `otc.trade.on_behalf`
-
----
-
-### POST /api/v3/otc/offers/:id/counter
-
-Send a counter-offer on an existing negotiation thread. The counterparty becomes the new `last_modified_by`. Each counter appends an `OTCOfferRevision` row.
-
-**Authentication:** Any JWT + `securities.trade` AND `otc.trade`
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | uint64 | Offer ID |
-
-**Request Body:** Any subset of the negotiable terms — fields left blank are unchanged. No account is bound at counter time (each party's account is bound at create / accept).
-
-| Field | Type | Description |
-|---|---|---|
-| `quantity` | string (decimal) | New share count |
-| `strike_price` | string (decimal) | New strike per share |
-| `premium` | string (decimal) | New premium |
-| `settlement_date` | string (RFC3339 date) | New settlement date |
-| `on_behalf_of_client_id` | uint64 | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). |
-
-**Response 200:** `{ "offer": <updated offer> }`.
-
-**Error Responses:**
-- `400` — invalid id / invalid body
-- `403` — missing perms
-- `409` — offer is already accepted, rejected, or expired
-
----
-
-### POST /api/v3/otc/offers/:id/accept
-
-Accept the current revision of an offer. Triggers the premium-payment SAGA: reserve seller's shares → debit buyer's account by `premium` → credit seller → create `OptionContract` row in `ACTIVE` status. Cross-currency cases convert through exchange-service.
-
-**Authentication:** Any JWT + `securities.trade` AND `otc.trade`
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | uint64 | Offer ID |
-
-**Request Body:**
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `account_id` | uint64 | Yes | The **acceptor's own** account. Maps to buyer or seller via the offer's `direction`; the counterparty (initiator) account is read from the persisted offer. Ownership-verified. |
-| `on_behalf_of_client_id` | uint64 | No | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). |
-
-**Response 201:**
-```json
-{
-  "offer": { "id": 1001, "status": "ACCEPTED", ... },
-  "contract": {
-    "id": 5001,
-    "status": "ACTIVE",
-    "stock_id": 42,
-    "quantity": "100",
-    "strike_price": "5000.00",
-    "premium": "50000.00",
-    "settlement_date": "2026-06-05",
-    "buyer": { "owner_type": "client", "owner_id": 7 },
-    "seller": { "owner_type": "client", "owner_id": 8 }
-  }
-}
-```
-
-**Error Responses:**
-- `400` — missing `account_id`
-- `403` — account does not belong to the caller, or employee missing perms
-- `409` — insufficient buyer funds, insufficient seller shares, or offer no longer pending
-
----
-
-### POST /api/v3/otc/offers/:id/reject
-
-Reject an offer. Marks status `REJECTED`; no further revisions are accepted.
-
-**Authentication:** Any JWT + `securities.trade` AND `otc.trade`
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | uint64 | Offer ID |
-
-**Request Body:** None.
-
-**Response 200:** `{ "offer": <updated offer> }`.
-
----
-
-### GET /api/v3/otc/offers/:id
-
-Get full detail for one offer including its revision history.
-
-**Authentication:** Any JWT (read-only)
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | uint64 | Offer ID |
-
-**Response 200:**
-```json
-{
-  "offer": { "id": 1001, ... },
-  "revisions": [
-    {
-      "revision_number": 1,
-      "modified_by": { "principal_type": "client", "principal_id": 7 },
-      "quantity": "100",
-      "strike_price": "5000.00",
-      "premium": "45000.00",
-      "settlement_date": "2026-06-05",
-      "created_at": "2026-04-28T14:20:00Z"
-    },
-    {
-      "revision_number": 2,
-      "modified_by": { "principal_type": "client", "principal_id": 8 },
-      "quantity": "100",
-      "strike_price": "5000.00",
-      "premium": "50000.00",
-      "settlement_date": "2026-06-05",
-      "created_at": "2026-04-28T14:35:00Z"
-    }
-  ]
-}
-```
-
----
-
-### GET /api/v3/me/otc/offers
-
-List the caller's OTC offers. Employees see all bank-owned offers; clients see their own.
-
-**Authentication:** Any JWT (`OwnerIsBankIfEmployee`)
-
-**Query Parameters:**
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `role` | string | `either` | `initiator`, `counterparty`, or `either` |
-| `page` | int | 1 | Page number |
-| `page_size` | int | 20 | Items per page |
-
-**Response 200:**
-```json
-{
-  "offers": [ { "id": 1001, "status": "PENDING", "unread": true, ... } ],
-  "total": 1
-}
-```
-
----
-
-### POST /api/v3/otc/contracts/:id/exercise
-
-Exercise an active option contract — the buyer pays `quantity * strike_price` to the seller and receives the underlying shares. Runs the 5-phase exercise SAGA.
-
-**Authentication:** Any JWT + `securities.trade` AND `otc.trade`
-
-**Path Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `id` | uint64 | Contract ID |
-
-**Request Body:** Optional. The buyer and seller accounts are read from the contract (bound at accept time), so no account is supplied here.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `on_behalf_of_client_id` | uint64 | No | Employee-only: act on behalf of this client (requires `otc.trade.on_behalf`). |
-
-**Response 201:**
-```json
-{
-  "contract": { "id": 5001, "status": "EXERCISED", ... },
-  "holding": { "id": 9001, "stock_id": 42, "quantity": "100", "owner": { ... } }
-}
-```
-
-**Error Responses:**
-- `403` — caller is not the contract buyer, or employee missing perms
-- `409` — contract already exercised / expired, or insufficient buyer funds
-
----
-
-### GET /api/v3/otc/contracts/:id
-
-Get one option contract.
-
-**Authentication:** Any JWT (read-only)
-
-**Response 200:** `{ "contract": { ... } }`.
-
----
-
-### GET /api/v3/me/otc/contracts
-
-List the caller's option contracts.
-
-**Authentication:** Any JWT (`OwnerIsBankIfEmployee`)
-
-**Query Parameters:**
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `role` | string | `either` | `buyer`, `seller`, or `either` |
-| `page` | int | 1 | Page number |
-| `page_size` | int | 20 | Items per page |
-
-**Response 200:**
-```json
-{
-  "contracts": [ { "id": 5001, "status": "ACTIVE", ... } ],
-  "total": 1,
-  "peer_contracts": [
-    {
-      "id": 6,
-      "crossbank_tx_id": "222:abc-123",
-      "posting_index": 3,
-      "negotiation_routing_number": 222,
-      "negotiation_id": "neg-uuid",
-      "buyer_id":  { "routing_number": 111, "id": "client-1" },
-      "seller_id": { "routing_number": 222, "id": "client-1" },
-      "ticker": "AAPL",
-      "quantity": 5,
-      "strike_price": "180",
-      "currency": "USD",
-      "settlement_date": "2027-05-01T00:00:00Z",
-      "direction": "CREDIT",
-      "status": "active",
-      "created_at_unix": 1777595867
-    }
-  ],
-  "peer_total": 1
-}
-```
-
-The `peer_contracts` array surfaces cross-bank (Celina 5) option contracts where the caller is a participant. `direction=CREDIT` means this bank holds the buyer side of the contract; `direction=DEBIT` means this bank holds the seller side. `status` values: `active`, `exercised`, `expired`.
-
----
-
-### POST /api/v3/me/otc/contracts/peer/:id/exercise
-
-Exercise a cross-bank OTC option contract (Celina 5 SI-TX). Buyer-only — only callable on the bank that holds the buyer side (i.e. the row in this bank's `peer_option_contracts` has `direction=CREDIT`).
-
-**Authentication:** Any JWT (`OwnerIsBankIfEmployee`)
-
-**Path Parameters:**
-- `id` — the local `peer_option_contracts` row id (the same `id` returned by `GET /api/v3/me/otc/contracts`'s `peer_contracts`).
-
-**Request Body:**
-```json
-{ "buyer_account_number": "111000192244743221" }
-```
-
-The caller specifies the currency account that pays the strike. The seller's currency account is resolved on the seller's bank from the contract's `seller_id` participant.
-
-**Response 200:**
-```json
-{ "transaction_id": "<uuid>", "status": "pending" }
-```
-
-The exercise dispatches a 4-posting SI-TX (strike money buyer→seller + option markers carrying `intent="exercise"`). Both banks transition the contract to `status=exercised` on COMMIT_TX; the seller's reservation is consumed and the buyer's holding is credited the contract quantity.
-
-**Response 412:** Contract not in status `active` (already exercised / expired) or this bank doesn't hold the buyer side.
-**Response 500:** Insufficient buyer funds or other dispatch failure (the SI-TX local-reserve aborts before money moves).
-
----
-
-### POST /api/v3/me/peer-otc/negotiations
-
-Initiate a cross-bank OTC negotiation against a peer bank's listing. Buyer-side client-facing entry point — composes an SI-TX `OtcOffer` with `buyerId` derived from the caller's JWT and HTTP-POSTs to the seller bank's `/api/v3/negotiations` endpoint.
-
-**Authentication:** Any JWT (`AnyAuthMiddleware`)
-
-**Request Body:**
-```json
-{
-  "seller_bank_code": "222",
-  "seller_id":        "client-1",
-  "stock":            { "ticker": "AAPL" },
-  "settlement_date":  "2027-08-01T00:00:00Z",
-  "price_per_unit":   { "amount": "175", "currency": "USD" },
-  "premium":          { "amount": "40",  "currency": "USD" },
-  "amount":           2
-}
-```
-
-`seller_bank_code` must be a registered peer (see Section 38), not own bank. `seller_id` is an SI-TX participant id (`client-<n>` or `bank`).
-
-**Response 201:** `ForeignBankId` directly — the negotiation id assigned by the seller's bank.
-```json
-{ "routingNumber": 222, "id": "<uuid>" }
-```
-
-After creation, both banks have a negotiation row. Either side can counter via `PUT /api/v3/negotiations/{rid}/{id}` (peer-facing, called bank-to-bank), cancel via `DELETE` (soft-cancel — sets `isOngoing=false`), or accept via `GET /api/v3/negotiations/{rid}/{id}/accept` which dispatches the option-formation SI-TX.
-
-**Response 400:** Validation error (unknown peer, missing fields, seller_bank_code = own bank).
-**Response 404:** Peer bank not registered.
-**Response 502:** Peer transport failure (network error, timeout).
+## 30. OTC Option Contracts (Celina 4) — moved to §47.2
+
+**Phase 8 reorganisation.** The single-chain options surface in this section has been **deleted** and replaced by the per-bidder parallel-negotiation-chain marketplace in [Section 47.2](#472-options-marketplace--parallel-negotiation-chains). The new model is fundamentally different: many bidders can each open their own chain against the same listing, and the first-to-accept wins atomically (parent listing flips to `consumed`; sibling chains cascade-cancel in the same DB transaction). Mapping:
+
+| Old | New |
+|---|---|
+| `POST /api/v3/otc/offers` (create listing) | `POST /api/v3/me/otc/options` |
+| `POST /api/v3/otc/offers/:id/counter` | `POST /api/v3/me/otc/options/:id/negotiations/:nid/counter` |
+| `POST /api/v3/otc/offers/:id/accept` | `POST /api/v3/me/otc/options/:id/negotiations/:nid/accept` |
+| `POST /api/v3/otc/offers/:id/reject` | `POST /api/v3/me/otc/options/:id/negotiations/:nid/reject` |
+| `GET /api/v3/otc/offers/:id` | `GET /api/v3/otc/options/:id` |
+| `GET /api/v3/me/otc/offers` | `GET /api/v3/me/otc/options` |
+| *(new)* | `POST /api/v3/otc/options/:id/bid` (open a negotiation chain) |
+| *(new)* | `DELETE /api/v3/me/otc/options/:id/negotiations/:nid` (bidder withdraws) |
+| *(new)* | `GET /api/v3/otc/options/:id/negotiations` (every chain on a listing — visible to all parties) |
+| *(new)* | `GET /api/v3/me/otc/options/negotiations` (caller's chains) |
+| *(new)* | `GET /api/v3/otc/options` (unified local + remote discovery) |
+| *(new — peer)* | `GET /api/v3/public-option-offers` (cross-bank discovery endpoint) |
+
+The exercise route, contract list, contract detail, ratings, and negotiation-history routes from the old §30 are unchanged — they're still at their existing paths under `/me/otc/contracts/...`, `/me/otc/history`, and `/otc/traders/...`.
 
 ---
 
@@ -8169,6 +7642,396 @@ Permanently cancel.
 **Response 204:** Success.
 
 **Use cases:** Wind down a DCA strategy.
+
+---
+
+## 47. OTC Marketplace Refactor (Phases 2-6)
+
+The OTC surface is split into two clearly-separated marketplaces:
+
+- **`/api/v3/otc/stocks/...`** — public-stock listings, **no negotiation**. Sellers publish shares, buyers fill outright. Includes both sell-direction (publish shares from a holding) and buy-direction (publish a standing offer to buy at a fixed price, backed by a cash reservation).
+- **`/api/v3/otc/options/...`** — option-contract marketplace, **with negotiation**. Any user can post an option listing; many other users can each open their own bid chain on the same listing; first-to-accept wins atomically and sibling chains cascade-cancel inside the same DB transaction.
+
+Both marketplaces support local + cross-bank discovery (peer banks publish their listings via `/api/v3/public-stock` and `/api/v3/public-option-offers`; each bank's stock-service polls every ~5 s and merges into an in-memory cache).
+
+> **Migration note:** Phase 8 cleanup deletes the legacy `/api/v3/otc/offers/...` routes. Existing frontends should migrate to the routes below before that lands. See [Section 29](#29-otc-offers-public-stock-listings) and [Section 30](#30-otc-option-contracts-celina-4) for what was there before.
+
+### 47.1 Stocks marketplace
+
+#### POST /api/v3/me/otc/stocks
+
+Create a sell or buy OTC stock offer. Direction-keyed body.
+
+**Authentication:** Any JWT (`AnyAuthMiddleware` + `ResolveIdentity`)
+
+**Request Body:**
+
+| Field | Type | Required when | Description |
+|---|---|---|---|
+| `direction` | string | always | `sell` or `buy` |
+| `holding_id` | int | direction=sell | Caller's holding to publish shares from. Accumulative — calling twice with qty=N each time results in 2N public shares. |
+| `listing_id` | int | direction=buy | Stock listing to bid on |
+| `quantity` | int | always | Positive integer |
+| `price_per_unit` | string (decimal) | direction=buy | Bid price |
+| `buyer_account_id` | int | direction=buy | Caller's account; cash will be reserved here at create time. Currency must match the listing's exchange currency. |
+
+**Response 201:** `{ "offer": OTCStockOfferResponse }` — direction-aware projection.
+
+**Response 400:** Validation (missing/bad direction, non-positive quantity, missing direction-specific field, currency mismatch, ownership of buyer_account_id failed).
+
+**Response 403:** Buyer account does not belong to caller, or holding ownership failed (sell direction enforces this in the service layer's `SELECT FOR UPDATE` TX).
+
+**Atomic safety (sell direction):** The TX locks the holding with `SELECT FOR UPDATE` and rejects if `OTCSafeAvailable() = Quantity - ReservedQuantity - PublicQuantity` is less than the requested addition — preventing double-commit of shares that are already locked by orders or earlier public offers.
+
+**Atomic safety (buy direction):** The OTCStockBuyOffer row is written in a TX, then `account-service.ReserveFunds` is called after commit. On reservation failure the row is rolled to `cancelled` in a compensating TX. Saga recovery (Phase 3B) reconciles the small orphan window if the process crashes between commit and reserve.
+
+---
+
+#### GET /api/v3/me/otc/stocks
+
+List the caller's own OTC stock offers, both directions merged.
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `direction` | string | Filter to `sell` or `buy`; omit for both |
+| `page` | int | 1-based, default 1 |
+| `page_size` | int | Default 20, max 200 |
+
+**Response 200:** `{ "offers": [OTCStockOfferResponse...], "total": int }`. Sell rows carry `quantity = PublicQuantity` (the active signal); buy rows carry `quantity = RemainingQuantity` and `status = active|filled|cancelled|expired`.
+
+---
+
+#### DELETE /api/v3/me/otc/stocks/:id
+
+Cancel the caller's sell or buy offer.
+
+**Path/Query Params:** `id` (holding_id for sell, buy-offer id for buy) + required `?direction=sell|buy`.
+
+**Response 204:** Cancelled.
+
+- **Sell**: zeros `PublicQuantity` inside `SELECT FOR UPDATE` TX. Rejects with 412 if no active sell offer exists on the holding.
+- **Buy**: flips status to `cancelled` in a TX, then calls `ReleaseReservation` to release any remaining held cash. Rejects with 403 if caller is not the buy-offer's owner; 412 if already terminal.
+
+**Response 403/404/412** per service-sentinel mapping.
+
+---
+
+#### GET /api/v3/otc/stocks
+
+Unified marketplace listing of sell + buy directions across local + remote peer banks. Same partial-failure semantics as `/otc/options` (cache refreshed every ~5 s; `peers_total` / `peers_reached` / `partial=true` reflect the most recent refresh). Replaces the legacy `GET /api/v3/otc/offers` deleted in Phase 8.
+
+**Query Parameters:** `direction` (`sell`|`buy`), `ticker`, `kind` (`local`|`remote`), `bank_code`, `page`, `page_size` (default 10).
+
+---
+
+#### POST /api/v3/otc/stocks/:id/buy
+
+Fill a sell offer with the caller's cash. Race-hardened in Phase 3B follow-up: the seller's holding is `SELECT FOR UPDATE`'d before any money moves, so two concurrent buyers cannot double-spend the same `PublicQuantity` on the same holding. Replaces `POST /api/v3/otc/offers/:id/buy` (deleted in Phase 8).
+
+**Request Body:** `{ "quantity": int, "account_id": int }` (caller's account that pays).
+
+---
+
+#### POST /api/v3/otc/stocks/:id/sell
+
+**Phase 3B — buy-direction fill.** Caller sells the requested quantity of shares into an existing buy offer. The seller's holding is locked with `SELECT FOR UPDATE` and a shares-available check (`Quantity - ReservedQuantity ≥ requested qty`) runs **before** any money moves — the caller literally cannot sell shares they don't have. The buyer's cash was already reserved at buy-offer-create time via account-service `ReserveFunds`, so payment is guaranteed; `PartialSettleReservation` consumes part of that reservation atomically.
+
+**Authentication:** Any JWT + `securities.trade` OR `otc.trade.accept`.
+
+**Path Parameters:**
+- `id` — `otc_stock_buy_offers.id` of the buy offer being filled.
+
+**Request Body:**
+```json
+{
+  "quantity": 5,
+  "seller_account_id": 42
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `quantity` | int | Positive integer; must be ≤ offer's `remaining_quantity` |
+| `seller_account_id` | int | Caller's account that receives proceeds; must match buyer offer's currency |
+
+**Saga ordering:**
+1. `SELECT FOR UPDATE` buy offer + decrement `RemainingQuantity` + `ReservedAmount`; flip status to `filled` when `RemainingQuantity` reaches 0.
+2. `SELECT FOR UPDATE` seller's holding by `(owner, stock_id)` + verify shares + decrement `Quantity`.
+3. `PartialSettleReservation` on buyer's reservation (debits buyer; ledger entry).
+4. `CreditAccount` on seller's chosen destination.
+5. `Upsert` buyer's holding (best-effort post-money bookkeeping).
+
+Failure at any step reverses the prior steps via compensating account-service calls + repo updates with deterministic idempotency keys.
+
+**Response 200:**
+```json
+{
+  "fill": {
+    "offer_id": 7,
+    "filled_quantity": 5,
+    "price_per_unit": "100.00",
+    "total_amount": "500.00",
+    "seller_credited_account_number": "111000123456789011"
+  }
+}
+```
+
+**Response 400:** Validation (non-positive quantity, missing `seller_account_id`).
+
+**Response 403:** `seller_account_id` does not belong to caller.
+
+**Response 412:**
+- `ErrOTCStockBuyOfferNotActive` — offer already filled/cancelled/expired.
+- `ErrOTCStockInsufficientRemainingQty` — fill exceeds offer's `remaining_quantity`.
+- `ErrOTCStockInsufficientShares` — seller is short on shares (no money moves).
+- `ErrOTCStockCurrencyMismatch` — seller's account currency differs from offer's.
+- `ErrOTCBuyOwnOffer` — caller is the buy offer's owner.
+
+### 47.2 Options marketplace — parallel negotiation chains
+
+Each OTC option listing (an `OTCOffer` posted by a seller or buyer) can accept many parallel **negotiation chains** in the new model. One bidder per chain; the chain has its own counter history and current terms. First chain to accept wins atomically; the parent listing flips to `consumed` and sibling chains cascade-cancel in the same transaction.
+
+#### POST /api/v3/otc/options/:id/bid
+
+Open a new negotiation chain by placing the initial bid on an open listing.
+
+**Authentication:** Any JWT + `securities.trade` OR `otc.trade.accept` + `ResolveIdentity`
+
+**Path:** `:id` — the parent OTCOffer listing id.
+
+**Request Body:**
+
+| Field | Type | Description |
+|---|---|---|
+| `bidder_account_id` | int | Caller's account that will pay/receive premium on accept |
+| `quantity` | string (decimal) | Initial bid quantity |
+| `strike_price` | string (decimal) | Initial bid strike |
+| `premium` | string (decimal) | Initial bid premium |
+| `settlement_date` | string | RFC3339 or YYYY-MM-DD |
+
+**Response 201:** `{ "negotiation": OTCNegotiationResponse }`. Status `open`.
+
+**Response 400/403/409:** Validation, account-ownership, or chain-already-exists (one chain per bidder per listing).
+
+**Response 412:** Parent listing is no longer open (consumed, cancelled, or expired).
+
+---
+
+#### POST /api/v3/me/otc/options/:id/negotiations/:nid/counter
+
+Counter the current terms on one of the caller's chains. Either party (the chain's bidder OR the listing's poster) may counter.
+
+**Request Body:** new `{ quantity, strike_price, premium, settlement_date }`.
+
+**Response 200:** updated `OTCNegotiationResponse`. Status flips to `countered`. Snapshot terms updated; a new COUNTER revision is appended to the chain's history.
+
+**Response 403:** Caller is neither the bidder nor the listing poster.
+
+---
+
+#### POST /api/v3/me/otc/options/:id/negotiations/:nid/accept
+
+Accept the current terms on a chain. Caller must be the party **opposite** to whoever proposed the current terms (i.e. you cannot "accept your own offer" — you have to wait for the other side's response).
+
+**Phase 9: now two-stage.** The accept performs negotiation state transitions in a DB transaction AND immediately runs the 4-step contract-formation saga (mints the `OptionContract` row, reserves the seller's underlying shares, reserves+settles the buyer's premium, credits the seller). The safety invariants — **cannot sell what you don't have / cannot buy if you don't have money** — are enforced by the saga; if the seller's holding has dropped below `quantity` OR the buyer's balance has dropped below `premium`, the saga aborts and the negotiation is flipped to a terminal `failed` status so the front-end sees coherent state.
+
+**Request Body:**
+```json
+{
+  "acceptor_account_id": 42
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `acceptor_account_id` | int | Caller's account — pays the premium if accepter is the buyer (parent direction = `sell_initiated`); receives the premium if accepter is the seller (parent direction = `buy_initiated`). Currency must match the seller's account currency or a cross-currency FX conversion is performed via exchange-service. |
+
+**Stage 1 — negotiation state TX (first-accept-wins):**
+1. `SELECT FOR UPDATE` on the winning negotiation row.
+2. `SELECT FOR UPDATE` on the parent OTCOffer listing.
+3. Reject with 412 if parent is no longer open (a parallel sibling already won — your call serialised behind theirs and lost).
+4. Verify the caller is the opposite party to `last_action_by_owner_*`.
+5. Flip the winning negotiation to `accepted` + append ACCEPT revision.
+6. Flip parent listing to `consumed`.
+7. `SELECT FOR UPDATE` every sibling chain in `open`/`countered` status and flip them to `cancelled` (cascade).
+
+**Stage 2 — contract-formation saga (runs after the TX commits):**
+1. `reserve_and_contract` — create `OptionContract` row + `ReserveForOTCContract` on seller's holding. **Seller-can-deliver check**: aborts if seller no longer has free shares; contract row is deleted in the Backward path.
+2. `reserve_premium` — `ReserveFunds` on buyer's account. **Buyer-has-cash check**: aborts if buyer's balance dropped below premium; seller's share reservation released.
+3. `settle_premium_buyer` — `PartialSettleReservation` (debits the premium from the buyer's reservation).
+4. `credit_premium_seller` — `CreditAccount` on seller (in seller's currency).
+
+**Response 200:**
+```json
+{
+  "winning":             OTCNegotiationResponse,
+  "parent_offer_id":     123,
+  "parent_status":       "consumed",
+  "cancelled_siblings":  [OTCNegotiationResponse...],
+  "contract": {
+    "id":                17,
+    "offer_id":          123,
+    "buyer_owner_type":  "client",
+    "buyer_owner_id":    7,
+    "seller_owner_type": "client",
+    "seller_owner_id":   42,
+    "ticker":            "AAPL",
+    "quantity":          "10",
+    "strike_price":      "175.50",
+    "premium_paid":      "700.00",
+    "premium_currency":  "USD",
+    "strike_currency":   "USD",
+    "settlement_date":   "2027-08-01T00:00:00Z",
+    "buyer_account_id":  42,
+    "seller_account_id": 99,
+    "status":            "ACTIVE",
+    "premium_paid_at":   "2026-05-16T03:20:00Z"
+  }
+}
+```
+
+`contract` is `null` when the formation saga failed; in that case the negotiation status is `failed`, the parent stays `consumed`, and the front-end can surface a "contract not formed" warning + suggest re-listing.
+
+**Exercise:** the minted `OptionContract` row is consumable by `POST /api/v3/otc/contracts/:id/exercise` (see existing exercise route) — strike money moves buyer→seller, the reserved seller shares are consumed and credited to the buyer's holding.
+
+**Response 400:**
+- `acceptor_account_id` missing or zero.
+- `ErrOTCAcceptorAccountRequired` from the service if the gRPC layer is reached without it.
+
+**Response 403:**
+- Caller proposed the current terms (`ErrOTCAcceptUnauthorized`) or is not a party to the chain.
+- `acceptor_account_id` does not belong to caller (gateway-side ownership check).
+
+**Response 412:**
+- Parent listing no longer open OR negotiation is in a terminal state.
+- Settlement date is no longer in the future.
+- Seller short on shares at saga step 1 / buyer short on cash at saga step 2 — negotiation flipped to `failed`.
+- Cross-currency premium without exchange-service wired.
+
+---
+
+#### POST /api/v3/me/otc/options/:id/negotiations/:nid/reject
+
+Reject a chain. Either party may reject; ends that chain only — the parent listing stays open, other chains continue.
+
+**Response 200:** updated `OTCNegotiationResponse` with status `rejected`.
+
+**Response 403:** Caller is neither a party nor the listing's poster.
+
+---
+
+#### DELETE /api/v3/me/otc/options/:id/negotiations/:nid
+
+Cancel (withdraw) the caller's own chain. **Bidder-only** — the listing's poster cannot cancel a bidder's chain (use reject for that).
+
+**Response 204:** Status flipped to `cancelled`.
+
+**Response 403:** Caller is not the chain's bidder (`ErrOTCCounterUnauthorized` — naming holdover from the counter route; same sentinel).
+
+---
+
+#### GET /api/v3/otc/options/:id/negotiations
+
+List every negotiation chain against a listing (any status). Used by the listing's poster to see all incoming bids, and by bidders to see what competing counter-bids look like.
+
+**Response 200:** `{ "negotiations": [OTCNegotiationResponse...], "total": int }`.
+
+---
+
+#### GET /api/v3/me/otc/options/negotiations
+
+List chains where the caller is the bidder.
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `statuses` | string | Comma-separated filter: `open,countered,accepted,rejected,cancelled,expired` |
+| `page` | int | Default 1 |
+| `page_size` | int | Default 20, max 200 |
+
+---
+
+#### GET /api/v3/otc/options
+
+Unified cross-bank discovery view: every open OTC option listing on this bank + every peer bank's open listings (refreshed every ~5 s by the OptionRefresher). Filterable, paginated, partial-failure tolerant (the cache exposes `peers_total` / `peers_reached` / `partial=true` if some peers were unreachable in the last refresh).
+
+**Query Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `ticker` | string | Filter to one ticker (case-insensitive) |
+| `kind` | string | `local` or `remote` |
+| `bank_code` | string | Filter to one bank (e.g. `222`) |
+| `direction` | string | `sell_initiated` or `buy_initiated` |
+| `page` | int | Default 1 |
+| `page_size` | int | Default 10 |
+
+**Response 200:**
+```json
+{
+  "offers": [
+    {
+      "kind":             "remote",
+      "bank_code":        "222",
+      "routing_number":   222,
+      "offer_id":         "42",
+      "seller_id":        "client-7",
+      "seller_name":      "",
+      "direction":        "sell_initiated",
+      "ticker":           "AAPL",
+      "amount":           50,
+      "strike_price":     "180.50",
+      "strike_currency":  "USD",
+      "premium":          "700.00",
+      "premium_currency": "USD",
+      "settlement_date":  "2026-12-31T00:00:00Z",
+      "created_at":       "2026-05-10T14:00:00Z"
+    }
+  ],
+  "total_count":   1,
+  "peers_total":   2,
+  "peers_reached": 2,
+  "partial":       false,
+  "last_refresh":  "2026-05-16T02:50:00Z"
+}
+```
+
+After picking a remote offer, bidders drive negotiation via `POST /api/v3/me/peer-otc/negotiations` using `bank_code` as `seller_bank_code` and `seller_id.id` from the discovered row.
+
+### 47.3 Peer protocol (SI-TX cross-bank)
+
+#### GET /api/v3/public-option-offers
+
+Peer-facing endpoint for cross-bank option discovery. Same auth as `/api/v3/public-stock`: `PeerAuth` middleware validates `X-Api-Key` against the registered peer-bank's API token. The peer's `X-Bank-Code` is stamped onto the request context and used to filter listings marked `Private=true` to a specific recipient bank.
+
+**Authentication:** PeerAuth (X-Api-Key alone OR full HMAC bundle)
+
+**Response 200:**
+```json
+{
+  "offers": [
+    {
+      "offerId":         { "routingNumber": 111, "id": "42" },
+      "ticker":          "AAPL",
+      "amount":          50,
+      "strikePrice":     "180.50",
+      "strikeCurrency":  "USD",
+      "premium":         "700",
+      "premiumCurrency": "USD",
+      "settlementDate":  "2026-12-31T00:00:00Z",
+      "sellerId":        { "routingNumber": 111, "id": "client-7" },
+      "direction":       "sell_initiated",
+      "createdAt":       "2026-05-10T14:00:00Z",
+      "lastModifiedBy":  { "routingNumber": 111, "id": "client-7" }
+    }
+  ]
+}
+```
+
+Each entry corresponds to one `OTCOffer` row on this bank with `status IN ('open','PENDING','COUNTERED')` AND `counterparty_owner_id IS NULL`. `Private=true` rows are dropped unless `PrivateToBankCode` equals the calling peer's bank code.
 
 ---
 
