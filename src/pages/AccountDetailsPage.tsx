@@ -71,7 +71,10 @@ export function AccountDetailsPage() {
             label="Available"
             value={formatCurrency(account.available_balance, account.currency_code)}
           />
-          <InfoRow label="Reserved Funds" value={formatCurrency(0, account.currency_code)} />
+          <InfoRow
+            label="Reserved Funds"
+            value={formatCurrency(account.reserved_balance, account.currency_code)}
+          />
         </CardContent>
       </Card>
 

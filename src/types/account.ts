@@ -21,6 +21,7 @@ export interface Account {
   account_category: AccountCategory
   balance: number
   available_balance: number
+  reserved_balance: number
   status: AccountStatus
   owner_id: number
   owner_name?: string

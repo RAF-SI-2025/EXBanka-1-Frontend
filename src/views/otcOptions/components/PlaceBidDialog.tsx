@@ -70,6 +70,26 @@ export function PlaceBidDialog({
   )
 }
 
+// Premium floor: prefer the current best_bid; fall back to the seller's
+// original strike if best_bid is absent or not a finite positive number.
+// Returns the floor as a number for comparison and as a string for display,
+// keeping the seller's original string so "175.50" doesn't render as "175.5".
+function computePremiumFloor(offer: OtcOptionRow): {
+  floor: number | null
+  floorLabel: string
+  floorSource: 'best_bid' | 'strike' | null
+} {
+  const bestBidNum = Number(offer.best_bid)
+  if (Number.isFinite(bestBidNum) && bestBidNum > 0) {
+    return { floor: bestBidNum, floorLabel: offer.best_bid as string, floorSource: 'best_bid' }
+  }
+  const strikeNum = Number(offer.strike_price)
+  if (Number.isFinite(strikeNum) && strikeNum > 0) {
+    return { floor: strikeNum, floorLabel: offer.strike_price, floorSource: 'strike' }
+  }
+  return { floor: null, floorLabel: '', floorSource: null }
+}
+
 function PlaceBidForm({
   offer,
   accounts,
@@ -87,12 +107,27 @@ function PlaceBidForm({
   const [quantity, setQuantity] = useState(String(offer.amount ?? ''))
   const [strike, setStrike] = useState(offer.strike_price ?? '')
   const [premium, setPremium] = useState(offer.premium ?? '')
+  const [premiumTouched, setPremiumTouched] = useState(false)
   const [settlement, setSettlement] = useState(
     offer.settlement_date ? offer.settlement_date.slice(0, 10) : ''
   )
 
+  const { floor, floorLabel, floorSource } = computePremiumFloor(offer)
+  const premiumNum = Number(premium)
+  const premiumIsNumber = premium !== '' && Number.isFinite(premiumNum)
+  const premiumMeetsFloor = floor == null || !premiumIsNumber || premiumNum >= floor
+  // Destructive variant fires only once the user has edited — a prefilled
+  // below-floor value on initial mount shouldn't shout. Submit is still
+  // blocked by `premiumMeetsFloor` regardless.
+  const premiumBelowFloor = premiumTouched && floor != null && premiumIsNumber && premiumNum < floor
+
   const isValid =
-    accountId != null && quantity !== '' && strike !== '' && premium !== '' && settlement !== ''
+    accountId != null &&
+    quantity !== '' &&
+    strike !== '' &&
+    premium !== '' &&
+    settlement !== '' &&
+    premiumMeetsFloor
 
   return (
     <>
@@ -140,8 +175,18 @@ function PlaceBidForm({
               id="bid-premium"
               inputMode="decimal"
               value={premium}
-              onChange={(e) => setPremium(e.target.value)}
+              onChange={(e) => {
+                setPremium(e.target.value)
+                setPremiumTouched(true)
+              }}
             />
+            {floor != null && floorSource && (
+              <PremiumFloorHelp
+                floorLabel={floorLabel}
+                source={floorSource}
+                violated={premiumBelowFloor}
+              />
+            )}
           </div>
           <div>
             <Label htmlFor="bid-settlement">Settlement date</Label>
@@ -175,5 +220,30 @@ function PlaceBidForm({
         </Button>
       </DialogFooter>
     </>
+  )
+}
+
+function PremiumFloorHelp({
+  floorLabel,
+  source,
+  violated,
+}: {
+  floorLabel: string
+  source: 'best_bid' | 'strike'
+  violated: boolean
+}) {
+  const label = source === 'best_bid' ? 'current best bid' : 'seller strike'
+  if (violated) {
+    const reason = source === 'best_bid' ? 'the current best bid' : "the seller's strike"
+    return (
+      <p className="text-xs text-destructive mt-1">
+        Bid must be at least {floorLabel} — {reason}.
+      </p>
+    )
+  }
+  return (
+    <p className="text-xs text-muted-foreground mt-1">
+      Minimum {floorLabel} ({label})
+    </p>
   )
 }

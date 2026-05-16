@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectCurrentUser } from '@/store/selectors/authSelectors'
-import { useClientAccounts } from '@/hooks/useAccounts'
+import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -18,40 +18,15 @@ import {
 } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { useBidOrCounter } from '@/views/otcOptions/hooks/useBidOrCounter'
 import { useCreateOtcOption } from '@/views/otcOptions/hooks/useOtcOptionMutations'
-import type {
-  MyOtcOptionListing,
-  OtcOptionRow,
-  OtcOptionsMode,
-  OtcOwnerType,
-} from '@/views/otcOptions/types'
-
-function myListingToRow(l: MyOtcOptionListing): OtcOptionRow {
-  return {
-    kind: 'local',
-    bank_code: 'self',
-    routing_number: 0,
-    offer_id: l.id,
-    seller_id: {
-      owner_type: l.initiator.owner_type,
-      id: l.initiator.owner_id ?? '',
-    },
-    direction: l.direction,
-    ticker: l.ticker ?? `#${l.stock_id}`,
-    amount: l.quantity,
-    strike_price: l.strike_price,
-    strike_currency: l.strike_currency ?? '',
-    premium: l.premium ?? '',
-    premium_currency: l.premium_currency ?? '',
-    settlement_date: l.settlement_date,
-    created_at: l.created_at,
-    active_chains_count: l.active_chains_count,
-  }
-}
+import type { OtcOptionRow, OtcOptionsMode, OtcOwnerType } from '@/views/otcOptions/types'
 
 export function OtcOptionsView() {
   const user = useAppSelector(selectCurrentUser)
-  const accountsQ = useClientAccounts()
-  const accounts = accountsQ.data?.accounts ?? []
+  const isEmployee = user?.system_type === 'employee'
+  const clientAccountsQ = useClientAccounts(!isEmployee)
+  const bankAccountsQ = useBankAccounts(isEmployee)
+  const accounts =
+    (isEmployee ? bankAccountsQ.data?.accounts : clientAccountsQ.data?.accounts) ?? []
 
   const [mode, setMode] = useState<OtcOptionsMode>('all')
   const [bidOffer, setBidOffer] = useState<OtcOptionRow | null>(null)
@@ -82,7 +57,7 @@ export function OtcOptionsView() {
   }, [user])
 
   const rows: OtcOptionRow[] =
-    mode === 'all' ? (allQ.data?.offers ?? []) : (mineQ.data?.offers ?? []).map(myListingToRow)
+    mode === 'all' ? (allQ.data?.offers ?? []) : (mineQ.data?.offers ?? [])
 
   const peersInfo = allQ.data
   const banner =

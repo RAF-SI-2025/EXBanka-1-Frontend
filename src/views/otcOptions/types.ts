@@ -53,31 +53,12 @@ export interface OtcOptionsDiscoveryResponse {
   last_refresh?: string
 }
 
-// Row as returned by GET /me/otc/options (poster's own listings).
-// Slightly different shape from discovery — has an `initiator` party
-// instead of a flat `seller_id` and exposes a listing-level `status`.
-export interface MyOtcOptionListing {
-  id: number
-  direction: OtcOptionDirection
-  status: OtcOptionListingStatus
-  stock_id: number
-  ticker?: string
-  quantity: string
-  strike_price: string
-  strike_currency?: string
-  premium: string | null
-  premium_currency?: string
-  settlement_date: string
-  initiator: OtcParty
-  created_at: string
-  last_modified_at?: string
-  active_chains_count?: number
-}
-
-export interface MyOtcOptionsResponse {
-  offers: MyOtcOptionListing[]
-  total: number
-}
+// GET /me/otc/options now returns the same marketplace shape as the
+// discovery endpoint, scoped to the caller's own open listings via the
+// server-side `owner_only_seller_id` filter on the unified cache. So
+// `MyOtcOptionsResponse` is just an alias — kept as a named type so the
+// API surface still reads intentionally.
+export type MyOtcOptionsResponse = OtcOptionsDiscoveryResponse
 
 // One per-bidder negotiation chain against a listing.
 export interface OtcNegotiation {
