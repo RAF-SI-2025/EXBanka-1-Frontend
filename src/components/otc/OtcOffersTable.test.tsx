@@ -62,4 +62,36 @@ describe('OtcOffersTable', () => {
     render(<OtcOffersTable offers={[remote]} onBuy={onBuy} />)
     expect(screen.getByText('420.50 EUR')).toBeInTheDocument()
   })
+
+  describe('owner cannot buy their own offer', () => {
+    it('hides the Buy button on a local offer the current user listed', () => {
+      const myOffer = createMockOtcOffer({ id: 10, ticker: 'AAPL', seller_id: 42 })
+      render(<OtcOffersTable offers={[myOffer]} onBuy={onBuy} currentUserId={42} />)
+      expect(screen.queryByRole('button', { name: /^buy$/i })).not.toBeInTheDocument()
+    })
+
+    it('shows a "Your offer" indicator instead of the Buy button', () => {
+      const myOffer = createMockOtcOffer({ id: 10, ticker: 'AAPL', seller_id: 42 })
+      render(<OtcOffersTable offers={[myOffer]} onBuy={onBuy} currentUserId={42} />)
+      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+    })
+
+    it('still shows Buy on local offers the user does not own', () => {
+      const otherOffer = createMockOtcOffer({ id: 11, ticker: 'MSFT', seller_id: 99 })
+      render(<OtcOffersTable offers={[otherOffer]} onBuy={onBuy} currentUserId={42} />)
+      expect(screen.getByRole('button', { name: /^buy$/i })).toBeInTheDocument()
+    })
+
+    it('does not hide buttons when currentUserId is not provided (default behavior)', () => {
+      const myOffer = createMockOtcOffer({ id: 10, ticker: 'AAPL', seller_id: 42 })
+      render(<OtcOffersTable offers={[myOffer]} onBuy={onBuy} />)
+      expect(screen.getByRole('button', { name: /^buy$/i })).toBeInTheDocument()
+    })
+
+    it('does not affect Negotiate on remote offers (peer-bank-side ownership)', () => {
+      const remote = createMockRemoteOtcOffer({ owner_id: '42' })
+      render(<OtcOffersTable offers={[remote]} onBuy={onBuy} currentUserId={42} />)
+      expect(screen.getByRole('button', { name: /negotiate/i })).toBeInTheDocument()
+    })
+  })
 })

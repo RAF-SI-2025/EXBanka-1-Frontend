@@ -13,6 +13,8 @@ import type { OtcOffer } from '@/types/otc'
 interface Props {
   offers: OtcOffer[]
   onBuy: (offer: OtcOffer) => void
+  /** When set, hides the Buy button on local offers whose seller_id matches. */
+  currentUserId?: number
 }
 
 function offerKey(offer: OtcOffer): string {
@@ -30,7 +32,7 @@ function formatPrice(offer: OtcOffer): string {
   return offer.price_per_unit
 }
 
-export function OtcOffersTable({ offers, onBuy }: Props) {
+export function OtcOffersTable({ offers, onBuy, currentUserId }: Props) {
   if (offers.length === 0) {
     return <p className="text-muted-foreground">No offers available.</p>
   }
@@ -64,9 +66,15 @@ export function OtcOffersTable({ offers, onBuy }: Props) {
             <TableCell className="text-right">{offer.quantity}</TableCell>
             <TableCell className="text-right">{formatPrice(offer)}</TableCell>
             <TableCell className="text-right">
-              <Button size="sm" variant="outline" onClick={() => onBuy(offer)}>
-                {offer.kind === 'local' ? 'Buy' : 'Negotiate'}
-              </Button>
+              {offer.kind === 'local' &&
+              currentUserId !== undefined &&
+              offer.seller_id === currentUserId ? (
+                <span className="text-sm text-muted-foreground italic">Your offer</span>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => onBuy(offer)}>
+                  {offer.kind === 'local' ? 'Buy' : 'Negotiate'}
+                </Button>
+              )}
             </TableCell>
           </TableRow>
         ))}
