@@ -15,14 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { AcceptOtcOfferPayload } from '@/types/otcOption'
+import type { AcceptNegotiationPayload } from '@/types/otcOption'
 import type { Account } from '@/types/account'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   accounts: Account[]
-  onSubmit: (payload: AcceptOtcOfferPayload) => void
+  onSubmit: (payload: AcceptNegotiationPayload) => void
   loading: boolean
 }
 
@@ -67,7 +67,7 @@ export function AcceptOfferDialog({ open, onOpenChange, accounts, onSubmit, load
           </Button>
           <Button
             onClick={() => {
-              if (isValid) onSubmit({ account_id: accountId! })
+              if (isValid) onSubmit({ acceptor_account_id: accountId! })
             }}
             disabled={!isValid || loading}
           >

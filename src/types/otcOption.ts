@@ -1,9 +1,32 @@
 export type OtcOfferDirection = 'sell_initiated' | 'buy_initiated'
-export type OtcOfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED'
+/**
+ * Listing status under /otc/options. Phase 8 introduces `open`/`consumed`/
+ * `cancelled`; older `PENDING`/`ACCEPTED`/`REJECTED`/`EXPIRED` values are
+ * kept here for any legacy data still in flight.
+ */
+export type OtcOfferStatus =
+  | 'open'
+  | 'consumed'
+  | 'cancelled'
+  | 'expired'
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'EXPIRED'
 export type OptionContractStatus = 'ACTIVE' | 'EXERCISED' | 'EXPIRED'
 
+/** Per-chain status under /me/otc/options/:id/negotiations/:nid. */
+export type OtcNegotiationStatus =
+  | 'open'
+  | 'countered'
+  | 'accepted'
+  | 'rejected'
+  | 'cancelled'
+  | 'expired'
+  | 'failed'
+
 export interface OtcParty {
-  owner_type: 'client' | 'bank'
+  owner_type: 'client' | 'bank' | 'employee'
   owner_id: number | null
 }
 
@@ -22,14 +45,19 @@ export interface OtcOffer {
   unread?: boolean
 }
 
-export interface OtcOfferRevision {
-  revision_number: number
-  modified_by: { principal_type: 'client' | 'employee'; principal_id: number }
+export interface OtcNegotiation {
+  id: number
+  offer_id: number
+  status: OtcNegotiationStatus
+  bidder: OtcParty
+  /** Last party that proposed the current terms. The opposite party may accept. */
+  last_action_by: OtcParty
   quantity: string
   strike_price: string
   premium: string | null
   settlement_date: string
   created_at: string
+  updated_at: string
 }
 
 export interface OptionContract {
@@ -57,7 +85,15 @@ export interface CreateOtcOfferPayload {
   on_behalf_of_client_id?: number
 }
 
-export interface CounterOtcOfferPayload {
+export interface PlaceBidPayload {
+  bidder_account_id: number
+  quantity: string
+  strike_price: string
+  premium: string
+  settlement_date: string
+}
+
+export interface CounterNegotiationPayload {
   quantity?: string
   strike_price?: string
   premium?: string
@@ -65,8 +101,8 @@ export interface CounterOtcOfferPayload {
   on_behalf_of_client_id?: number
 }
 
-export interface AcceptOtcOfferPayload {
-  account_id: number
+export interface AcceptNegotiationPayload {
+  acceptor_account_id: number
   on_behalf_of_client_id?: number
 }
 
@@ -83,6 +119,16 @@ export interface MyOffersFilters {
 export interface AllOffersFilters {
   page?: number
   page_size?: number
+  ticker?: string
+  kind?: 'local' | 'remote'
+  bank_code?: string
+  direction?: OtcOfferDirection
+}
+
+export interface MyNegotiationsFilters {
+  statuses?: string
+  page?: number
+  page_size?: number
 }
 
 export interface MyContractsFilters {
@@ -93,11 +139,15 @@ export interface MyContractsFilters {
 
 export interface OtcOfferDetailResponse {
   offer: OtcOffer
-  revisions: OtcOfferRevision[]
 }
 
 export interface MyOtcOffersResponse {
   offers: OtcOffer[]
+  total: number
+}
+
+export interface OtcNegotiationListResponse {
+  negotiations: OtcNegotiation[]
   total: number
 }
 
@@ -107,8 +157,11 @@ export interface MyOtcContractsResponse {
 }
 
 export interface AcceptOtcOfferResponse {
-  offer: OtcOffer
-  contract: OptionContract
+  winning: OtcNegotiation
+  parent_offer_id: number
+  parent_status: OtcOfferStatus
+  cancelled_siblings: OtcNegotiation[]
+  contract: OptionContract | null
 }
 
 export interface ExerciseOtcContractResponse {

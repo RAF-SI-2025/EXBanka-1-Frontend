@@ -1,14 +1,18 @@
 import { apiClient } from '@/lib/api/axios'
 import type {
   OtcOffer,
+  OtcNegotiation,
   CreateOtcOfferPayload,
-  CounterOtcOfferPayload,
-  AcceptOtcOfferPayload,
+  PlaceBidPayload,
+  CounterNegotiationPayload,
+  AcceptNegotiationPayload,
   ExerciseContractPayload,
   OtcOfferDetailResponse,
   MyOffersFilters,
   AllOffersFilters,
+  MyNegotiationsFilters,
   MyOtcOffersResponse,
+  OtcNegotiationListResponse,
   MyContractsFilters,
   MyOtcContractsResponse,
   OptionContract,
@@ -16,43 +20,24 @@ import type {
   ExerciseOtcContractResponse,
 } from '@/types/otcOption'
 
+// -- Listings ----------------------------------------------------------------
+
 export async function createOtcOptionOffer(
   payload: CreateOtcOfferPayload
 ): Promise<{ offer: OtcOffer }> {
-  const { data } = await apiClient.post<{ offer: OtcOffer }>('/otc/offers', payload)
-  return data
-}
-
-export async function counterOtcOptionOffer(
-  id: number,
-  payload: CounterOtcOfferPayload
-): Promise<{ offer: OtcOffer }> {
-  const { data } = await apiClient.post<{ offer: OtcOffer }>(`/otc/offers/${id}/counter`, payload)
-  return data
-}
-
-export async function acceptOtcOptionOffer(
-  id: number,
-  payload: AcceptOtcOfferPayload
-): Promise<AcceptOtcOfferResponse> {
-  const { data } = await apiClient.post<AcceptOtcOfferResponse>(`/otc/offers/${id}/accept`, payload)
-  return data
-}
-
-export async function rejectOtcOptionOffer(id: number): Promise<{ offer: OtcOffer }> {
-  const { data } = await apiClient.post<{ offer: OtcOffer }>(`/otc/offers/${id}/reject`)
+  const { data } = await apiClient.post<{ offer: OtcOffer }>('/me/otc/options', payload)
   return data
 }
 
 export async function getOtcOptionOffer(id: number): Promise<OtcOfferDetailResponse> {
-  const { data } = await apiClient.get<OtcOfferDetailResponse>(`/otc/offers/${id}`)
-  return { ...data, revisions: data.revisions ?? [] }
+  const { data } = await apiClient.get<OtcOfferDetailResponse>(`/otc/options/${id}`)
+  return data
 }
 
 export async function getMyOtcOptionOffers(
   filters: MyOffersFilters = {}
 ): Promise<MyOtcOffersResponse> {
-  const { data } = await apiClient.get<MyOtcOffersResponse>('/me/otc/offers', {
+  const { data } = await apiClient.get<MyOtcOffersResponse>('/me/otc/options', {
     params: filters,
   })
   return { ...data, offers: data.offers ?? [] }
@@ -61,11 +46,82 @@ export async function getMyOtcOptionOffers(
 export async function getAllOtcOptionOffers(
   filters: AllOffersFilters = {}
 ): Promise<MyOtcOffersResponse> {
-  const { data } = await apiClient.get<MyOtcOffersResponse>('/otc/offers', {
+  const { data } = await apiClient.get<MyOtcOffersResponse>('/otc/options', {
     params: filters,
   })
   return { ...data, offers: data.offers ?? [] }
 }
+
+// -- Negotiation chains ------------------------------------------------------
+
+export async function placeBidOnOtcOption(
+  offerId: number,
+  payload: PlaceBidPayload
+): Promise<{ negotiation: OtcNegotiation }> {
+  const { data } = await apiClient.post<{ negotiation: OtcNegotiation }>(
+    `/otc/options/${offerId}/bid`,
+    payload
+  )
+  return data
+}
+
+export async function getOtcOptionNegotiations(
+  offerId: number
+): Promise<OtcNegotiationListResponse> {
+  const { data } = await apiClient.get<OtcNegotiationListResponse>(
+    `/otc/options/${offerId}/negotiations`
+  )
+  return { ...data, negotiations: data.negotiations ?? [] }
+}
+
+export async function getMyOtcOptionNegotiations(
+  filters: MyNegotiationsFilters = {}
+): Promise<OtcNegotiationListResponse> {
+  const { data } = await apiClient.get<OtcNegotiationListResponse>('/me/otc/options/negotiations', {
+    params: filters,
+  })
+  return { ...data, negotiations: data.negotiations ?? [] }
+}
+
+export async function counterOtcNegotiation(
+  offerId: number,
+  negotiationId: number,
+  payload: CounterNegotiationPayload
+): Promise<{ negotiation: OtcNegotiation }> {
+  const { data } = await apiClient.post<{ negotiation: OtcNegotiation }>(
+    `/me/otc/options/${offerId}/negotiations/${negotiationId}/counter`,
+    payload
+  )
+  return data
+}
+
+export async function acceptOtcNegotiation(
+  offerId: number,
+  negotiationId: number,
+  payload: AcceptNegotiationPayload
+): Promise<AcceptOtcOfferResponse> {
+  const { data } = await apiClient.post<AcceptOtcOfferResponse>(
+    `/me/otc/options/${offerId}/negotiations/${negotiationId}/accept`,
+    payload
+  )
+  return data
+}
+
+export async function rejectOtcNegotiation(
+  offerId: number,
+  negotiationId: number
+): Promise<{ negotiation: OtcNegotiation }> {
+  const { data } = await apiClient.post<{ negotiation: OtcNegotiation }>(
+    `/me/otc/options/${offerId}/negotiations/${negotiationId}/reject`
+  )
+  return data
+}
+
+export async function cancelOtcNegotiation(offerId: number, negotiationId: number): Promise<void> {
+  await apiClient.delete(`/me/otc/options/${offerId}/negotiations/${negotiationId}`)
+}
+
+// -- Contracts ---------------------------------------------------------------
 
 export async function getOtcOptionContract(id: number): Promise<{ contract: OptionContract }> {
   const { data } = await apiClient.get<{ contract: OptionContract }>(`/otc/contracts/${id}`)

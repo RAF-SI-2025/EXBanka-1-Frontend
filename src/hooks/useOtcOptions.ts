@@ -1,25 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createOtcOptionOffer,
-  counterOtcOptionOffer,
-  acceptOtcOptionOffer,
-  rejectOtcOptionOffer,
   getOtcOptionOffer,
   getMyOtcOptionOffers,
   getAllOtcOptionOffers,
+  placeBidOnOtcOption,
+  getOtcOptionNegotiations,
+  getMyOtcOptionNegotiations,
+  counterOtcNegotiation,
+  acceptOtcNegotiation,
+  rejectOtcNegotiation,
+  cancelOtcNegotiation,
   getOtcOptionContract,
   getMyOtcOptionContracts,
   exerciseOtcOptionContract,
 } from '@/lib/api/otcOption'
 import type {
   CreateOtcOfferPayload,
-  CounterOtcOfferPayload,
-  AcceptOtcOfferPayload,
+  PlaceBidPayload,
+  CounterNegotiationPayload,
+  AcceptNegotiationPayload,
   ExerciseContractPayload,
   MyOffersFilters,
   AllOffersFilters,
+  MyNegotiationsFilters,
   MyContractsFilters,
 } from '@/types/otcOption'
+
+// -- Listings ---------------------------------------------------------------
 
 export function useOtcOptionOffer(id: number | null) {
   return useQuery({
@@ -57,27 +65,59 @@ export function useCreateOtcOptionOffer() {
     mutationFn: (payload: CreateOtcOfferPayload) => createOtcOptionOffer(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-offers'] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'all-offers'] })
     },
   })
 }
 
-export function useCounterOtcOptionOffer(id: number) {
+// -- Negotiation chains -----------------------------------------------------
+
+export function useOtcOptionNegotiations(offerId: number | null) {
+  return useQuery({
+    queryKey: ['otc-option', 'negotiations', offerId],
+    queryFn: () => getOtcOptionNegotiations(offerId!),
+    enabled: offerId != null && offerId > 0,
+  })
+}
+
+export function useMyOtcOptionNegotiations(filters: MyNegotiationsFilters = {}) {
+  return useQuery({
+    queryKey: ['otc-option', 'me-negotiations', filters],
+    queryFn: () => getMyOtcOptionNegotiations(filters),
+  })
+}
+
+export function usePlaceBidOnOtcOption(offerId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: CounterOtcOfferPayload) => counterOtcOptionOffer(id, payload),
+    mutationFn: (payload: PlaceBidPayload) => placeBidOnOtcOption(offerId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['otc-option', 'offer', id] })
-      queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-offers'] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'negotiations', offerId] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-negotiations'] })
     },
   })
 }
 
-export function useAcceptOtcOptionOffer(id: number) {
+export function useCounterOtcNegotiation(offerId: number, negotiationId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: AcceptOtcOfferPayload) => acceptOtcOptionOffer(id, payload),
+    mutationFn: (payload: CounterNegotiationPayload) =>
+      counterOtcNegotiation(offerId, negotiationId, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['otc-option', 'offer', id] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'negotiations', offerId] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-negotiations'] })
+    },
+  })
+}
+
+export function useAcceptOtcNegotiation(offerId: number, negotiationId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: AcceptNegotiationPayload) =>
+      acceptOtcNegotiation(offerId, negotiationId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'negotiations', offerId] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'offer', offerId] })
       queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-offers'] })
       queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-contracts'] })
       queryClient.invalidateQueries({ queryKey: ['accounts'] })
@@ -85,16 +125,29 @@ export function useAcceptOtcOptionOffer(id: number) {
   })
 }
 
-export function useRejectOtcOptionOffer(id: number) {
+export function useRejectOtcNegotiation(offerId: number, negotiationId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () => rejectOtcOptionOffer(id),
+    mutationFn: () => rejectOtcNegotiation(offerId, negotiationId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['otc-option', 'offer', id] })
-      queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-offers'] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'negotiations', offerId] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-negotiations'] })
     },
   })
 }
+
+export function useCancelOtcNegotiation(offerId: number, negotiationId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => cancelOtcNegotiation(offerId, negotiationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'negotiations', offerId] })
+      queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-negotiations'] })
+    },
+  })
+}
+
+// -- Contracts (unchanged URLs) ---------------------------------------------
 
 export function useOtcOptionContract(id: number | null) {
   return useQuery({

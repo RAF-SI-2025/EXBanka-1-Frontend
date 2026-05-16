@@ -13,42 +13,87 @@ import {
 } from '@/components/ui/table'
 import {
   useOtcOptionOffer,
-  useCounterOtcOptionOffer,
-  useAcceptOtcOptionOffer,
-  useRejectOtcOptionOffer,
+  useOtcOptionNegotiations,
+  usePlaceBidOnOtcOption,
+  useCounterOtcNegotiation,
+  useAcceptOtcNegotiation,
+  useRejectOtcNegotiation,
+  useCancelOtcNegotiation,
 } from '@/hooks/useOtcOptions'
-import { useClientAccounts } from '@/hooks/useAccounts'
+import { useClientAccounts, useBankAccounts } from '@/hooks/useAccounts'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectUserType, selectCurrentUser } from '@/store/selectors/authSelectors'
 import { OtcOptionStatusBadge } from '@/components/otc/OtcOptionStatusBadge'
 import { CounterOfferDialog } from '@/components/otc/CounterOfferDialog'
 import { AcceptOfferDialog } from '@/components/otc/AcceptOfferDialog'
+import { PlaceBidDialog } from '@/components/otc/PlaceBidDialog'
 import { ErrorFallback } from '@/components/shared/ErrorFallback'
 import { notifySuccess } from '@/lib/errors'
+import type { OtcNegotiation } from '@/types/otcOption'
 
 export function OtcOfferDetailPage() {
   const { id } = useParams<{ id: string }>()
   const offerId = Number(id) || 0
   const navigate = useNavigate()
 
-  const { data, isLoading, isError } = useOtcOptionOffer(offerId)
-  const { data: accountsData } = useClientAccounts()
-  const accounts = accountsData?.accounts ?? []
+  const currentUser = useAppSelector(selectCurrentUser)
+  const userType = useAppSelector(selectUserType)
+  const isEmployee = userType === 'employee'
 
-  const counterMutation = useCounterOtcOptionOffer(offerId)
-  const acceptMutation = useAcceptOtcOptionOffer(offerId)
-  const rejectMutation = useRejectOtcOptionOffer(offerId)
+  const offerQuery = useOtcOptionOffer(offerId)
+  const negotiationsQuery = useOtcOptionNegotiations(offerId)
 
-  const [counterOpen, setCounterOpen] = useState(false)
-  const [acceptOpen, setAcceptOpen] = useState(false)
+  const { data: clientAccountsData } = useClientAccounts(!isEmployee)
+  const { data: bankAccountsData } = useBankAccounts(isEmployee)
+  const accounts = (isEmployee ? bankAccountsData?.accounts : clientAccountsData?.accounts) ?? []
 
-  if (isLoading) {
-    return <Skeleton className="h-64 w-full rounded-xl" />
+  const [selectedChain, setSelectedChain] = useState<OtcNegotiation | null>(null)
+  const [dialog, setDialog] = useState<'bid' | 'counter' | 'accept' | null>(null)
+
+  const closeDialog = () => {
+    setDialog(null)
+    setSelectedChain(null)
   }
-  if (isError || !data) {
+
+  // Always-defined offer/negotiation ids for hook initialisation; the
+  // mutation calls below short-circuit if `selectedChain` is null.
+  const targetChainId = selectedChain?.id ?? 0
+  const placeBidMutation = usePlaceBidOnOtcOption(offerId)
+  const counterMutation = useCounterOtcNegotiation(offerId, targetChainId)
+  const acceptMutation = useAcceptOtcNegotiation(offerId, targetChainId)
+  const rejectMutation = useRejectOtcNegotiation(offerId, targetChainId)
+  const cancelMutation = useCancelOtcNegotiation(offerId, targetChainId)
+
+  if (offerQuery.isLoading) return <Skeleton className="h-64 w-full rounded-xl" />
+  if (offerQuery.isError || !offerQuery.data)
     return <ErrorFallback message="Could not load offer." />
+
+  const { offer } = offerQuery.data
+  const negotiations = negotiationsQuery.data?.negotiations ?? []
+
+  const isPoster = currentUser?.id != null && offer.initiator.owner_id === currentUser.id
+  const myChain = negotiations.find((n) => n.bidder.owner_id === currentUser?.id) ?? null
+  const isListingOpen = offer.status === 'open' || offer.status === 'PENDING'
+
+  const handleReject = (chain: OtcNegotiation) => {
+    setSelectedChain(chain)
+    rejectMutation.mutate(undefined, {
+      onSuccess: () => {
+        notifySuccess(`Negotiation #${chain.id} rejected.`)
+        setSelectedChain(null)
+      },
+    })
   }
 
-  const { offer, revisions } = data
-  const isPending = offer.status === 'PENDING'
+  const handleCancel = (chain: OtcNegotiation) => {
+    setSelectedChain(chain)
+    cancelMutation.mutate(undefined, {
+      onSuccess: () => {
+        notifySuccess(`Negotiation #${chain.id} cancelled.`)
+        setSelectedChain(null)
+      },
+    })
+  }
 
   return (
     <div className="space-y-4">
@@ -62,7 +107,7 @@ export function OtcOfferDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Current terms</CardTitle>
+          <CardTitle>Listing terms</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
           <Metric label="Direction" value={offer.direction.replace('_', ' ')} />
@@ -74,97 +119,169 @@ export function OtcOfferDetailPage() {
         </CardContent>
       </Card>
 
-      {isPending && (
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={() => setAcceptOpen(true)}>Accept</Button>
-          <Button variant="outline" onClick={() => setCounterOpen(true)}>
-            Counter
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() =>
-              rejectMutation.mutate(undefined, {
-                onSuccess: () => notifySuccess('Offer rejected.'),
-              })
-            }
-            disabled={rejectMutation.isPending}
-          >
-            Reject
-          </Button>
-        </div>
+      {isListingOpen && !isPoster && !myChain && (
+        <Button onClick={() => setDialog('bid')}>Place bid</Button>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Revisions</CardTitle>
+          <CardTitle>Negotiation chains ({negotiations.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {revisions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No revisions yet.</p>
+          {negotiationsQuery.isLoading ? (
+            <Skeleton className="h-12 w-full rounded-md" />
+          ) : negotiations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No bids placed yet.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>#</TableHead>
-                  <TableHead>By</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Strike</TableHead>
-                  <TableHead>Premium</TableHead>
+                  <TableHead>Bidder</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Strike</TableHead>
+                  <TableHead className="text-right">Premium</TableHead>
                   <TableHead>Settlement</TableHead>
-                  <TableHead>At</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[...revisions]
-                  .sort((a, b) => b.revision_number - a.revision_number)
-                  .map((r) => (
-                    <TableRow key={r.revision_number}>
-                      <TableCell>{r.revision_number}</TableCell>
+                {negotiations.map((n) => {
+                  const isMyChain = n.bidder.owner_id === currentUser?.id
+                  const myTurnToAct =
+                    n.status === 'open' || n.status === 'countered'
+                      ? n.last_action_by.owner_id !== currentUser?.id
+                      : false
+                  const canActAsPoster =
+                    isPoster && (n.status === 'open' || n.status === 'countered')
+                  const canActAsBidder =
+                    isMyChain && (n.status === 'open' || n.status === 'countered')
+
+                  return (
+                    <TableRow key={n.id}>
+                      <TableCell>{n.id}</TableCell>
                       <TableCell>
-                        {r.modified_by.principal_type} #{r.modified_by.principal_id}
+                        {n.bidder.owner_type} #{n.bidder.owner_id ?? '-'}
+                        {isMyChain && (
+                          <span className="ml-1 text-xs text-muted-foreground italic">(you)</span>
+                        )}
                       </TableCell>
-                      <TableCell>{r.quantity}</TableCell>
-                      <TableCell>{r.strike_price}</TableCell>
-                      <TableCell>{r.premium ?? '—'}</TableCell>
-                      <TableCell>{r.settlement_date}</TableCell>
-                      <TableCell>{new Date(r.created_at).toLocaleString()}</TableCell>
+                      <TableCell>{n.status}</TableCell>
+                      <TableCell className="text-right">{n.quantity}</TableCell>
+                      <TableCell className="text-right">{n.strike_price}</TableCell>
+                      <TableCell className="text-right">{n.premium ?? '—'}</TableCell>
+                      <TableCell>{n.settlement_date}</TableCell>
+                      <TableCell>{new Date(n.updated_at).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2 flex-wrap">
+                          {(canActAsPoster || canActAsBidder) && myTurnToAct && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setSelectedChain(n)
+                                setDialog('accept')
+                              }}
+                            >
+                              Accept
+                            </Button>
+                          )}
+                          {(canActAsPoster || canActAsBidder) && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedChain(n)
+                                setDialog('counter')
+                              }}
+                            >
+                              Counter
+                            </Button>
+                          )}
+                          {canActAsPoster && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReject(n)}
+                              disabled={rejectMutation.isPending}
+                            >
+                              Reject
+                            </Button>
+                          )}
+                          {canActAsBidder && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleCancel(n)}
+                              disabled={cancelMutation.isPending}
+                            >
+                              Withdraw
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  ))}
+                  )
+                })}
               </TableBody>
             </Table>
           )}
         </CardContent>
       </Card>
 
-      {counterOpen && (
-        <CounterOfferDialog
+      {dialog === 'bid' && (
+        <PlaceBidDialog
           open
-          onOpenChange={setCounterOpen}
-          current={offer}
-          loading={counterMutation.isPending}
+          onOpenChange={(o) => !o && closeDialog()}
+          listing={offer}
+          accounts={accounts}
+          loading={placeBidMutation.isPending}
           onSubmit={(payload) =>
-            counterMutation.mutate(payload, {
+            placeBidMutation.mutate(payload, {
               onSuccess: () => {
-                notifySuccess('Counter sent.')
-                setCounterOpen(false)
+                notifySuccess('Bid placed.')
+                closeDialog()
               },
             })
           }
         />
       )}
 
-      {acceptOpen && (
+      {dialog === 'counter' && selectedChain && (
+        <CounterOfferDialog
+          open
+          onOpenChange={(o) => !o && closeDialog()}
+          current={selectedChain}
+          loading={counterMutation.isPending}
+          onSubmit={(payload) =>
+            counterMutation.mutate(payload, {
+              onSuccess: () => {
+                notifySuccess('Counter sent.')
+                closeDialog()
+              },
+            })
+          }
+        />
+      )}
+
+      {dialog === 'accept' && selectedChain && (
         <AcceptOfferDialog
           open
-          onOpenChange={setAcceptOpen}
+          onOpenChange={(o) => !o && closeDialog()}
           accounts={accounts}
           loading={acceptMutation.isPending}
           onSubmit={(payload) =>
             acceptMutation.mutate(payload, {
               onSuccess: ({ contract }) => {
-                notifySuccess(`Contract #${contract.id} created.`)
-                setAcceptOpen(false)
-                navigate(`/otc/contracts/${contract.id}`)
+                if (contract) {
+                  notifySuccess(`Contract #${contract.id} created.`)
+                  closeDialog()
+                  navigate(`/otc/contracts/${contract.id}`)
+                } else {
+                  notifySuccess('Negotiation accepted, but contract formation failed.')
+                  closeDialog()
+                }
               },
             })
           }

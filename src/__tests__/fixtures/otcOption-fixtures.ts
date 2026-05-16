@@ -1,10 +1,10 @@
-import type { OtcOffer, OtcOfferRevision, OptionContract } from '@/types/otcOption'
+import type { OtcOffer, OtcNegotiation, OptionContract } from '@/types/otcOption'
 
 export function createMockOtcOptionOffer(overrides: Partial<OtcOffer> = {}): OtcOffer {
   return {
     id: 1001,
     direction: 'sell_initiated',
-    status: 'PENDING',
+    status: 'open',
     stock_id: 42,
     quantity: '100',
     strike_price: '5000.00',
@@ -18,17 +18,19 @@ export function createMockOtcOptionOffer(overrides: Partial<OtcOffer> = {}): Otc
   }
 }
 
-export function createMockOtcOfferRevision(
-  overrides: Partial<OtcOfferRevision> = {}
-): OtcOfferRevision {
+export function createMockOtcNegotiation(overrides: Partial<OtcNegotiation> = {}): OtcNegotiation {
   return {
-    revision_number: 1,
-    modified_by: { principal_type: 'client', principal_id: 7 },
+    id: 1,
+    offer_id: 1001,
+    status: 'open',
+    bidder: { owner_type: 'client', owner_id: 7 },
+    last_action_by: { owner_type: 'client', owner_id: 7 },
     quantity: '100',
     strike_price: '5000.00',
     premium: '45000.00',
     settlement_date: '2026-06-05',
     created_at: '2026-04-28T14:20:00Z',
+    updated_at: '2026-04-28T14:20:00Z',
     ...overrides,
   }
 }

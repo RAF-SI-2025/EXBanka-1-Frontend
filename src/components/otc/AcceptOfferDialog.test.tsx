@@ -38,7 +38,7 @@ describe('AcceptOfferDialog', () => {
     )
     fireEvent.click(screen.getByRole('option', { name: /Main/ }))
     fireEvent.click(screen.getByRole('button', { name: /^accept$/i }))
-    expect(onSubmit).toHaveBeenCalledWith({ account_id: 5 })
+    expect(onSubmit).toHaveBeenCalledWith({ acceptor_account_id: 5 })
   })
 
   it('keeps Accept disabled until an account is chosen', () => {

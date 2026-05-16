@@ -9,13 +9,24 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import type { CounterOtcOfferPayload, OtcOffer } from '@/types/otcOption'
+import type { CounterNegotiationPayload } from '@/types/otcOption'
+
+/**
+ * Counter accepts either an offer-terms snapshot or a negotiation-terms
+ * snapshot — both expose the same four negotiable fields.
+ */
+interface CounterTerms {
+  quantity: string
+  strike_price: string
+  premium: string | null
+  settlement_date: string
+}
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
-  current: OtcOffer
-  onSubmit: (payload: CounterOtcOfferPayload) => void
+  current: CounterTerms
+  onSubmit: (payload: CounterNegotiationPayload) => void
   loading: boolean
 }
 
@@ -43,7 +54,7 @@ export function CounterOfferDialog({ open, onOpenChange, current, onSubmit, load
 
   const handleSubmit = () => {
     if (!isValid) return
-    const payload: CounterOtcOfferPayload = {}
+    const payload: CounterNegotiationPayload = {}
     if (quantity !== current.quantity) payload.quantity = quantity
     if (strike !== current.strike_price) payload.strike_price = strike
     if (premium !== (current.premium ?? '')) payload.premium = premium
