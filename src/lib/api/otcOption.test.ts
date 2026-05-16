@@ -233,6 +233,71 @@ describe('getAllOtcOptionOffers', () => {
 
 // -- Negotiation chains -----------------------------------------------------
 
+describe('placeBidOrCounter', () => {
+  // Imported lazily so the rest of the file doesn't need restructuring.
+  let placeBidOrCounter: typeof import('@/lib/api/otcOption').placeBidOrCounter
+  beforeAll(async () => {
+    placeBidOrCounter = (await import('@/lib/api/otcOption')).placeBidOrCounter
+  })
+
+  const bidPayload = {
+    bidder_account_id: 42,
+    quantity: '100',
+    strike_price: '180.00',
+    premium: '500.00',
+    settlement_date: '2026-06-05',
+  }
+
+  it('first attempt: POST /otc/options/:id/bid succeeds and returns the negotiation', async () => {
+    mockPost.mockResolvedValueOnce({ data: { negotiation: { id: 5 } } })
+    const result = await placeBidOrCounter(1001, bidPayload)
+    expect(mockPost).toHaveBeenCalledWith('/otc/options/1001/bid', bidPayload)
+    expect(result.negotiation.id).toBe(5)
+  })
+
+  it('on 409 from /bid, falls back to counter on the caller\'s existing chain for this offer', async () => {
+    // 1st POST → 409 (chain exists)
+    const conflict: { isAxiosError: true; response: { status: number } } = {
+      isAxiosError: true,
+      response: { status: 409 },
+    }
+    mockPost.mockRejectedValueOnce(conflict)
+    // GET /me/otc/options/negotiations → caller has a chain on this offer
+    mockGet.mockResolvedValueOnce({
+      data: {
+        negotiations: [
+          { id: 77, offer_id: 1001, status: 'open' },
+          { id: 99, offer_id: 9999, status: 'open' }, // for a different offer
+        ],
+        total: 2,
+      },
+    })
+    // 2nd POST → counter on chain 77 succeeds
+    mockPost.mockResolvedValueOnce({ data: { negotiation: { id: 77, status: 'countered' } } })
+
+    const result = await placeBidOrCounter(1001, bidPayload)
+
+    expect(mockPost).toHaveBeenNthCalledWith(1, '/otc/options/1001/bid', bidPayload)
+    expect(mockGet).toHaveBeenCalledWith('/me/otc/options/negotiations', {
+      params: { statuses: 'open,countered' },
+    })
+    expect(mockPost).toHaveBeenNthCalledWith(2, '/me/otc/options/1001/negotiations/77/counter', {
+      quantity: '100',
+      strike_price: '180.00',
+      premium: '500.00',
+      settlement_date: '2026-06-05',
+    })
+    expect(result.negotiation.id).toBe(77)
+  })
+
+  it('rethrows when /bid returns a non-409 error', async () => {
+    mockPost.mockRejectedValueOnce({ isAxiosError: true, response: { status: 403 } })
+    await expect(placeBidOrCounter(1001, bidPayload)).rejects.toMatchObject({
+      response: { status: 403 },
+    })
+  })
+})
+
 describe('placeBidOnOtcOption', () => {
   it('POST /otc/options/:id/bid', async () => {
     mockPost.mockResolvedValue({

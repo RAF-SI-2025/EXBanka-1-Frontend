@@ -84,13 +84,14 @@ describe('OtcOptionOffersTable', () => {
       expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
     })
 
-    it('renders a "Your offer" indicator when the current user is the owner', () => {
+    it('renders a "See details" button when the current user is the owner', () => {
       const offer = createMockOtcOptionOffer({
         ticker: 'AAPL',
         initiator: { owner_type: 'client', owner_id: 7 },
       })
       renderWithRouter(<OtcOptionOffersTable offers={[offer]} currentUserId={7} />)
-      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /see details/i })).toBeInTheDocument()
+      expect(screen.queryByText(/your offer/i)).not.toBeInTheDocument()
     })
 
     it('makes the whole row a link to the offer detail page so owners can see bids', () => {
@@ -124,7 +125,7 @@ describe('OtcOptionOffersTable', () => {
           />
         )
         expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
-        expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /see details/i })).toBeInTheDocument()
       })
 
       it('still lets a client bid on a bank-owned offer', () => {

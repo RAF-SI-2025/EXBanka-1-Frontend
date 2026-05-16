@@ -120,9 +120,9 @@ describe('useMyOtcOptionNegotiations', () => {
 })
 
 describe('usePlaceBidOnOtcOption', () => {
-  it('posts a bid payload to the listing', async () => {
+  it('delegates to placeBidOrCounter so the bid/409→counter flow is shared', async () => {
     jest
-      .mocked(otcOptionApi.placeBidOnOtcOption)
+      .mocked(otcOptionApi.placeBidOrCounter)
       .mockResolvedValue({ negotiation: createMockOtcNegotiation() })
     const { result } = renderHook(() => usePlaceBidOnOtcOption(1001), {
       wrapper: createQueryWrapper(),
@@ -136,7 +136,7 @@ describe('usePlaceBidOnOtcOption', () => {
         settlement_date: '2026-06-05',
       })
     })
-    expect(otcOptionApi.placeBidOnOtcOption).toHaveBeenCalledWith(
+    expect(otcOptionApi.placeBidOrCounter).toHaveBeenCalledWith(
       1001,
       expect.objectContaining({ bidder_account_id: 42 })
     )

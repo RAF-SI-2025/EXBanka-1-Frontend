@@ -14,8 +14,6 @@ import {
 import {
   useOtcOptionOffer,
   useOtcOptionNegotiations,
-  useMyOtcOptionNegotiations,
-  usePlaceBidOnOtcOption,
   useCounterOtcNegotiation,
   useAcceptOtcNegotiation,
   useRejectOtcNegotiation,
@@ -27,7 +25,6 @@ import { selectUserType, selectCurrentUser } from '@/store/selectors/authSelecto
 import { OtcOptionStatusBadge } from '@/components/otc/OtcOptionStatusBadge'
 import { CounterOfferDialog } from '@/components/otc/CounterOfferDialog'
 import { AcceptOfferDialog } from '@/components/otc/AcceptOfferDialog'
-import { PlaceBidDialog } from '@/components/otc/PlaceBidDialog'
 import { ErrorFallback } from '@/components/shared/ErrorFallback'
 import { notifySuccess } from '@/lib/errors'
 import type { OtcNegotiation } from '@/types/otcOption'
@@ -57,30 +54,26 @@ export function OtcOfferDetailPage() {
       : ownerType === 'client' && currentUser?.id != null && ownerId === currentUser.id
     : false
 
-  // Posters get every chain on the listing; non-posters only ever see
-  // their own chain (filtered client-side from /me/otc/options/negotiations).
-  const posterChainsQuery = useOtcOptionNegotiations(offerId, { enabled: isPosterLive })
-  const myChainsQuery = useMyOtcOptionNegotiations(
-    { statuses: 'open,countered' },
-    { enabled: loadedOffer != null && !isPosterLive }
-  )
+  // All viewers see every chain on the listing via the public detail
+  // endpoint (per spec: "visible to all parties"). Per-chain action
+  // buttons stay gated by role so a non-party viewer is read-only.
+  const chainsQuery = useOtcOptionNegotiations(offerId)
 
   const { data: clientAccountsData } = useClientAccounts(!isEmployee)
   const { data: bankAccountsData } = useBankAccounts(isEmployee)
   const accounts = (isEmployee ? bankAccountsData?.accounts : clientAccountsData?.accounts) ?? []
 
   const [selectedChain, setSelectedChain] = useState<OtcNegotiation | null>(null)
-  const [dialog, setDialog] = useState<'bid' | 'counter' | 'accept' | null>(null)
+  const [dialog, setDialog] = useState<'counter' | 'accept' | null>(null)
 
   const closeDialog = () => {
     setDialog(null)
     setSelectedChain(null)
   }
 
-  // Always-defined offer/negotiation ids for hook initialisation; the
-  // mutation calls below short-circuit if `selectedChain` is null.
+  // Always-defined negotiation id for hook initialisation; mutation calls
+  // short-circuit if `selectedChain` is null.
   const targetChainId = selectedChain?.id ?? 0
-  const placeBidMutation = usePlaceBidOnOtcOption(offerId)
   const counterMutation = useCounterOtcNegotiation(offerId, targetChainId)
   const acceptMutation = useAcceptOtcNegotiation(offerId, targetChainId)
   const rejectMutation = useRejectOtcNegotiation(offerId, targetChainId)
@@ -92,16 +85,8 @@ export function OtcOfferDetailPage() {
 
   const { offer } = offerQuery.data
   const isPoster = isPosterLive
-  // Posters see every chain via /otc/options/:id/negotiations.
-  // Non-posters see their own chains via /me/otc/options/negotiations
-  // filtered down to chains attached to this listing.
-  const negotiations = isPoster
-    ? (posterChainsQuery.data?.negotiations ?? [])
-    : (myChainsQuery.data?.negotiations ?? []).filter((n) => n.offer_id === offerId)
-  const negotiationsLoading = isPoster ? posterChainsQuery.isLoading : myChainsQuery.isLoading
-  const myChain =
-    negotiations.find((n) => n.bidder?.owner_id === currentUser?.id) ?? null
-  const isListingOpen = offer.status === 'open' || offer.status === 'PENDING'
+  const negotiations = chainsQuery.data?.negotiations ?? []
+  const negotiationsLoading = chainsQuery.isLoading
 
   const handleReject = (chain: OtcNegotiation) => {
     setSelectedChain(chain)
@@ -146,10 +131,6 @@ export function OtcOfferDetailPage() {
           <Metric label="Settlement" value={offer.settlement_date} />
         </CardContent>
       </Card>
-
-      {isListingOpen && !isPoster && !myChain && (
-        <Button onClick={() => setDialog('bid')}>Place bid</Button>
-      )}
 
       <Card>
         <CardHeader>
@@ -260,24 +241,6 @@ export function OtcOfferDetailPage() {
           )}
         </CardContent>
       </Card>
-
-      {dialog === 'bid' && (
-        <PlaceBidDialog
-          open
-          onOpenChange={(o) => !o && closeDialog()}
-          listing={offer}
-          accounts={accounts}
-          loading={placeBidMutation.isPending}
-          onSubmit={(payload) =>
-            placeBidMutation.mutate(payload, {
-              onSuccess: () => {
-                notifySuccess('Bid placed.')
-                closeDialog()
-              },
-            })
-          }
-        />
-      )}
 
       {dialog === 'counter' && selectedChain && (
         <CounterOfferDialog

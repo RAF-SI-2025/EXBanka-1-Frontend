@@ -110,7 +110,9 @@ export function OtcOptionOffersTable({
               </TableCell>
               <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                 {isOwner ? (
-                  <span className="text-sm text-muted-foreground italic">Your offer</span>
+                  <Button size="sm" variant="outline" onClick={navigateOnClick}>
+                    See details
+                  </Button>
                 ) : onBid ? (
                   <Button size="sm" variant="outline" onClick={() => onBid(o)}>
                     Bid

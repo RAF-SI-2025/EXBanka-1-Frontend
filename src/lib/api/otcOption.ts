@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { apiClient } from '@/lib/api/axios'
 import type {
   OtcOffer,
@@ -156,6 +157,33 @@ export async function placeBidOnOtcOption(
     payload
   )
   return data
+}
+
+/**
+ * Place a bid, or — if the caller already has a chain on this offer —
+ * counter that chain with the same terms. The backend's uniqueness guard
+ * returns 409 ErrOTCChainAlreadyExists when the second bid is attempted,
+ * so we use that as the signal to look up the existing chain and counter
+ * it instead. The dialog UX is the same either way.
+ */
+export async function placeBidOrCounter(
+  offerId: number,
+  payload: PlaceBidPayload
+): Promise<{ negotiation: OtcNegotiation }> {
+  try {
+    return await placeBidOnOtcOption(offerId, payload)
+  } catch (err) {
+    if (!axios.isAxiosError(err) || err.response?.status !== 409) throw err
+    const myChains = await getMyOtcOptionNegotiations({ statuses: 'open,countered' })
+    const existing = myChains.negotiations.find((n) => n.offer_id === offerId)
+    if (!existing) throw err
+    return counterOtcNegotiation(offerId, existing.id, {
+      quantity: payload.quantity,
+      strike_price: payload.strike_price,
+      premium: payload.premium,
+      settlement_date: payload.settlement_date,
+    })
+  }
 }
 
 /**

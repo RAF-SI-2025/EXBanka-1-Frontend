@@ -69,8 +69,8 @@ function clientAuth(id = 5) {
 }
 
 describe('OtcOfferDetailPage', () => {
-  describe('endpoint selection by viewer role', () => {
-    it('poster fetches all chains via /otc/options/:id/negotiations', () => {
+  describe('chain list visibility', () => {
+    it('every viewer reads /otc/options/:id/negotiations and sees all chains', () => {
       jest.mocked(useOtcOptionsHook.useOtcOptionOffer).mockReturnValue({
         data: {
           offer: createMockOtcOptionOffer({
@@ -80,50 +80,11 @@ describe('OtcOfferDetailPage', () => {
         },
         isLoading: false,
       } as any)
-      renderWithProviders(<OtcOfferDetailPage />, {
-        route: '/otc/offers/1001',
-        routePath: '/otc/offers/:id',
-        preloadedState: clientAuth(5),
-      })
-      // Poster query is enabled, bidder query is not.
-      expect(useOtcOptionsHook.useOtcOptionNegotiations).toHaveBeenCalledWith(
-        1001,
-        expect.objectContaining({ enabled: true })
-      )
-      expect(useOtcOptionsHook.useMyOtcOptionNegotiations).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ enabled: false })
-      )
-    })
-
-    it('non-poster fetches their own chains via /me/otc/options/negotiations and filters by offer', () => {
-      jest.mocked(useOtcOptionsHook.useOtcOptionOffer).mockReturnValue({
-        data: {
-          offer: createMockOtcOptionOffer({
-            id: 1001,
-            initiator: { owner_type: 'client', owner_id: 7 },
-          }),
-        },
-        isLoading: false,
-      } as any)
-      // Bidder is client 99 — different from the offer's owner.
-      jest.mocked(useOtcOptionsHook.useMyOtcOptionNegotiations).mockReturnValue({
+      jest.mocked(useOtcOptionsHook.useOtcOptionNegotiations).mockReturnValue({
         data: {
           negotiations: [
-            // Belongs to a different offer — must be filtered out client-side.
-            createMockOtcNegotiation({
-              id: 1,
-              offer_id: 2222,
-              status: 'open',
-              bidder: { owner_type: 'client', owner_id: 99 },
-            }),
-            // Belongs to THIS offer — should be shown.
-            createMockOtcNegotiation({
-              id: 2,
-              offer_id: 1001,
-              status: 'open',
-              bidder: { owner_type: 'client', owner_id: 99 },
-            }),
+            createMockOtcNegotiation({ id: 1, offer_id: 1001, status: 'open' }),
+            createMockOtcNegotiation({ id: 2, offer_id: 1001, status: 'countered' }),
           ],
           total: 2,
         },
@@ -132,21 +93,14 @@ describe('OtcOfferDetailPage', () => {
       renderWithProviders(<OtcOfferDetailPage />, {
         route: '/otc/offers/1001',
         routePath: '/otc/offers/:id',
+        // Viewer is neither the poster nor a bidder — still sees the chains.
         preloadedState: clientAuth(99),
       })
-      expect(useOtcOptionsHook.useMyOtcOptionNegotiations).toHaveBeenCalledWith(
-        { statuses: 'open,countered' },
-        expect.objectContaining({ enabled: true })
-      )
-      expect(useOtcOptionsHook.useOtcOptionNegotiations).toHaveBeenCalledWith(
-        1001,
-        expect.objectContaining({ enabled: false })
-      )
-      // Only the chain for this offer is rendered.
-      expect(screen.queryByText(/#2222/)).not.toBeInTheDocument()
+      expect(useOtcOptionsHook.useOtcOptionNegotiations).toHaveBeenCalledWith(1001)
+      expect(screen.getByText(/negotiation chains \(2\)/i)).toBeInTheDocument()
     })
 
-    it('non-poster without an existing chain sees the Place bid button', () => {
+    it('does not render a Place bid button on the detail page — bidding lives on the list', () => {
       jest.mocked(useOtcOptionsHook.useOtcOptionOffer).mockReturnValue({
         data: {
           offer: createMockOtcOptionOffer({
@@ -157,7 +111,7 @@ describe('OtcOfferDetailPage', () => {
         },
         isLoading: false,
       } as any)
-      jest.mocked(useOtcOptionsHook.useMyOtcOptionNegotiations).mockReturnValue({
+      jest.mocked(useOtcOptionsHook.useOtcOptionNegotiations).mockReturnValue({
         data: { negotiations: [], total: 0 },
         isLoading: false,
       } as any)
@@ -166,7 +120,7 @@ describe('OtcOfferDetailPage', () => {
         routePath: '/otc/offers/:id',
         preloadedState: clientAuth(99),
       })
-      expect(screen.getByRole('button', { name: /place bid/i })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /place bid/i })).not.toBeInTheDocument()
     })
   })
 
@@ -216,8 +170,7 @@ describe('OtcOfferDetailPage', () => {
       },
       isLoading: false,
     } as any)
-    // The bidder is not the poster, so they read from /me/otc/options/negotiations.
-    jest.mocked(useOtcOptionsHook.useMyOtcOptionNegotiations).mockReturnValue({
+    jest.mocked(useOtcOptionsHook.useOtcOptionNegotiations).mockReturnValue({
       data: {
         negotiations: [
           createMockOtcNegotiation({

@@ -222,7 +222,7 @@ describe('OtcOffersPage', () => {
         },
       })
       expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
-      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /see details/i })).toBeInTheDocument()
     })
 
     it('still lets a client bid on a bank-owned offer', () => {
@@ -273,7 +273,7 @@ describe('OtcOffersPage', () => {
         },
       })
       expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
-      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /see details/i })).toBeInTheDocument()
     })
   })
 

@@ -4,7 +4,7 @@ import {
   getOtcOptionOffer,
   getMyOtcOptionOffers,
   getAllOtcOptionOffers,
-  placeBidOnOtcOption,
+  placeBidOrCounter,
   getOtcOptionNegotiations,
   getMyOtcOptionNegotiations,
   counterOtcNegotiation,
@@ -98,7 +98,10 @@ export function useMyOtcOptionNegotiations(
 export function usePlaceBidOnOtcOption(offerId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: PlaceBidPayload) => placeBidOnOtcOption(offerId, payload),
+    // Try bid first; if the caller already has a chain on this offer the
+    // backend returns 409 and placeBidOrCounter transparently falls back
+    // to countering the existing chain with the same terms.
+    mutationFn: (payload: PlaceBidPayload) => placeBidOrCounter(offerId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['otc-option', 'negotiations', offerId] })
       queryClient.invalidateQueries({ queryKey: ['otc-option', 'me-negotiations'] })
