@@ -8,7 +8,7 @@ import {
 import { useClientAccounts, useAccountsByClient } from '@/hooks/useAccounts'
 import { useAllClients } from '@/hooks/useClients'
 import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectUserType } from '@/store/selectors/authSelectors'
+import { selectUserType, selectCurrentUser } from '@/store/selectors/authSelectors'
 import { OtcOffersTable } from '@/components/otc/OtcOffersTable'
 import { OtcPeersStatusBanner } from '@/components/otc/OtcPeersStatusBanner'
 import { BuyOtcDialog } from '@/components/otc/BuyOtcDialog'
@@ -20,6 +20,7 @@ import type { OtcOffer, OtcLocalOffer, OtcRemoteOffer } from '@/types/otc'
 
 export function OtcPortalPage() {
   const userType = useAppSelector(selectUserType)
+  const currentUser = useAppSelector(selectCurrentUser)
   const isEmployee = userType === 'employee'
 
   const { data, isLoading } = useOtcOffers()
@@ -31,7 +32,7 @@ export function OtcPortalPage() {
   const { data: clientAccountsData } = useClientAccounts()
   const clientAccounts = clientAccountsData?.accounts ?? []
 
-  const { data: clientsData } = useAllClients()
+  const { data: clientsData } = useAllClients(undefined, { enabled: isEmployee })
   const clients = clientsData?.clients ?? []
   const { data: accountsForClientData } = useAccountsByClient(selectedClientId ?? 0)
   const accountsForClient = accountsForClientData?.accounts ?? []
@@ -133,7 +134,16 @@ export function OtcPortalPage() {
           lastRefresh={data.last_refresh}
         />
       )}
-      {isLoading ? <LoadingSpinner /> : <OtcOffersTable offers={offers} onBuy={setSelectedOffer} />}
+      {isLoading ? (
+        <LoadingSpinner />
+      ) : (
+        <OtcOffersTable
+          offers={offers}
+          onBuy={setSelectedOffer}
+          currentUserId={currentUser?.id}
+          isCurrentUserEmployee={isEmployee}
+        />
+      )}
       {renderDialog()}
     </div>
   )

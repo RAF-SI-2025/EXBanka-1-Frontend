@@ -3,10 +3,15 @@ import { createQueryWrapper } from '@/__tests__/utils/test-utils'
 import {
   useOtcOptionOffer,
   useMyOtcOptionOffers,
+  useAllOtcOptionOffers,
   useCreateOtcOptionOffer,
-  useCounterOtcOptionOffer,
-  useAcceptOtcOptionOffer,
-  useRejectOtcOptionOffer,
+  useOtcOptionNegotiations,
+  useMyOtcOptionNegotiations,
+  usePlaceBidOnOtcOption,
+  useCounterOtcNegotiation,
+  useAcceptOtcNegotiation,
+  useRejectOtcNegotiation,
+  useCancelOtcNegotiation,
   useOtcOptionContract,
   useMyOtcOptionContracts,
   useExerciseOtcOptionContract,
@@ -14,6 +19,7 @@ import {
 import * as otcOptionApi from '@/lib/api/otcOption'
 import {
   createMockOtcOptionOffer,
+  createMockOtcNegotiation,
   createMockOptionContract,
 } from '@/__tests__/fixtures/otcOption-fixtures'
 
@@ -25,7 +31,6 @@ describe('useOtcOptionOffer', () => {
   it('fetches offer detail when id is positive', async () => {
     jest.mocked(otcOptionApi.getOtcOptionOffer).mockResolvedValue({
       offer: createMockOtcOptionOffer(),
-      revisions: [],
     })
     const { result } = renderHook(() => useOtcOptionOffer(1001), {
       wrapper: createQueryWrapper(),
@@ -34,15 +39,19 @@ describe('useOtcOptionOffer', () => {
     expect(otcOptionApi.getOtcOptionOffer).toHaveBeenCalledWith(1001)
   })
 
-  it('does not fetch when id is null', () => {
-    renderHook(() => useOtcOptionOffer(null), { wrapper: createQueryWrapper() })
-    expect(otcOptionApi.getOtcOptionOffer).not.toHaveBeenCalled()
+  it('is disabled when id is null', () => {
+    const { result } = renderHook(() => useOtcOptionOffer(null), {
+      wrapper: createQueryWrapper(),
+    })
+    expect(result.current.fetchStatus).toBe('idle')
   })
 })
 
 describe('useMyOtcOptionOffers', () => {
   it('fetches with filters', async () => {
-    jest.mocked(otcOptionApi.getMyOtcOptionOffers).mockResolvedValue({ offers: [], total: 0 })
+    jest
+      .mocked(otcOptionApi.getMyOtcOptionOffers)
+      .mockResolvedValue({ offers: [createMockOtcOptionOffer()], total: 1 })
     const { result } = renderHook(() => useMyOtcOptionOffers({ role: 'initiator' }), {
       wrapper: createQueryWrapper(),
     })
@@ -51,8 +60,19 @@ describe('useMyOtcOptionOffers', () => {
   })
 })
 
+describe('useAllOtcOptionOffers', () => {
+  it('fetches all listings', async () => {
+    jest.mocked(otcOptionApi.getAllOtcOptionOffers).mockResolvedValue({ offers: [], total: 0 })
+    const { result } = renderHook(() => useAllOtcOptionOffers(), {
+      wrapper: createQueryWrapper(),
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(otcOptionApi.getAllOtcOptionOffers).toHaveBeenCalledWith({})
+  })
+})
+
 describe('useCreateOtcOptionOffer', () => {
-  it('calls createOtcOptionOffer', async () => {
+  it('posts the payload via createOtcOptionOffer', async () => {
     jest
       .mocked(otcOptionApi.createOtcOptionOffer)
       .mockResolvedValue({ offer: createMockOtcOptionOffer() })
@@ -62,64 +82,130 @@ describe('useCreateOtcOptionOffer', () => {
     await act(async () => {
       await result.current.mutateAsync({
         direction: 'sell_initiated',
-        stock_id: 42,
+        ticker: 'AAPL',
         quantity: '100',
         strike_price: '5000.00',
         settlement_date: '2026-06-05',
+        account_id: 4242,
       })
     })
     expect(otcOptionApi.createOtcOptionOffer).toHaveBeenCalled()
   })
 })
 
-describe('useCounterOtcOptionOffer', () => {
-  it('calls counterOtcOptionOffer', async () => {
+describe('useOtcOptionNegotiations', () => {
+  it("fetches a listing's negotiation chains", async () => {
     jest
-      .mocked(otcOptionApi.counterOtcOptionOffer)
-      .mockResolvedValue({ offer: createMockOtcOptionOffer() })
-    const { result } = renderHook(() => useCounterOtcOptionOffer(1001), {
+      .mocked(otcOptionApi.getOtcOptionNegotiations)
+      .mockResolvedValue({ negotiations: [createMockOtcNegotiation()], total: 1 })
+    const { result } = renderHook(() => useOtcOptionNegotiations(1001), {
+      wrapper: createQueryWrapper(),
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(otcOptionApi.getOtcOptionNegotiations).toHaveBeenCalledWith(1001)
+  })
+})
+
+describe('useMyOtcOptionNegotiations', () => {
+  it("fetches caller's chains with statuses filter", async () => {
+    jest
+      .mocked(otcOptionApi.getMyOtcOptionNegotiations)
+      .mockResolvedValue({ negotiations: [], total: 0 })
+    const { result } = renderHook(() => useMyOtcOptionNegotiations({ statuses: 'open' }), {
+      wrapper: createQueryWrapper(),
+    })
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(otcOptionApi.getMyOtcOptionNegotiations).toHaveBeenCalledWith({ statuses: 'open' })
+  })
+})
+
+describe('usePlaceBidOnOtcOption', () => {
+  it('delegates to placeBidOrCounter so the bid/409→counter flow is shared', async () => {
+    jest
+      .mocked(otcOptionApi.placeBidOrCounter)
+      .mockResolvedValue({ negotiation: createMockOtcNegotiation() })
+    const { result } = renderHook(() => usePlaceBidOnOtcOption(1001), {
+      wrapper: createQueryWrapper(),
+    })
+    await act(async () => {
+      await result.current.mutateAsync({
+        bidder_account_id: 42,
+        quantity: '100',
+        strike_price: '5000.00',
+        premium: '500.00',
+        settlement_date: '2026-06-05',
+      })
+    })
+    expect(otcOptionApi.placeBidOrCounter).toHaveBeenCalledWith(
+      1001,
+      expect.objectContaining({ bidder_account_id: 42 })
+    )
+  })
+})
+
+describe('useCounterOtcNegotiation', () => {
+  it('posts a counter to the specified chain', async () => {
+    jest
+      .mocked(otcOptionApi.counterOtcNegotiation)
+      .mockResolvedValue({ negotiation: createMockOtcNegotiation() })
+    const { result } = renderHook(() => useCounterOtcNegotiation(1001, 5), {
       wrapper: createQueryWrapper(),
     })
     await act(async () => {
       await result.current.mutateAsync({ premium: '52000' })
     })
-    expect(otcOptionApi.counterOtcOptionOffer).toHaveBeenCalledWith(1001, {
+    expect(otcOptionApi.counterOtcNegotiation).toHaveBeenCalledWith(1001, 5, {
       premium: '52000',
     })
   })
 })
 
-describe('useAcceptOtcOptionOffer', () => {
-  it('calls acceptOtcOptionOffer', async () => {
-    jest.mocked(otcOptionApi.acceptOtcOptionOffer).mockResolvedValue({
-      offer: createMockOtcOptionOffer(),
+describe('useAcceptOtcNegotiation', () => {
+  it('posts acceptor_account_id to the chain', async () => {
+    jest.mocked(otcOptionApi.acceptOtcNegotiation).mockResolvedValue({
+      winning: createMockOtcNegotiation({ status: 'accepted' }),
+      parent_offer_id: 1001,
+      parent_status: 'consumed',
+      cancelled_siblings: [],
       contract: createMockOptionContract(),
     })
-    const { result } = renderHook(() => useAcceptOtcOptionOffer(1001), {
+    const { result } = renderHook(() => useAcceptOtcNegotiation(1001, 5), {
       wrapper: createQueryWrapper(),
     })
     await act(async () => {
-      await result.current.mutateAsync({ buyer_account_id: 5, seller_account_id: 9 })
+      await result.current.mutateAsync({ acceptor_account_id: 42 })
     })
-    expect(otcOptionApi.acceptOtcOptionOffer).toHaveBeenCalledWith(1001, {
-      buyer_account_id: 5,
-      seller_account_id: 9,
+    expect(otcOptionApi.acceptOtcNegotiation).toHaveBeenCalledWith(1001, 5, {
+      acceptor_account_id: 42,
     })
   })
 })
 
-describe('useRejectOtcOptionOffer', () => {
-  it('calls rejectOtcOptionOffer', async () => {
+describe('useRejectOtcNegotiation', () => {
+  it('posts a reject (no body)', async () => {
     jest
-      .mocked(otcOptionApi.rejectOtcOptionOffer)
-      .mockResolvedValue({ offer: createMockOtcOptionOffer({ status: 'REJECTED' }) })
-    const { result } = renderHook(() => useRejectOtcOptionOffer(1001), {
+      .mocked(otcOptionApi.rejectOtcNegotiation)
+      .mockResolvedValue({ negotiation: createMockOtcNegotiation({ status: 'rejected' }) })
+    const { result } = renderHook(() => useRejectOtcNegotiation(1001, 5), {
       wrapper: createQueryWrapper(),
     })
     await act(async () => {
       await result.current.mutateAsync()
     })
-    expect(otcOptionApi.rejectOtcOptionOffer).toHaveBeenCalledWith(1001)
+    expect(otcOptionApi.rejectOtcNegotiation).toHaveBeenCalledWith(1001, 5)
+  })
+})
+
+describe('useCancelOtcNegotiation', () => {
+  it('DELETEs the chain', async () => {
+    jest.mocked(otcOptionApi.cancelOtcNegotiation).mockResolvedValue(undefined)
+    const { result } = renderHook(() => useCancelOtcNegotiation(1001, 5), {
+      wrapper: createQueryWrapper(),
+    })
+    await act(async () => {
+      await result.current.mutateAsync()
+    })
+    expect(otcOptionApi.cancelOtcNegotiation).toHaveBeenCalledWith(1001, 5)
   })
 })
 
@@ -148,7 +234,7 @@ describe('useMyOtcOptionContracts', () => {
 })
 
 describe('useExerciseOtcOptionContract', () => {
-  it('calls exerciseOtcOptionContract', async () => {
+  it('calls exerciseOtcOptionContract with empty body', async () => {
     jest.mocked(otcOptionApi.exerciseOtcOptionContract).mockResolvedValue({
       contract: createMockOptionContract({ status: 'EXERCISED' }),
       holding: {
@@ -162,11 +248,8 @@ describe('useExerciseOtcOptionContract', () => {
       wrapper: createQueryWrapper(),
     })
     await act(async () => {
-      await result.current.mutateAsync({ buyer_account_id: 5, seller_account_id: 9 })
+      await result.current.mutateAsync({})
     })
-    expect(otcOptionApi.exerciseOtcOptionContract).toHaveBeenCalledWith(5001, {
-      buyer_account_id: 5,
-      seller_account_id: 9,
-    })
+    expect(otcOptionApi.exerciseOtcOptionContract).toHaveBeenCalledWith(5001, {})
   })
 })

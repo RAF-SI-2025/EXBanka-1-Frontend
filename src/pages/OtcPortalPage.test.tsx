@@ -90,4 +90,20 @@ describe('OtcPortalPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /buy/i }))
     expect(screen.getByText(/buy aapl on behalf of client/i)).toBeInTheDocument()
   })
+
+  it('disables useAllClients for client users (employee-only endpoint)', () => {
+    renderWithProviders(<OtcPortalPage />, { preloadedState: clientAuth() })
+    expect(useClientsHook.useAllClients).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ enabled: false })
+    )
+  })
+
+  it('enables useAllClients for employee users', () => {
+    renderWithProviders(<OtcPortalPage />, { preloadedState: employeeAuth() })
+    expect(useClientsHook.useAllClients).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ enabled: true })
+    )
+  })
 })

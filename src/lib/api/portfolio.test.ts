@@ -51,12 +51,30 @@ describe('getPortfolioSummary', () => {
 })
 
 describe('makeHoldingPublic', () => {
-  it('posts make-public with quantity', async () => {
-    const holding = createMockHolding({ public_quantity: 5 })
-    mockPost.mockResolvedValue({ data: holding })
+  it('posts to /me/otc/stocks with direction=sell, holding_id, and quantity', async () => {
+    // Phase 8: POST /api/v3/me/portfolio/:id/make-public was removed and
+    // replaced by POST /api/v3/me/otc/stocks with a direction-keyed body
+    // (spec § 47.1).
+    const offer = { offer: { id: 99, public_quantity: 5 } }
+    mockPost.mockResolvedValue({ data: offer })
     const result = await makeHoldingPublic(1, { quantity: 5 })
-    expect(mockPost).toHaveBeenCalledWith('/me/portfolio/1/make-public', { quantity: 5 })
-    expect(result).toEqual(holding)
+    expect(mockPost).toHaveBeenCalledWith('/me/otc/stocks', {
+      direction: 'sell',
+      holding_id: 1,
+      quantity: 5,
+    })
+    expect(result).toEqual(offer)
+  })
+
+  it('forwards price_per_unit when provided', async () => {
+    mockPost.mockResolvedValue({ data: { offer: { id: 99 } } })
+    await makeHoldingPublic(1, { quantity: 5, price_per_unit: '175.50' })
+    expect(mockPost).toHaveBeenCalledWith('/me/otc/stocks', {
+      direction: 'sell',
+      holding_id: 1,
+      quantity: 5,
+      price_per_unit: '175.50',
+    })
   })
 })
 

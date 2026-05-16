@@ -70,7 +70,14 @@ export function AdminAccountsPage() {
         <AccountTable
           accounts={accounts}
           onViewCards={(id) => navigate(`/admin/accounts/${id}/cards`)}
-          onViewActivity={(id) => navigate(`/accounts/${id}/activity`)}
+          onViewActivity={(id) => {
+            const account = accounts.find((a) => a.id === id)
+            navigate(
+              account?.account_type === 'bank'
+                ? `/admin/bank-accounts/${id}/activity`
+                : `/accounts/${id}/activity`
+            )
+          }}
           clientsById={clientsById}
         />
       )}

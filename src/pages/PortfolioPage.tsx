@@ -18,6 +18,7 @@ import {
   useExerciseOption,
 } from '@/hooks/usePortfolio'
 import { useMyFundPositions } from '@/hooks/useFunds'
+import { getStocks } from '@/lib/api/securities'
 import type { Holding, PortfolioFilters } from '@/types/portfolio'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 
@@ -88,10 +89,21 @@ export function PortfolioPage() {
     [data]
   )
 
-  const handleMakePublicSubmit = (quantity: number) => {
+  const handleMakePublicSubmit = async (quantity: number) => {
     if (!makePublicHolding) return
+    // /me/otc/stocks (sell direction) requires price_per_unit. Look it up
+    // from the live stock listing matching this holding's ticker; if the
+    // lookup fails we still submit so the backend can return a clear error.
+    let price_per_unit: string | undefined
+    try {
+      const resp = await getStocks({ search: makePublicHolding.ticker, page_size: 5 })
+      price_per_unit = resp.stocks.find((s) => s.ticker === makePublicHolding.ticker)?.price
+    } catch {
+      // Lookup failed — submit without; global error handling will surface
+      // a backend rejection if price is genuinely required.
+    }
     makePublicMutation.mutate(
-      { id: makePublicHolding.id, payload: { quantity } },
+      { id: makePublicHolding.id, payload: { quantity, price_per_unit } },
       { onSuccess: () => setMakePublicHolding(null) }
     )
   }

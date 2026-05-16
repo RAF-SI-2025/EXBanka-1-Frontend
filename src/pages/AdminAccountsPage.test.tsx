@@ -6,6 +6,12 @@ import * as useAccountsHook from '@/hooks/useAccounts'
 import * as useClientsHook from '@/hooks/useClients'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}))
+
 jest.mock('@/hooks/useAccounts')
 jest.mock('@/hooks/useClients')
 
@@ -61,6 +67,7 @@ const companyAccount = createMockAccount({
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockNavigate.mockClear()
   jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
     data: { accounts: [personalAna, personalMarko, companyAccount], total: 3 },
     isLoading: false,
@@ -152,6 +159,37 @@ describe('AdminAccountsPage', () => {
         expect.objectContaining({ page: 2, page_size: 10 })
       )
     )
+  })
+
+  it('routes bank-owned account Activity click to admin bank account activity page', async () => {
+    const bankAccount = createMockAccount({
+      id: 99,
+      account_number: '999000900000000099',
+      owner_name: 'EX Banka',
+      account_type: 'bank',
+    })
+    jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
+      data: { accounts: [bankAccount], total: 1 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminAccountsPage />)
+    await userEvent.click(screen.getByRole('button', { name: /activity/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/bank-accounts/99/activity')
+  })
+
+  it('routes non-bank account Activity click to client activity page', async () => {
+    const clientAccount = createMockAccount({
+      id: 100,
+      account_number: '111000100000000100',
+      account_type: 'standard',
+    })
+    jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
+      data: { accounts: [clientAccount], total: 1 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminAccountsPage />)
+    await userEvent.click(screen.getByRole('button', { name: /activity/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/accounts/100/activity')
   })
 
   it('resets to page 1 when filter changes', async () => {

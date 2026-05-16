@@ -16,7 +16,7 @@ export async function getOtcOffers(filters?: OtcFilters): Promise<OtcOfferListRe
   if (filters?.ticker) params.append('ticker', filters.ticker)
   if (filters?.kind) params.append('kind', filters.kind)
   if (filters?.bank_code) params.append('bank_code', filters.bank_code)
-  const response = await apiClient.get<OtcOfferListResponse>('/otc/offers', { params })
+  const response = await apiClient.get<OtcOfferListResponse>('/otc/stocks', { params })
   const data = response.data
   return {
     offers: data.offers ?? [],
@@ -29,14 +29,14 @@ export async function getOtcOffers(filters?: OtcFilters): Promise<OtcOfferListRe
 }
 
 export async function buyOtcOffer(id: number, payload: OtcBuyRequest): Promise<void> {
-  await apiClient.post(`/otc/offers/${id}/buy`, payload)
+  await apiClient.post(`/otc/stocks/${id}/buy`, payload)
 }
 
 export async function buyOtcOfferOnBehalf(
   id: number,
   payload: OtcBuyOnBehalfRequest
 ): Promise<void> {
-  await apiClient.post(`/otc/offers/${id}/buy-on-behalf`, payload)
+  await apiClient.post(`/otc/stocks/${id}/buy-on-behalf`, payload)
 }
 
 export async function createPeerOtcNegotiation(
