@@ -63,6 +63,7 @@ import { BankFundPositionsPage } from '@/pages/BankFundPositionsPage'
 import { OtcContractsPage } from '@/pages/OtcContractsPage'
 import { OtcContractDetailPage } from '@/pages/OtcContractDetailPage'
 import { OtcOptionsView } from '@/views/otcOptions'
+import { NotificationTemplatesView } from '@/views/notificationTemplates'
 import { BankAccountActivityPage } from '@/pages/BankAccountActivityPage'
 
 export default function App() {
@@ -446,6 +447,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin>
               <AdminPeerBanksPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/notification-templates"
+          element={
+            <ProtectedRoute requiredPermission="notifications.templates.manage">
+              <NotificationTemplatesView />
             </ProtectedRoute>
           }
         />
