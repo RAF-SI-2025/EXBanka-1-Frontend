@@ -24,8 +24,9 @@ const bankAccount = createMockAccount({
   account_name: 'EX Banka RSD',
   account_type: 'bank',
 })
-const allOffer = createMockOtcOptionOffer({ id: 1001 })
-const meOffer = createMockOtcOptionOffer({ id: 2002 })
+// Distinguishable by ticker so we can assert exactly one set is on screen.
+const allOffer = createMockOtcOptionOffer({ id: 1001, ticker: 'AAPL-ALL', stock_id: 1 })
+const meOffer = createMockOtcOptionOffer({ id: 2002, ticker: 'TSLA-ME', stock_id: 2 })
 
 function clientAuth() {
   return {
@@ -95,7 +96,12 @@ describe('OtcOffersPage', () => {
 
     it('renders option offers from the All endpoint by default', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
-      expect(screen.getByText(`#${allOffer.stock_id}`)).toBeInTheDocument()
+      expect(screen.getByText('AAPL-ALL')).toBeInTheDocument()
+    })
+
+    it('does not render Me-only offers on the All tab', () => {
+      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+      expect(screen.queryByText('TSLA-ME')).not.toBeInTheDocument()
     })
   })
 
@@ -104,6 +110,53 @@ describe('OtcOffersPage', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
       fireEvent.click(screen.getByRole('tab', { name: /^me$/i }))
       expect(useOtcOptionsHook.useMyOtcOptionOffers).toHaveBeenCalled()
+    })
+
+    it('renders only the Me listing when the Me tab is active', () => {
+      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+      fireEvent.click(screen.getByRole('tab', { name: /^me$/i }))
+      expect(screen.getByText('TSLA-ME')).toBeInTheDocument()
+      expect(screen.queryByText('AAPL-ALL')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('toggling between tabs does not mix datasets', () => {
+    it('All → Me → All swaps the visible rows cleanly each step', () => {
+      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+
+      // start on All
+      expect(screen.getByText('AAPL-ALL')).toBeInTheDocument()
+      expect(screen.queryByText('TSLA-ME')).not.toBeInTheDocument()
+
+      // → Me
+      fireEvent.click(screen.getByRole('tab', { name: /^me$/i }))
+      expect(screen.getByText('TSLA-ME')).toBeInTheDocument()
+      expect(screen.queryByText('AAPL-ALL')).not.toBeInTheDocument()
+
+      // → All again
+      fireEvent.click(screen.getByRole('tab', { name: /^all$/i }))
+      expect(screen.getByText('AAPL-ALL')).toBeInTheDocument()
+      expect(screen.queryByText('TSLA-ME')).not.toBeInTheDocument()
+    })
+
+    it('All tab shows exactly the All listings count, not Me + All', () => {
+      jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
+        data: {
+          offers: [
+            createMockOtcOptionOffer({ id: 100, ticker: 'A' }),
+            createMockOtcOptionOffer({ id: 101, ticker: 'B' }),
+            createMockOtcOptionOffer({ id: 102, ticker: 'C' }),
+          ],
+          total: 3,
+        },
+        isLoading: false,
+      } as any)
+      renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
+      // Three All offers, zero Me offers visible.
+      expect(screen.getByText('A')).toBeInTheDocument()
+      expect(screen.getByText('B')).toBeInTheDocument()
+      expect(screen.getByText('C')).toBeInTheDocument()
+      expect(screen.queryByText('TSLA-ME')).not.toBeInTheDocument()
     })
   })
 
