@@ -28,9 +28,14 @@ export interface OtcParty {
 export interface OptionContract {
   id: number
   status: OptionContractStatus
-  stock_id: number
+  // Wire ships `ticker` (human-readable stock symbol, e.g. "AAPL"). The
+  // earlier `stock_id` field was a phantom that never appeared on the wire —
+  // see normalizeContract() in src/lib/api/otcOption.ts.
+  ticker: string
   quantity: string
   strike_price: string
+  // Backend wire field is `premium_paid`; the normalizer maps it to `premium`
+  // to keep downstream consumers stable.
   premium: string
   settlement_date: string
   buyer: OtcParty

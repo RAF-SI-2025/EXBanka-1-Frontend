@@ -7,14 +7,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
 import { OtcOptionStatusBadge } from './OtcOptionStatusBadge'
 import type { OptionContract } from '@/types/otcOption'
 
 interface Props {
   contracts: OptionContract[]
+  onExercise: (contract: OptionContract) => void
 }
 
-export function OtcContractsTable({ contracts }: Props) {
+export function OtcContractsTable({ contracts, onExercise }: Props) {
   if (contracts.length === 0) {
     return <p className="text-muted-foreground">No contracts in this view.</p>
   }
@@ -29,6 +31,7 @@ export function OtcContractsTable({ contracts }: Props) {
           <TableHead className="text-right">Premium</TableHead>
           <TableHead>Settlement</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -39,13 +42,22 @@ export function OtcContractsTable({ contracts }: Props) {
                 #{c.id}
               </Link>
             </TableCell>
-            <TableCell>#{c.stock_id}</TableCell>
+            <TableCell>{c.ticker}</TableCell>
             <TableCell className="text-right">{c.quantity}</TableCell>
             <TableCell className="text-right">{c.strike_price}</TableCell>
             <TableCell className="text-right">{c.premium}</TableCell>
             <TableCell>{c.settlement_date}</TableCell>
             <TableCell>
               <OtcOptionStatusBadge status={c.status} />
+            </TableCell>
+            <TableCell className="text-right">
+              {c.status === 'ACTIVE' ? (
+                <Button size="sm" onClick={() => onExercise(c)}>
+                  Exercise
+                </Button>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
             </TableCell>
           </TableRow>
         ))}

@@ -56,15 +56,37 @@ describe('otcOptionsApi.listAll', () => {
 })
 
 describe('otcOptionsApi.listMine', () => {
-  it('GETs /me/otc/options', async () => {
-    mockGet.mockResolvedValue({ data: { offers: [], total: 0 } })
+  it('GETs /me/otc/options and returns the marketplace discovery shape', async () => {
+    const payload = {
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          offer_id: '77',
+          seller_id: 'client-5',
+          direction: 'sell_initiated',
+          ticker: 'TSLA',
+          amount: 5,
+          strike_price: '300',
+          strike_currency: 'USD',
+          premium: '500',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          active_chains_count: 0,
+        },
+      ],
+      total_count: 1,
+    }
+    mockGet.mockResolvedValue({ data: payload })
 
     const result = await otcOptionsApi.listMine({ page: 1, page_size: 20 })
 
     expect(mockGet).toHaveBeenCalledWith('/me/otc/options', {
       params: { page: 1, page_size: 20 },
     })
-    expect(result).toEqual({ offers: [], total: 0 })
+    expect(result).toEqual(payload)
   })
 })
 

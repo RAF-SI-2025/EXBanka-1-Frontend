@@ -24,6 +24,7 @@ jest.mock('@/views/otcOptions/api/otcOptionsApi', () => ({
 
 jest.mock('@/lib/api/accounts', () => ({
   getClientAccounts: jest.fn(),
+  getBankAccounts: jest.fn(),
 }))
 
 const user: AuthUser = {
@@ -49,7 +50,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   // Default: caller has no active chains anywhere.
   jest.mocked(otcOptionsApi.listMyNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
-  jest.mocked(otcOptionsApi.listMine).mockResolvedValue({ offers: [], total: 0 })
+  jest.mocked(otcOptionsApi.listMine).mockResolvedValue({ offers: [], total_count: 0 })
   jest.mocked(accountsApi.getClientAccounts).mockResolvedValue({
     accounts: [
       {
@@ -62,8 +63,28 @@ beforeEach(() => {
         account_category: 'personal',
         balance: 1000,
         available_balance: 1000,
+        reserved_balance: 0,
         status: 'ACTIVE',
         owner_id: 5,
+      },
+    ],
+    total: 1,
+  })
+  jest.mocked(accountsApi.getBankAccounts).mockResolvedValue({
+    accounts: [
+      {
+        id: 99,
+        account_number: '999-1',
+        account_name: 'Bank ops',
+        currency_code: 'USD',
+        account_kind: 'current',
+        account_type: 'standard',
+        account_category: 'business',
+        balance: 100000,
+        available_balance: 100000,
+        reserved_balance: 0,
+        status: 'ACTIVE',
+        owner_id: 0,
       },
     ],
     total: 1,
@@ -137,23 +158,30 @@ describe('OtcOptionsView', () => {
       offers: [],
       total_count: 0,
     })
+    // /me/otc/options now returns the same marketplace shape as /otc/options
+    // (kind, bank_code, best_bid/ask, active_chains_count, …), scoped to the
+    // caller's own open listings via owner_only_seller_id server-side.
     jest.mocked(otcOptionsApi.listMine).mockResolvedValue({
       offers: [
         {
-          id: 77,
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          offer_id: '77',
+          seller_id: 'client-5',
           direction: 'sell_initiated',
-          status: 'open',
-          stock_id: 1,
           ticker: 'TSLA',
-          quantity: '5',
+          amount: 5,
           strike_price: '300',
+          strike_currency: 'USD',
           premium: '500',
-          settlement_date: '2026-12-31',
-          initiator: { owner_type: 'client', owner_id: 5 },
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
           created_at: '2026-05-10T14:00:00Z',
+          active_chains_count: 0,
         },
       ],
-      total: 1,
+      total_count: 1,
     })
 
     renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
@@ -162,5 +190,97 @@ describe('OtcOptionsView', () => {
 
     expect(await screen.findByText('TSLA')).toBeInTheDocument()
     await waitFor(() => expect(otcOptionsApi.listMine).toHaveBeenCalled())
+  })
+
+  it('routes an employee to the owner panel when clicking a local bank-owned row', async () => {
+    const employee: AuthUser = {
+      id: 7,
+      email: 'emp@example.com',
+      role: 'EmployeeAdmin',
+      permissions: [],
+      system_type: 'employee',
+    }
+    const employeeAuth = {
+      auth: {
+        user: employee,
+        userType: 'employee' as const,
+        accessToken: 'tok',
+        refreshToken: 'rt',
+        status: 'authenticated' as const,
+        error: null,
+      },
+    }
+
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          offer_id: '42',
+          seller_id: { owner_type: 'bank', id: 7 },
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          active_chains_count: 0,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({
+      negotiations: [],
+      total: 0,
+    })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: employeeAuth })
+
+    // Wait for the row to appear, then click it (not the Activity button — the
+    // row body itself dispatches via onRowOpen which calls handleRowOpen and,
+    // because isOwnRow short-circuits to true for employee + local + bank,
+    // routes us into the OWNER panel (OfferActivityPanel), not BidderActivityPanel.
+    const tickerCell = await screen.findByText('AAPL')
+    const row = tickerCell.closest('tr')
+    expect(row).not.toBeNull()
+    await userEvent.click(row!)
+
+    // The owner panel renders "Cancel listing" and a "Bidders" heading.
+    // The bidder panel would render "Your chain" / "Place bid" instead — so
+    // these two assertions together guard against the regression of an
+    // employee being routed away from accept/counter/reject for bank-owned
+    // local offers.
+    expect(await screen.findByRole('button', { name: /cancel listing/i })).toBeInTheDocument()
+    expect(screen.getByText(/bidders/i)).toBeInTheDocument()
+  })
+
+  it('uses bank accounts (not client accounts) for an employee user', async () => {
+    const employee: AuthUser = {
+      id: 7,
+      email: 'emp@example.com',
+      role: 'EmployeeAdmin',
+      permissions: [],
+      system_type: 'employee',
+    }
+    const employeeAuth = {
+      auth: {
+        user: employee,
+        userType: 'employee' as const,
+        accessToken: 'tok',
+        refreshToken: 'rt',
+        status: 'authenticated' as const,
+        error: null,
+      },
+    }
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({ offers: [], total_count: 0 })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: employeeAuth })
+
+    await waitFor(() => expect(accountsApi.getBankAccounts).toHaveBeenCalled())
+    expect(accountsApi.getClientAccounts).not.toHaveBeenCalled()
   })
 })

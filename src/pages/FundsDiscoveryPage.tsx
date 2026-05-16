@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useFunds, useInvestFund } from '@/hooks/useFunds'
-import { useClientAccounts } from '@/hooks/useAccounts'
+import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectHasPermission, selectUserType } from '@/store/selectors/authSelectors'
 import { FundsTable } from '@/components/funds/FundsTable'
@@ -30,8 +30,11 @@ export function FundsDiscoveryPage() {
   const isEmployee = userType === 'employee'
   const canManageFunds = useAppSelector((state) => selectHasPermission(state, 'funds.manage'))
 
-  const { data: accountsData } = useClientAccounts()
-  const accounts = accountsData?.accounts ?? []
+  const { data: clientAccountsData } = useClientAccounts(!isEmployee)
+  const { data: bankAccountsData } = useBankAccounts(isEmployee)
+  const accounts = isEmployee
+    ? (bankAccountsData?.accounts ?? [])
+    : (clientAccountsData?.accounts ?? [])
 
   const investMutation = useInvestFund(selectedFund?.id ?? 0)
 
@@ -76,16 +79,21 @@ export function FundsDiscoveryPage() {
         <FundsTable funds={funds} onInvest={setSelectedFund} />
       )}
 
-      {selectedFund && !isEmployee && (
+      {selectedFund && (
         <InvestInFundDialog
           open
           onOpenChange={(open) => !open && setSelectedFund(null)}
           fund={selectedFund}
           accounts={accounts}
+          asBank={isEmployee}
           onSubmit={(payload) =>
             investMutation.mutate(payload, {
               onSuccess: () => {
-                notifySuccess(`Investment placed in ${selectedFund.name}.`)
+                notifySuccess(
+                  isEmployee
+                    ? `Bank invested in ${selectedFund.name}.`
+                    : `Investment placed in ${selectedFund.name}.`
+                )
                 setSelectedFund(null)
               },
             })

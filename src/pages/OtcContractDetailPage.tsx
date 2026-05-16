@@ -40,7 +40,7 @@ export function OtcContractDetailPage() {
           <CardTitle>Details</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
-          <Metric label="Stock" value={`#${contract.stock_id}`} />
+          <Metric label="Stock" value={contract.ticker} />
           <Metric label="Quantity" value={contract.quantity} />
           <Metric label="Strike" value={contract.strike_price} />
           <Metric label="Premium" value={contract.premium} />

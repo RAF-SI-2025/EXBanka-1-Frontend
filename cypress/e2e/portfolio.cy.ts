@@ -66,9 +66,13 @@ describe('Portfolio Page', () => {
   })
 
   it('should make a holding public', () => {
-    cy.intercept('POST', '**/api/v3/me/portfolio/30/make-public', {
-      statusCode: 200,
-      body: { id: 30, is_public: true, public_quantity: 3 },
+    // Phase 8 (spec § 47.1): the FE no longer hits POST /me/portfolio/:id/make-public.
+    // It now hits POST /me/otc/stocks with a direction-keyed body:
+    //   { direction: 'sell', holding_id, quantity }
+    // Response shape is { offer: OtcStockOfferResponse }.
+    cy.intercept('POST', '**/api/v3/me/otc/stocks', {
+      statusCode: 201,
+      body: { offer: { id: 30, holding_id: 30, public_quantity: 3 } },
     }).as('makePublic')
 
     cy.loginAsClient('/portfolio')
@@ -84,7 +88,11 @@ describe('Portfolio Page', () => {
       cy.contains('button', 'Make Public').click()
     })
 
-    cy.wait('@makePublic').its('request.body').should('deep.equal', { quantity: 3 })
+    cy.wait('@makePublic').its('request.body').should('deep.equal', {
+      direction: 'sell',
+      holding_id: 30,
+      quantity: 3,
+    })
   })
 
   it('should navigate to holding transactions on row click', () => {

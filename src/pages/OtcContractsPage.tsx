@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { useMyOtcOptionContracts } from '@/hooks/useOtcOptions'
+import { useMyOtcOptionContracts, useExerciseOtcOptionContract } from '@/hooks/useOtcOptions'
 import { OtcContractsTable } from '@/components/otc/OtcContractsTable'
-import type { MyContractsFilters } from '@/types/otcOption'
+import { ExerciseContractDialog } from '@/components/otc/ExerciseContractDialog'
+import { notifySuccess } from '@/lib/errors'
+import type { MyContractsFilters, OptionContract } from '@/types/otcOption'
 
 export function OtcContractsPage() {
   const [role, setRole] = useState<MyContractsFilters['role']>('either')
@@ -12,6 +14,9 @@ export function OtcContractsPage() {
 
   const active = contracts.filter((c) => c.status === 'ACTIVE')
   const expiredOrExercised = contracts.filter((c) => c.status !== 'ACTIVE')
+
+  const [exerciseTarget, setExerciseTarget] = useState<OptionContract | null>(null)
+  const exerciseMutation = useExerciseOtcOptionContract(exerciseTarget?.id ?? 0)
 
   return (
     <div className="space-y-4">
@@ -34,16 +39,33 @@ export function OtcContractsPage() {
             <>
               <section className="space-y-2">
                 <h2 className="text-lg font-semibold">Active</h2>
-                <OtcContractsTable contracts={active} />
+                <OtcContractsTable contracts={active} onExercise={setExerciseTarget} />
               </section>
               <section className="space-y-2">
                 <h2 className="text-lg font-semibold">Concluded / Expired</h2>
-                <OtcContractsTable contracts={expiredOrExercised} />
+                <OtcContractsTable contracts={expiredOrExercised} onExercise={setExerciseTarget} />
               </section>
             </>
           )}
         </TabsContent>
       </Tabs>
+
+      {exerciseTarget && (
+        <ExerciseContractDialog
+          open
+          onOpenChange={(open) => !open && setExerciseTarget(null)}
+          contract={exerciseTarget}
+          loading={exerciseMutation.isPending}
+          onSubmit={(payload) =>
+            exerciseMutation.mutate(payload, {
+              onSuccess: () => {
+                notifySuccess(`Contract #${exerciseTarget.id} exercised.`)
+                setExerciseTarget(null)
+              },
+            })
+          }
+        />
+      )}
     </div>
   )
 }

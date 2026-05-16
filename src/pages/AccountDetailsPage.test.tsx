@@ -10,7 +10,7 @@ describe('AccountDetailsPage', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.mocked(useAccountsHook.useClientAccount).mockReturnValue({
-      data: createMockAccount(),
+      data: createMockAccount({ reserved_balance: 1500 }),
       isLoading: false,
     } as any)
     jest.mocked(useAccountsHook.useUpdateAccountName).mockReturnValue({
@@ -50,5 +50,15 @@ describe('AccountDetailsPage', () => {
   it('renders rename button', () => {
     renderWithProviders(<AccountDetailsPage />, { route: '/accounts/1' })
     expect(screen.getByText(/rename account/i)).toBeInTheDocument()
+  })
+
+  it('displays the reserved_balance from the account in the Reserved Funds row', () => {
+    renderWithProviders(<AccountDetailsPage />, { route: '/accounts/1' })
+    const reservedLabel = screen.getByText(/reserved funds/i)
+    const row = reservedLabel.parentElement
+    expect(row).not.toBeNull()
+    // The mock account has reserved_balance: 1500 — we should see "1.500" formatted, not "0".
+    expect(row!.textContent).toMatch(/1[.,]500/)
+    expect(row!.textContent).not.toMatch(/(?:^|\s)0(?:[.,]00)?\s*RSD/)
   })
 })

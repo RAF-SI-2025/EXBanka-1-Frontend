@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useFund, useInvestFund } from '@/hooks/useFunds'
-import { useClientAccounts } from '@/hooks/useAccounts'
+import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
 import { FundDetailsPanel } from '@/components/funds/FundDetailsPanel'
@@ -22,8 +22,11 @@ export function FundDetailsPage() {
   const userType = useAppSelector(selectUserType)
   const isEmployee = userType === 'employee'
 
-  const { data: clientAccountsData } = useClientAccounts()
-  const accounts = clientAccountsData?.accounts ?? []
+  const { data: clientAccountsData } = useClientAccounts(!isEmployee)
+  const { data: bankAccountsData } = useBankAccounts(isEmployee)
+  const accounts = isEmployee
+    ? (bankAccountsData?.accounts ?? [])
+    : (clientAccountsData?.accounts ?? [])
 
   const [investOpen, setInvestOpen] = useState(false)
   const investMutation = useInvestFund(fundId)
@@ -70,16 +73,21 @@ export function FundDetailsPage() {
         </CardContent>
       </Card>
 
-      {investOpen && !isEmployee && (
+      {investOpen && (
         <InvestInFundDialog
           open
           onOpenChange={setInvestOpen}
           fund={fund}
           accounts={accounts}
+          asBank={isEmployee}
           onSubmit={(payload) =>
             investMutation.mutate(payload, {
               onSuccess: () => {
-                notifySuccess(`Investment placed in ${fund.name}.`)
+                notifySuccess(
+                  isEmployee
+                    ? `Bank invested in ${fund.name}.`
+                    : `Investment placed in ${fund.name}.`
+                )
                 setInvestOpen(false)
               },
             })
