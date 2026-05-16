@@ -90,4 +90,38 @@ describe('Password Reset Page', () => {
     cy.wait('@resetPasswordFail')
     cy.contains('Failed to reset password. The link may have expired.').should('be.visible')
   })
+
+  // Backend email template links use /reset-password?token=... (note the
+  // dash spelling). The /password-reset routes alone caused a catch-all
+  // redirect to /login. The aliases below cover the email's actual URL.
+  it('should display the password reset form via /reset-password?token= alias', () => {
+    cy.visit('/reset-password?token=test-token-123')
+    cy.contains('Set New Password').should('be.visible')
+    cy.url().should('not.include', '/login')
+  })
+
+  it('should submit new password via /reset-password?token= alias', () => {
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 200, body: {} }).as(
+      'resetPasswordAlias'
+    )
+
+    cy.visit('/reset-password?token=alias-token-abc')
+
+    cy.get('#new_password').type('NewPassword12!')
+    cy.get('#confirm_password').type('NewPassword12!')
+    cy.contains('button', 'Reset Password').click()
+
+    cy.wait('@resetPasswordAlias')
+    cy.get('@resetPasswordAlias')
+      .its('request.body')
+      .should((body) => {
+        expect(body.token).to.equal('alias-token-abc')
+      })
+  })
+
+  it('should display the password reset form via /reset-password/:token alias', () => {
+    cy.visit('/reset-password/test-token-123')
+    cy.contains('Set New Password').should('be.visible')
+    cy.url().should('not.include', '/login')
+  })
 })

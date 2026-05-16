@@ -75,6 +75,9 @@ export default function App() {
         <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
         <Route path="/password-reset" element={<PasswordResetPage />} />
         <Route path="/password-reset/:token" element={<PasswordResetPage />} />
+        {/* Aliases — backend email template uses /reset-password?token=... */}
+        <Route path="/reset-password" element={<PasswordResetPage />} />
+        <Route path="/reset-password/:token" element={<PasswordResetPage />} />
         <Route path="/activate" element={<ActivationPage />} />
       </Route>
 
