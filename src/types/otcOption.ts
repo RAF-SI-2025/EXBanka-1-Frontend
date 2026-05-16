@@ -56,6 +56,8 @@ export interface OtcNegotiation {
   offer_id: number
   status: OtcNegotiationStatus
   bidder: OtcParty
+  /** Optional human-readable bidder name when the backend resolves it. */
+  bidder_name?: string
   /** Last party that proposed the current terms. The opposite party may accept. */
   last_action_by: OtcParty
   quantity: string

@@ -61,6 +61,10 @@ beforeEach(() => {
     mutate: jest.fn(),
     isPending: false,
   } as any)
+  jest.mocked(useOtcOptionsHook.usePlaceBidOnOtcOption).mockReturnValue({
+    mutate: jest.fn(),
+    isPending: false,
+  } as any)
   jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
     data: { accounts: [clientAccount], total: 1 },
   } as any)
@@ -164,6 +168,61 @@ describe('OtcOffersPage', () => {
     it('does not render a Public market section', () => {
       renderWithProviders(<OtcOffersPage />, { preloadedState: clientAuth() })
       expect(screen.queryByText(/public market/i)).not.toBeInTheDocument()
+    })
+  })
+
+  describe('bidding from the list', () => {
+    it('opens the place-bid dialog when Bid is clicked on a non-owned offer', () => {
+      // Make the visible All offer not owned by the current user (id=99).
+      jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
+        data: {
+          offers: [
+            createMockOtcOptionOffer({
+              id: 5,
+              ticker: 'AAPL-BID',
+              initiator: { owner_type: 'client', owner_id: 7 },
+            }),
+          ],
+          total: 1,
+        },
+        isLoading: false,
+      } as any)
+      renderWithProviders(<OtcOffersPage />, {
+        preloadedState: {
+          auth: createMockAuthState({
+            userType: 'client',
+            user: createMockAuthUser({ id: 99, role: 'Client', system_type: 'client' }),
+          }),
+        },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /^bid$/i }))
+      expect(screen.getByRole('heading', { name: /place bid/i })).toBeInTheDocument()
+    })
+
+    it('does not render a Bid button on the user\'s own offer', () => {
+      jest.mocked(useOtcOptionsHook.useAllOtcOptionOffers).mockReturnValue({
+        data: {
+          offers: [
+            createMockOtcOptionOffer({
+              id: 5,
+              ticker: 'AAPL-MINE',
+              initiator: { owner_type: 'client', owner_id: 7 },
+            }),
+          ],
+          total: 1,
+        },
+        isLoading: false,
+      } as any)
+      renderWithProviders(<OtcOffersPage />, {
+        preloadedState: {
+          auth: createMockAuthState({
+            userType: 'client',
+            user: createMockAuthUser({ id: 7, role: 'Client', system_type: 'client' }),
+          }),
+        },
+      })
+      expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
+      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
     })
   })
 

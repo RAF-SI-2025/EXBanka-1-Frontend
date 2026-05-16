@@ -79,7 +79,7 @@ export function OtcOfferDetailPage() {
     setSelectedChain(chain)
     rejectMutation.mutate(undefined, {
       onSuccess: () => {
-        notifySuccess(`Negotiation #${chain.id} rejected.`)
+        notifySuccess(`Negotiation #${chain.id} declined.`)
         setSelectedChain(null)
       },
     })
@@ -163,7 +163,7 @@ export function OtcOfferDetailPage() {
                     <TableRow key={n.id}>
                       <TableCell>{n.id}</TableCell>
                       <TableCell>
-                        {n.bidder.owner_type} #{n.bidder.owner_id ?? '-'}
+                        {n.bidder_name ?? `${n.bidder.owner_type} #${n.bidder.owner_id ?? '-'}`}
                         {isMyChain && (
                           <span className="ml-1 text-xs text-muted-foreground italic">(you)</span>
                         )}
@@ -206,7 +206,7 @@ export function OtcOfferDetailPage() {
                               onClick={() => handleReject(n)}
                               disabled={rejectMutation.isPending}
                             >
-                              Reject
+                              Decline
                             </Button>
                           )}
                           {canActAsBidder && (

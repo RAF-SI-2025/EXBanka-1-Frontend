@@ -7,29 +7,29 @@ import {
   useMyOtcOptionOffers,
   useAllOtcOptionOffers,
   useCreateOtcOptionOffer,
+  usePlaceBidOnOtcOption,
 } from '@/hooks/useOtcOptions'
 import { useClientAccounts, useBankAccounts } from '@/hooks/useAccounts'
 import { usePortfolio } from '@/hooks/usePortfolio'
 import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectUserType } from '@/store/selectors/authSelectors'
+import { selectUserType, selectCurrentUser } from '@/store/selectors/authSelectors'
 import { OtcOptionOffersTable } from '@/components/otc/OtcOptionOffersTable'
 import { CreateOptionOfferDialog } from '@/components/otc/CreateOptionOfferDialog'
+import { PlaceBidDialog } from '@/components/otc/PlaceBidDialog'
 import { notifySuccess } from '@/lib/errors'
-import type { MyOtcOffersResponse } from '@/types/otcOption'
+import type { MyOtcOffersResponse, OtcOffer } from '@/types/otcOption'
 
 type OffersTab = 'all' | 'me'
 
 export function OtcOffersPage() {
   const userType = useAppSelector(selectUserType)
+  const currentUser = useAppSelector(selectCurrentUser)
   const isEmployee = userType === 'employee'
 
   const [tab, setTab] = useState<OffersTab>('all')
   const [createOpen, setCreateOpen] = useState(false)
+  const [bidTarget, setBidTarget] = useState<OtcOffer | null>(null)
 
-  // Each tab owns its own query and is mounted only when active. There is
-  // intentionally no shared `data` variable — that previously made tab
-  // switches briefly read from the wrong query and rows from both
-  // datasets could appear together.
   const isAll = tab === 'all'
   const allQuery = useAllOtcOptionOffers({}, { enabled: isAll })
   const meQuery = useMyOtcOptionOffers({}, { enabled: !isAll })
@@ -43,6 +43,7 @@ export function OtcOffersPage() {
     (isEmployee ? bankAccountsData?.accounts : clientAccountsData?.accounts) ?? []
 
   const createMutation = useCreateOtcOptionOffer()
+  const placeBidMutation = usePlaceBidOnOtcOption(bidTarget?.id ?? 0)
 
   return (
     <div className="space-y-4">
@@ -57,11 +58,20 @@ export function OtcOffersPage() {
           <TabsTrigger value="me">Me</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-3">
-          {/* Key forces a fresh subtree on tab swap so no stale rows linger. */}
-          <OffersTab key="all" query={allQuery} />
+          <OffersTab
+            key="all"
+            query={allQuery}
+            currentUserId={currentUser?.id}
+            onBid={setBidTarget}
+          />
         </TabsContent>
         <TabsContent value="me" className="mt-3">
-          <OffersTab key="me" query={meQuery} />
+          <OffersTab
+            key="me"
+            query={meQuery}
+            currentUserId={currentUser?.id}
+            onBid={setBidTarget}
+          />
         </TabsContent>
       </Tabs>
 
@@ -82,15 +92,35 @@ export function OtcOffersPage() {
           }
         />
       )}
+
+      {bidTarget && (
+        <PlaceBidDialog
+          open
+          onOpenChange={(o) => !o && setBidTarget(null)}
+          listing={bidTarget}
+          accounts={accounts}
+          loading={placeBidMutation.isPending}
+          onSubmit={(payload) =>
+            placeBidMutation.mutate(payload, {
+              onSuccess: () => {
+                notifySuccess('Bid placed.')
+                setBidTarget(null)
+              },
+            })
+          }
+        />
+      )}
     </div>
   )
 }
 
 interface OffersTabProps {
   query: UseQueryResult<MyOtcOffersResponse, unknown>
+  currentUserId?: number
+  onBid: (offer: OtcOffer) => void
 }
 
-function OffersTab({ query }: OffersTabProps) {
+function OffersTab({ query, currentUserId, onBid }: OffersTabProps) {
   const { data, isLoading } = query
   const offers = data?.offers ?? []
 
@@ -103,5 +133,5 @@ function OffersTab({ query }: OffersTabProps) {
       </div>
     )
   }
-  return <OtcOptionOffersTable offers={offers} />
+  return <OtcOptionOffersTable offers={offers} currentUserId={currentUserId} onBid={onBid} />
 }

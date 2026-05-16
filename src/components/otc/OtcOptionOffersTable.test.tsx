@@ -39,4 +39,58 @@ describe('OtcOptionOffersTable', () => {
     renderWithRouter(<OtcOptionOffersTable offers={[]} />)
     expect(screen.getByText(/no offers/i)).toBeInTheDocument()
   })
+
+  describe('Action column', () => {
+    it('renders an Action column header', () => {
+      const offer = createMockOtcOptionOffer({ ticker: 'AAPL' })
+      renderWithRouter(<OtcOptionOffersTable offers={[offer]} />)
+      expect(screen.getByRole('columnheader', { name: /action/i })).toBeInTheDocument()
+    })
+
+    it('renders a Bid button when the current user is not the offer owner', () => {
+      const offer = createMockOtcOptionOffer({
+        ticker: 'AAPL',
+        initiator: { owner_type: 'client', owner_id: 7 },
+      })
+      const onBid = jest.fn()
+      renderWithRouter(
+        <OtcOptionOffersTable offers={[offer]} currentUserId={99} onBid={onBid} />
+      )
+      expect(screen.getByRole('button', { name: /^bid$/i })).toBeInTheDocument()
+    })
+
+    it('calls onBid with the offer when Bid is clicked', () => {
+      const offer = createMockOtcOptionOffer({
+        ticker: 'AAPL',
+        initiator: { owner_type: 'client', owner_id: 7 },
+      })
+      const onBid = jest.fn()
+      renderWithRouter(
+        <OtcOptionOffersTable offers={[offer]} currentUserId={99} onBid={onBid} />
+      )
+      screen.getByRole('button', { name: /^bid$/i }).click()
+      expect(onBid).toHaveBeenCalledWith(offer)
+    })
+
+    it('hides the Bid button when the current user owns the offer', () => {
+      const offer = createMockOtcOptionOffer({
+        ticker: 'AAPL',
+        initiator: { owner_type: 'client', owner_id: 7 },
+      })
+      const onBid = jest.fn()
+      renderWithRouter(
+        <OtcOptionOffersTable offers={[offer]} currentUserId={7} onBid={onBid} />
+      )
+      expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
+    })
+
+    it('renders a "Your offer" indicator when the current user is the owner', () => {
+      const offer = createMockOtcOptionOffer({
+        ticker: 'AAPL',
+        initiator: { owner_type: 'client', owner_id: 7 },
+      })
+      renderWithRouter(<OtcOptionOffersTable offers={[offer]} currentUserId={7} />)
+      expect(screen.getByText(/your offer/i)).toBeInTheDocument()
+    })
+  })
 })
