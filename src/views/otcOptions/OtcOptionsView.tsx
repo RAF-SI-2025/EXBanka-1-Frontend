@@ -9,7 +9,13 @@ import { OtcOptionsTable } from '@/views/otcOptions/components/OtcOptionsTable'
 import { PlaceBidDialog } from '@/views/otcOptions/components/PlaceBidDialog'
 import { CreateOtcOptionDialog } from '@/views/otcOptions/components/CreateOtcOptionDialog'
 import { OfferActivityPanel } from '@/views/otcOptions/components/OfferActivityPanel'
-import { useAllOtcOptions, useMyOtcOptions } from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import { BidderActivityPanel } from '@/views/otcOptions/components/BidderActivityPanel'
+import { isOwnRow } from '@/views/otcOptions/lib/ownership'
+import {
+  useAllOtcOptions,
+  useMyActiveOtcNegotiations,
+  useMyOtcOptions,
+} from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { useBidOrCounter } from '@/views/otcOptions/hooks/useBidOrCounter'
 import { useCreateOtcOption } from '@/views/otcOptions/hooks/useOtcOptionMutations'
 import type {
@@ -50,10 +56,21 @@ export function OtcOptionsView() {
   const [mode, setMode] = useState<OtcOptionsMode>('all')
   const [bidOffer, setBidOffer] = useState<OtcOptionRow | null>(null)
   const [activityOffer, setActivityOffer] = useState<OtcOptionRow | null>(null)
+  const [bidderOffer, setBidderOffer] = useState<OtcOptionRow | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
 
   const allQ = useAllOtcOptions({})
   const mineQ = useMyOtcOptions({})
+  const myNegotiationsQ = useMyActiveOtcNegotiations()
+
+  const myBidOfferIds = useMemo(() => {
+    const s = new Set<number>()
+    for (const n of myNegotiationsQ.data?.negotiations ?? []) {
+      const id = n.parent_offer_id ?? n.offer_id
+      if (id != null) s.add(Number(id))
+    }
+    return s
+  }, [myNegotiationsQ.data])
 
   const bidOrCounter = useBidOrCounter()
   const createListing = useCreateOtcOption()
@@ -90,6 +107,29 @@ export function OtcOptionsView() {
     )
   }
 
+  if (bidderOffer && currentBidder) {
+    return (
+      <div className="p-6">
+        <BidderActivityPanel
+          offer={bidderOffer}
+          accounts={accounts}
+          currentBidder={currentBidder}
+          onBack={() => setBidderOffer(null)}
+          onPlaceBid={(row) => {
+            setBidderOffer(null)
+            setBidOffer(row)
+          }}
+        />
+      </div>
+    )
+  }
+
+  const handleRowOpen = (row: OtcOptionRow) => {
+    const own = mode === 'my' || isOwnRow(row, currentBidder)
+    if (own) setActivityOffer(row)
+    else setBidderOffer(row)
+  }
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -116,8 +156,10 @@ export function OtcOptionsView() {
               rows={rows}
               currentBidder={currentBidder}
               forceOwn={mode === 'my'}
+              myBidOfferIds={myBidOfferIds}
               onBid={(row) => setBidOffer(row)}
               onActivity={(row) => setActivityOffer(row)}
+              onRowOpen={handleRowOpen}
             />
           )}
         </CardContent>

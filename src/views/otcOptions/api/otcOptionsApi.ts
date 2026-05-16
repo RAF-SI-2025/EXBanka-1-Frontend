@@ -7,6 +7,7 @@ import type {
   AcceptNegotiationResponse,
   CounterNegotiationPayload,
   CreateOtcOptionPayload,
+  MyHoldingsResponse,
   MyOtcOptionsResponse,
   OtcNegotiation,
   OtcNegotiationsResponse,
@@ -14,6 +15,7 @@ import type {
   OtcOptionsListFilters,
   OtcParty,
   PlaceBidPayload,
+  StockCatalogResponse,
 } from '@/views/otcOptions/types'
 
 // The backend ships negotiation rows with flat `bidder_owner_type`/
@@ -156,6 +158,43 @@ async function listNegotiations(offerId: number): Promise<OtcNegotiationsRespons
   }
 }
 
+interface MyNegotiationsFilters {
+  statuses?: string
+  page?: number
+  page_size?: number
+}
+
+async function listMyNegotiations(
+  filters: MyNegotiationsFilters = {}
+): Promise<OtcNegotiationsResponse> {
+  const { data } = await apiClient.get<{ negotiations: RawNegotiation[]; total: number }>(
+    '/me/otc/options/negotiations',
+    { params: filters }
+  )
+  return {
+    negotiations: (data.negotiations ?? []).map(normalizeNegotiation),
+    total: data.total ?? 0,
+  }
+}
+
+// Used by the New-Listing ticker picker (sell direction): the caller can only
+// post sell options on shares they actually hold.
+async function listMyHoldings(): Promise<MyHoldingsResponse> {
+  const { data } = await apiClient.get<MyHoldingsResponse>('/me/portfolio', {
+    params: { security_type: 'stock', page_size: 500 },
+  })
+  return { holdings: data.holdings ?? [], total_count: data.total_count ?? 0 }
+}
+
+// Used by the New-Listing ticker picker (buy direction): the caller can post
+// a buy option on any tradable stock.
+async function listStockCatalog(): Promise<StockCatalogResponse> {
+  const { data } = await apiClient.get<StockCatalogResponse>('/securities/stocks', {
+    params: { page_size: 500 },
+  })
+  return { stocks: data.stocks ?? [], total_count: data.total_count ?? 0 }
+}
+
 export const otcOptionsApi = {
   listAll,
   listMine,
@@ -167,4 +206,7 @@ export const otcOptionsApi = {
   rejectNegotiation,
   withdrawNegotiation,
   listNegotiations,
+  listMyNegotiations,
+  listMyHoldings,
+  listStockCatalog,
 }

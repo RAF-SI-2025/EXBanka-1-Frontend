@@ -25,3 +25,14 @@ export function useOtcOptionNegotiations(offerId: number | null) {
     enabled: offerId != null && offerId > 0,
   })
 }
+
+// Used as the upfront "have I already bid on this listing?" precheck so the
+// row's button can show "Counter" instead of "Bid". Filtered to active
+// statuses only — terminal chains (cancelled/rejected/expired) don't block a
+// fresh /bid call, so they shouldn't drive the label either.
+export function useMyActiveOtcNegotiations() {
+  return useQuery({
+    queryKey: [OTC_OPTIONS_QUERY_KEY, 'my-negotiations', 'open,countered'],
+    queryFn: () => otcOptionsApi.listMyNegotiations({ statuses: 'open,countered' }),
+  })
+}

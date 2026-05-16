@@ -99,7 +99,7 @@ export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Bidder chains ({negotiations.length})</CardTitle>
+          <CardTitle className="text-base">Bidders ({negotiations.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}

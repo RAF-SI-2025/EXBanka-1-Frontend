@@ -18,6 +18,7 @@ jest.mock('@/views/otcOptions/api/otcOptionsApi', () => ({
     rejectNegotiation: jest.fn(),
     withdrawNegotiation: jest.fn(),
     listNegotiations: jest.fn(),
+    listMyNegotiations: jest.fn(),
   },
 }))
 
@@ -46,6 +47,9 @@ const preloadedAuth = {
 
 beforeEach(() => {
   jest.clearAllMocks()
+  // Default: caller has no active chains anywhere.
+  jest.mocked(otcOptionsApi.listMyNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+  jest.mocked(otcOptionsApi.listMine).mockResolvedValue({ offers: [], total: 0 })
   jest.mocked(accountsApi.getClientAccounts).mockResolvedValue({
     accounts: [
       {
@@ -95,7 +99,7 @@ describe('OtcOptionsView', () => {
     renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
 
     expect(await screen.findByText('AAPL')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /place bid/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^bid$/i })).toBeInTheDocument()
   })
 
   it("shows Activity (not Place bid) on the user's own listing", async () => {
@@ -125,7 +129,7 @@ describe('OtcOptionsView', () => {
 
     expect(await screen.findByText('AAPL')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /activity/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /place bid/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
   })
 
   it('switches to My listings tab and fetches /me/otc/options', async () => {

@@ -120,6 +120,37 @@ export interface AcceptNegotiationResponse {
   contract: OptionContractLite | null
 }
 
+// ---- Picker lookups ---------------------------------------------------------
+
+// Subset of /me/portfolio Holding the ticker picker needs for sell-direction
+// listings (caller can only sell options on shares they actually hold).
+export interface HoldingLite {
+  id: number
+  security_type: 'stock' | 'futures' | 'option'
+  ticker: string
+  name: string
+  quantity: number
+  public_quantity: number
+}
+
+export interface MyHoldingsResponse {
+  holdings: HoldingLite[]
+  total_count: number
+}
+
+// Subset of /securities/stocks Stock the catalog picker needs for buy-direction
+// listings (any tradable ticker is valid).
+export interface StockLite {
+  id: number
+  ticker: string
+  name: string
+}
+
+export interface StockCatalogResponse {
+  stocks: StockLite[]
+  total_count: number
+}
+
 // ---- Mutation payloads ------------------------------------------------------
 
 export interface CreateOtcOptionPayload {
