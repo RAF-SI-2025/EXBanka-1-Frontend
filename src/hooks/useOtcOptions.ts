@@ -72,18 +72,26 @@ export function useCreateOtcOptionOffer() {
 
 // -- Negotiation chains -----------------------------------------------------
 
-export function useOtcOptionNegotiations(offerId: number | null) {
+export function useOtcOptionNegotiations(
+  offerId: number | null,
+  options?: { enabled?: boolean }
+) {
+  const hasId = offerId != null && offerId > 0
   return useQuery({
     queryKey: ['otc-option', 'negotiations', offerId],
     queryFn: () => getOtcOptionNegotiations(offerId!),
-    enabled: offerId != null && offerId > 0,
+    enabled: hasId && (options?.enabled ?? true),
   })
 }
 
-export function useMyOtcOptionNegotiations(filters: MyNegotiationsFilters = {}) {
+export function useMyOtcOptionNegotiations(
+  filters: MyNegotiationsFilters = {},
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: ['otc-option', 'me-negotiations', filters],
     queryFn: () => getMyOtcOptionNegotiations(filters),
+    enabled: options?.enabled ?? true,
   })
 }
 

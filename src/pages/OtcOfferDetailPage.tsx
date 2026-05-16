@@ -14,6 +14,7 @@ import {
 import {
   useOtcOptionOffer,
   useOtcOptionNegotiations,
+  useMyOtcOptionNegotiations,
   usePlaceBidOnOtcOption,
   useCounterOtcNegotiation,
   useAcceptOtcNegotiation,
@@ -41,7 +42,28 @@ export function OtcOfferDetailPage() {
   const isEmployee = userType === 'employee'
 
   const offerQuery = useOtcOptionOffer(offerId)
-  const negotiationsQuery = useOtcOptionNegotiations(offerId)
+
+  // Compute viewer role early so the right negotiation endpoint fires.
+  // Hooks below must run unconditionally, so derive isPoster from the
+  // currently-loaded offer (false while the offer is still loading; the
+  // queries flip on when the role is known).
+  const loadedOffer = offerQuery.data?.offer
+  const ownerType = loadedOffer?.initiator?.owner_type
+  const ownerId = loadedOffer?.initiator?.owner_id
+  const isPosterLive = loadedOffer
+    ? isEmployee
+      ? ownerType === 'bank' ||
+        (ownerType === 'employee' && currentUser?.id != null && ownerId === currentUser.id)
+      : ownerType === 'client' && currentUser?.id != null && ownerId === currentUser.id
+    : false
+
+  // Posters get every chain on the listing; non-posters only ever see
+  // their own chain (filtered client-side from /me/otc/options/negotiations).
+  const posterChainsQuery = useOtcOptionNegotiations(offerId, { enabled: isPosterLive })
+  const myChainsQuery = useMyOtcOptionNegotiations(
+    { statuses: 'open,countered' },
+    { enabled: loadedOffer != null && !isPosterLive }
+  )
 
   const { data: clientAccountsData } = useClientAccounts(!isEmployee)
   const { data: bankAccountsData } = useBankAccounts(isEmployee)
@@ -69,17 +91,14 @@ export function OtcOfferDetailPage() {
     return <ErrorFallback message="Could not load offer." />
 
   const { offer } = offerQuery.data
-  const negotiations = negotiationsQuery.data?.negotiations ?? []
-
-  // Posters are owners of the listing. Viewer type must match owner type —
-  // without that gate, a client and an employee sharing an id both see
-  // poster actions on the same listing.
-  const ownerType = offer.initiator?.owner_type
-  const ownerId = offer.initiator?.owner_id
-  const isPoster = isEmployee
-    ? ownerType === 'bank' ||
-      (ownerType === 'employee' && currentUser?.id != null && ownerId === currentUser.id)
-    : ownerType === 'client' && currentUser?.id != null && ownerId === currentUser.id
+  const isPoster = isPosterLive
+  // Posters see every chain via /otc/options/:id/negotiations.
+  // Non-posters see their own chains via /me/otc/options/negotiations
+  // filtered down to chains attached to this listing.
+  const negotiations = isPoster
+    ? (posterChainsQuery.data?.negotiations ?? [])
+    : (myChainsQuery.data?.negotiations ?? []).filter((n) => n.offer_id === offerId)
+  const negotiationsLoading = isPoster ? posterChainsQuery.isLoading : myChainsQuery.isLoading
   const myChain =
     negotiations.find((n) => n.bidder?.owner_id === currentUser?.id) ?? null
   const isListingOpen = offer.status === 'open' || offer.status === 'PENDING'
@@ -137,7 +156,7 @@ export function OtcOfferDetailPage() {
           <CardTitle>Negotiation chains ({negotiations.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {negotiationsQuery.isLoading ? (
+          {negotiationsLoading ? (
             <Skeleton className="h-12 w-full rounded-md" />
           ) : negotiations.length === 0 ? (
             <p className="text-sm text-muted-foreground">No bids placed yet.</p>
