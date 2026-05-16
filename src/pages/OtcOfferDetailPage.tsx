@@ -157,7 +157,7 @@ export function OtcOfferDetailPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {negotiations.map((n) => {
+                {negotiations.map((n, idx) => {
                   const isMyChain = n.bidder?.owner_id === currentUser?.id
                   const myTurnToAct =
                     n.status === 'open' || n.status === 'countered'
@@ -169,7 +169,7 @@ export function OtcOfferDetailPage() {
                     isMyChain && (n.status === 'open' || n.status === 'countered')
 
                   return (
-                    <TableRow key={n.id}>
+                    <TableRow key={`${n.id ?? 'unknown'}-${idx}`}>
                       <TableCell>{n.id}</TableCell>
                       <TableCell>
                         {n.bidder_name ??

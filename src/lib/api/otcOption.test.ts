@@ -57,6 +57,33 @@ describe('getOtcOptionOffer', () => {
     await getOtcOptionOffer(1001)
     expect(mockGet).toHaveBeenCalledWith('/otc/options/1001')
   })
+
+  it('synthesises initiator from flat seller_id (bank-typed listing)', async () => {
+    // The single-offer endpoint sometimes returns a flat seller representation
+    // instead of a nested initiator object. The page's `isPoster` check is
+    // viewer-type gated against initiator.owner_type, so the field must
+    // always be present and typed.
+    mockGet.mockResolvedValue({
+      data: {
+        offer: { id: 1001, status: 'open', ticker: 'AAPL', seller_id: 'bank-0' },
+      },
+    })
+    const result = await getOtcOptionOffer(1001)
+    expect(result.offer.initiator).toEqual({ owner_type: 'bank', owner_id: 0 })
+  })
+
+  it('keeps initiator unchanged when the backend already provides it', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        offer: {
+          ...createMockOtcOptionOffer(),
+          initiator: { owner_type: 'bank', owner_id: null },
+        },
+      },
+    })
+    const result = await getOtcOptionOffer(1001)
+    expect(result.offer.initiator).toEqual({ owner_type: 'bank', owner_id: null })
+  })
 })
 
 describe('getMyOtcOptionOffers', () => {

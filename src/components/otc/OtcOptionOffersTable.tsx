@@ -53,7 +53,7 @@ export function OtcOptionOffersTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {offers.map((o) => {
+        {offers.map((o, idx) => {
           // A viewer "owns" an offer when both viewer type AND owner identity
           // line up. Without the type gate, a client and an employee that
           // happen to share an id both get "Your offer" on the same listing.
@@ -76,7 +76,7 @@ export function OtcOptionOffersTable({
           const navigateOnClick = () => navigate(detailUrl)
           return (
             <TableRow
-              key={o.id}
+              key={`${o.id ?? 'unknown'}-${idx}`}
               className="cursor-pointer hover:bg-muted/40"
               onClick={navigateOnClick}
             >

@@ -31,7 +31,15 @@ export async function createOtcOptionOffer(
 
 export async function getOtcOptionOffer(id: number): Promise<OtcOfferDetailResponse> {
   const { data } = await apiClient.get<OtcOfferDetailResponse>(`/otc/options/${id}`)
-  return data
+  // The single-offer endpoint may return the seller as a flat string
+  // (`seller_id: "bank-0"`) instead of a nested `initiator` object.
+  // The detail page's viewer-type-gated isPoster check needs
+  // `initiator.owner_type` populated, otherwise an employee viewing a
+  // bank-owned offer sees no Counter/Accept/Decline actions.
+  const normalizedOffer = normalizeOtcOffer(
+    data.offer as unknown as Record<string, unknown>
+  )
+  return { ...data, offer: normalizedOffer }
 }
 
 /**
