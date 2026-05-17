@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { BankFundPositionsTable } from '@/components/profit/BankFundPositionsTable'
+import { BankFundPositionsTable } from '@/views/funds/components/BankFundPositionsTable'
 import { useBankAccounts } from '@/hooks/useAccounts'
 import { useFund, useInvestFund, useRedeemFund } from '@/hooks/useFunds'
 import { useBankFundPositions } from '@/hooks/useProfit'

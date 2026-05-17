@@ -34,7 +34,7 @@ import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { clearAuth, logoutThunk } from '@/store/slices/authSlice'
 import { useQueryClient } from '@tanstack/react-query'
-import { BackendSwitcherButton } from '@/components/auth/BackendSwitcherButton'
+import { BackendSwitcherButton } from '@/views/auth/components/BackendSwitcherButton'
 import {
   selectCurrentUser,
   selectHasPermission,

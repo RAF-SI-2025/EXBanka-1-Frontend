@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
-import { ClientSelector } from '@/components/accounts/ClientSelector'
+import { ClientSelector } from '@/views/accounts/components/ClientSelector'
 import { Label } from '@/components/ui/label'
 import { useCreateOrder, useCreateOrderOnBehalf } from '@/hooks/useOrders'
 import { useCreateOptionOrder, useListingsForSell } from '@/hooks/useSecurities'

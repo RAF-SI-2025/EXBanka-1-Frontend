@@ -1,0 +1,98 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useClientAccounts } from '@/hooks/useAccounts'
+import { usePayments } from '@/hooks/usePayments'
+import { AccountCard } from '@/views/accounts/components/AccountCard'
+import { RecentTransactions } from '@/views/accounts/components/RecentTransactions'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import type { Payment } from '@/types/payment'
+import { EmptyState, ViewShell } from '@/views/shared'
+
+export function AccountListView() {
+  const navigate = useNavigate()
+  const { data: accountsData, isLoading } = useClientAccounts()
+  const accounts = accountsData?.accounts ?? []
+  const [sortBy, setSortBy] = useState<'date' | 'type'>('date')
+
+  const effectiveAccount = accounts[0] ?? null
+
+  const { data: paymentsData } = usePayments({ page_size: 5 })
+
+  const sortedTransactions = [...(paymentsData?.payments ?? [])].sort((a: Payment, b: Payment) => {
+    if (sortBy === 'date') return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    return a.status.localeCompare(b.status)
+  })
+
+  if (isLoading) {
+    return (
+      <ViewShell>
+        <div className="space-y-4" data-testid="accounts-skeleton">
+          <Skeleton className="h-8 w-48" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-xl" />
+            ))}
+          </div>
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </div>
+      </ViewShell>
+    )
+  }
+
+  return (
+    <ViewShell title="My Accounts" subtitle="Your bank accounts at EXBanka.">
+      <div className="space-y-3">
+        {accounts.map((account) => (
+          <AccountCard
+            key={account.id}
+            account={account}
+            onClick={() => navigate(`/accounts/${account.id}`)}
+          />
+        ))}
+        {accounts.length === 0 && <EmptyState title="You have no active accounts." />}
+      </div>
+
+      {effectiveAccount && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base">
+              Recent Transactions — {effectiveAccount.account_name}
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/accounts/${effectiveAccount.id}`)}
+            >
+              Account Details
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-2">
+              <Label>Sort by:</Label>
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'date' | 'type')}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="type">Transaction Type</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <RecentTransactions transactions={sortedTransactions} />
+          </CardContent>
+        </Card>
+      )}
+    </ViewShell>
+  )
+}

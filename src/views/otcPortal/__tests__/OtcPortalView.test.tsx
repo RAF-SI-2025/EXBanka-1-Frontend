@@ -40,7 +40,7 @@ describe('OtcPortalView', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
-     
+
     const anyVal = (v: unknown) => v as any
     jest
       .mocked(useOtcHook.useOtcOffers)
@@ -80,7 +80,6 @@ describe('OtcPortalView', () => {
   })
 
   it('shows the loading state while fetching', () => {
-     
     jest.mocked(useOtcHook.useOtcOffers).mockReturnValue({
       data: undefined,
       isLoading: true,

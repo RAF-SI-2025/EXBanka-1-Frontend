@@ -16,7 +16,7 @@ import {
   submitTransfer,
 } from '@/store/slices/transferSlice'
 import { createChallenge, submitVerificationCode } from '@/lib/api/verification'
-import { VerificationStep } from '@/components/verification/VerificationStep'
+import { VerificationStep } from '@/views/auth/verification/VerificationStep'
 import { CreateTransferForm } from '@/views/transfers/components/CreateTransferForm'
 import { TransferPreview } from '@/views/transfers/components/TransferPreview'
 import { LoadingState, ViewShell } from '@/views/shared'

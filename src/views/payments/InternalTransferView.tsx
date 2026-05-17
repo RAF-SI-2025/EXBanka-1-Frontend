@@ -15,7 +15,7 @@ import {
   submitPayment,
 } from '@/store/slices/paymentSlice'
 import { createChallenge, submitVerificationCode } from '@/lib/api/verification'
-import { VerificationStep } from '@/components/verification/VerificationStep'
+import { VerificationStep } from '@/views/auth/verification/VerificationStep'
 import { createInternalTransferSchema } from '@/lib/utils/validation'
 import type { z } from 'zod'
 import { InternalTransferForm } from '@/views/payments/components/InternalTransferForm'

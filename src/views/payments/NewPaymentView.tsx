@@ -19,7 +19,7 @@ import {
   submitPayment,
 } from '@/store/slices/paymentSlice'
 import { createChallenge, submitVerificationCode } from '@/lib/api/verification'
-import { VerificationStep } from '@/components/verification/VerificationStep'
+import { VerificationStep } from '@/views/auth/verification/VerificationStep'
 import { NewPaymentForm } from '@/views/payments/components/NewPaymentForm'
 import { PaymentConfirmation } from '@/views/payments/components/PaymentConfirmation'
 import { ViewShell } from '@/views/shared'
