@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
-import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
+import { InterestRatesView } from '@/views/interestRates/InterestRatesView'
 import * as tiersApi from '@/lib/api/interestRateTiers'
 import * as marginsApi from '@/lib/api/bankMargins'
 import type { InterestRateTier } from '@/types/interestRateTiers'
@@ -50,9 +50,9 @@ beforeEach(() => {
   jest.mocked(marginsApi.getBankMargins).mockResolvedValue({ margins: mockMargins })
 })
 
-describe('AdminInterestRatesPage', () => {
+describe('InterestRatesView', () => {
   it('renders page title', async () => {
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
     expect(screen.getByRole('heading', { name: 'Interest Rates' })).toBeInTheDocument()
   })
 
@@ -60,12 +60,12 @@ describe('AdminInterestRatesPage', () => {
     jest.mocked(tiersApi.getInterestRateTiers).mockReturnValue(new Promise(() => {}))
     jest.mocked(marginsApi.getBankMargins).mockReturnValue(new Promise(() => {}))
 
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
     expect(screen.getByTestId('view-loading')).toBeInTheDocument()
   })
 
   it('displays tiers table with data', async () => {
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
 
     await screen.findByText('0 - 50,000')
     expect(screen.getByText('3.5%')).toBeInTheDocument()
@@ -75,14 +75,14 @@ describe('AdminInterestRatesPage', () => {
   })
 
   it('shows Create Tier button', async () => {
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
 
     await screen.findByText('0 - 50,000')
     expect(screen.getByRole('button', { name: /create tier/i })).toBeInTheDocument()
   })
 
   it('shows active/inactive badges for tiers', async () => {
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
 
     await screen.findByText('0 - 50,000')
     // "Active" appears as table header + badge, so use getAllByText
@@ -93,7 +93,7 @@ describe('AdminInterestRatesPage', () => {
 
   it('shows bank margins tab and can switch to it', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
 
     await screen.findByText('0 - 50,000')
 
@@ -109,13 +109,13 @@ describe('AdminInterestRatesPage', () => {
   it('shows "No interest rate tiers found." when there are no tiers', async () => {
     jest.mocked(tiersApi.getInterestRateTiers).mockResolvedValue({ tiers: [] })
 
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
 
     await screen.findByText('No interest rate tiers found.')
   })
 
   it('renders edit, delete, and apply buttons for each tier', async () => {
-    renderWithProviders(<AdminInterestRatesPage />)
+    renderWithProviders(<InterestRatesView />)
 
     await screen.findByText('0 - 50,000')
     const editButtons = screen.getAllByRole('button', { name: /^edit$/i })

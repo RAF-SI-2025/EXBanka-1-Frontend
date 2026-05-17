@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useEmployees } from '@/hooks/useEmployees'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { PaginationControls } from '@/components/shared/PaginationControls'
-import { EditEmployeeLimitsDialog } from '@/components/admin/EditEmployeeLimitsDialog'
-import { LimitTemplatesDialog } from '@/components/admin/LimitTemplatesDialog'
+import { EditEmployeeLimitsDialog } from '@/views/employeeLimits/components/EditEmployeeLimitsDialog'
+import { LimitTemplatesDialog } from '@/views/employeeLimits/components/LimitTemplatesDialog'
 import {
   Table,
   TableBody,
@@ -24,7 +24,7 @@ const PAGE_SIZE = 10
 
 const FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
-export function AdminEmployeeLimitsPage() {
+export function EmployeeLimitsView() {
   const navigate = useNavigate()
   const [filterValues, setFilterValues] = useState<FilterValues>({})
   const [page, setPage] = useState(1)

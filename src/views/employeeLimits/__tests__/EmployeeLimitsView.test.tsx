@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
-import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
+import { EmployeeLimitsView } from '@/views/employeeLimits/EmployeeLimitsView'
 import * as employeesApi from '@/lib/api/employees'
 import * as limitsApi from '@/lib/api/limits'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
@@ -60,16 +60,16 @@ beforeEach(() => {
   })
 })
 
-describe('AdminEmployeeLimitsPage', () => {
+describe('EmployeeLimitsView', () => {
   it('renders page title', async () => {
-    renderWithProviders(<AdminEmployeeLimitsPage />, {
+    renderWithProviders(<EmployeeLimitsView />, {
       preloadedState: { auth: adminAuth },
     })
     expect(screen.getByRole('heading', { name: 'Employee Limits' })).toBeInTheDocument()
   })
 
   it('displays employees on load', async () => {
-    renderWithProviders(<AdminEmployeeLimitsPage />, {
+    renderWithProviders(<EmployeeLimitsView />, {
       preloadedState: { auth: adminAuth },
     })
     await screen.findByText('John Doe')
@@ -78,14 +78,14 @@ describe('AdminEmployeeLimitsPage', () => {
 
   it('shows loading state', () => {
     jest.mocked(employeesApi.getEmployees).mockReturnValue(new Promise(() => {}))
-    renderWithProviders(<AdminEmployeeLimitsPage />, {
+    renderWithProviders(<EmployeeLimitsView />, {
       preloadedState: { auth: adminAuth },
     })
     expect(screen.getByTestId('view-loading')).toBeInTheDocument()
   })
 
   it('shows Manage Templates button', async () => {
-    renderWithProviders(<AdminEmployeeLimitsPage />, {
+    renderWithProviders(<EmployeeLimitsView />, {
       preloadedState: { auth: adminAuth },
     })
     await waitFor(() => {
@@ -98,7 +98,7 @@ describe('AdminEmployeeLimitsPage', () => {
       employees: [],
       total_count: 0,
     })
-    renderWithProviders(<AdminEmployeeLimitsPage />, {
+    renderWithProviders(<EmployeeLimitsView />, {
       preloadedState: { auth: adminAuth },
     })
     await screen.findByText('No employees found.')

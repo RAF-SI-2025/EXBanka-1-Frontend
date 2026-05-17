@@ -2,15 +2,15 @@ import { useState } from 'react'
 import { useRoles, useCreateRole, useUpdateRolePermissions } from '@/hooks/useRoles'
 import { usePermissions } from '@/hooks/usePermissions'
 import type { Role, CreateRolePayload } from '@/types/roles'
-import { RolesTable } from '@/components/admin/RolesTable'
-import { PermissionsTable } from '@/components/admin/PermissionsTable'
-import { CreateRoleDialog } from '@/components/admin/CreateRoleDialog'
-import { EditRolePermissionsDialog } from '@/components/admin/EditRolePermissionsDialog'
+import { RolesTable } from '@/views/roles/components/RolesTable'
+import { PermissionsTable } from '@/views/roles/components/PermissionsTable'
+import { CreateRoleDialog } from '@/views/roles/components/CreateRoleDialog'
+import { EditRolePermissionsDialog } from '@/views/roles/components/EditRolePermissionsDialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
 
-export function AdminRolesPage() {
+export function RolesView() {
   const { data: rolesData, isLoading: rolesLoading } = useRoles()
   const { data: permissionsData, isLoading: permissionsLoading } = usePermissions()
   const createRoleMutation = useCreateRole()

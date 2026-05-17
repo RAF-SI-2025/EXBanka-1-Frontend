@@ -44,12 +44,13 @@ import {
 import { AdminOrdersView, CreateOrderView, MyOrdersView } from '@/views/orders'
 import { HoldingTransactionsView, PortfolioView } from '@/views/portfolio'
 import { TaxView } from '@/views/tax'
-import { AdminRolesPage } from '@/pages/AdminRolesPage'
-import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
-import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
-import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
+import { RolesView } from '@/views/roles'
+import { EmployeeLimitsView } from '@/views/employeeLimits'
+import { ClientLimitsView } from '@/views/clientLimits'
+import { InterestRatesView } from '@/views/interestRates'
 import { AdminFeesView } from '@/views/adminFees'
 import { PeerBanksView } from '@/views/peerBanks'
+import { OtcView } from '@/views/otc'
 import { OtcPortalView } from '@/views/otcPortal'
 import { BankFundPositionsView, CreateFundView, FundDetailsView, FundsView } from '@/views/funds'
 import { OtcContractDetailView, OtcContractsView } from '@/views/otcContracts'
@@ -341,10 +342,15 @@ export default function App() {
         <Route path="/securities/options/:id" element={<OptionDetailView />} />
         <Route path="/securities/order/new" element={<CreateOrderView />} />
         <Route path="/orders" element={<MyOrdersView />} />
-        <Route path="/otc" element={<OtcPortalView />} />
-        <Route path="/otc/options" element={<OtcOptionsView />} />
-        <Route path="/otc/contracts" element={<OtcContractsView />} />
-        <Route path="/otc/contracts/:id" element={<OtcContractDetailView />} />
+        {/* OTC hub — single sidebar entry, three internal tabs. Legacy
+            top-level URLs redirect to /otc/<tab>. */}
+        <Route path="/otc" element={<OtcView />}>
+          <Route index element={<Navigate to="market" replace />} />
+          <Route path="market" element={<OtcPortalView />} />
+          <Route path="options" element={<OtcOptionsView />} />
+          <Route path="contracts" element={<OtcContractsView />} />
+          <Route path="contracts/:id" element={<OtcContractDetailView />} />
+        </Route>
         <Route path="/funds" element={<FundsView />} />
         <Route
           path="/funds/new"
@@ -412,10 +418,10 @@ export default function App() {
           />
           <Route path="fees" element={<AdminFeesView />} />
           <Route path="peer-banks" element={<PeerBanksView />} />
-          <Route path="roles" element={<AdminRolesPage />} />
-          <Route path="interest-rates" element={<AdminInterestRatesPage />} />
-          <Route path="employee-limits" element={<AdminEmployeeLimitsPage />} />
-          <Route path="client-limits" element={<AdminClientLimitsPage />} />
+          <Route path="roles" element={<RolesView />} />
+          <Route path="interest-rates" element={<InterestRatesView />} />
+          <Route path="employee-limits" element={<EmployeeLimitsView />} />
+          <Route path="client-limits" element={<ClientLimitsView />} />
         </Route>
 
         {/* Legacy settings routes — redirect to the consolidated hub so

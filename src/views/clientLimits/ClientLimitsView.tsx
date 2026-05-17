@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAllClients } from '@/hooks/useClients'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { PaginationControls } from '@/components/shared/PaginationControls'
-import { EditClientLimitsDialog } from '@/components/admin/EditClientLimitsDialog'
+import { EditClientLimitsDialog } from '@/views/clientLimits/components/EditClientLimitsDialog'
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ const PAGE_SIZE = 10
 
 const FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
-export function AdminClientLimitsPage() {
+export function ClientLimitsView() {
   const navigate = useNavigate()
   const [filterValues, setFilterValues] = useState<FilterValues>({})
   const [page, setPage] = useState(1)

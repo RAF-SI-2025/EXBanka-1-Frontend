@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
-import { AdminRolesPage } from '@/pages/AdminRolesPage'
+import { RolesView } from '@/views/roles/RolesView'
 import * as rolesApi from '@/lib/api/roles'
 import * as permissionsApi from '@/lib/api/permissions'
 import type { Role, Permission } from '@/types/roles'
@@ -32,9 +32,9 @@ beforeEach(() => {
   jest.mocked(permissionsApi.getPermissions).mockResolvedValue({ permissions: mockPermissions })
 })
 
-describe('AdminRolesPage', () => {
+describe('RolesView', () => {
   it('renders roles table with role data', async () => {
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     await screen.findByText('Admin')
     expect(screen.getByText('Full access')).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('AdminRolesPage', () => {
   })
 
   it('shows permission counts for each role', async () => {
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     await screen.findByText('Admin')
     expect(screen.getByText('2 permissions')).toBeInTheDocument()
@@ -52,7 +52,7 @@ describe('AdminRolesPage', () => {
 
   it('shows permissions tab with all permissions', async () => {
     const user = userEvent.setup()
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     await screen.findByText('Admin')
 
@@ -71,7 +71,7 @@ describe('AdminRolesPage', () => {
     jest.mocked(rolesApi.getRoles).mockReturnValue(new Promise(() => {}))
     jest.mocked(permissionsApi.getPermissions).mockReturnValue(new Promise(() => {}))
 
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     expect(screen.getByTestId('view-loading')).toBeInTheDocument()
   })
@@ -79,20 +79,20 @@ describe('AdminRolesPage', () => {
   it('shows "No roles found." when there are no roles', async () => {
     jest.mocked(rolesApi.getRoles).mockResolvedValue({ roles: [] })
 
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     await screen.findByText('No roles found.')
   })
 
   it('renders Create Role button', async () => {
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     await screen.findByText('Admin')
     expect(screen.getByRole('button', { name: /create role/i })).toBeInTheDocument()
   })
 
   it('renders Edit Permissions buttons for each role', async () => {
-    renderWithProviders(<AdminRolesPage />)
+    renderWithProviders(<RolesView />)
 
     await screen.findByText('Admin')
     const editButtons = screen.getAllByRole('button', { name: /edit permissions/i })

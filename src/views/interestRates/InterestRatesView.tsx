@@ -10,11 +10,11 @@ import {
 import { useBankMargins, useUpdateBankMargin } from '@/hooks/useBankMargins'
 import type { InterestRateTier, CreateTierPayload } from '@/types/interestRateTiers'
 import type { BankMargin } from '@/types/bankMargins'
-import { InterestRateTiersTable } from '@/components/admin/InterestRateTiersTable'
-import { BankMarginsTable } from '@/components/admin/BankMarginsTable'
-import { CreateTierDialog } from '@/components/admin/CreateTierDialog'
-import { EditTierDialog } from '@/components/admin/EditTierDialog'
-import { EditMarginDialog } from '@/components/admin/EditMarginDialog'
+import { InterestRateTiersTable } from '@/views/interestRates/components/InterestRateTiersTable'
+import { BankMarginsTable } from '@/views/interestRates/components/BankMarginsTable'
+import { CreateTierDialog } from '@/views/interestRates/components/CreateTierDialog'
+import { EditTierDialog } from '@/views/interestRates/components/EditTierDialog'
+import { EditMarginDialog } from '@/views/interestRates/components/EditMarginDialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,7 +25,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
-export function AdminInterestRatesPage() {
+export function InterestRatesView() {
   const { data: tiersData, isLoading: tiersLoading } = useInterestRateTiers()
   const { data: marginsData, isLoading: marginsLoading } = useBankMargins()
   const createTierMutation = useCreateTier()
