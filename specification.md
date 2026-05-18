@@ -252,6 +252,7 @@ src/
 │   ├── AccountDetailsPage.tsx + .test.tsx
 │   ├── AdminAccountsPage.tsx + .test.tsx
 │   ├── AdminAccountCardsPage.tsx + .test.tsx     # Lists cards for an account; block/unblock/deactivate per card; "Create Card" button opens CreateCardDialog
+│   ├── BankAccountActivityPage.tsx + .test.tsx  # Paginated ledger (debit/credit) for a bank-owned account; employee-only (bank-accounts.manage)
 │   ├── AdminClientsPage.tsx + .test.tsx
 │   ├── AdminCardRequestsPage.tsx + .test.tsx
 │   ├── AdminLoanRequestsPage.tsx + .test.tsx
@@ -420,6 +421,7 @@ src/
 | `/employees/:id` | EditEmployeePage | `employees.update` |
 | `/admin/accounts` | AdminAccountsPage | admin |
 | `/admin/accounts/:id/cards` | AdminAccountCardsPage | admin |
+| `/admin/bank-accounts/:id/activity` | BankAccountActivityPage | `bank-accounts.manage` |
 | `/admin/clients` | AdminClientsPage | admin |
 | `/admin/clients/new` | CreateClientPage | admin |
 | `/admin/clients/:id` | EditClientPage | admin |
@@ -1307,6 +1309,7 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `useClientLimits(id)` | React Query | Fetch client limits; query key: `['clientLimits', id]` |
 | `useUpdateClientLimits()` | React Query | Mutation: update client limits; invalidates `['clientLimits', id]` |
 | `useSearchAccounts(query)` | React Query | Search accounts by account_number_filter; query key: `['accounts', 'search', query]`; disabled when query is empty |
+| `useBankAccountActivity(id, filters?)` | React Query | Fetch ledger entries for a bank-owned account; query key: `['bankAccountActivity', id, filters]`; calls `GET /api/v3/bank-accounts/:id/activity` |
 | `useCreateCard()` | React Query | Mutation: POST authorized person then POST card sequentially; invalidates `['cards', 'account', account_number]` on success |
 
 ---

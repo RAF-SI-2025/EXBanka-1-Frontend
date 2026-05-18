@@ -15,8 +15,6 @@ import {
   HandCoins,
   LineChart,
   Handshake,
-  MessageSquare,
-  FileSignature,
   PiggyBank,
   PlusSquare,
   ListOrdered,
@@ -27,11 +25,7 @@ import {
   Building2,
   CheckSquare,
   Receipt,
-  Shield,
-  Gauge,
-  Percent,
-  Banknote,
-  Network,
+  Settings,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -39,7 +33,7 @@ import { useAppDispatch } from '@/hooks/useAppDispatch'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { clearAuth, logoutThunk } from '@/store/slices/authSlice'
 import { useQueryClient } from '@tanstack/react-query'
-import { BackendSwitcherButton } from '@/components/auth/BackendSwitcherButton'
+import { BackendSwitcherButton } from '@/views/auth/components/BackendSwitcherButton'
 import {
   selectCurrentUser,
   selectHasPermission,
@@ -133,13 +127,7 @@ function ClientNav({ canManageFunds }: { canManageFunds: boolean }) {
           Securities
         </NavItem>
         <NavItem to="/otc" icon={Handshake}>
-          OTC Market
-        </NavItem>
-        <NavItem to="/otc/offers" icon={MessageSquare}>
-          OTC Offers
-        </NavItem>
-        <NavItem to="/otc/contracts" icon={FileSignature}>
-          OTC Contracts
+          OTC
         </NavItem>
         <NavItem to="/funds" icon={PiggyBank}>
           Funds
@@ -208,13 +196,7 @@ function EmployeeNav({
           Securities
         </NavItem>
         <NavItem to="/otc" icon={Handshake}>
-          OTC Market
-        </NavItem>
-        <NavItem to="/otc/offers" icon={MessageSquare}>
-          OTC Offers
-        </NavItem>
-        <NavItem to="/otc/contracts" icon={FileSignature}>
-          OTC Contracts
+          OTC
         </NavItem>
         <NavItem to="/funds" icon={PiggyBank}>
           Funds
@@ -256,23 +238,9 @@ function EmployeeNav({
         </NavGroup>
       )}
       {isAdmin && (
-        <NavGroup label="Settings">
-          <NavItem to="/admin/roles" icon={Shield}>
-            Roles &amp; Permissions
-          </NavItem>
-          <NavItem to="/admin/limits/employees" icon={Gauge}>
-            Limits
-          </NavItem>
-          <NavItem to="/admin/interest-rates" icon={Percent}>
-            Interest Rates
-          </NavItem>
-          <NavItem to="/admin/fees" icon={Banknote}>
-            Transfer Fees
-          </NavItem>
-          <NavItem to="/admin/peer-banks" icon={Network}>
-            Peer Banks
-          </NavItem>
-        </NavGroup>
+        <NavItem to="/admin/settings" icon={Settings}>
+          Settings
+        </NavItem>
       )}
     </>
   )

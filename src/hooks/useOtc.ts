@@ -7,10 +7,11 @@ import {
 } from '@/lib/api/otc'
 import type { OtcFilters, PeerOtcNegotiationRequest } from '@/types/otc'
 
-export function useOtcOffers(filters?: OtcFilters) {
+export function useOtcOffers(filters?: OtcFilters, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['otc-offers', filters],
     queryFn: () => getOtcOffers(filters),
+    enabled: options?.enabled ?? true,
   })
 }
 

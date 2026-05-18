@@ -1,83 +1,89 @@
 import { apiClient } from '@/lib/api/axios'
 import type {
-  OtcOffer,
-  CreateOtcOfferPayload,
-  CounterOtcOfferPayload,
-  AcceptOtcOfferPayload,
   ExerciseContractPayload,
-  OtcOfferDetailResponse,
-  MyOffersFilters,
-  MyOtcOffersResponse,
+  ExerciseOtcContractResponse,
   MyContractsFilters,
   MyOtcContractsResponse,
   OptionContract,
-  AcceptOtcOfferResponse,
-  ExerciseOtcContractResponse,
+  OtcParty,
 } from '@/types/otcOption'
 
-export async function createOtcOptionOffer(
-  payload: CreateOtcOfferPayload
-): Promise<{ offer: OtcOffer }> {
-  const { data } = await apiClient.post<{ offer: OtcOffer }>('/otc/offers', payload)
-  return data
+// The backend ships contract rows with flat `buyer_owner_type` /
+// `buyer_owner_id` (+ seller equivalents) fields, a `ticker` (the
+// human-readable stock symbol), and `premium_paid` (instead of `premium`)
+// per REST_API_v3.md §7874. Downstream consumers (OtcContractsTable, the
+// Exercise dialog, the contract detail page, etc.) expect nested
+// `buyer` / `seller` OtcParty objects and a `premium` field, so we normalise
+// on the way out. Mirrors `normalizeNegotiation` in
+// src/views/otcOptions/api/otcOptionsApi.ts.
+type RawOptionContract = Omit<Partial<OptionContract>, 'buyer' | 'seller'> & {
+  buyer?: OtcParty
+  seller?: OtcParty
+  buyer_owner_type?: string | null
+  buyer_owner_id?: number | string | null
+  seller_owner_type?: string | null
+  seller_owner_id?: number | string | null
+  ticker?: string
+  premium_paid?: string
 }
 
-export async function counterOtcOptionOffer(
-  id: number,
-  payload: CounterOtcOfferPayload
-): Promise<{ offer: OtcOffer }> {
-  const { data } = await apiClient.post<{ offer: OtcOffer }>(`/otc/offers/${id}/counter`, payload)
-  return data
+function buildParty(
+  ownerType: string | null | undefined,
+  ownerId: number | string | null | undefined
+): OtcParty {
+  const t = (ownerType as OtcParty['owner_type']) || 'client'
+  const id =
+    ownerId == null || ownerId === ''
+      ? null
+      : typeof ownerId === 'number'
+        ? ownerId
+        : Number.isNaN(Number(ownerId))
+          ? null
+          : Number(ownerId)
+  return { owner_type: t, owner_id: id }
 }
 
-export async function acceptOtcOptionOffer(
-  id: number,
-  payload: AcceptOtcOfferPayload
-): Promise<AcceptOtcOfferResponse> {
-  const { data } = await apiClient.post<AcceptOtcOfferResponse>(`/otc/offers/${id}/accept`, payload)
-  return data
-}
-
-export async function rejectOtcOptionOffer(id: number): Promise<{ offer: OtcOffer }> {
-  const { data } = await apiClient.post<{ offer: OtcOffer }>(`/otc/offers/${id}/reject`)
-  return data
-}
-
-export async function getOtcOptionOffer(id: number): Promise<OtcOfferDetailResponse> {
-  const { data } = await apiClient.get<OtcOfferDetailResponse>(`/otc/offers/${id}`)
-  return { ...data, revisions: data.revisions ?? [] }
-}
-
-export async function getMyOtcOptionOffers(
-  filters: MyOffersFilters = {}
-): Promise<MyOtcOffersResponse> {
-  const { data } = await apiClient.get<MyOtcOffersResponse>('/me/otc/offers', {
-    params: filters,
-  })
-  return { ...data, offers: data.offers ?? [] }
+function normalizeContract(raw: RawOptionContract): OptionContract {
+  const buyer: OtcParty = raw.buyer ?? buildParty(raw.buyer_owner_type, raw.buyer_owner_id)
+  const seller: OtcParty = raw.seller ?? buildParty(raw.seller_owner_type, raw.seller_owner_id)
+  return {
+    id: raw.id ?? 0,
+    status: raw.status ?? 'ACTIVE',
+    ticker: raw.ticker ?? '',
+    quantity: raw.quantity ?? '',
+    strike_price: raw.strike_price ?? '',
+    // Prefer the wire field `premium_paid`; fall back to the already-nested
+    // `premium` to stay compatible with fixtures using the post-normalised
+    // shape (e.g. createMockOptionContract).
+    premium: raw.premium_paid ?? raw.premium ?? '',
+    settlement_date: raw.settlement_date ?? '',
+    buyer,
+    seller,
+  }
 }
 
 export async function getOtcOptionContract(id: number): Promise<{ contract: OptionContract }> {
-  const { data } = await apiClient.get<{ contract: OptionContract }>(`/otc/contracts/${id}`)
-  return data
+  const { data } = await apiClient.get<{ contract: RawOptionContract }>(`/otc/contracts/${id}`)
+  return { contract: normalizeContract(data.contract) }
 }
 
 export async function getMyOtcOptionContracts(
   filters: MyContractsFilters = {}
 ): Promise<MyOtcContractsResponse> {
-  const { data } = await apiClient.get<MyOtcContractsResponse>('/me/otc/contracts', {
+  const { data } = await apiClient.get<
+    Omit<MyOtcContractsResponse, 'contracts'> & { contracts?: RawOptionContract[] }
+  >('/me/otc/contracts', {
     params: filters,
   })
-  return { ...data, contracts: data.contracts ?? [] }
+  return { ...data, contracts: (data.contracts ?? []).map(normalizeContract) }
 }
 
 export async function exerciseOtcOptionContract(
   id: number,
   payload: ExerciseContractPayload
 ): Promise<ExerciseOtcContractResponse> {
-  const { data } = await apiClient.post<ExerciseOtcContractResponse>(
-    `/otc/contracts/${id}/exercise`,
-    payload
-  )
-  return data
+  const { data } = await apiClient.post<
+    Omit<ExerciseOtcContractResponse, 'contract'> & { contract: RawOptionContract }
+  >(`/otc/contracts/${id}/exercise`, payload)
+  return { ...data, contract: normalizeContract(data.contract) }
 }

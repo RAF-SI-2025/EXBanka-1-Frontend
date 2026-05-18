@@ -8,6 +8,7 @@
   "account_category": "personal",
   "balance": 150000,
   "available_balance": 145000,
+  "reserved_balance": 5000,
   "status": "ACTIVE",
   "owner_id": 42,
   "owner_name": "Marko Jovanović",

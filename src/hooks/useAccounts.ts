@@ -10,6 +10,7 @@ import {
   getAccountsByClient,
   getBankAccounts,
   getAccountActivity,
+  getBankAccountActivity,
 } from '@/lib/api/accounts'
 import type {
   AccountFilters,
@@ -19,10 +20,11 @@ import type {
   AccountActivityFilters,
 } from '@/types/account'
 
-export function useClientAccounts() {
+export function useClientAccounts(enabled = true) {
   return useQuery({
     queryKey: ['accounts', 'me'],
     queryFn: () => getClientAccounts(),
+    enabled,
   })
 }
 
@@ -81,10 +83,11 @@ export function useAllAccounts(filters?: AccountFilters) {
   })
 }
 
-export function useBankAccounts() {
+export function useBankAccounts(enabled = true) {
   return useQuery({
     queryKey: ['accounts', 'bank'],
     queryFn: () => getBankAccounts(),
+    enabled,
   })
 }
 
@@ -108,6 +111,14 @@ export function useAccountActivity(id: number, filters: AccountActivityFilters =
   return useQuery({
     queryKey: ['accountActivity', id, filters],
     queryFn: () => getAccountActivity(id, filters),
+    enabled: id > 0,
+  })
+}
+
+export function useBankAccountActivity(id: number, filters: AccountActivityFilters = {}) {
+  return useQuery({
+    queryKey: ['bankAccountActivity', id, filters],
+    queryFn: () => getBankAccountActivity(id, filters),
     enabled: id > 0,
   })
 }

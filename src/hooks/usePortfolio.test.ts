@@ -62,8 +62,9 @@ describe('usePortfolioSummary', () => {
 
 describe('useMakePublic', () => {
   it('calls makeHoldingPublic', async () => {
-    const holding = createMockHolding({ public_quantity: 5 })
-    jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue(holding)
+    jest
+      .mocked(portfolioApi.makeHoldingPublic)
+      .mockResolvedValue({ offer: { id: 1, public_quantity: 5 } })
 
     const { result } = renderHook(() => useMakePublic(), {
       wrapper: createQueryWrapper(),

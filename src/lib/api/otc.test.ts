@@ -17,13 +17,13 @@ const mockPost = jest.mocked(apiClient.post)
 beforeEach(() => jest.clearAllMocks())
 
 describe('getOtcOffers', () => {
-  it('GET /api/otc/offers returns offers and peer-status fields', async () => {
+  it('GET /otc/stocks returns offers and peer-status fields', async () => {
     const mockData = createMockOtcOfferListResponse({ offers: [] })
     mockGet.mockResolvedValue({ data: mockData })
 
     const result = await getOtcOffers()
 
-    expect(mockGet).toHaveBeenCalledWith('/otc/offers', {
+    expect(mockGet).toHaveBeenCalledWith('/otc/stocks', {
       params: expect.any(URLSearchParams),
     })
     expect(result).toEqual(mockData)
@@ -59,12 +59,12 @@ describe('getOtcOffers', () => {
 })
 
 describe('buyOtcOffer', () => {
-  it('POST /api/otc/offers/:id/buy with payload', async () => {
+  it('POST /otc/stocks/:id/buy with payload', async () => {
     mockPost.mockResolvedValue({ data: {} })
 
     await buyOtcOffer(3, { quantity: 2, account_id: 42 })
 
-    expect(mockPost).toHaveBeenCalledWith('/otc/offers/3/buy', {
+    expect(mockPost).toHaveBeenCalledWith('/otc/stocks/3/buy', {
       quantity: 2,
       account_id: 42,
     })
@@ -72,12 +72,12 @@ describe('buyOtcOffer', () => {
 })
 
 describe('buyOtcOfferOnBehalf', () => {
-  it('POST /api/otc/offers/:id/buy-on-behalf with payload', async () => {
+  it('POST /otc/stocks/:id/buy-on-behalf with payload', async () => {
     mockPost.mockResolvedValue({ data: {} })
 
     await buyOtcOfferOnBehalf(7, { client_id: 5, account_id: 12, quantity: 3 })
 
-    expect(mockPost).toHaveBeenCalledWith('/otc/offers/7/buy-on-behalf', {
+    expect(mockPost).toHaveBeenCalledWith('/otc/stocks/7/buy-on-behalf', {
       client_id: 5,
       account_id: 12,
       quantity: 3,

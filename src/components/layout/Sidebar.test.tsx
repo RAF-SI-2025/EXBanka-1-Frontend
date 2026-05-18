@@ -99,7 +99,7 @@ describe('Sidebar', () => {
     })
   })
 
-  it('shows the Peer Banks settings link for EmployeeAdmin', () => {
+  it('shows the consolidated Settings link for EmployeeAdmin', () => {
     renderWithProviders(<Sidebar />, {
       preloadedState: {
         auth: createMockAuthState({
@@ -107,13 +107,13 @@ describe('Sidebar', () => {
         }),
       },
     })
-    expect(screen.getByRole('link', { name: /peer banks/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /^settings$/i })).toHaveAttribute(
       'href',
-      '/admin/peer-banks'
+      '/admin/settings'
     )
   })
 
-  it('hides the Peer Banks settings link for non-admin employees', () => {
+  it('hides the Settings link for non-admin employees', () => {
     renderWithProviders(<Sidebar />, {
       preloadedState: {
         auth: createMockAuthState({
@@ -121,7 +121,7 @@ describe('Sidebar', () => {
         }),
       },
     })
-    expect(screen.queryByRole('link', { name: /peer banks/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^settings$/i })).not.toBeInTheDocument()
   })
 
   it('exposes a Backend button that opens the backend selector', async () => {

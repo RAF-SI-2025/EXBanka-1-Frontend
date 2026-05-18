@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Bell } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -9,6 +10,16 @@ export function NotificationBell() {
   const { data } = useUnreadNotificationCount()
   const unread = data?.unread_count ?? 0
   const badge = unread > 9 ? '9+' : String(unread)
+  // jiggleKey re-mounts the Bell to replay the CSS animation. Only bumped
+  // when unread INCREASES — marking notifications read should not jiggle.
+  // React's pattern for "previous state from props": store prev in state and
+  // compare during render. This avoids the set-state-in-effect lint rule.
+  const [jiggleKey, setJiggleKey] = useState(0)
+  const [prevUnread, setPrevUnread] = useState(unread)
+  if (unread !== prevUnread) {
+    setPrevUnread(unread)
+    if (unread > prevUnread) setJiggleKey((k) => k + 1)
+  }
 
   return (
     <Popover>
@@ -19,7 +30,7 @@ export function NotificationBell() {
           'relative transition-transform duration-150 hover:-rotate-6 active:scale-95'
         )}
       >
-        <Bell className="h-5 w-5" />
+        <Bell key={jiggleKey} className={cn('h-5 w-5', jiggleKey > 0 && 'animate-bell-jiggle')} />
         {unread > 0 && (
           <>
             <span

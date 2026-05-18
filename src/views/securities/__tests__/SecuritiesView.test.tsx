@@ -1,0 +1,131 @@
+import { screen, fireEvent, waitFor } from '@testing-library/react'
+import { renderWithProviders } from '@/__tests__/utils/test-utils'
+import { SecuritiesView } from '@/views/securities/SecuritiesView'
+import * as securitiesApi from '@/lib/api/securities'
+import {
+  createMockStock,
+  createMockFutures,
+  createMockForex,
+  createMockOption,
+} from '@/__tests__/fixtures/security-fixtures'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
+
+jest.mock('@/lib/api/securities')
+
+jest.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  LineChart: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  Line: () => <div />,
+  XAxis: () => <div />,
+  YAxis: () => <div />,
+  CartesianGrid: () => <div />,
+  Tooltip: () => <div />,
+}))
+
+const employeeAuth = createMockAuthState({
+  user: createMockAuthUser({ permissions: ['employees.read'] }),
+})
+
+const clientAuth = createMockAuthState({
+  user: createMockAuthUser(),
+  userType: 'client',
+})
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  jest.mocked(securitiesApi.getStocks).mockResolvedValue({
+    stocks: [createMockStock()],
+    total_count: 1,
+  })
+  jest.mocked(securitiesApi.getFutures).mockResolvedValue({
+    futures: [createMockFutures()],
+    total_count: 1,
+  })
+  jest.mocked(securitiesApi.getForexPairs).mockResolvedValue({
+    forex_pairs: [createMockForex()],
+    total_count: 1,
+  })
+  jest.mocked(securitiesApi.getOptions).mockResolvedValue({
+    options: [createMockOption()],
+    total_count: 1,
+  })
+})
+
+describe('SecuritiesView', () => {
+  it('renders title inside the animated shell', () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    expect(screen.getByText('Securities')).toBeInTheDocument()
+    expect(screen.getByTestId('view-shell')).toHaveClass('animate-in')
+  })
+
+  it('renders Stocks, Futures, Forex, and Options tabs for employees', () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    expect(screen.getByText('Stocks')).toBeInTheDocument()
+    expect(screen.getByText('Futures')).toBeInTheDocument()
+    expect(screen.getByText('Forex')).toBeInTheDocument()
+    expect(screen.getByText('Options')).toBeInTheDocument()
+  })
+
+  it('renders Stocks, Futures, and Options tabs for clients (no Forex)', () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: clientAuth } })
+    expect(screen.getByText('Stocks')).toBeInTheDocument()
+    expect(screen.getByText('Futures')).toBeInTheDocument()
+    expect(screen.queryByText('Forex')).not.toBeInTheDocument()
+    expect(screen.getByText('Options')).toBeInTheDocument()
+  })
+
+  it('Options tab shows stock search prompt when no stock selected', async () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    fireEvent.click(screen.getByText('Options'))
+    await waitFor(() => {
+      expect(screen.getByText(/select a stock above/i)).toBeInTheDocument()
+    })
+  })
+
+  it('Options tab shows stock search input', async () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    fireEvent.click(screen.getByText('Options'))
+    await waitFor(() => {
+      expect(screen.getByLabelText('Search stock')).toBeInTheDocument()
+    })
+  })
+
+  it('displays stocks on load', async () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    await screen.findByText('AAPL')
+    expect(screen.getByText('Apple Inc.')).toBeInTheDocument()
+  })
+
+  it('shows the loading state', () => {
+    jest.mocked(securitiesApi.getStocks).mockReturnValue(new Promise(() => {}))
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    expect(screen.getByTestId('view-loading')).toBeInTheDocument()
+  })
+
+  it('shows "No stocks found." when empty', async () => {
+    jest.mocked(securitiesApi.getStocks).mockResolvedValue({ stocks: [], total_count: 0 })
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    await screen.findByText('No stocks found.')
+  })
+
+  it('calls API with search filter when typing', async () => {
+    jest.mocked(securitiesApi.getStocks).mockImplementation(async (filters = {}) => {
+      if (filters.search === 'AAPL') {
+        return { stocks: [createMockStock()], total_count: 1 }
+      }
+      return { stocks: [createMockStock()], total_count: 1 }
+    })
+
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    await screen.findByText('AAPL')
+
+    const searchInput = screen.getByPlaceholderText(/^search$/i)
+    fireEvent.change(searchInput, { target: { value: 'AAPL' } })
+
+    await waitFor(() =>
+      expect(securitiesApi.getStocks).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'AAPL', page: 1, page_size: 10 })
+      )
+    )
+  })
+})

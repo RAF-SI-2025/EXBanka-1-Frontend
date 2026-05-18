@@ -10,10 +10,11 @@ export function useSearchClients(query: string) {
   })
 }
 
-export function useAllClients(filters?: ClientFilters) {
+export function useAllClients(filters?: ClientFilters, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['clients', 'all', filters],
     queryFn: () => getClients(filters),
+    enabled: options?.enabled ?? true,
   })
 }
 

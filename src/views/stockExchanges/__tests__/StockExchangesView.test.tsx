@@ -1,0 +1,148 @@
+import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { renderWithProviders } from '@/__tests__/utils/test-utils'
+import { StockExchangesView } from '@/views/stockExchanges/StockExchangesView'
+import { stockExchangesApi } from '@/views/stockExchanges/api/stockExchangesApi'
+import { createMockStockExchange } from '@/views/stockExchanges/__tests__/fixtures'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
+
+jest.mock('@/views/stockExchanges/api/stockExchangesApi', () => ({
+  stockExchangesApi: {
+    list: jest.fn(),
+    getTestingMode: jest.fn(),
+    setTestingMode: jest.fn(),
+  },
+}))
+
+const mockExchanges = [
+  createMockStockExchange({ id: 1, name: 'New York Stock Exchange', acronym: 'NYSE' }),
+  createMockStockExchange({ id: 2, name: 'London Stock Exchange', acronym: 'LSE' }),
+]
+
+const authWithExchangePermission = createMockAuthState({
+  user: createMockAuthUser({ permissions: ['employees.read', 'exchanges.manage'] }),
+})
+
+const authWithoutExchangePermission = createMockAuthState({
+  user: createMockAuthUser({ role: 'EmployeeAgent', permissions: ['employees.read'] }),
+})
+
+const authAdminWithoutExchangePermission = createMockAuthState({
+  user: createMockAuthUser({ role: 'EmployeeAdmin', permissions: ['employees.read'] }),
+})
+
+beforeEach(() => {
+  jest.clearAllMocks()
+  jest
+    .mocked(stockExchangesApi.list)
+    .mockResolvedValue({ exchanges: mockExchanges, total_count: 2 })
+  jest.mocked(stockExchangesApi.getTestingMode).mockResolvedValue({ testing_mode: false })
+  jest.mocked(stockExchangesApi.setTestingMode).mockResolvedValue({ testing_mode: true })
+})
+
+describe('StockExchangesView', () => {
+  it('renders title in the animated shell', async () => {
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    expect(screen.getByText('Stock Exchanges')).toBeInTheDocument()
+    expect(screen.getByTestId('view-shell')).toHaveClass('animate-in')
+  })
+
+  it('displays exchanges on load', async () => {
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+    expect(screen.getByText('London Stock Exchange')).toBeInTheDocument()
+  })
+
+  it('shows the loading state', () => {
+    jest.mocked(stockExchangesApi.list).mockReturnValue(new Promise(() => {}))
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    expect(screen.getByTestId('view-loading')).toBeInTheDocument()
+  })
+
+  it('shows the empty state when no exchanges', async () => {
+    jest.mocked(stockExchangesApi.list).mockResolvedValue({ exchanges: [], total_count: 0 })
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    await screen.findByText('No exchanges found.')
+  })
+
+  it('shows the testing mode toggle when user has exchanges.manage permission', async () => {
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+    expect(screen.getByRole('button', { name: /enable testing mode/i })).toBeInTheDocument()
+  })
+
+  it('hides the testing mode toggle when user lacks exchanges.manage permission', async () => {
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithoutExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+    expect(screen.queryByRole('button', { name: /testing mode/i })).not.toBeInTheDocument()
+  })
+
+  it('shows the toggle for admin even without explicit exchanges.manage permission', async () => {
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authAdminWithoutExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+    expect(screen.getByRole('button', { name: /enable testing mode/i })).toBeInTheDocument()
+  })
+
+  it('calls setTestingMode(true) when Enable button is clicked', async () => {
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+
+    fireEvent.click(screen.getByRole('button', { name: /enable testing mode/i }))
+
+    await waitFor(() => expect(stockExchangesApi.setTestingMode).toHaveBeenCalledWith(true))
+  })
+
+  it('shows Disable button and calls setTestingMode(false) when testing mode is active', async () => {
+    jest.mocked(stockExchangesApi.getTestingMode).mockResolvedValue({ testing_mode: true })
+
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+
+    const disableBtn = screen.getByRole('button', { name: /disable testing mode/i })
+    expect(disableBtn).toBeInTheDocument()
+
+    fireEvent.click(disableBtn)
+
+    await waitFor(() => expect(stockExchangesApi.setTestingMode).toHaveBeenCalledWith(false))
+  })
+
+  it('calls API with search filter when typing', async () => {
+    jest.mocked(stockExchangesApi.list).mockImplementation(async (filters = {}) => {
+      if (filters.search === 'London') {
+        return { exchanges: [mockExchanges[1]], total_count: 1 }
+      }
+      return { exchanges: mockExchanges, total_count: 2 }
+    })
+
+    renderWithProviders(<StockExchangesView />, {
+      preloadedState: { auth: authWithExchangePermission },
+    })
+    await screen.findByText('New York Stock Exchange')
+
+    const searchInput = screen.getByPlaceholderText(/^search$/i)
+    fireEvent.change(searchInput, { target: { value: 'London' } })
+
+    await waitFor(() =>
+      expect(stockExchangesApi.list).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'London', page: 1, page_size: 10 })
+      )
+    )
+  })
+})
