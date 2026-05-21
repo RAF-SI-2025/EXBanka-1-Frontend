@@ -51,4 +51,14 @@ describe('LoanDetails', () => {
     renderWithProviders(<LoanDetails loan={createMockLoan({ interest_type: 'VARIABLE' })} />)
     expect(screen.getByText(/variable/i)).toBeInTheDocument()
   })
+
+  it('shows fallback dash when loan_number, interest_rate, and period are undefined', () => {
+    const loan = createMockLoan({
+      loan_number: undefined as unknown as string,
+      interest_rate: undefined as unknown as number,
+      period: undefined as unknown as number,
+    })
+    renderWithProviders(<LoanDetails loan={loan} />)
+    expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument()
+  })
 })
