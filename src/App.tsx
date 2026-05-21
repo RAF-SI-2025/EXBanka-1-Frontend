@@ -133,7 +133,7 @@ export default function App() {
         <Route
           path="/admin/bank-accounts/:id/activity"
           element={
-            <ProtectedRoute requiredPermission="bank-accounts.manage">
+            <ProtectedRoute requiredRole="Employee">
               <BankAccountActivityView />
             </ProtectedRoute>
           }

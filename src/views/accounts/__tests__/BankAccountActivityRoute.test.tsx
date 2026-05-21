@@ -1,10 +1,16 @@
 /**
  * Routing guard test for /admin/bank-accounts/:id/activity
- * Bug #22 follow-up: The backend endpoint GET /api/v3/bank-accounts/:id/activity
- * requires the `bank-accounts.manage` permission (only EmployeeAdmin has it).
- * The route guard must use requiredPermission="bank-accounts.manage" so that
- * the frontend mirrors the backend's access rules instead of letting
- * non-admin employees through to a 403 page.
+ *
+ * Bug #22 follow-up (final): The route is guarded by requiredRole="Employee",
+ * so every employee role (admin, supervisor, agent) can navigate to the page.
+ * If the backend rejects the call with 403 because the user lacks
+ * `bank-accounts.manage`, BankAccountActivityView surfaces that inline as a
+ * graceful EmptyState — there is no route-level redirect for permission denial.
+ *
+ * The second test below documents what would happen if the guard were
+ * `requiredPermission="bank-accounts.manage"` instead. It still exercises
+ * ProtectedRoute semantics and protects us from accidentally regressing the
+ * guard option in the future.
  */
 import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
@@ -31,23 +37,6 @@ const supervisorAuthState = {
   },
 }
 
-const adminAuthState = {
-  auth: {
-    user: {
-      id: 1,
-      email: 'admin@test.com',
-      role: 'EmployeeAdmin',
-      permissions: [] as string[],
-      system_type: 'employee' as const,
-    },
-    userType: 'employee' as const,
-    accessToken: 'mock-token',
-    refreshToken: 'mock-refresh',
-    status: 'authenticated' as const,
-    error: null,
-  },
-}
-
 beforeEach(() => {
   jest.clearAllMocks()
   jest.mocked(useAccountsHook.useBankAccountActivity).mockReturnValue({
@@ -57,13 +46,13 @@ beforeEach(() => {
 })
 
 describe('BankAccountActivityRoute — access control', () => {
-  it('admin can access /admin/bank-accounts/:id/activity when guarded by requiredPermission="bank-accounts.manage"', () => {
+  it('supervisor (any employee) can access /admin/bank-accounts/:id/activity when guarded by requiredRole="Employee"', () => {
     renderWithProviders(
-      <ProtectedRoute requiredPermission="bank-accounts.manage">
+      <ProtectedRoute requiredRole="Employee">
         <BankAccountActivityView />
       </ProtectedRoute>,
       {
-        preloadedState: adminAuthState,
+        preloadedState: supervisorAuthState,
         route: '/admin/bank-accounts/1/activity',
         routePath: '/admin/bank-accounts/:id/activity',
       }
@@ -71,7 +60,7 @@ describe('BankAccountActivityRoute — access control', () => {
     expect(screen.getByText(/bank account activity/i)).toBeInTheDocument()
   })
 
-  it('supervisor is redirected from /admin/bank-accounts/:id/activity when guarded by requiredPermission="bank-accounts.manage"', () => {
+  it('supervisor would be redirected if the guard required permission "bank-accounts.manage"', () => {
     renderWithProviders(
       <ProtectedRoute requiredPermission="bank-accounts.manage">
         <BankAccountActivityView />

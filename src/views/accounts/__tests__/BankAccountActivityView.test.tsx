@@ -148,4 +148,43 @@ describe('BankAccountActivityView', () => {
     })
     expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument()
   })
+
+  it('shows a permission-denied message when the API returns 403', () => {
+    const err = Object.assign(new Error('access denied'), {
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: { error: { code: 'forbidden', message: 'access denied' } },
+      },
+    })
+    jest.mocked(useAccountsHook.useBankAccountActivity).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: err,
+    } as any)
+    renderWithProviders(<BankAccountActivityView />, {
+      route: '/admin/bank-accounts/1/activity',
+      routePath: '/admin/bank-accounts/:id/activity',
+    })
+    expect(screen.getByText(/don't have permission/i)).toBeInTheDocument()
+  })
+
+  it('shows a generic error message when the API fails with a non-403 error', () => {
+    const err = Object.assign(new Error('server boom'), {
+      isAxiosError: true,
+      response: { status: 500, data: { error: 'something broke' } },
+    })
+    jest.mocked(useAccountsHook.useBankAccountActivity).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: err,
+    } as any)
+    renderWithProviders(<BankAccountActivityView />, {
+      route: '/admin/bank-accounts/1/activity',
+      routePath: '/admin/bank-accounts/:id/activity',
+    })
+    expect(screen.getByText(/could not load activity/i)).toBeInTheDocument()
+  })
 })

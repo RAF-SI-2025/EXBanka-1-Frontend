@@ -34,7 +34,6 @@ interface AccountTableProps {
   onViewCards: (accountId: number) => void
   onViewActivity?: (accountId: number) => void
   clientsById?: Record<number, Client>
-  canViewBankActivity?: boolean
 }
 
 export function AccountTable({
@@ -42,7 +41,6 @@ export function AccountTable({
   onViewCards,
   onViewActivity,
   clientsById,
-  canViewBankActivity,
 }: AccountTableProps) {
   return (
     <Table>
@@ -92,7 +90,7 @@ export function AccountTable({
                     size="sm"
                     variant="outline"
                     onClick={() => onViewActivity(acc.id)}
-                    disabled={acc.account_type === 'bank' && canViewBankActivity === false}
+                    disabled={acc.account_category === 'personal'}
                   >
                     Activity
                   </Button>

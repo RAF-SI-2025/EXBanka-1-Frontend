@@ -29,7 +29,7 @@ describe('AccountTable', () => {
   it('renders Activity button when onViewActivity is provided', () => {
     renderWithProviders(
       <AccountTable
-        accounts={[createMockAccount()]}
+        accounts={[createMockAccount({ account_category: 'business' })]}
         onViewCards={jest.fn()}
         onViewActivity={jest.fn()}
       />
@@ -41,7 +41,7 @@ describe('AccountTable', () => {
     const onViewActivity = jest.fn()
     renderWithProviders(
       <AccountTable
-        accounts={[createMockAccount()]}
+        accounts={[createMockAccount({ account_category: 'business' })]}
         onViewCards={jest.fn()}
         onViewActivity={onViewActivity}
       />
@@ -90,41 +90,29 @@ describe('AccountTable', () => {
     expect(screen.queryByText('Ana Anić')).not.toBeInTheDocument()
   })
 
-  it('disables Activity button for bank-owned accounts when canViewBankActivity is false', () => {
-    const account = createMockAccount({ account_type: 'bank' })
+  it('Activity button is disabled for personal accounts', () => {
+    const account = createMockAccount({ account_category: 'personal' })
     renderWithProviders(
-      <AccountTable
-        accounts={[account]}
-        onViewCards={jest.fn()}
-        onViewActivity={jest.fn()}
-        canViewBankActivity={false}
-      />
+      <AccountTable accounts={[account]} onViewCards={jest.fn()} onViewActivity={jest.fn()} />
     )
     expect(screen.getByRole('button', { name: /activity/i })).toBeDisabled()
   })
 
-  it('enables Activity button for bank-owned accounts when canViewBankActivity is true', () => {
-    const account = createMockAccount({ account_type: 'bank' })
+  it('Activity button is enabled for business accounts', () => {
+    const account = createMockAccount({ account_category: 'business' })
     renderWithProviders(
-      <AccountTable
-        accounts={[account]}
-        onViewCards={jest.fn()}
-        onViewActivity={jest.fn()}
-        canViewBankActivity={true}
-      />
+      <AccountTable accounts={[account]} onViewCards={jest.fn()} onViewActivity={jest.fn()} />
     )
     expect(screen.getByRole('button', { name: /activity/i })).not.toBeDisabled()
   })
 
-  it('enables Activity button for non-bank accounts regardless of canViewBankActivity', () => {
-    const account = createMockAccount({ account_type: 'standard' })
+  it('Activity button is enabled for bank accounts regardless of role', () => {
+    const account = createMockAccount({
+      account_type: 'bank',
+      account_category: 'business',
+    })
     renderWithProviders(
-      <AccountTable
-        accounts={[account]}
-        onViewCards={jest.fn()}
-        onViewActivity={jest.fn()}
-        canViewBankActivity={false}
-      />
+      <AccountTable accounts={[account]} onViewCards={jest.fn()} onViewActivity={jest.fn()} />
     )
     expect(screen.getByRole('button', { name: /activity/i })).not.toBeDisabled()
   })

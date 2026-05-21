@@ -7,8 +7,6 @@ import { FilterBar } from '@/components/ui/FilterBar'
 import { AccountTable } from '@/views/accounts/components/AccountTable'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import { filterAccountsByOwner } from '@/lib/utils/accountFilters'
-import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectHasPermission } from '@/store/selectors/authSelectors'
 import type { Client } from '@/types/client'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 import { LoadingState, ViewShell } from '@/views/shared'
@@ -24,7 +22,6 @@ export function AdminAccountsView() {
   const navigate = useNavigate()
   const [filterValues, setFilterValues] = useState<FilterValues>({})
   const [page, setPage] = useState(1)
-  const canViewBankActivity = useAppSelector((s) => selectHasPermission(s, 'bank-accounts.manage'))
 
   const handleFilterChange = (newFilters: FilterValues) => {
     setFilterValues(newFilters)
@@ -83,7 +80,6 @@ export function AdminAccountsView() {
             )
           }}
           clientsById={clientsById}
-          canViewBankActivity={canViewBankActivity}
         />
       )}
       <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />

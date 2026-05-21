@@ -121,5 +121,6 @@ export function useBankAccountActivity(id: number, filters: AccountActivityFilte
     queryKey: ['bankAccountActivity', id, filters],
     queryFn: () => getBankAccountActivity(id, filters),
     enabled: id > 0,
+    meta: { suppressGlobalError: true },
   })
 }
