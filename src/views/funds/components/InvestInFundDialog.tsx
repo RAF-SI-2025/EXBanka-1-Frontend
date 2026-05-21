@@ -72,7 +72,7 @@ export function InvestInFundDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Invest in {fund.name}</DialogTitle>
         </DialogHeader>

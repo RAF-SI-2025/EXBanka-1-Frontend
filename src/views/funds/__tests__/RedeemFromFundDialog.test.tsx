@@ -52,6 +52,7 @@ describe('RedeemFromFundDialog', () => {
     fireEvent.click(screen.getByRole('option', { name: /tekući rsd/i }))
     expect(screen.getByText(/cannot redeem more/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^redeem$/i })).toBeDisabled()
+    expect(document.querySelector('[data-slot="dialog-content"]')).toHaveClass('sm:max-w-lg')
   })
 
   it('fills amount with current_value_rsd when withdraw-all is checked', () => {

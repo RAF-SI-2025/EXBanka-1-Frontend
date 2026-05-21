@@ -68,7 +68,7 @@ export function RedeemFromFundDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Redeem from {position.fund_name}</DialogTitle>
         </DialogHeader>

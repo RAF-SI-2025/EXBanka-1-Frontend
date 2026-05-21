@@ -28,6 +28,7 @@ describe('InvestInFundDialog', () => {
   it('disables Invest until account + valid amount are picked', () => {
     setup()
     expect(screen.getByRole('button', { name: /^invest$/i })).toBeDisabled()
+    expect(document.querySelector('[data-slot="dialog-content"]')).toHaveClass('sm:max-w-lg')
   })
 
   it('rejects amounts below minimum_contribution_rsd in RSD', () => {
