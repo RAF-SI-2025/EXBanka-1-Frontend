@@ -82,13 +82,8 @@ export function InvestInFundDialog({
             >
               <SelectTrigger id="invest-account" aria-label="Source account">
                 <SelectValue placeholder="Select account">
-                  {accountId !== undefined
-                    ? (() => {
-                        const a = accounts.find((acc) => acc.id === accountId)
-                        return a
-                          ? `${a.account_number} — ${a.account_name} (${a.currency_code})`
-                          : null
-                      })()
+                  {account
+                    ? `${account.account_number} — ${account.account_name} (${account.currency_code})`
                     : null}
                 </SelectValue>
               </SelectTrigger>

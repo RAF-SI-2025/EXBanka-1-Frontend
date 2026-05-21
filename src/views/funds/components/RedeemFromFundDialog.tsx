@@ -50,6 +50,8 @@ export function RedeemFromFundDialog({
     if (next) setAmount(position.current_value_rsd)
   }
 
+  const account = accounts.find((a) => a.id === accountId)
+
   const decimalOk = DECIMAL_RE.test(amount)
   const withinPosition = decimalOk && Number(amount) <= Number(position.current_value_rsd)
   const isValid = accountId !== undefined && decimalOk && withinPosition
@@ -112,13 +114,8 @@ export function RedeemFromFundDialog({
             >
               <SelectTrigger id="redeem-account" aria-label="Target account">
                 <SelectValue placeholder="Select account">
-                  {accountId !== undefined
-                    ? (() => {
-                        const a = accounts.find((acc) => acc.id === accountId)
-                        return a
-                          ? `${a.account_number} — ${a.account_name} (${a.currency_code})`
-                          : null
-                      })()
+                  {account
+                    ? `${account.account_number} — ${account.account_name} (${account.currency_code})`
                     : null}
                 </SelectValue>
               </SelectTrigger>
