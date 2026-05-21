@@ -52,6 +52,7 @@ describe('RedeemFromFundDialog', () => {
     fireEvent.click(screen.getByRole('option', { name: /tekući rsd/i }))
     expect(screen.getByText(/cannot redeem more/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^redeem$/i })).toBeDisabled()
+    expect(document.querySelector('[data-slot="dialog-content"]')).toHaveClass('sm:max-w-lg')
   })
 
   it('fills amount with current_value_rsd when withdraw-all is checked', () => {
@@ -81,5 +82,15 @@ describe('RedeemFromFundDialog', () => {
       target_account_id: 5,
       on_behalf_of_type: 'bank',
     })
+  })
+
+  it('shows account number and name in the target account trigger after selection', () => {
+    setup()
+    fireEvent.click(screen.getByRole('option', { name: /tekući rsd/i }))
+    const trigger = screen.getByRole('combobox')
+    expect(trigger).toHaveTextContent('111000100000000011 — Tekući RSD (RSD)')
+    expect(trigger).toHaveClass('w-full')
+    const truncateSpan = trigger.querySelector('[data-testid="select-value"] span')
+    expect(truncateSpan).toHaveClass('truncate')
   })
 })

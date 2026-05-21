@@ -16,7 +16,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-const loanTypeLabel = (type: string) => LOAN_TYPES.find((t) => t.value === type)?.label ?? type
+const loanTypeLabel = (type: string) => {
+  const match = LOAN_TYPES.find((t) => t.value === type)
+  if (match) return match.label
+  if (!type) return '—'
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()
+}
 
 const interestTypeLabel = (type?: string) => {
   if (type === 'VARIABLE') return 'Variable'
@@ -33,19 +38,22 @@ export function LoanDetails({ loan }: LoanDetailsProps) {
         <CardTitle>Loan Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <InfoRow label="Loan Number" value={loan.loan_number} />
+        <InfoRow label="Loan Number" value={loan.loan_number ?? '—'} />
         <InfoRow label="Loan Type" value={loanTypeLabel(loan.loan_type)} />
         <InfoRow label="Currency" value={currency} />
         <InfoRow label="Interest Type" value={interestTypeLabel(loan.interest_type)} />
         <InfoRow label="Amount" value={formatCurrency(loan.amount, currency)} />
-        <InfoRow label="Interest Rate" value={`${loan.interest_rate}%`} />
+        <InfoRow
+          label="Interest Rate"
+          value={loan.interest_rate != null ? `${loan.interest_rate}%` : '—'}
+        />
         {loan.nominal_interest_rate !== undefined && (
           <InfoRow label="Nominal Interest Rate" value={`${loan.nominal_interest_rate}%`} />
         )}
         {loan.effective_interest_rate !== undefined && (
           <InfoRow label="Effective Interest Rate" value={`${loan.effective_interest_rate}%`} />
         )}
-        <InfoRow label="Period" value={`${loan.period} months`} />
+        <InfoRow label="Period" value={loan.period != null ? `${loan.period} months` : '—'} />
         {loan.installment_amount !== undefined && (
           <InfoRow
             label="Monthly Installment"

@@ -135,7 +135,10 @@ export const createLoanRequestSchema = z.object({
     message: 'Please select an interest rate type',
   }),
   account_number: z.string().min(1, 'Please select an account'),
-  amount: z.number({ error: 'Please enter an amount' }).positive('Amount must be positive'),
+  amount: z
+    .number({ error: 'Please enter an amount' })
+    .positive('Amount must be positive')
+    .max(10_000_000, 'Amount cannot exceed 10,000,000'),
   currency_code: z.string().min(1, 'Please select a currency'),
   purpose: z.string().optional(),
   monthly_salary: z.number().positive('Salary must be positive').optional(),

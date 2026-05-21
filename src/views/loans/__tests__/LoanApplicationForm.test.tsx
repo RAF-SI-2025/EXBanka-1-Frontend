@@ -80,6 +80,18 @@ describe('LoanApplicationForm', () => {
     expect(screen.getByLabelText(/phone/i)).toBeInTheDocument()
   })
 
+  it('shows human-readable loan type label in trigger after selection', async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
+    renderWithProviders(<LoanApplicationForm {...defaultProps} />)
+
+    await user.click(screen.getByRole('combobox', { name: /loan type/i }))
+    await user.click(screen.getByText('Cash'))
+
+    // Trigger should show "Cash", not "CASH"
+    expect(screen.getByRole('combobox', { name: /loan type/i })).toHaveTextContent('Cash')
+    expect(screen.getByRole('combobox', { name: /loan type/i })).not.toHaveTextContent('CASH')
+  }, 15000)
+
   it('shows housing period options when housing loan type is selected', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 })
     renderWithProviders(<LoanApplicationForm {...defaultProps} />)

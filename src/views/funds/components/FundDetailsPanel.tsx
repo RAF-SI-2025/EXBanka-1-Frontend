@@ -1,5 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useEmployee } from '@/hooks/useEmployee'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectHasPermission } from '@/store/selectors/authSelectors'
 import type { Fund } from '@/types/fund'
 
 interface FundDetailsPanelProps {
@@ -7,7 +9,11 @@ interface FundDetailsPanelProps {
 }
 
 export function FundDetailsPanel({ fund }: FundDetailsPanelProps) {
-  const { data: managerData } = useEmployee(fund.manager_employee_id)
+  const canReadEmployees = useAppSelector((s) => selectHasPermission(s, 'employees.read'))
+  const { data: managerData } = useEmployee(fund.manager_employee_id, {
+    suppressGlobalError: true,
+    enabled: canReadEmployees,
+  })
   const managerName = managerData
     ? `${managerData.first_name} ${managerData.last_name}`
     : `Employee #${fund.manager_employee_id}`
@@ -27,10 +33,10 @@ export function FundDetailsPanel({ fund }: FundDetailsPanelProps) {
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
         <Metric label="Manager" value={managerName} />
-        <Metric label="Fund value" value={`${fund.fund_value_rsd} RSD`} />
-        <Metric label="Profit" value={`${fund.profit_rsd} RSD`} />
-        <Metric label="Liquid cash" value={`${fund.liquid_cash_rsd} RSD`} />
-        <Metric label="Min. contribution" value={`${fund.minimum_contribution_rsd} RSD`} />
+        <Metric label="Fund value" value={`${fund.fund_value_rsd ?? '—'} RSD`} />
+        <Metric label="Profit" value={`${fund.profit_rsd ?? '—'} RSD`} />
+        <Metric label="Liquid cash" value={`${fund.liquid_cash_rsd ?? '—'} RSD`} />
+        <Metric label="Min. contribution" value={`${fund.minimum_contribution_rsd ?? '—'} RSD`} />
         <Metric label="Account #" value={String(fund.rsd_account_id)} />
       </CardContent>
     </Card>

@@ -53,4 +53,25 @@ describe('PriceChart', () => {
     expect(screen.getByText('Loading chart...')).toBeInTheDocument()
     expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument()
   })
+
+  it('shows "No historical data available" when data has fewer than 2 entries', () => {
+    const onPeriodChange = jest.fn()
+    renderWithProviders(
+      <PriceChart
+        data={createMockPriceHistory(1)}
+        selectedPeriod="month"
+        onPeriodChange={onPeriodChange}
+      />
+    )
+    expect(screen.getByText(/no historical data/i)).toBeInTheDocument()
+    expect(screen.getByText('1M')).toBeInTheDocument()
+    expect(screen.queryByTestId('responsive-container')).not.toBeInTheDocument()
+  })
+
+  it('shows "No historical data available" when data is empty', () => {
+    renderWithProviders(<PriceChart data={[]} selectedPeriod="month" onPeriodChange={jest.fn()} />)
+    expect(screen.getByText(/no historical data/i)).toBeInTheDocument()
+    expect(screen.getByText('1M')).toBeInTheDocument()
+    expect(screen.queryByTestId('responsive-container')).not.toBeInTheDocument()
+  })
 })

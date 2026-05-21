@@ -44,7 +44,7 @@ export function TaxView() {
               onSuccess: () => notifySuccess('Taxes collected.'),
             })
           }
-          disabled={collectMutation.isPending}
+          disabled={collectMutation.isPending || (!isLoading && !data?.tax_records.length)}
         >
           {collectMutation.isPending ? 'Collecting...' : 'Collect Taxes'}
         </Button>

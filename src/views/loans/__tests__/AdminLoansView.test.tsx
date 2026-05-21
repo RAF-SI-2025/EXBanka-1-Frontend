@@ -57,6 +57,16 @@ describe('AdminLoansView', () => {
     )
   })
 
+  it('shows dash instead of NaN when installment_amount is undefined', () => {
+    jest.mocked(useLoansHook.useAllLoans).mockReturnValue({
+      data: { loans: [createMockLoan({ installment_amount: undefined })], total: 1 },
+      isLoading: false,
+    } as any)
+    renderWithProviders(<AdminLoansView />)
+    expect(screen.queryByText(/NaN/i)).not.toBeInTheDocument()
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+  })
+
   it('resets to page 1 when filter changes', async () => {
     jest.mocked(useLoansHook.useAllLoans).mockReturnValue({
       data: { loans: [createMockLoan()], total: 11 },

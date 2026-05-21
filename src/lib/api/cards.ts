@@ -19,6 +19,11 @@ export async function getCards(): Promise<Card[]> {
   return response.data.cards
 }
 
+export async function getMyCard(id: number): Promise<Card> {
+  const response = await apiClient.get<Card>(`/me/cards/${id}`)
+  return response.data
+}
+
 export async function getAccountCards(accountId: number): Promise<Card[]> {
   const response = await apiClient.get<{ cards: Card[] }>(`/accounts/${accountId}/cards`)
   return response.data.cards

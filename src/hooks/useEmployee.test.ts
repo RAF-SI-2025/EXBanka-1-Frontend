@@ -30,4 +30,13 @@ describe('useEmployee', () => {
     expect(result.current.fetchStatus).toBe('idle')
     expect(employeesApi.getEmployee).not.toHaveBeenCalled()
   })
+
+  it('does not fetch when options.enabled is false', () => {
+    const { result } = renderHook(() => useEmployee(5, { enabled: false }), {
+      wrapper: createQueryWrapper(),
+    })
+
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(employeesApi.getEmployee).not.toHaveBeenCalled()
+  })
 })

@@ -11,14 +11,28 @@ import type {
   CreateLoanRequest,
 } from '@/types/loan'
 
+function normalizeLoan(
+  raw: Loan & {
+    repayment_period?: number
+    nominal_interest_rate?: number
+    effective_interest_rate?: number
+  }
+): Loan {
+  return {
+    ...raw,
+    period: raw.period ?? raw.repayment_period,
+    interest_rate: raw.interest_rate ?? raw.nominal_interest_rate,
+  }
+}
+
 export async function getLoans(): Promise<LoanListResponse> {
   const response = await apiClient.get<LoanListResponse>('/me/loans')
-  return response.data
+  return { ...response.data, loans: response.data.loans.map(normalizeLoan) }
 }
 
 export async function getLoan(id: number): Promise<Loan> {
   const response = await apiClient.get<Loan>(`/me/loans/${id}`)
-  return response.data
+  return normalizeLoan(response.data)
 }
 
 export async function createLoanRequest(payload: CreateLoanRequest): Promise<LoanRequest> {
@@ -62,5 +76,5 @@ export async function getAllLoans(filters?: LoanFilters): Promise<LoanListRespon
   if (filters?.page) params.append('page', String(filters.page))
   if (filters?.page_size) params.append('page_size', String(filters.page_size))
   const response = await apiClient.get<LoanListResponse>('/loans', { params })
-  return response.data
+  return { ...response.data, loans: response.data.loans.map(normalizeLoan) }
 }

@@ -50,4 +50,30 @@ describe('CreateFundForm', () => {
     render(<CreateFundForm onSubmit={() => {}} submitting={true} />)
     expect(screen.getByRole('button', { name: /creating/i })).toBeDisabled()
   })
+
+  it('rejects minimum contribution above 10,000,000 RSD', () => {
+    const onSubmit = jest.fn()
+    render(<CreateFundForm onSubmit={onSubmit} submitting={false} />)
+    fireEvent.change(screen.getByLabelText(/^name$/i), { target: { value: 'Big' } })
+    fireEvent.change(screen.getByLabelText(/minimum contribution/i), {
+      target: { value: '10000001' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /create fund/i }))
+    expect(screen.getByText(/10,000,000/i)).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('accepts minimum contribution exactly at the 10,000,000 boundary', () => {
+    const onSubmit = jest.fn()
+    render(<CreateFundForm onSubmit={onSubmit} submitting={false} />)
+    fireEvent.change(screen.getByLabelText(/^name$/i), { target: { value: 'Edge' } })
+    fireEvent.change(screen.getByLabelText(/minimum contribution/i), {
+      target: { value: '10000000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /create fund/i }))
+    expect(onSubmit).toHaveBeenCalledWith({
+      name: 'Edge',
+      minimum_contribution_rsd: '10000000',
+    })
+  })
 })

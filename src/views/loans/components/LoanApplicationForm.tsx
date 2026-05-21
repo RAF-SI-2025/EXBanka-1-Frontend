@@ -40,7 +40,11 @@ export function LoanApplicationForm({
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger aria-label="Loan Type">
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder="Select type">
+                  {field.value
+                    ? (LOAN_TYPES.find((t) => t.value === field.value)?.label ?? field.value)
+                    : null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {LOAN_TYPES.map((t) => (

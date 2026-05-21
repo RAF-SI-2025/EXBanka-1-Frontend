@@ -10,15 +10,20 @@ import { PaginationControls } from '@/components/shared/PaginationControls'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { MyFundsList } from '@/views/funds/components/MyFundsList'
+import { RedeemFromFundDialog } from '@/views/funds/components/RedeemFromFundDialog'
 import {
   usePortfolio,
   usePortfolioSummary,
   useMakePublic,
   useExerciseOption,
 } from '@/hooks/usePortfolio'
-import { useMyFundPositions } from '@/hooks/useFunds'
+import { useMyFundPositions, useRedeemFund } from '@/hooks/useFunds'
+import { useClientAccounts } from '@/hooks/useAccounts'
+import { notifySuccess } from '@/lib/errors'
 import { getStocks } from '@/lib/api/securities'
 import type { Holding, PortfolioFilters } from '@/types/portfolio'
+import type { ClientFundPosition, RedeemPayload } from '@/types/fund'
+import type { Account } from '@/types/account'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
 
@@ -34,6 +39,7 @@ export function PortfolioView() {
   const [filterValues, setFilterValues] = useState<FilterValues>({})
   const [page, setPage] = useState(1)
   const [makePublicHolding, setMakePublicHolding] = useState<Holding | null>(null)
+  const [redeemPosition, setRedeemPosition] = useState<ClientFundPosition | null>(null)
 
   const apiFilters: PortfolioFilters = {
     page,
@@ -45,6 +51,8 @@ export function PortfolioView() {
   const { data: summary } = usePortfolioSummary()
   const { data: fundPositionsData } = useMyFundPositions()
   const fundPositions = fundPositionsData?.positions ?? []
+  const { data: clientAccountsData } = useClientAccounts()
+  const accounts = clientAccountsData?.accounts ?? []
   const totalPages = Math.max(1, Math.ceil((data?.total_count ?? 0) / PAGE_SIZE))
   const makePublicMutation = useMakePublic()
   const exerciseMutation = useExerciseOption()
@@ -173,7 +181,7 @@ export function PortfolioView() {
           <MyFundsList
             positions={fundPositions}
             onInvest={(p) => navigate(`/funds/${p.fund_id}`)}
-            onRedeem={(p) => navigate(`/funds/${p.fund_id}`)}
+            onRedeem={(p) => setRedeemPosition(p)}
           />
         </TabsContent>
       </Tabs>
@@ -189,6 +197,45 @@ export function PortfolioView() {
           loading={makePublicMutation.isPending}
         />
       )}
+
+      {redeemPosition && (
+        <PortfolioRedeemConnector
+          position={redeemPosition}
+          accounts={accounts}
+          onClose={() => setRedeemPosition(null)}
+        />
+      )}
     </ViewShell>
+  )
+}
+
+function PortfolioRedeemConnector({
+  position,
+  accounts,
+  onClose,
+}: {
+  position: ClientFundPosition
+  accounts: Account[]
+  onClose: () => void
+}) {
+  const mutation = useRedeemFund(position.fund_id)
+  return (
+    <RedeemFromFundDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+      position={position}
+      accounts={accounts}
+      loading={mutation.isPending}
+      onSubmit={(payload: RedeemPayload) =>
+        mutation.mutate(payload, {
+          onSuccess: () => {
+            notifySuccess(`Redeemed from ${position.fund_name}.`)
+            onClose()
+          },
+        })
+      }
+    />
   )
 }

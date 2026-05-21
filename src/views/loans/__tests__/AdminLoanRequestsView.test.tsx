@@ -170,6 +170,14 @@ describe('AdminLoanRequestsView', () => {
     )
   })
 
+  it('calls useAllClients with suppressGlobalError: true', () => {
+    renderWithProviders(<AdminLoanRequestsView />)
+    expect(useClientsHook.useAllClients).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ suppressGlobalError: true })
+    )
+  })
+
   it('resets to page 1 when filter changes', async () => {
     jest.mocked(useLoansHook.useLoanRequests).mockReturnValue({
       data: { requests: [mockRequest], total: 11 },

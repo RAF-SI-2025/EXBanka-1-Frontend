@@ -167,6 +167,7 @@ describe('AdminAccountsView', () => {
       account_number: '999000900000000099',
       owner_name: 'EX Banka',
       account_type: 'bank',
+      account_category: 'business',
     })
     jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
       data: { accounts: [bankAccount], total: 1 },
@@ -182,6 +183,7 @@ describe('AdminAccountsView', () => {
       id: 100,
       account_number: '111000100000000100',
       account_type: 'standard',
+      account_category: 'business',
     })
     jest.mocked(useAccountsHook.useAllAccounts).mockReturnValue({
       data: { accounts: [clientAccount], total: 1 },

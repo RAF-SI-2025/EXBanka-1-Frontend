@@ -16,7 +16,8 @@ interface FundsTableProps {
   onInvest: (fund: Fund) => void
 }
 
-function formatRsd(value: string): string {
+function formatRsd(value: string | null): string {
+  if (value === null) return '—'
   const num = Number(value)
   if (Number.isNaN(num)) return value
   return new Intl.NumberFormat('sr-RS', {

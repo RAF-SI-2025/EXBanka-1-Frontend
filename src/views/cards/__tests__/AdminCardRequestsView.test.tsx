@@ -136,6 +136,14 @@ describe('AdminCardRequestsView', () => {
     expect(screen.getByRole('button', { name: /next page/i })).toBeInTheDocument()
   })
 
+  it('calls useAllClients with suppressGlobalError: true', () => {
+    renderWithProviders(<AdminCardRequestsView />)
+    expect(useClientsHook.useAllClients).toHaveBeenCalledWith(
+      undefined,
+      expect.objectContaining({ suppressGlobalError: true })
+    )
+  })
+
   it('calls useCardRequests with page 2 when next arrow clicked', async () => {
     jest.mocked(useCardsHook.useCardRequests).mockReturnValue({
       data: { requests: [], total: 11 },

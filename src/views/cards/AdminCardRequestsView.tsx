@@ -21,7 +21,7 @@ export function AdminCardRequestsView() {
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null)
 
   const { data, isLoading } = useCardRequests({ status: 'pending', page, page_size: PAGE_SIZE })
-  const { data: clientsData } = useAllClients()
+  const { data: clientsData } = useAllClients(undefined, { suppressGlobalError: true })
   const approve = useApproveCardRequest()
   const reject = useRejectCardRequest()
 

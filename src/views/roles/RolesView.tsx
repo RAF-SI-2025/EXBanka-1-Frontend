@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useRoles, useCreateRole, useUpdateRolePermissions } from '@/hooks/useRoles'
 import { usePermissions } from '@/hooks/usePermissions'
 import type { Role, CreateRolePayload } from '@/types/roles'
+import { notifySuccess } from '@/lib/errors'
 import { RolesTable } from '@/views/roles/components/RolesTable'
 import { PermissionsTable } from '@/views/roles/components/PermissionsTable'
 import { CreateRoleDialog } from '@/views/roles/components/CreateRoleDialog'
@@ -32,7 +33,12 @@ export function RolesView() {
   function handleSavePermissions(roleId: number, permissionCodes: string[]) {
     updatePermissionsMutation.mutate(
       { id: roleId, permissionCodes },
-      { onSuccess: () => setEditRole(null) }
+      {
+        onSuccess: () => {
+          notifySuccess('Permissions updated successfully.')
+          setEditRole(null)
+        },
+      }
     )
   }
 

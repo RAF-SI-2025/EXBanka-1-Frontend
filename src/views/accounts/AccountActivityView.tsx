@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import { useAccountActivity } from '@/hooks/useAccounts'
+import { parseApiError } from '@/lib/errors'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
 
 const PAGE_SIZE = 20
@@ -21,8 +22,12 @@ export function AccountActivityView() {
   const accountId = Number(id) || 0
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useAccountActivity(accountId, { page, page_size: PAGE_SIZE })
+  const { data, isLoading, isError, error } = useAccountActivity(accountId, {
+    page,
+    page_size: PAGE_SIZE,
+  })
   const totalPages = Math.max(1, Math.ceil((data?.total_count ?? 0) / PAGE_SIZE))
+  const isForbidden = isError && parseApiError(error).status === 403
 
   return (
     <ViewShell
@@ -37,6 +42,19 @@ export function AccountActivityView() {
     >
       {isLoading ? (
         <LoadingState />
+      ) : isError ? (
+        <EmptyState
+          title={
+            isForbidden
+              ? "You don't have permission to view this account's activity."
+              : 'Could not load activity.'
+          }
+          hint={
+            isForbidden
+              ? 'Only the account owner can see the full activity ledger for personal accounts.'
+              : undefined
+          }
+        />
       ) : data?.entries.length ? (
         <>
           <Table>

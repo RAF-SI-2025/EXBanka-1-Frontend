@@ -1,19 +1,28 @@
 import { screen, fireEvent, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PortfolioView } from '@/views/portfolio/PortfolioView'
 import * as portfolioApi from '@/lib/api/portfolio'
+import * as useFundsHook from '@/hooks/useFunds'
+import * as useAccountsHook from '@/hooks/useAccounts'
 import {
   createMockHolding,
   createMockPortfolioSummary,
 } from '@/__tests__/fixtures/portfolio-fixtures'
+import { createMockClientFundPosition } from '@/__tests__/fixtures/fund-fixtures'
+import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 
 jest.mock('@/lib/api/portfolio')
+jest.mock('@/hooks/useFunds')
+jest.mock('@/hooks/useAccounts')
 
 const mockNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({
   ...jest.requireActual('react-router-dom'),
   useNavigate: () => mockNavigate,
 }))
+
+const mockRedeemMutate = jest.fn()
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -24,6 +33,18 @@ beforeEach(() => {
   jest.mocked(portfolioApi.getPortfolioSummary).mockResolvedValue(createMockPortfolioSummary())
   jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue({ offer: { id: 1 } })
   jest.mocked(portfolioApi.exerciseOption).mockResolvedValue(createMockHolding())
+  jest.mocked(useFundsHook.useMyFundPositions).mockReturnValue({
+    data: { positions: [] },
+    isLoading: false,
+  } as any)
+  jest.mocked(useFundsHook.useRedeemFund).mockReturnValue({
+    mutate: mockRedeemMutate,
+    isPending: false,
+  } as any)
+  jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
+    data: { accounts: [createMockAccount()], total: 1 },
+    isLoading: false,
+  } as any)
 })
 
 describe('PortfolioView', () => {
@@ -90,5 +111,22 @@ describe('PortfolioView', () => {
     await waitFor(() => {
       expect(portfolioApi.makeHoldingPublic).toHaveBeenCalledWith(1, { quantity: 7 })
     })
+  })
+
+  it('opens the Redeem dialog when the Redeem button is clicked on a fund position', async () => {
+    jest.mocked(useFundsHook.useMyFundPositions).mockReturnValue({
+      data: {
+        positions: [createMockClientFundPosition({ fund_id: 101, fund_name: 'Alpha Growth Fund' })],
+      },
+      isLoading: false,
+    } as any)
+
+    renderWithProviders(<PortfolioView />, { route: '/portfolio?tab=funds' })
+
+    await userEvent.click(await screen.findByRole('button', { name: /redeem/i }))
+
+    expect(
+      await screen.findByRole('heading', { name: /redeem from alpha growth fund/i })
+    ).toBeInTheDocument()
   })
 })

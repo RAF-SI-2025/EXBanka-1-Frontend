@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/shared/FormField'
 import { AuthFormCard } from '@/views/auth/components/AuthFormCard'
+import { PasswordRequirements } from '@/views/auth/components/PasswordRequirements'
 
 const schema = z
   .object({
@@ -31,10 +32,13 @@ export function ActivationForm({ onSubmit, isLoading, isSuccess, error }: Activa
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+
+  const passwordValue = watch('password') ?? ''
 
   return (
     <AuthFormCard
@@ -54,6 +58,7 @@ export function ActivationForm({ onSubmit, isLoading, isSuccess, error }: Activa
         <FormField label="Password" id="password" error={errors.password?.message}>
           <Input id="password" type="password" {...register('password')} />
         </FormField>
+        <PasswordRequirements value={passwordValue} />
         <FormField
           label="Confirm Password"
           id="confirm_password"

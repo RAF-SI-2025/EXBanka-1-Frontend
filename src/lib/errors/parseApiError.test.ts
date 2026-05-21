@@ -79,4 +79,24 @@ describe('parseApiError', () => {
   it('maps 404 to "Not found"', () => {
     expect(parseApiError(makeAxiosError(404, {})).title).toBe('Not found')
   })
+
+  it('falls back to default 500 message when error is an object (e.g. raw SQL overflow)', () => {
+    const err = {
+      isAxiosError: true,
+      response: {
+        status: 500,
+        data: {
+          error: {
+            code: 'internal_error',
+            message: 'ERROR: numeric field overflow (SQLSTATE 22003)',
+          },
+        },
+      },
+    } as unknown
+    const result = parseApiError(err)
+    expect(result.title).toBe('Server error')
+    expect(result.message).toBe('The server reported an error. Please try again in a moment.')
+    // The raw backend message must NOT leak through:
+    expect(result.message).not.toMatch(/numeric field overflow|SQLSTATE/)
+  })
 })

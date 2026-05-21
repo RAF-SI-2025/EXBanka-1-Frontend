@@ -24,6 +24,31 @@ describe('createLoanRequestSchema', () => {
     const { repayment_period: _period, ...without } = validLoanData
     expect(createLoanRequestSchema.safeParse(without).success).toBe(false)
   })
+
+  it('rejects loan amounts above 10,000,000', () => {
+    const result = createLoanRequestSchema.safeParse({
+      loan_type: 'CASH',
+      interest_type: 'FIXED',
+      account_number: '265-0000000042-10',
+      amount: 10_000_001,
+      currency_code: 'RSD',
+      repayment_period: 12,
+    })
+    expect(result.success).toBe(false)
+    expect(result.error?.issues[0].message).toMatch(/10,000,000/i)
+  })
+
+  it('accepts loan amounts at the boundary', () => {
+    const result = createLoanRequestSchema.safeParse({
+      loan_type: 'CASH',
+      interest_type: 'FIXED',
+      account_number: '265-0000000042-10',
+      amount: 10_000_000,
+      currency_code: 'RSD',
+      repayment_period: 12,
+    })
+    expect(result.success).toBe(true)
+  })
 })
 
 describe('passwordSchema', () => {

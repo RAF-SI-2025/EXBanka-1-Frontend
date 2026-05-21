@@ -52,6 +52,10 @@ export function PriceChart({ data, selectedPeriod, onPeriodChange, isLoading }: 
         <div className="h-64 flex items-center justify-center text-muted-foreground">
           Loading chart...
         </div>
+      ) : chartData.length < 2 ? (
+        <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
+          No historical data available for this period.
+        </div>
       ) : (
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData}>

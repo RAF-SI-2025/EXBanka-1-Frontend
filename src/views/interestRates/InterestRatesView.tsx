@@ -205,7 +205,11 @@ export function InterestRatesView() {
           <DialogHeader>
             <DialogTitle>Tier Applied Successfully</DialogTitle>
           </DialogHeader>
-          <p>{applyResult} loans updated.</p>
+          <p>
+            {applyResult === 0
+              ? 'No variable-rate loans were found in this tier range.'
+              : `${applyResult} loan${applyResult === 1 ? '' : 's'} updated.`}
+          </p>
           <DialogFooter>
             <Button onClick={() => setApplyResult(null)}>OK</Button>
           </DialogFooter>
