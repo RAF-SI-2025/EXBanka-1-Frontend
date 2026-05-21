@@ -2,6 +2,7 @@ import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { LoanDetails } from '@/views/loans/components/LoanDetails'
 import { createMockLoan } from '@/__tests__/fixtures/loan-fixtures'
+import type { LoanType } from '@/types/loan'
 
 describe('LoanDetails', () => {
   it('renders loan number', () => {
@@ -60,5 +61,12 @@ describe('LoanDetails', () => {
     })
     renderWithProviders(<LoanDetails loan={loan} />)
     expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument()
+  })
+
+  it('shows humanized loan type label for backend enum values not in LOAN_TYPES', () => {
+    const loan = createMockLoan({ loan_type: 'PERSONAL' as unknown as LoanType })
+    renderWithProviders(<LoanDetails loan={loan} />)
+    expect(screen.getByText('Personal')).toBeInTheDocument()
+    expect(screen.queryByText('PERSONAL')).not.toBeInTheDocument()
   })
 })

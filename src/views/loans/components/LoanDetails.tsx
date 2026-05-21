@@ -16,7 +16,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-const loanTypeLabel = (type: string) => LOAN_TYPES.find((t) => t.value === type)?.label ?? type
+const loanTypeLabel = (type: string) => {
+  const match = LOAN_TYPES.find((t) => t.value === type)
+  if (match) return match.label
+  if (!type) return '—'
+  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()
+}
 
 const interestTypeLabel = (type?: string) => {
   if (type === 'VARIABLE') return 'Variable'
