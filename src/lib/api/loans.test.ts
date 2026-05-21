@@ -71,6 +71,23 @@ describe('getLoan', () => {
     const loan = await getLoan(1)
     expect(loan.period).toBe(36)
   })
+
+  it('leaves period and interest_rate undefined when the API omits all related fields', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        id: 1,
+        loan_number: 'LN-001',
+        loan_type: 'CASH',
+        account_number: '111000100000000011',
+        amount: 100000,
+        status: 'ACTIVE',
+        created_at: '2026-01-15T10:00:00Z',
+      },
+    })
+    const loan = await getLoan(1)
+    expect(loan.period).toBeUndefined()
+    expect(loan.interest_rate).toBeUndefined()
+  })
 })
 
 describe('getLoans', () => {

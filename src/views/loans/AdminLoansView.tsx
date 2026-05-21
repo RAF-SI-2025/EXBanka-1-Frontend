@@ -108,7 +108,7 @@ export function AdminLoansView() {
                     {loan.interest_type ? (INTEREST_TYPE_LABELS[loan.interest_type] ?? '—') : '—'}
                   </TableCell>
                   <TableCell>{formatCurrency(loan.amount, currency)}</TableCell>
-                  <TableCell>{loan.period} months</TableCell>
+                  <TableCell>{loan.period != null ? `${loan.period} months` : '—'}</TableCell>
                   <TableCell>
                     {loan.installment_amount !== undefined
                       ? formatCurrency(loan.installment_amount, currency)

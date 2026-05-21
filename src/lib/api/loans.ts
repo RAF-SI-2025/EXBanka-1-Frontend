@@ -20,8 +20,8 @@ function normalizeLoan(
 ): Loan {
   return {
     ...raw,
-    period: raw.period ?? raw.repayment_period ?? 0,
-    interest_rate: raw.interest_rate ?? raw.nominal_interest_rate ?? 0,
+    period: raw.period ?? raw.repayment_period,
+    interest_rate: raw.interest_rate ?? raw.nominal_interest_rate,
   }
 }
 
