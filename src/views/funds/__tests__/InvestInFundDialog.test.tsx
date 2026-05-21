@@ -69,6 +69,8 @@ describe('InvestInFundDialog', () => {
     const trigger = screen.getByRole('combobox')
     expect(trigger).toHaveTextContent('111000100000000011 — Tekući RSD (RSD)')
     expect(trigger).toHaveClass('w-full')
+    const truncateSpan = trigger.querySelector('[data-testid="select-value"] span')
+    expect(truncateSpan).toHaveClass('truncate')
   })
 
   it('shows validation error when RSD amount is below 100', () => {

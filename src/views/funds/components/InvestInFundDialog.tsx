@@ -92,9 +92,11 @@ export function InvestInFundDialog({
             >
               <SelectTrigger className="w-full" id="invest-account" aria-label="Source account">
                 <SelectValue placeholder="Select account">
-                  {account
-                    ? `${account.account_number} — ${account.account_name} (${account.currency_code})`
-                    : null}
+                  {account ? (
+                    <span className="block min-w-0 truncate">
+                      {account.account_number} — {account.account_name} ({account.currency_code})
+                    </span>
+                  ) : null}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
