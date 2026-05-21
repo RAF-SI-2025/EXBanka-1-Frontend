@@ -10,11 +10,15 @@ export function useSearchClients(query: string) {
   })
 }
 
-export function useAllClients(filters?: ClientFilters, options?: { enabled?: boolean }) {
+export function useAllClients(
+  filters?: ClientFilters,
+  options?: { enabled?: boolean; suppressGlobalError?: boolean }
+) {
   return useQuery({
     queryKey: ['clients', 'all', filters],
     queryFn: () => getClients(filters),
     enabled: options?.enabled ?? true,
+    meta: { suppressGlobalError: options?.suppressGlobalError ?? false },
   })
 }
 
