@@ -4,10 +4,12 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { RolesView } from '@/views/roles/RolesView'
 import * as rolesApi from '@/lib/api/roles'
 import * as permissionsApi from '@/lib/api/permissions'
+import { toast } from 'sonner'
 import type { Role, Permission } from '@/types/roles'
 
 jest.mock('@/lib/api/roles')
 jest.mock('@/lib/api/permissions')
+jest.mock('sonner', () => ({ toast: { success: jest.fn(), error: jest.fn() } }))
 
 const mockPermissions: Permission[] = [
   { id: 1, code: 'accounts.read', description: 'Read accounts', category: 'accounts' },
@@ -97,5 +99,26 @@ describe('RolesView', () => {
     await screen.findByText('Admin')
     const editButtons = screen.getAllByRole('button', { name: /edit permissions/i })
     expect(editButtons).toHaveLength(2)
+  })
+
+  it('shows a success toast after saving role permissions', async () => {
+    jest.mocked(rolesApi.updateRolePermissions).mockResolvedValue(mockRoles[0])
+    const user = userEvent.setup()
+
+    renderWithProviders(<RolesView />)
+
+    await screen.findByText('Admin')
+
+    const editButtons = screen.getAllByRole('button', { name: /edit permissions/i })
+    await user.click(editButtons[0])
+
+    await screen.findByText(/edit permissions - admin/i)
+
+    const saveButton = screen.getByRole('button', { name: /save/i })
+    await user.click(saveButton)
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('Permissions updated successfully.')
+    })
   })
 })
