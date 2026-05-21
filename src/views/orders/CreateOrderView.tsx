@@ -39,7 +39,7 @@ export function CreateOrderView() {
   const createOptionOrderMutation = useCreateOptionOrder()
   const { triggerPiggy } = usePiggy()
   const { data: clientAccountsData } = useClientAccounts()
-  const { data: bankAccountsData } = useBankAccounts()
+  const { data: bankAccountsData } = useBankAccounts(userType === 'employee')
   const { data: clientSpecificData } = useAccountsByClient(selectedClient?.id ?? 0)
   const sellListings = useListingsForSell(
     isSell ? securityType : undefined,
