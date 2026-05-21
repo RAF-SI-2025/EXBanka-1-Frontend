@@ -58,18 +58,20 @@ describe('PriceChart', () => {
     const onPeriodChange = jest.fn()
     renderWithProviders(
       <PriceChart
-        data={[
-          { date: '2025-01-01', price: '100', high: '105', low: '95', change: '0', volume: 1000 },
-        ]}
+        data={createMockPriceHistory(1)}
         selectedPeriod="month"
         onPeriodChange={onPeriodChange}
       />
     )
     expect(screen.getByText(/no historical data/i)).toBeInTheDocument()
+    expect(screen.getByText('1M')).toBeInTheDocument()
+    expect(screen.queryByTestId('responsive-container')).not.toBeInTheDocument()
   })
 
   it('shows "No historical data available" when data is empty', () => {
     renderWithProviders(<PriceChart data={[]} selectedPeriod="month" onPeriodChange={jest.fn()} />)
     expect(screen.getByText(/no historical data/i)).toBeInTheDocument()
+    expect(screen.getByText('1M')).toBeInTheDocument()
+    expect(screen.queryByTestId('responsive-container')).not.toBeInTheDocument()
   })
 })
