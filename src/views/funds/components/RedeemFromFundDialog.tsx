@@ -112,7 +112,7 @@ export function RedeemFromFundDialog({
               value={accountId?.toString() ?? ''}
               onValueChange={(v) => v && setAccountId(Number(v))}
             >
-              <SelectTrigger id="redeem-account" aria-label="Target account">
+              <SelectTrigger className="w-full" id="redeem-account" aria-label="Target account">
                 <SelectValue placeholder="Select account">
                   {account
                     ? `${account.account_number} — ${account.account_name} (${account.currency_code})`

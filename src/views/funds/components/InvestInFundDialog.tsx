@@ -90,7 +90,7 @@ export function InvestInFundDialog({
               value={accountId?.toString() ?? ''}
               onValueChange={(v) => v && setAccountId(Number(v))}
             >
-              <SelectTrigger id="invest-account" aria-label="Source account">
+              <SelectTrigger className="w-full" id="invest-account" aria-label="Source account">
                 <SelectValue placeholder="Select account">
                   {account
                     ? `${account.account_number} — ${account.account_name} (${account.currency_code})`

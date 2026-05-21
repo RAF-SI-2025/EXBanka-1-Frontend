@@ -88,5 +88,6 @@ describe('RedeemFromFundDialog', () => {
     fireEvent.click(screen.getByRole('option', { name: /tekući rsd/i }))
     const trigger = screen.getByRole('combobox')
     expect(trigger).toHaveTextContent('111000100000000011 — Tekući RSD (RSD)')
+    expect(trigger).toHaveClass('w-full')
   })
 })
