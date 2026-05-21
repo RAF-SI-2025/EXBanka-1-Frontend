@@ -112,6 +112,7 @@ export function useAccountActivity(id: number, filters: AccountActivityFilters =
     queryKey: ['accountActivity', id, filters],
     queryFn: () => getAccountActivity(id, filters),
     enabled: id > 0,
+    meta: { suppressGlobalError: true },
   })
 }
 

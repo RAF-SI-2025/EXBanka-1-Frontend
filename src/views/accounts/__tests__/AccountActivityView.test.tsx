@@ -56,4 +56,29 @@ describe('AccountActivityView', () => {
     renderWithProviders(<AccountActivityView />)
     expect(screen.getByTestId('view-loading')).toBeInTheDocument()
   })
+
+  it('shows a permission-denied message when the API returns 403', async () => {
+    const err = Object.assign(new Error('access denied'), {
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: { error: { code: 'forbidden', message: 'access denied' } },
+      },
+    })
+    jest.mocked(accountsApi.getAccountActivity).mockRejectedValue(err)
+
+    renderWithProviders(<AccountActivityView />)
+    expect(await screen.findByText(/don't have permission/i)).toBeInTheDocument()
+  })
+
+  it('shows a generic error message when the API fails with a non-403 error', async () => {
+    const err = Object.assign(new Error('server boom'), {
+      isAxiosError: true,
+      response: { status: 500, data: { error: 'something broke' } },
+    })
+    jest.mocked(accountsApi.getAccountActivity).mockRejectedValue(err)
+
+    renderWithProviders(<AccountActivityView />)
+    expect(await screen.findByText(/could not load activity/i)).toBeInTheDocument()
+  })
 })
