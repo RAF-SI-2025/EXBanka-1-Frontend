@@ -27,10 +27,10 @@ export function FundDetailsPanel({ fund }: FundDetailsPanelProps) {
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">
         <Metric label="Manager" value={managerName} />
-        <Metric label="Fund value" value={`${fund.fund_value_rsd} RSD`} />
-        <Metric label="Profit" value={`${fund.profit_rsd} RSD`} />
-        <Metric label="Liquid cash" value={`${fund.liquid_cash_rsd} RSD`} />
-        <Metric label="Min. contribution" value={`${fund.minimum_contribution_rsd} RSD`} />
+        <Metric label="Fund value" value={`${fund.fund_value_rsd ?? '—'} RSD`} />
+        <Metric label="Profit" value={`${fund.profit_rsd ?? '—'} RSD`} />
+        <Metric label="Liquid cash" value={`${fund.liquid_cash_rsd ?? '—'} RSD`} />
+        <Metric label="Min. contribution" value={`${fund.minimum_contribution_rsd ?? '—'} RSD`} />
         <Metric label="Account #" value={String(fund.rsd_account_id)} />
       </CardContent>
     </Card>
