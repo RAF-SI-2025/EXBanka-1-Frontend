@@ -1,7 +1,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useEmployee } from '@/hooks/useEmployee'
 import { useAppSelector } from '@/hooks/useAppSelector'
-import { selectUserType } from '@/store/selectors/authSelectors'
+import { selectHasPermission } from '@/store/selectors/authSelectors'
 import type { Fund } from '@/types/fund'
 
 interface FundDetailsPanelProps {
@@ -9,10 +9,10 @@ interface FundDetailsPanelProps {
 }
 
 export function FundDetailsPanel({ fund }: FundDetailsPanelProps) {
-  const userType = useAppSelector(selectUserType)
+  const canReadEmployees = useAppSelector((s) => selectHasPermission(s, 'employees.read'))
   const { data: managerData } = useEmployee(fund.manager_employee_id, {
     suppressGlobalError: true,
-    enabled: userType === 'employee',
+    enabled: canReadEmployees,
   })
   const managerName = managerData
     ? `${managerData.first_name} ${managerData.last_name}`

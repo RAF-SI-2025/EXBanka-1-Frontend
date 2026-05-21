@@ -16,12 +16,20 @@ jest.mock('@/hooks/useEmployee', () => ({
     mockUseEmployee(id, options),
 }))
 
-const employeeAuth = createMockAuthState({
-  user: createMockAuthUser({ permissions: ['employees.read'] }),
+const adminAuth = createMockAuthState({
+  user: createMockAuthUser({ role: 'EmployeeAdmin', permissions: [] }),
+})
+
+const employeeWithoutPermissionAuth = createMockAuthState({
+  user: createMockAuthUser({ role: 'EmployeeSupervisor', permissions: [] }),
 })
 
 const clientAuth = createMockAuthState({
-  user: createMockAuthUser(),
+  user: createMockAuthUser({
+    role: 'Client',
+    permissions: [],
+    system_type: 'client',
+  }),
   userType: 'client',
 })
 
@@ -47,7 +55,7 @@ describe('FundDetailsPanel', () => {
 
   it('shows "— RSD" instead of "undefined RSD" when RSD fields are null', () => {
     renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
-      preloadedState: { auth: employeeAuth },
+      preloadedState: { auth: adminAuth },
     })
     expect(screen.queryByText(/undefined rsd/i)).not.toBeInTheDocument()
     expect(screen.getAllByText(/— rsd/i)).toHaveLength(4)
@@ -55,7 +63,7 @@ describe('FundDetailsPanel', () => {
 
   it('calls useEmployee with suppressGlobalError: true to silence permission errors for non-admin roles', () => {
     renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
-      preloadedState: { auth: employeeAuth },
+      preloadedState: { auth: adminAuth },
     })
     expect(mockUseEmployee).toHaveBeenCalledWith(
       baseFund.manager_employee_id,
@@ -63,7 +71,27 @@ describe('FundDetailsPanel', () => {
     )
   })
 
-  it('does not call useEmployee when userType is client', () => {
+  it('enables useEmployee when user has employees.read permission (admin)', () => {
+    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+      preloadedState: { auth: adminAuth },
+    })
+    expect(mockUseEmployee).toHaveBeenCalledWith(
+      baseFund.manager_employee_id,
+      expect.objectContaining({ enabled: true })
+    )
+  })
+
+  it('does not call useEmployee when employee lacks employees.read permission (e.g. supervisor/agent)', () => {
+    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+      preloadedState: { auth: employeeWithoutPermissionAuth },
+    })
+    expect(mockUseEmployee).toHaveBeenCalledWith(
+      baseFund.manager_employee_id,
+      expect.objectContaining({ enabled: false })
+    )
+  })
+
+  it('does not call useEmployee when user is a client', () => {
     renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
       preloadedState: { auth: clientAuth },
     })
