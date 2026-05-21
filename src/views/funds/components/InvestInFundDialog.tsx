@@ -50,8 +50,8 @@ export function InvestInFundDialog({
 
   const decimalOk = DECIMAL_RE.test(amount)
   const fundMin = Number(fund.minimum_contribution_rsd)
-  const effectiveMin = currency === 'RSD' ? Math.max(fundMin, MIN_CONTRIBUTION_RSD) : fundMin
-  const aboveMinimum = !decimalOk || Number(amount) >= effectiveMin
+  const effectiveMin = currency === 'RSD' ? Math.max(fundMin, MIN_CONTRIBUTION_RSD) : null
+  const aboveMinimum = effectiveMin === null || !decimalOk || Number(amount) >= effectiveMin
 
   const isValid = accountId !== undefined && decimalOk && aboveMinimum
 
@@ -74,7 +74,11 @@ export function InvestInFundDialog({
         </DialogHeader>
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            Minimum: <strong>{fund.minimum_contribution_rsd} RSD</strong>
+            Minimum:{' '}
+            <strong>
+              {currency === 'RSD' ? effectiveMin : (fund.minimum_contribution_rsd ?? '—')}{' '}
+              {currency === 'RSD' ? 'RSD' : currency}
+            </strong>
           </p>
           <div>
             <Label htmlFor="invest-account">Source account</Label>

@@ -70,7 +70,7 @@ describe('InvestInFundDialog', () => {
     expect(trigger).toHaveTextContent('111000100000000011 — Tekući RSD (RSD)')
   })
 
-  it('shows validation error when RSD amount is below 100', async () => {
+  it('shows validation error when RSD amount is below 100', () => {
     const accounts = [createMockAccount({ currency_code: 'RSD', available_balance: 5000 })]
     const fundWith0Min = { ...createMockFund(), minimum_contribution_rsd: '0' }
     setup({ fund: fundWith0Min, accounts })
