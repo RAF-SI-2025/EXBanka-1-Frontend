@@ -3,9 +3,6 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PriceChart } from '@/views/securities/components/PriceChart'
 import { createMockPriceHistory } from '@/__tests__/fixtures/security-fixtures'
 
-// Recharts is mocked because JSDOM has no SVG layout engine. The mock renders
-// children inline so we can assert on the shape callbacks recharts would
-// otherwise invoke with computed geometry.
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
@@ -15,9 +12,7 @@ jest.mock('recharts', () => ({
       {children}
     </div>
   ),
-  Bar: ({ dataKey }: { dataKey: string }) => (
-    <div data-testid={`bar-${dataKey}`} />
-  ),
+  Bar: ({ dataKey }: { dataKey: string }) => <div data-testid={`bar-${dataKey}`} />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
@@ -49,11 +44,12 @@ describe('PriceChart', () => {
     expect(defaultProps.onPeriodChange).toHaveBeenCalledWith('week')
   })
 
-  it('renders a ComposedChart with both wick and body bars when data is present', () => {
+  it('renders a single candle Bar (merged wick + body) when data is present', () => {
     renderWithProviders(<PriceChart {...defaultProps} />)
     expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
-    expect(screen.getByTestId('bar-wick')).toBeInTheDocument()
-    expect(screen.getByTestId('bar-body')).toBeInTheDocument()
+    expect(screen.getByTestId('bar-range')).toBeInTheDocument()
+    expect(screen.queryByTestId('bar-wick')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('bar-body')).not.toBeInTheDocument()
   })
 
   it('passes the full data row count to the chart', () => {
@@ -61,7 +57,7 @@ describe('PriceChart', () => {
     expect(screen.getByTestId('composed-chart')).toHaveAttribute('data-rows', '7')
   })
 
-  it('renders a single candle when data has exactly 1 entry (no longer blocked by <2 gate)', () => {
+  it('renders a single candle when data has exactly 1 entry', () => {
     renderWithProviders(
       <PriceChart
         data={createMockPriceHistory(1)}

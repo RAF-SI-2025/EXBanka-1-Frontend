@@ -31,13 +31,13 @@ const BEAR_COLOR = '#dc2626'
 
 interface CandleDatum {
   date: string
+  ts: number
   open: number
   close: number
   high: number
   low: number
   volume: number
-  wick: [number, number]
-  body: [number, number]
+  range: [number, number] // [low, high] — drives Bar height
   bullish: boolean
 }
 
@@ -49,22 +49,22 @@ function toCandle(entry: PriceHistoryEntry): CandleDatum {
   const open = close - change
   return {
     date: entry.date,
+    ts: new Date(entry.date).getTime(),
     open,
     close,
     high,
     low,
     volume: entry.volume,
-    wick: [low, high],
-    body: [Math.min(open, close), Math.max(open, close)],
+    range: [low, high],
     bullish: close >= open,
   }
 }
 
-function fmtTick(period: PriceHistoryPeriod): (value: string) => string {
-  return (value: string) => {
-    if (!value) return ''
+function fmtTick(period: PriceHistoryPeriod): (value: number) => string {
+  return (value: number) => {
+    if (!Number.isFinite(value)) return ''
     const d = new Date(value)
-    if (Number.isNaN(d.getTime())) return value
+    if (Number.isNaN(d.getTime())) return ''
     if (period === 'day') {
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
@@ -75,7 +75,11 @@ function fmtTick(period: PriceHistoryPeriod): (value: string) => string {
   }
 }
 
-function Wick(props: unknown) {
+// Candle draws both the wick (low→high vertical line) and the body
+// (open→close filled rect) at the same X position. Recharts gives us the
+// bar slot geometry for the [low, high] value range — y is the pixel for
+// HIGH, y+height is the pixel for LOW.
+function Candle(props: unknown) {
   const { x, y, width, height, payload } = props as {
     x: number
     y: number
@@ -83,44 +87,48 @@ function Wick(props: unknown) {
     height: number
     payload: CandleDatum
   }
-  const color = payload.bullish ? BULL_COLOR : BEAR_COLOR
+  const { open, close, high, low, bullish } = payload
+  const color = bullish ? BULL_COLOR : BEAR_COLOR
   const cx = x + width / 2
-  return (
-    <line
-      data-testid="candle-wick"
-      data-bullish={payload.bullish ? 'true' : 'false'}
-      x1={cx}
-      x2={cx}
-      y1={y}
-      y2={y + height}
-      stroke={color}
-      strokeWidth={1}
-    />
-  )
-}
 
-function CandleBody(props: unknown) {
-  const { x, y, width, height, payload } = props as {
-    x: number
-    y: number
-    width: number
-    height: number
-    payload: CandleDatum
+  const valueRange = high - low
+  let bodyTop: number
+  let bodyBottom: number
+  if (valueRange <= 0) {
+    bodyTop = y
+    bodyBottom = y + Math.max(1, height)
+  } else {
+    const pxPerVal = height / valueRange
+    bodyTop = y + (high - Math.max(open, close)) * pxPerVal
+    bodyBottom = y + (high - Math.min(open, close)) * pxPerVal
   }
-  const color = payload.bullish ? BULL_COLOR : BEAR_COLOR
   const bodyWidth = Math.max(2, width * 0.6)
   const bodyX = x + (width - bodyWidth) / 2
-  const bodyHeight = Math.max(1, height)
+  const bodyHeight = Math.max(1, bodyBottom - bodyTop)
+
   return (
-    <rect
-      data-testid="candle-body"
-      data-bullish={payload.bullish ? 'true' : 'false'}
-      x={bodyX}
-      y={y}
-      width={bodyWidth}
-      height={bodyHeight}
-      fill={color}
-    />
+    <g
+      data-testid="candle"
+      data-bullish={bullish ? 'true' : 'false'}
+    >
+      <line
+        data-testid="candle-wick"
+        x1={cx}
+        x2={cx}
+        y1={y}
+        y2={y + height}
+        stroke={color}
+        strokeWidth={1}
+      />
+      <rect
+        data-testid="candle-body"
+        x={bodyX}
+        y={bodyTop}
+        width={bodyWidth}
+        height={bodyHeight}
+        fill={color}
+      />
+    </g>
   )
 }
 
@@ -137,9 +145,11 @@ function CandleTooltip({
 }) {
   if (!active || !payload || payload.length === 0 || !payload[0].payload) return null
   const d = payload[0].payload
+  const when = new Date(d.ts)
+  const label = Number.isNaN(when.getTime()) ? d.date : when.toLocaleString()
   return (
     <div className="rounded border bg-background p-2 text-xs shadow">
-      <div className="font-medium">{d.date}</div>
+      <div className="font-medium">{label}</div>
       <div>O: {d.open.toFixed(2)}</div>
       <div>H: {d.high.toFixed(2)}</div>
       <div>L: {d.low.toFixed(2)}</div>
@@ -150,7 +160,10 @@ function CandleTooltip({
 }
 
 export function PriceChart({ data, selectedPeriod, onPeriodChange, isLoading }: PriceChartProps) {
-  const chartData = data.map(toCandle)
+  const chartData = data
+    .map(toCandle)
+    .filter((c) => Number.isFinite(c.ts))
+    .sort((a, b) => a.ts - b.ts)
 
   return (
     <div>
@@ -178,11 +191,17 @@ export function PriceChart({ data, selectedPeriod, onPeriodChange, isLoading }: 
         <ResponsiveContainer width="100%" height={320}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" tickFormatter={fmtTick(selectedPeriod)} />
+            <XAxis
+              dataKey="ts"
+              type="number"
+              scale="time"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={fmtTick(selectedPeriod)}
+              minTickGap={40}
+            />
             <YAxis domain={['auto', 'auto']} />
             <Tooltip content={<CandleTooltip />} />
-            <Bar dataKey="wick" shape={<Wick />} isAnimationActive={false} />
-            <Bar dataKey="body" shape={<CandleBody />} isAnimationActive={false} />
+            <Bar dataKey="range" shape={<Candle />} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
       )}
