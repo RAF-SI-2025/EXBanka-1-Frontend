@@ -37,6 +37,7 @@ export function useStockHistory(id: number, filters: PriceHistoryFilters = {}) {
     queryKey: ['stock-history', id, filters],
     queryFn: () => getStockHistory(id, filters),
     enabled: id > 0,
+    refetchInterval: 60_000,
   })
 }
 
@@ -53,6 +54,7 @@ export function useFutureHistory(id: number, filters: PriceHistoryFilters = {}) 
     queryKey: ['future-history', id, filters],
     queryFn: () => getFutureHistory(id, filters),
     enabled: id > 0,
+    refetchInterval: 60_000,
   })
 }
 
@@ -73,6 +75,7 @@ export function useForexHistory(id: number, filters: PriceHistoryFilters = {}) {
     queryKey: ['forex-history', id, filters],
     queryFn: () => getForexHistory(id, filters),
     enabled: id > 0,
+    refetchInterval: 60_000,
   })
 }
 
