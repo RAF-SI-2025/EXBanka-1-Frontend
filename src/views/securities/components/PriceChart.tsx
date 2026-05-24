@@ -68,11 +68,31 @@ function fmtTick(period: PriceHistoryPeriod): (value: number) => string {
     if (period === 'day') {
       return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
-    if (period === 'week' || period === 'month') {
+    if (period === 'week') {
+      return d.toLocaleDateString([], { weekday: 'short', day: '2-digit' })
+    }
+    if (period === 'month') {
       return d.toLocaleDateString([], { month: 'short', day: '2-digit' })
     }
     return d.toLocaleDateString([], { month: 'short', year: 'numeric' })
   }
+}
+
+function fmtTooltipDate(period: PriceHistoryPeriod, ts: number, fallback: string): string {
+  if (!Number.isFinite(ts)) return fallback
+  const d = new Date(ts)
+  if (Number.isNaN(d.getTime())) return fallback
+  if (period === 'day') {
+    // Same-day intraday candles: show full date + HH:mm
+    return d.toLocaleString([], {
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+  // Daily-grain candles for week/month/year/5y/all — show date only, NO time.
+  return d.toLocaleDateString([], { month: 'short', day: '2-digit', year: 'numeric' })
 }
 
 // Candle draws both the wick (low→high vertical line) and the body
@@ -139,14 +159,15 @@ interface CandleTooltipPayloadItem {
 function CandleTooltip({
   active,
   payload,
+  period,
 }: {
   active?: boolean
   payload?: CandleTooltipPayloadItem[]
+  period: PriceHistoryPeriod
 }) {
   if (!active || !payload || payload.length === 0 || !payload[0].payload) return null
   const d = payload[0].payload
-  const when = new Date(d.ts)
-  const label = Number.isNaN(when.getTime()) ? d.date : when.toLocaleString()
+  const label = fmtTooltipDate(period, d.ts, d.date)
   return (
     <div className="rounded border bg-background p-2 text-xs shadow">
       <div className="font-medium">{label}</div>
@@ -200,7 +221,7 @@ export function PriceChart({ data, selectedPeriod, onPeriodChange, isLoading }: 
               minTickGap={40}
             />
             <YAxis domain={['auto', 'auto']} />
-            <Tooltip content={<CandleTooltip />} />
+            <Tooltip content={<CandleTooltip period={selectedPeriod} />} />
             <Bar dataKey="range" shape={<Candle />} isAnimationActive={false} />
           </ComposedChart>
         </ResponsiveContainer>
