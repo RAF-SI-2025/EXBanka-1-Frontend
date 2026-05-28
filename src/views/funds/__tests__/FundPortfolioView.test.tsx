@@ -10,12 +10,16 @@ jest.mock('@/lib/api/funds')
 jest.mock('@/lib/api/securities')
 
 const mockedGetFund = fundsApi.getFund as jest.MockedFunction<typeof fundsApi.getFund>
+const mockedGetFunds = fundsApi.getFunds as jest.MockedFunction<typeof fundsApi.getFunds>
 const mockedGetStock = securitiesApi.getStock as jest.MockedFunction<typeof securitiesApi.getStock>
 
 describe('FundPortfolioView', () => {
   beforeEach(() => {
     mockedGetFund.mockReset()
+    mockedGetFunds.mockReset()
     mockedGetStock.mockReset()
+    // Default: empty funds list so existing tests still run without changes
+    mockedGetFunds.mockResolvedValue({ funds: [], total: 0 })
   })
 
   it('renders the fund name as the page title and summary cards', async () => {
@@ -87,6 +91,77 @@ describe('FundPortfolioView', () => {
     })
     await waitFor(() => {
       expect(screen.getByText(/could not load fund/i)).toBeInTheDocument()
+    })
+  })
+
+  it('renders "— RSD" (not "undefined RSD") when the detail endpoint omits the financial fields', async () => {
+    // Backend's detail endpoint sometimes returns the fund without computed
+    // financials (fund_value_rsd / liquid_cash_rsd / profit_rsd). Frontend
+    // must surface them as "— RSD" instead of leaking "undefined".
+    mockedGetFund.mockResolvedValue({
+      fund: {
+        id: 7,
+        name: 'Sparse Fund',
+        description: 'No metrics yet',
+        minimum_contribution_rsd: null,
+        manager_employee_id: 1,
+        rsd_account_id: 1,
+        fund_value_rsd: undefined as unknown as null,
+        liquid_cash_rsd: undefined as unknown as null,
+        profit_rsd: undefined as unknown as null,
+        active: true,
+        created_at: '2026-01-01',
+      },
+      holdings: [],
+      performance: [],
+    })
+
+    renderWithProviders(<FundPortfolioView />, {
+      route: '/funds/7/portfolio',
+      routePath: '/funds/:id/portfolio',
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('Sparse Fund')).toBeInTheDocument()
+    })
+    expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument()
+    // At least one of the three financial cards should fall back to "— RSD"
+    expect(screen.getAllByText(/—\s*RSD/).length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('prefers financial values from the funds list endpoint when the detail omits them', async () => {
+    mockedGetFund.mockResolvedValue({
+      fund: createMockFund({
+        id: 7,
+        name: 'Merge Fund',
+        fund_value_rsd: null,
+        liquid_cash_rsd: null,
+        profit_rsd: null,
+      }),
+      holdings: [],
+      performance: [],
+    })
+    mockedGetFunds.mockResolvedValue({
+      funds: [
+        createMockFund({
+          id: 7,
+          name: 'Merge Fund',
+          fund_value_rsd: '9999000.00',
+          liquid_cash_rsd: '4000000.00',
+          profit_rsd: '123000.00',
+        }),
+      ],
+      total: 1,
+    })
+
+    renderWithProviders(<FundPortfolioView />, {
+      route: '/funds/7/portfolio',
+      routePath: '/funds/:id/portfolio',
+    })
+
+    await waitFor(() => {
+      // Formatted as RSD currency — "9.999.000,00" with sr-RS locale, plus "RSD"
+      expect(screen.getByText(/9[.,\s]?999[.,\s]?000/)).toBeInTheDocument()
     })
   })
 })
