@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useListingMap } from '@/hooks/useSecurities'
 import type { PriceAlert, PriceAlertCondition } from '@/types/priceAlert'
 
 interface MyPriceAlertsTableProps {
@@ -43,6 +44,8 @@ export function MyPriceAlertsTable({
   onDelete,
   busyId,
 }: MyPriceAlertsTableProps) {
+  const listingMap = useListingMap()
+
   if (alerts.length === 0) {
     return <p className="text-sm text-muted-foreground">You have no price alerts yet.</p>
   }
@@ -51,7 +54,8 @@ export function MyPriceAlertsTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Listing ID</TableHead>
+          <TableHead>Ticker</TableHead>
+          <TableHead>Name</TableHead>
           <TableHead>Condition</TableHead>
           <TableHead>Recurring</TableHead>
           <TableHead>Status</TableHead>
@@ -61,9 +65,13 @@ export function MyPriceAlertsTable({
       <TableBody>
         {alerts.map((a) => {
           const busy = busyId === a.id
+          const listing = listingMap.get(a.listing_id)
           return (
             <TableRow key={a.id}>
-              <TableCell className="font-mono">#{a.listing_id}</TableCell>
+              <TableCell className="font-mono font-semibold">
+                {listing?.ticker ?? `#${a.listing_id}`}
+              </TableCell>
+              <TableCell>{listing?.name ?? '—'}</TableCell>
               <TableCell>{formatCondition(a)}</TableCell>
               <TableCell>
                 {a.is_recurring ? formatCooldown(a.cooldown_seconds) : 'Single-shot'}
