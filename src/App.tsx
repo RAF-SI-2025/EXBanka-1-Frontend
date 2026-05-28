@@ -52,7 +52,13 @@ import { AdminFeesView } from '@/views/adminFees'
 import { PeerBanksView } from '@/views/peerBanks'
 import { OtcView } from '@/views/otc'
 import { OtcPortalView } from '@/views/otcPortal'
-import { BankFundPositionsView, CreateFundView, FundDetailsView, FundsView } from '@/views/funds'
+import {
+  BankFundPositionsView,
+  CreateFundView,
+  FundDetailsView,
+  FundPortfolioView,
+  FundsView,
+} from '@/views/funds'
 import { OtcContractDetailView, OtcContractsView } from '@/views/otcContracts'
 import { OtcOptionsView } from '@/views/otcOptions'
 import { NotificationTemplatesView } from '@/views/notificationTemplates'
@@ -361,6 +367,7 @@ export default function App() {
           }
         />
         <Route path="/funds/:id" element={<FundDetailsView />} />
+        <Route path="/funds/:id/portfolio" element={<FundPortfolioView />} />
         <Route path="/portfolio" element={<PortfolioView />} />
         <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsView />} />
 

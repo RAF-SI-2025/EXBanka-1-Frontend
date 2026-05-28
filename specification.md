@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper)_
+_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value)_
 
 ---
 
@@ -272,6 +272,7 @@ src/
 │   ├── OtcPortalPage.tsx + .test.tsx     # /otc — role-aware: clients use BuyOtcDialog, employees use BuyOnBehalfOtcDialog
 │   ├── FundsDiscoveryPage.tsx            # /funds — search + active-only + InvestInFundDialog
 │   ├── FundDetailsPage.tsx               # /funds/:id — Panel + Holdings + Performance + Invest
+│   ├── FundPortfolioView.tsx             # /funds/:id/portfolio — portfolio-style page (summary + perf + enriched holdings)
 │   ├── CreateFundPage.tsx                # /funds/new — gated on funds.manage
 │   ├── ActuaryPerformancePage.tsx        # /admin/profit/actuaries — gated on actuaries.read.all
 │   ├── BankFundPositionsPage.tsx         # /admin/profit/funds — gated on funds.bank-position-read; reuses Invest/Redeem dialogs with asBank
