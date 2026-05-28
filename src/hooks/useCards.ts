@@ -114,10 +114,11 @@ export function useDeactivateCard() {
   })
 }
 
-export function useRequestCardForAuthorizedPerson() {
+export function useRequestCardForAuthorizedPerson(options?: { onError?: (err: unknown) => void }) {
   return useMutation({
     mutationFn: (payload: CreateAuthorizedPersonRequest & { account_id: number }) =>
       requestCardForAuthorizedPerson(payload),
+    onError: options?.onError,
   })
 }
 

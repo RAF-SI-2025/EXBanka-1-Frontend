@@ -6,12 +6,14 @@ interface UseMutationWithRedirectOptions<TData, TVariables> {
   mutationFn: (variables: TVariables) => Promise<TData>
   invalidateKeys?: QueryKey[]
   redirectTo: string
+  onError?: (err: unknown) => void
 }
 
 export function useMutationWithRedirect<TData = unknown, TVariables = void>({
   mutationFn,
   invalidateKeys = [],
   redirectTo,
+  onError,
 }: UseMutationWithRedirectOptions<TData, TVariables>) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -24,5 +26,6 @@ export function useMutationWithRedirect<TData = unknown, TVariables = void>({
       }
       navigate(redirectTo)
     },
+    onError,
   })
 }

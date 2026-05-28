@@ -1,6 +1,6 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-05-07 (added admin Peer Banks settings page — CRUD UI for the SI-TX peer bank registry; runtime backend host selector on login + Sidebar)_
+_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper)_
 
 ---
 
@@ -1593,12 +1593,22 @@ All defined in `lib/utils/validation.ts` using Zod.
 |---|---|---|
 | `passwordSchema` | Shared | 8–32 chars, 2+ digits, 1+ uppercase, 1+ lowercase |
 | `emailSchema` | Shared | Valid email format |
+| `phoneSchema` | Shared building block | `/^\+?[0-9]+$/`, max 15 chars — digits only, optional `+` at start |
+| `dateOfBirthStringSchema` | Shared building block (string DoB) | required, parseable date, not in the future, ≥ 16 years old |
+| `dateOfBirthTimestampSchema` | Shared building block (Unix timestamp DoB) | not in the future, ≥ 16 years old |
 | `loginSchema` | LoginForm | `{email, password}` |
 | `passwordResetSchema` | PasswordResetForm | `{token, new_password, confirm_password}` — passwords must match |
 | `activationSchema` | ActivationForm | `{token, password, confirm_password}` — passwords must match |
-| `createEmployeeSchema` | EmployeeCreateForm | All required fields + JMBG 13-digit regex |
-| `updateEmployeeSchema` | EmployeeEditForm | All optional; JMBG `/^\d{13}$/` if provided |
-| `authorizedPersonSchema` | AuthorizedPersonForm | first_name, last_name, date_of_birth (required), gender (optional), email, phone, address |
+| `createEmployeeSchema` | EmployeeCreateForm | All required fields + JMBG 13-digit regex; DoB via `dateOfBirthTimestampSchema`; phone via `phoneSchema` |
+| `updateEmployeeSchema` | EmployeeEditForm | All optional; JMBG `/^\d{13}$/` if provided; phone via `phoneSchema` |
+| `createClientSchema` | CreateClientView | first_name, last_name, email, jmbg required; DoB via `dateOfBirthStringSchema`; phone via `phoneSchema` |
+| `updateClientSchema` | EditClientForm | All optional; phone via `phoneSchema` |
+| `authorizedPersonSchema` | AuthorizedPersonForm | first_name, last_name, email required; DoB via `dateOfBirthStringSchema`; phone via `phoneSchema` |
+| `createLoanRequestSchema` | LoanApplicationForm | loan_type, interest_type, account_number, amount, currency_code, repayment_period required; phone via `phoneSchema` |
+
+### Server-side uniqueness — duplicate email
+
+Email uniqueness is enforced by the backend (no dedicated check endpoint). When a create/update mutation responds with HTTP 409 or HTTP 400 carrying a message matching email + (`exist`|`taken`|`duplicate`|`unique`|`alread`), the helper `lib/errors/isDuplicateEmailError.ts` recognizes the response and the affected forms surface an inline `setError('email', ...)` instead of a global toast. Wired in: `CreateEmployeeView`, `CreateClientView`, `EditClientView`, `CardRequestView` (for `AuthorizedPersonForm`).
 
 ---
 

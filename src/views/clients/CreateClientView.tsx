@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { createClientSchema } from '@/lib/utils/validation'
 import { todayISO, dateToUnixTimestamp } from '@/lib/utils/dateFormatter'
+import { isDuplicateEmailError, notifyError } from '@/lib/errors'
 import type { z } from 'zod'
 import { ViewShell } from '@/views/shared'
 
@@ -15,14 +16,24 @@ type FormValues = z.infer<typeof createClientSchema>
 
 export function CreateClientView() {
   const navigate = useNavigate()
-  const createClient = useCreateClient()
 
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(createClientSchema),
+  })
+
+  const createClient = useCreateClient({
+    onError: (err) => {
+      if (isDuplicateEmailError(err)) {
+        setError('email', { type: 'server', message: 'Email is already in use' })
+        return
+      }
+      notifyError(err)
+    },
   })
 
   const onSubmit = (data: FormValues) => {

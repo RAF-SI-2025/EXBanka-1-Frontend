@@ -14,13 +14,20 @@ interface EditClientFormProps {
   client: Client
   onSubmit: (data: UpdateClientRequest) => void
   submitting: boolean
+  externalEmailError?: string
 }
 
-export function EditClientForm({ client, onSubmit, submitting }: EditClientFormProps) {
+export function EditClientForm({
+  client,
+  onSubmit,
+  submitting,
+  externalEmailError,
+}: EditClientFormProps) {
   const {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(updateClientSchema),
@@ -36,6 +43,12 @@ export function EditClientForm({ client, onSubmit, submitting }: EditClientFormP
       gender: client.gender ?? '',
     })
   }, [client, reset])
+
+  useEffect(() => {
+    if (externalEmailError) {
+      setError('email', { type: 'server', message: externalEmailError })
+    }
+  }, [externalEmailError, setError])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -65,6 +78,7 @@ export function EditClientForm({ client, onSubmit, submitting }: EditClientFormP
       <div>
         <Label htmlFor="phone">Phone</Label>
         <Input id="phone" {...register('phone')} />
+        {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
       </div>
 
       <div>

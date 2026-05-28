@@ -7,9 +7,16 @@ interface EmployeeFormProps {
   isLoading: boolean
   employee?: Employee
   readOnly?: boolean
+  externalEmailError?: string
 }
 
-export function EmployeeForm({ onSubmit, isLoading, employee, readOnly }: EmployeeFormProps) {
+export function EmployeeForm({
+  onSubmit,
+  isLoading,
+  employee,
+  readOnly,
+  externalEmailError,
+}: EmployeeFormProps) {
   if (employee) {
     return (
       <EmployeeEditForm
@@ -21,5 +28,11 @@ export function EmployeeForm({ onSubmit, isLoading, employee, readOnly }: Employ
     )
   }
 
-  return <EmployeeCreateForm onSubmit={(data) => onSubmit(data)} isLoading={isLoading} />
+  return (
+    <EmployeeCreateForm
+      onSubmit={(data) => onSubmit(data)}
+      isLoading={isLoading}
+      externalEmailError={externalEmailError}
+    />
+  )
 }
