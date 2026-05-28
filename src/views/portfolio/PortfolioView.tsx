@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { MyFundsList } from '@/views/funds/components/MyFundsList'
 import { RedeemFromFundDialog } from '@/views/funds/components/RedeemFromFundDialog'
 import { MyPriceAlertsTable } from '@/views/priceAlerts/components/MyPriceAlertsTable'
+import { PriceAlertDialog } from '@/views/priceAlerts/components/PriceAlertDialog'
 import {
   usePortfolio,
   usePortfolioSummary,
@@ -20,6 +21,7 @@ import {
 } from '@/hooks/usePortfolio'
 import { useMyFundPositions, useRedeemFund } from '@/hooks/useFunds'
 import { useDeletePriceAlert, usePriceAlerts, useUpdatePriceAlert } from '@/hooks/usePriceAlerts'
+import { useListingMap } from '@/hooks/useSecurities'
 import { useClientAccounts } from '@/hooks/useAccounts'
 import { notifySuccess } from '@/lib/errors'
 import { getStocks } from '@/lib/api/securities'
@@ -27,6 +29,7 @@ import type { Holding, PortfolioFilters } from '@/types/portfolio'
 import type { ClientFundPosition, RedeemPayload } from '@/types/fund'
 import type { Account } from '@/types/account'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
+import type { CreatePriceAlertPayload, PriceAlert } from '@/types/priceAlert'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
 
 const PAGE_SIZE = 10
@@ -78,11 +81,27 @@ export function PortfolioView() {
   const { data: priceAlerts } = usePriceAlerts()
   const updateAlertMutation = useUpdatePriceAlert()
   const deleteAlertMutation = useDeletePriceAlert()
+  const listingMap = useListingMap()
+  const [editingAlert, setEditingAlert] = useState<PriceAlert | null>(null)
   const handlePauseAlert = (id: number) =>
     updateAlertMutation.mutate({ id, payload: { active: false } })
   const handleResumeAlert = (id: number) =>
     updateAlertMutation.mutate({ id, payload: { active: true } })
   const handleDeleteAlert = (id: number) => deleteAlertMutation.mutate(id)
+  const handleEditAlertSubmit = (payload: CreatePriceAlertPayload) => {
+    if (!editingAlert) return
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { listing_id, ...updatePayload } = payload
+    updateAlertMutation.mutate(
+      { id: editingAlert.id, payload: updatePayload },
+      {
+        onSuccess: () => {
+          notifySuccess('Price alert updated.')
+          setEditingAlert(null)
+        },
+      }
+    )
+  }
 
   const handleFilterChange = (newFilters: FilterValues) => {
     setFilterValues(newFilters)
@@ -207,6 +226,7 @@ export function PortfolioView() {
         <TabsContent value="alerts" className="mt-4">
           <MyPriceAlertsTable
             alerts={priceAlerts ?? []}
+            onEdit={setEditingAlert}
             onPause={handlePauseAlert}
             onResume={handleResumeAlert}
             onDelete={handleDeleteAlert}
@@ -238,6 +258,23 @@ export function PortfolioView() {
           position={redeemPosition}
           accounts={accounts}
           onClose={() => setRedeemPosition(null)}
+        />
+      )}
+
+      {editingAlert && (
+        <PriceAlertDialog
+          key={editingAlert.id}
+          open
+          onOpenChange={(o) => !o && setEditingAlert(null)}
+          listing={{
+            listing_id: editingAlert.listing_id,
+            ticker:
+              listingMap.get(editingAlert.listing_id)?.ticker ?? `#${editingAlert.listing_id}`,
+            name: listingMap.get(editingAlert.listing_id)?.name ?? '',
+          }}
+          initialAlert={editingAlert}
+          onSubmit={handleEditAlertSubmit}
+          loading={updateAlertMutation.isPending}
         />
       )}
     </ViewShell>

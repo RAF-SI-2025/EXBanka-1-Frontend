@@ -15,6 +15,7 @@ beforeEach(() => {
 function setup(overrides: Partial<React.ComponentProps<typeof MyPriceAlertsTable>> = {}) {
   const defaults = {
     alerts: [createMockPriceAlert()],
+    onEdit: jest.fn(),
     onPause: jest.fn(),
     onResume: jest.fn(),
     onDelete: jest.fn(),
@@ -92,6 +93,14 @@ describe('MyPriceAlertsTable', () => {
     expect(screen.getByText('#999')).toBeInTheDocument()
   })
 
+  it('calls onEdit with the full alert when the Edit button is clicked', () => {
+    const onEdit = jest.fn()
+    const alert = createMockPriceAlert({ id: 3, threshold: '500' })
+    setup({ alerts: [alert], onEdit })
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }))
+    expect(onEdit).toHaveBeenCalledWith(alert)
+  })
+
   it('calls onPause when the Pause button is clicked for an active alert', () => {
     const onPause = jest.fn()
     setup({ alerts: [createMockPriceAlert({ id: 9, active: true })], onPause })
@@ -115,6 +124,7 @@ describe('MyPriceAlertsTable', () => {
 
   it('disables row action buttons when busyId matches the alert id', () => {
     setup({ alerts: [createMockPriceAlert({ id: 11 })], busyId: 11 })
+    expect(screen.getByRole('button', { name: /edit/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /pause/i })).toBeDisabled()
     expect(screen.getByRole('button', { name: /delete/i })).toBeDisabled()
   })

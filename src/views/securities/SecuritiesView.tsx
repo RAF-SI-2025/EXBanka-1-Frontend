@@ -16,7 +16,7 @@ import { ForexTable } from '@/views/securities/components/ForexTable'
 import { FuturesTable } from '@/views/securities/components/FuturesTable'
 import { OptionsTab } from '@/views/securities/components/OptionsTab'
 import { StockTable } from '@/views/securities/components/StockTable'
-import { CreatePriceAlertDialog } from '@/views/priceAlerts/components/CreatePriceAlertDialog'
+import { PriceAlertDialog } from '@/views/priceAlerts/components/PriceAlertDialog'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
 
 interface AlertListing {
@@ -272,7 +272,7 @@ export function SecuritiesView() {
       </Tabs>
 
       {alertListing && (
-        <CreatePriceAlertDialog
+        <PriceAlertDialog
           open
           onOpenChange={(o) => !o && setAlertListing(null)}
           listing={alertListing}

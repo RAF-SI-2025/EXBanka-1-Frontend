@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { CreatePriceAlertPayload, PriceAlertCondition } from '@/types/priceAlert'
+import type { CreatePriceAlertPayload, PriceAlert, PriceAlertCondition } from '@/types/priceAlert'
 
 interface Listing {
   listing_id: number
@@ -31,6 +31,8 @@ interface Props {
   listing: Listing
   onSubmit: (payload: CreatePriceAlertPayload) => void
   loading: boolean
+  /** When set, the dialog opens in edit mode and prefills from this alert. */
+  initialAlert?: PriceAlert
 }
 
 const POSITIVE_DECIMAL_RE = /^\d+(\.\d+)?$/
@@ -46,12 +48,27 @@ const CONDITION_LABELS: Record<PriceAlertCondition, string> = {
   daily_change_pct_lte: 'Daily change % ≤ threshold',
 }
 
-export function CreatePriceAlertDialog({ open, onOpenChange, listing, onSubmit, loading }: Props) {
-  const [condition, setCondition] = useState<PriceAlertCondition>('gte')
-  const [threshold, setThreshold] = useState('')
-  const [isRecurring, setIsRecurring] = useState(false)
-  const [cooldownHours, setCooldownHours] = useState<number>(DEFAULT_COOLDOWN_HOURS)
-  const [emailToo, setEmailToo] = useState(false)
+function alertCooldownToHours(alert: PriceAlert | undefined): number {
+  if (!alert || !alert.is_recurring) return DEFAULT_COOLDOWN_HOURS
+  const hours = Math.round(alert.cooldown_seconds / SECONDS_PER_HOUR)
+  return Math.min(MAX_COOLDOWN_HOURS, Math.max(MIN_COOLDOWN_HOURS, hours))
+}
+
+export function PriceAlertDialog({
+  open,
+  onOpenChange,
+  listing,
+  onSubmit,
+  loading,
+  initialAlert,
+}: Props) {
+  const isEdit = initialAlert !== undefined
+
+  const [condition, setCondition] = useState<PriceAlertCondition>(initialAlert?.condition ?? 'gte')
+  const [threshold, setThreshold] = useState(initialAlert?.threshold ?? '')
+  const [isRecurring, setIsRecurring] = useState(initialAlert?.is_recurring ?? false)
+  const [cooldownHours, setCooldownHours] = useState<number>(alertCooldownToHours(initialAlert))
+  const [emailToo, setEmailToo] = useState(initialAlert?.email_too ?? false)
 
   const thresholdOk = POSITIVE_DECIMAL_RE.test(threshold) && Number(threshold) > 0
   const cooldownOk =
@@ -79,7 +96,8 @@ export function CreatePriceAlertDialog({ open, onOpenChange, listing, onSubmit, 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            Create price alert — <span className="font-mono">{listing.ticker}</span>{' '}
+            {isEdit ? 'Edit price alert' : 'Create price alert'} —{' '}
+            <span className="font-mono">{listing.ticker}</span>{' '}
             <span className="text-muted-foreground text-sm font-normal">({listing.name})</span>
           </DialogTitle>
         </DialogHeader>
@@ -165,7 +183,13 @@ export function CreatePriceAlertDialog({ open, onOpenChange, listing, onSubmit, 
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!isValid || loading}>
-            {loading ? 'Creating...' : 'Create alert'}
+            {loading
+              ? isEdit
+                ? 'Saving...'
+                : 'Creating...'
+              : isEdit
+                ? 'Save changes'
+                : 'Create alert'}
           </Button>
         </DialogFooter>
       </DialogContent>

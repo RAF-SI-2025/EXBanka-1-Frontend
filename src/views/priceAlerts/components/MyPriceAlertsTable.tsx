@@ -13,6 +13,7 @@ import type { PriceAlert, PriceAlertCondition } from '@/types/priceAlert'
 
 interface MyPriceAlertsTableProps {
   alerts: PriceAlert[]
+  onEdit: (alert: PriceAlert) => void
   onPause: (id: number) => void
   onResume: (id: number) => void
   onDelete: (id: number) => void
@@ -39,6 +40,7 @@ function formatCooldown(seconds: number): string {
 
 export function MyPriceAlertsTable({
   alerts,
+  onEdit,
   onPause,
   onResume,
   onDelete,
@@ -81,6 +83,9 @@ export function MyPriceAlertsTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
+                  <Button size="sm" variant="outline" onClick={() => onEdit(a)} disabled={busy}>
+                    Edit
+                  </Button>
                   {a.active ? (
                     <Button
                       size="sm"
