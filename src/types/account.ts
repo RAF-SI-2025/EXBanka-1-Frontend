@@ -1,6 +1,6 @@
 export type AccountKind = 'current' | 'foreign'
 export type AccountType = string
-export type AccountCategory = 'personal' | 'business'
+export type AccountCategory = 'personal' | 'business' | 'investment_fund'
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'CLOSED'
 
 export interface Company {

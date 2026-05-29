@@ -4,6 +4,7 @@ import type {
   OrderListResponse,
   CreateOrderPayload,
   CreateOrderOnBehalfPayload,
+  CreateOrderOnBehalfFundPayload,
   MyOrderFilters,
   AdminOrderFilters,
 } from '@/types/order'
@@ -25,6 +26,13 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
 
 export async function createOrderOnBehalf(payload: CreateOrderOnBehalfPayload): Promise<Order> {
   const { data } = await apiClient.post<Order>('/orders', payload)
+  return data
+}
+
+export async function createOrderOnBehalfFund(
+  payload: CreateOrderOnBehalfFundPayload
+): Promise<Order> {
+  const { data } = await apiClient.post<Order>('/me/orders', payload)
   return data
 }
 

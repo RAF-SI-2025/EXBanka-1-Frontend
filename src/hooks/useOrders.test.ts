@@ -3,6 +3,7 @@ import { createQueryWrapper } from '@/__tests__/utils/test-utils'
 import {
   useMyOrders,
   useCreateOrder,
+  useCreateOrderOnBehalfFund,
   useCancelOrder,
   useAllOrders,
   useApproveOrder,
@@ -66,6 +67,37 @@ describe('useCreateOrder', () => {
       direction: 'buy',
       order_type: 'market',
       quantity: 10,
+    })
+  })
+})
+
+describe('useCreateOrderOnBehalfFund', () => {
+  it('calls createOrderOnBehalfFund with on_behalf_of_fund_id', async () => {
+    const order = createMockOrder()
+    jest.mocked(ordersApi.createOrderOnBehalfFund).mockResolvedValue(order)
+
+    const { result } = renderHook(() => useCreateOrderOnBehalfFund(), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        listing_id: 42,
+        direction: 'buy',
+        order_type: 'market',
+        quantity: 10,
+        account_id: 200,
+        on_behalf_of_fund_id: 7,
+      })
+    })
+
+    expect(ordersApi.createOrderOnBehalfFund).toHaveBeenCalledWith({
+      listing_id: 42,
+      direction: 'buy',
+      order_type: 'market',
+      quantity: 10,
+      account_id: 200,
+      on_behalf_of_fund_id: 7,
     })
   })
 })

@@ -43,6 +43,10 @@ export interface CreateOrderOnBehalfPayload extends CreateOrderPayload {
   client_id: number
 }
 
+export interface CreateOrderOnBehalfFundPayload extends CreateOrderPayload {
+  on_behalf_of_fund_id: number
+}
+
 export interface OrderListResponse {
   orders: Order[]
   total_count: number
