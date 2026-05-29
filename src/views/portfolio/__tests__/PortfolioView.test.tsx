@@ -45,6 +45,10 @@ beforeEach(() => {
     data: { accounts: [createMockAccount()], total: 1 },
     isLoading: false,
   } as any)
+  jest.mocked(useAccountsHook.useBankAccounts).mockReturnValue({
+    data: { accounts: [], total: 0 },
+    isLoading: false,
+  } as any)
 })
 
 describe('PortfolioView', () => {
@@ -128,5 +132,35 @@ describe('PortfolioView', () => {
     expect(
       await screen.findByRole('heading', { name: /redeem from alpha growth fund/i })
     ).toBeInTheDocument()
+  })
+
+  it('uses bank accounts (not client accounts) in the Redeem dialog when the user is an employee', async () => {
+    jest.mocked(useFundsHook.useMyFundPositions).mockReturnValue({
+      data: {
+        positions: [createMockClientFundPosition({ fund_id: 101, fund_name: 'Alpha Growth Fund' })],
+      },
+      isLoading: false,
+    } as any)
+    jest.mocked(useAccountsHook.useClientAccounts).mockReturnValue({
+      data: { accounts: [createMockAccount({ id: 1, account_name: 'Client Acct' })], total: 1 },
+      isLoading: false,
+    } as any)
+    jest.mocked(useAccountsHook.useBankAccounts).mockReturnValue({
+      data: { accounts: [createMockAccount({ id: 99, account_name: 'Bank Op' })], total: 1 },
+      isLoading: false,
+    } as any)
+
+    renderWithProviders(<PortfolioView />, {
+      route: '/portfolio?tab=funds',
+      preloadedState: { auth: { userType: 'employee' } as any },
+    })
+
+    await userEvent.click(await screen.findByRole('button', { name: /redeem/i }))
+
+    // Open the Target account dropdown
+    await userEvent.click(await screen.findByRole('combobox', { name: /Target account/i }))
+    // Bank account shows, client account does not
+    expect(await screen.findByText(/Bank Op/)).toBeInTheDocument()
+    expect(screen.queryByText(/Client Acct/)).not.toBeInTheDocument()
   })
 })

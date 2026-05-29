@@ -11,7 +11,12 @@ import { EmptyState, LoadingState } from '@/views/shared'
 
 const PAGE_SIZE = 10
 
-export function OptionsTab() {
+interface OptionsTabProps {
+  watchlistIds?: Set<number>
+  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
+}
+
+export function OptionsTab({ watchlistIds, onToggleWatchlist }: OptionsTabProps = {}) {
   const navigate = useNavigate()
   const [stockSearch, setStockSearch] = useState('')
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
@@ -130,6 +135,8 @@ export function OptionsTab() {
                 options={optionsData.options}
                 onRowClick={(id) => navigate(`/securities/options/${id}`)}
                 onBuy={handleBuyOption}
+                watchlistIds={watchlistIds}
+                onToggleWatchlist={onToggleWatchlist}
               />
               <p className="text-sm text-muted-foreground mt-2">
                 {optionsData.total_count} options

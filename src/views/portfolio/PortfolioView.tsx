@@ -22,7 +22,11 @@ import {
 import { useMyFundPositions, useRedeemFund } from '@/hooks/useFunds'
 import { useDeletePriceAlert, usePriceAlerts, useUpdatePriceAlert } from '@/hooks/usePriceAlerts'
 import { useListingMap } from '@/hooks/useSecurities'
-import { useClientAccounts } from '@/hooks/useAccounts'
+import { useRemoveFromWatchlist, useWatchlist } from '@/hooks/useWatchlist'
+import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectUserType } from '@/store/selectors/authSelectors'
+import { FavoritesTable } from '@/views/portfolio/components/FavoritesTable'
 import { notifySuccess } from '@/lib/errors'
 import { getStocks } from '@/lib/api/securities'
 import type { Holding, PortfolioFilters } from '@/types/portfolio'
@@ -36,11 +40,12 @@ const PAGE_SIZE = 10
 
 const PORTFOLIO_FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
-type PortfolioTab = 'holdings' | 'funds' | 'alerts'
+type PortfolioTab = 'holdings' | 'funds' | 'alerts' | 'favorites'
 
 function parseTab(value: string | null): PortfolioTab {
   if (value === 'funds') return 'funds'
   if (value === 'alerts') return 'alerts'
+  if (value === 'favorites') return 'favorites'
   return 'holdings'
 }
 
@@ -64,8 +69,13 @@ export function PortfolioView() {
   const { data: summary } = usePortfolioSummary()
   const { data: fundPositionsData } = useMyFundPositions()
   const fundPositions = fundPositionsData?.positions ?? []
-  const { data: clientAccountsData } = useClientAccounts()
-  const accounts = clientAccountsData?.accounts ?? []
+  const userType = useAppSelector(selectUserType)
+  const isEmployee = userType === 'employee'
+  const { data: clientAccountsData } = useClientAccounts(!isEmployee)
+  const { data: bankAccountsData } = useBankAccounts(isEmployee)
+  const accounts = isEmployee
+    ? (bankAccountsData?.accounts ?? [])
+    : (clientAccountsData?.accounts ?? [])
   const totalPages = Math.max(1, Math.ceil((data?.total_count ?? 0) / PAGE_SIZE))
   const makePublicMutation = useMakePublic()
   const exerciseMutation = useExerciseOption()
@@ -77,6 +87,11 @@ export function PortfolioView() {
     else searchParams.set('tab', value)
     setSearchParams(searchParams, { replace: true })
   }
+
+  const { data: watchlistData } = useWatchlist()
+  const watchlistItems = watchlistData?.items ?? []
+  const removeFromWatchlistMutation = useRemoveFromWatchlist()
+  const handleRemoveFavorite = (listingId: number) => removeFromWatchlistMutation.mutate(listingId)
 
   const { data: priceAlerts } = usePriceAlerts()
   const updateAlertMutation = useUpdatePriceAlert()
@@ -191,6 +206,7 @@ export function PortfolioView() {
           <TabsTrigger value="holdings">My Holdings</TabsTrigger>
           <TabsTrigger value="funds">My Funds</TabsTrigger>
           <TabsTrigger value="alerts">My Price Alerts</TabsTrigger>
+          <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>
         <TabsContent value="holdings" className="mt-4">
           <FilterBar
@@ -239,6 +255,17 @@ export function PortfolioView() {
             }
           />
         </TabsContent>
+        <TabsContent value="favorites" className="mt-4">
+          <FavoritesTable
+            items={watchlistItems}
+            onRemove={handleRemoveFavorite}
+            busyListingId={
+              removeFromWatchlistMutation.isPending
+                ? removeFromWatchlistMutation.variables
+                : undefined
+            }
+          />
+        </TabsContent>
       </Tabs>
 
       {makePublicHolding && (
@@ -257,6 +284,7 @@ export function PortfolioView() {
         <PortfolioRedeemConnector
           position={redeemPosition}
           accounts={accounts}
+          asBank={isEmployee}
           onClose={() => setRedeemPosition(null)}
         />
       )}
@@ -284,10 +312,12 @@ export function PortfolioView() {
 function PortfolioRedeemConnector({
   position,
   accounts,
+  asBank,
   onClose,
 }: {
   position: ClientFundPosition
   accounts: Account[]
+  asBank: boolean
   onClose: () => void
 }) {
   const mutation = useRedeemFund(position.fund_id)
@@ -299,6 +329,7 @@ function PortfolioRedeemConnector({
       }}
       position={position}
       accounts={accounts}
+      asBank={asBank}
       loading={mutation.isPending}
       onSubmit={(payload: RedeemPayload) =>
         mutation.mutate(payload, {

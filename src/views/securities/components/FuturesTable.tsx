@@ -10,15 +10,25 @@ import {
 import { Button } from '@/components/ui/button'
 import type { FuturesContract } from '@/types/security'
 import { hoverLift, rowEnter } from '@/views/shared'
+import { WatchlistButton } from '@/views/securities/components/WatchlistButton'
 
 interface FuturesTableProps {
   futures: FuturesContract[]
   onRowClick: (id: number) => void
   onBuy: (future: FuturesContract) => void
   onCreateAlert?: (future: FuturesContract) => void
+  watchlistIds?: Set<number>
+  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
 }
 
-export function FuturesTable({ futures, onRowClick, onBuy, onCreateAlert }: FuturesTableProps) {
+export function FuturesTable({
+  futures,
+  onRowClick,
+  onBuy,
+  onCreateAlert,
+  watchlistIds,
+  onToggleWatchlist,
+}: FuturesTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -35,51 +45,62 @@ export function FuturesTable({ futures, onRowClick, onBuy, onCreateAlert }: Futu
         </TableRow>
       </TableHeader>
       <TableBody>
-        {futures.map((future) => (
-          <TableRow
-            key={future.id}
-            className={`${hoverLift} ${rowEnter}`}
-            onClick={() => onRowClick(future.id)}
-          >
-            <TableCell className="font-mono font-semibold">{future.ticker}</TableCell>
-            <TableCell>{future.name}</TableCell>
-            <TableCell>{future.price}</TableCell>
-            <TableCell className={Number(future.change) >= 0 ? 'text-green-600' : 'text-red-600'}>
-              {Number(future.change) >= 0 ? '+' : ''}
-              {future.change}
-            </TableCell>
-            <TableCell>{(future.volume ?? 0).toLocaleString()}</TableCell>
-            <TableCell>{future.settlement_date}</TableCell>
-            <TableCell>{future.exchange_acronym}</TableCell>
-            <TableCell>{future.initial_margin_cost}</TableCell>
-            <TableCell>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onBuy(future)
-                  }}
-                >
-                  Buy
-                </Button>
-                {onCreateAlert && (
+        {futures.map((future) => {
+          const listingId = future.listing_id ?? future.id
+          return (
+            <TableRow
+              key={future.id}
+              className={`${hoverLift} ${rowEnter}`}
+              onClick={() => onRowClick(future.id)}
+            >
+              <TableCell className="font-mono font-semibold">{future.ticker}</TableCell>
+              <TableCell>{future.name}</TableCell>
+              <TableCell>{future.price}</TableCell>
+              <TableCell className={Number(future.change) >= 0 ? 'text-green-600' : 'text-red-600'}>
+                {Number(future.change) >= 0 ? '+' : ''}
+                {future.change}
+              </TableCell>
+              <TableCell>{(future.volume ?? 0).toLocaleString()}</TableCell>
+              <TableCell>{future.settlement_date}</TableCell>
+              <TableCell>{future.exchange_acronym}</TableCell>
+              <TableCell>{future.initial_margin_cost}</TableCell>
+              <TableCell>
+                <div className="flex gap-2">
                   <Button
-                    size="icon"
-                    variant="outline"
-                    aria-label={`Create price alert for ${future.ticker}`}
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation()
-                      onCreateAlert(future)
+                      onBuy(future)
                     }}
                   >
-                    <Bell className="h-4 w-4" />
+                    Buy
                   </Button>
-                )}
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
+                  {onCreateAlert && (
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      aria-label={`Create price alert for ${future.ticker}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onCreateAlert(future)
+                      }}
+                    >
+                      <Bell className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onToggleWatchlist && (
+                    <WatchlistButton
+                      listingId={listingId}
+                      ticker={future.ticker}
+                      inWatchlist={watchlistIds?.has(listingId) ?? false}
+                      onToggle={onToggleWatchlist}
+                    />
+                  )}
+                </div>
+              </TableCell>
+            </TableRow>
+          )
+        })}
       </TableBody>
     </Table>
   )
