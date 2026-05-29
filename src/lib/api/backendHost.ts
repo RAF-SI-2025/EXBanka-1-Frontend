@@ -20,24 +20,24 @@ export interface BackendPreset {
   isCustom?: boolean
 }
 
-const BYTENITY_BASE = 'https://project-exbanka.bytenity.com'
+const VLUPSIC_BASE = 'https://exbanka.vlupsic.dev'
 
 export const BACKEND_PRESETS: ReadonlyArray<BackendPreset> = [
   { id: 'localhost', label: 'Localhost — http://localhost:8080', baseUrl: 'http://localhost:8080' },
   {
     id: 'instance1',
-    label: `Bytenity Instance 1 — ${BYTENITY_BASE}/instance1`,
-    baseUrl: `${BYTENITY_BASE}/instance1`,
+    label: `Instance 1 — ${VLUPSIC_BASE}/instance1`,
+    baseUrl: `${VLUPSIC_BASE}/instance1`,
   },
   {
     id: 'instance2',
-    label: `Bytenity Instance 2 — ${BYTENITY_BASE}/instance2`,
-    baseUrl: `${BYTENITY_BASE}/instance2`,
+    label: `Instance 2 — ${VLUPSIC_BASE}/instance2`,
+    baseUrl: `${VLUPSIC_BASE}/instance2`,
   },
   {
     id: 'instance3',
-    label: `Bytenity Instance 3 — ${BYTENITY_BASE}/instance3`,
-    baseUrl: `${BYTENITY_BASE}/instance3`,
+    label: `Instance 3 — ${VLUPSIC_BASE}/instance3`,
+    baseUrl: `${VLUPSIC_BASE}/instance3`,
   },
   { id: 'custom', label: 'Custom (enter URL)', baseUrl: '', isCustom: true },
 ]

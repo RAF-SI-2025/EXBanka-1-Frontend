@@ -16,11 +16,11 @@ describe('BACKEND_PRESETS', () => {
     expect(ids).toEqual(['localhost', 'instance1', 'instance2', 'instance3', 'custom'])
   })
 
-  it('points the bytenity presets at project-exbanka.bytenity.com/instanceN', () => {
+  it('points the instance presets at exbanka.vlupsic.dev/instanceN', () => {
     const byId = Object.fromEntries(BACKEND_PRESETS.map((p) => [p.id, p]))
-    expect(byId.instance1.baseUrl).toBe('https://project-exbanka.bytenity.com/instance1')
-    expect(byId.instance2.baseUrl).toBe('https://project-exbanka.bytenity.com/instance2')
-    expect(byId.instance3.baseUrl).toBe('https://project-exbanka.bytenity.com/instance3')
+    expect(byId.instance1.baseUrl).toBe('https://exbanka.vlupsic.dev/instance1')
+    expect(byId.instance2.baseUrl).toBe('https://exbanka.vlupsic.dev/instance2')
+    expect(byId.instance3.baseUrl).toBe('https://exbanka.vlupsic.dev/instance3')
   })
 
   it('points localhost preset at http://localhost:8080', () => {
@@ -48,7 +48,7 @@ describe('getCurrentHost / getCurrentSelection', () => {
 
   it('returns the stored preset host when one is selected', () => {
     localStorage.setItem(STORAGE_KEY_PRESET, 'instance2')
-    expect(getCurrentHost()).toBe('https://project-exbanka.bytenity.com/instance2')
+    expect(getCurrentHost()).toBe('https://exbanka.vlupsic.dev/instance2')
   })
 
   it('returns the stored custom URL when custom is selected', () => {
@@ -77,7 +77,7 @@ describe('setSelection', () => {
   it('persists a preset selection', () => {
     setSelection({ presetId: 'instance1' })
     expect(localStorage.getItem(STORAGE_KEY_PRESET)).toBe('instance1')
-    expect(getCurrentHost()).toBe('https://project-exbanka.bytenity.com/instance1')
+    expect(getCurrentHost()).toBe('https://exbanka.vlupsic.dev/instance1')
   })
 
   it('persists a custom selection with URL', () => {
@@ -105,7 +105,7 @@ describe('subscribeToHostChange', () => {
     const listener = jest.fn()
     const unsubscribe = subscribeToHostChange(listener)
     setSelection({ presetId: 'instance3' })
-    expect(listener).toHaveBeenCalledWith('https://project-exbanka.bytenity.com/instance3')
+    expect(listener).toHaveBeenCalledWith('https://exbanka.vlupsic.dev/instance3')
     unsubscribe()
   })
 
