@@ -12,6 +12,7 @@ import {
   createMockFund,
   createMockFundContribution,
   createMockClientFundPosition,
+  createMockFundDetailResponse,
 } from '@/__tests__/fixtures/fund-fixtures'
 
 jest.mock('@/lib/api/axios', () => ({
@@ -44,11 +45,21 @@ describe('getFunds', () => {
 describe('getFund', () => {
   it('GET /investment-funds/:id', async () => {
     mockGet.mockResolvedValue({
-      data: { fund: createMockFund({ id: 101 }), holdings: [], performance: [] },
+      data: createMockFundDetailResponse({ fund: createMockFund({ id: 101 }) }),
     })
     const result = await getFund(101)
     expect(mockGet).toHaveBeenCalledWith('/investment-funds/101')
     expect(result.fund.id).toBe(101)
+    expect(result.holdings).toEqual([])
+  })
+
+  it('defaults holdings to [] when backend returns null', async () => {
+    mockGet.mockResolvedValue({
+      data: createMockFundDetailResponse({
+        holdings: null as unknown as never,
+      }),
+    })
+    const result = await getFund(101)
     expect(result.holdings).toEqual([])
   })
 })

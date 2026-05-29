@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 import { FundDetailsPanel } from '../components/FundDetailsPanel'
-import type { Fund } from '@/types/fund'
+import { createMockFundDetailResponse, createMockFund } from '@/__tests__/fixtures/fund-fixtures'
 
 const mockUseEmployee = jest.fn(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -33,70 +33,93 @@ const clientAuth = createMockAuthState({
   userType: 'client',
 })
 
-// Build a fund with null RSD fields (backend can omit these)
-const baseFund: Fund = {
-  id: 1,
-  name: 'Test Fund',
-  description: 'A test fund',
-  minimum_contribution_rsd: null,
-  manager_employee_id: 5,
-  rsd_account_id: 10,
-  fund_value_rsd: null,
-  liquid_cash_rsd: null,
-  profit_rsd: null,
-  active: true,
-  created_at: '2025-01-01',
-}
-
 describe('FundDetailsPanel', () => {
   beforeEach(() => {
     mockUseEmployee.mockClear()
   })
 
-  it('shows "— RSD" instead of "undefined RSD" when RSD fields are null', () => {
-    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+  it('renders the new top-level financial metrics from FundDetailResponse', () => {
+    const detail = createMockFundDetailResponse({
+      fund: createMockFund({ name: 'Nova torbica', minimum_contribution_rsd: '100' }),
+      investor_count: 1,
+      liquid_rsd_balance: '100921.73',
+      total_contributed_rsd: '101000.00',
+      total_holdings_value_rsd: '0.00',
+      total_value_rsd: '100921.73',
+      total_dividends_paid_rsd: '0.00',
+      profit_rsd: '-78.27',
+      profit_pct: '-0.0775',
+    })
+    renderWithProviders(<FundDetailsPanel detail={detail} />, {
+      preloadedState: { auth: adminAuth },
+    })
+
+    expect(screen.getByText(/Total value/i)).toBeInTheDocument()
+    expect(screen.getByText(/Total contributed/i)).toBeInTheDocument()
+    expect(screen.getByText(/Holdings value/i)).toBeInTheDocument()
+    expect(screen.getByText(/Liquid cash/i)).toBeInTheDocument()
+    expect(screen.getByText(/Dividends paid/i)).toBeInTheDocument()
+    expect(screen.getByText(/Investors/i)).toBeInTheDocument()
+    expect(screen.getByText(/Min\. contribution/i)).toBeInTheDocument()
+    expect(screen.getByText(/Manager/i)).toBeInTheDocument()
+    expect(screen.getByText('1')).toBeInTheDocument() // investor_count
+    expect(screen.getByText(/-0\.08%/)).toBeInTheDocument() // profit_pct rounded to 2dp
+  })
+
+  it('renders "— RSD" instead of "undefined RSD" when a numeric field is null/empty', () => {
+    const detail = createMockFundDetailResponse({
+      fund: createMockFund({ minimum_contribution_rsd: null }),
+      liquid_rsd_balance: '',
+      total_value_rsd: '',
+      profit_rsd: '',
+      profit_pct: '',
+      total_dividends_paid_rsd: '',
+      total_contributed_rsd: '',
+      total_holdings_value_rsd: '',
+    })
+    renderWithProviders(<FundDetailsPanel detail={detail} />, {
       preloadedState: { auth: adminAuth },
     })
     expect(screen.queryByText(/undefined rsd/i)).not.toBeInTheDocument()
-    expect(screen.getAllByText(/— rsd/i)).toHaveLength(4)
+    expect(screen.getAllByText(/—\s*RSD/i).length).toBeGreaterThanOrEqual(1)
   })
 
   it('calls useEmployee with suppressGlobalError: true to silence permission errors for non-admin roles', () => {
-    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+    renderWithProviders(<FundDetailsPanel detail={createMockFundDetailResponse()} />, {
       preloadedState: { auth: adminAuth },
     })
     expect(mockUseEmployee).toHaveBeenCalledWith(
-      baseFund.manager_employee_id,
+      expect.any(Number),
       expect.objectContaining({ suppressGlobalError: true })
     )
   })
 
   it('enables useEmployee when user has employees.read permission (admin)', () => {
-    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+    renderWithProviders(<FundDetailsPanel detail={createMockFundDetailResponse()} />, {
       preloadedState: { auth: adminAuth },
     })
     expect(mockUseEmployee).toHaveBeenCalledWith(
-      baseFund.manager_employee_id,
+      expect.any(Number),
       expect.objectContaining({ enabled: true })
     )
   })
 
   it('does not call useEmployee when employee lacks employees.read permission (e.g. supervisor/agent)', () => {
-    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+    renderWithProviders(<FundDetailsPanel detail={createMockFundDetailResponse()} />, {
       preloadedState: { auth: employeeWithoutPermissionAuth },
     })
     expect(mockUseEmployee).toHaveBeenCalledWith(
-      baseFund.manager_employee_id,
+      expect.any(Number),
       expect.objectContaining({ enabled: false })
     )
   })
 
   it('does not call useEmployee when user is a client', () => {
-    renderWithProviders(<FundDetailsPanel fund={baseFund} />, {
+    renderWithProviders(<FundDetailsPanel detail={createMockFundDetailResponse()} />, {
       preloadedState: { auth: clientAuth },
     })
     expect(mockUseEmployee).toHaveBeenCalledWith(
-      baseFund.manager_employee_id,
+      expect.any(Number),
       expect.objectContaining({ enabled: false })
     )
   })

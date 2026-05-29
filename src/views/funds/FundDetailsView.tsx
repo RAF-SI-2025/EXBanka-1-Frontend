@@ -11,7 +11,6 @@ import { useFund, useInvestFund } from '@/hooks/useFunds'
 import { notifySuccess } from '@/lib/errors'
 import { FundDetailsPanel } from '@/views/funds/components/FundDetailsPanel'
 import { FundHoldingsTable } from '@/views/funds/components/FundHoldingsTable'
-import { FundPerformanceChart } from '@/views/funds/components/FundPerformanceChart'
 import { InvestInFundDialog } from '@/views/funds/components/InvestInFundDialog'
 import { ViewShell } from '@/views/shared'
 
@@ -48,7 +47,7 @@ export function FundDetailsView() {
     )
   }
 
-  const { fund, holdings, performance } = data
+  const { fund, holdings } = data
 
   return (
     <ViewShell
@@ -60,7 +59,7 @@ export function FundDetailsView() {
         </Button>
       }
     >
-      <FundDetailsPanel fund={fund} />
+      <FundDetailsPanel detail={data} />
 
       <Card>
         <CardHeader>
@@ -68,15 +67,6 @@ export function FundDetailsView() {
         </CardHeader>
         <CardContent>
           <FundHoldingsTable holdings={holdings} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <FundPerformanceChart performance={performance} />
         </CardContent>
       </Card>
 

@@ -2,8 +2,8 @@ import type {
   Fund,
   FundHolding,
   ClientFundPosition,
-  FundPerformancePoint,
   FundContribution,
+  FundDetailResponse,
 } from '@/types/fund'
 
 export function createMockFund(overrides: Partial<Fund> = {}): Fund {
@@ -19,23 +19,41 @@ export function createMockFund(overrides: Partial<Fund> = {}): Fund {
     profit_rsd: '5000.00',
     active: true,
     created_at: '2020-05-15T00:00:00Z',
+    updated_at: '2020-05-15T00:00:00Z',
     ...overrides,
   }
 }
 
 export function createMockFundHolding(overrides: Partial<FundHolding> = {}): FundHolding {
   return {
-    stock_id: 42,
-    quantity: '100',
+    security_type: 'stock',
+    security_id: 42,
+    ticker: 'AAPL',
+    quantity: 100,
+    average_price_rsd: '20000.00',
+    current_price_rsd: '22000.00',
+    current_value_rsd: '2200000.00',
     acquired_at: '2026-01-12T00:00:00Z',
     ...overrides,
   }
 }
 
-export function createMockPerformancePoint(
-  overrides: Partial<FundPerformancePoint> = {}
-): FundPerformancePoint {
-  return { as_of: '2026-04-01', fund_value_rsd: '2600000.00', ...overrides }
+export function createMockFundDetailResponse(
+  overrides: Partial<FundDetailResponse> = {}
+): FundDetailResponse {
+  return {
+    fund: createMockFund(),
+    holdings: [],
+    investor_count: 1,
+    liquid_rsd_balance: '1500000.00',
+    total_contributed_rsd: '2500000.00',
+    total_holdings_value_rsd: '1100000.00',
+    total_value_rsd: '2600000.00',
+    total_dividends_paid_rsd: '0.00',
+    profit_rsd: '100000.00',
+    profit_pct: '4.0000',
+    ...overrides,
+  }
 }
 
 export function createMockClientFundPosition(
