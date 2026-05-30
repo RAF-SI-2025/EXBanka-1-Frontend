@@ -1,6 +1,8 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`; added recurring buy scheduling — on the create-order form (`/securities/order/new`) a client or employee placing a market **buy** can tick "Schedule order", pick Weekly/Monthly, and either "Place order and schedule" (immediate buy + recurring template) or "Schedule" (template only) via POST `/me/recurring-orders` (caller-scoped: an employee's template is created under the employee principal))_
+_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`; added recurring buy scheduling — on the create-order form (`/securities/order/new`) a client or employee placing a market **buy** can tick "Schedule order", pick Weekly/Monthly, and either "Place order and schedule" (immediate buy + recurring template) or "Schedule" (template only) via POST `/me/recurring-orders` (caller-scoped: an employee's template is created under the employee principal); added a **Recurring Orders** tab on `/portfolio` (`?tab=recurring-orders`) that lists the caller's recurring-order templates via GET `/me/recurring-orders` and supports Pause/Resume/Cancel via POST `/me/recurring-orders/:id/{pause,resume,cancel}` — Cancel is gated behind a confirmation dialog)_
+
+_Updated: 2026-05-30_
 _Last updated: 2026-05-30_
 
 ---
@@ -579,6 +581,7 @@ src/
 - Renders `PortfolioSummaryCard` + security_type filter + `HoldingTable` + pagination.
 - Actions: Make Public (opens `MakePublicDialog`), Exercise (for options).
 - Make Public uses `useMakePublic` mutation; Exercise uses `useExerciseOption` mutation.
+- Tabs (URL-synced via `?tab=`): My Holdings, My Funds, My Price Alerts, Favorites, and **Recurring Orders** (`?tab=recurring-orders`). The Recurring Orders tab renders `RecurringOrdersTable` from `useRecurringOrders()` with Pause/Resume/Cancel wired to `usePause/Resume/CancelRecurringOrder` mutations.
 
 ### AdminOrdersPage
 - Supervisor view for order approval. Requires `orders.approve` permission.
@@ -847,6 +850,15 @@ src/
 **PortfolioSummaryCard** (`components/portfolio/PortfolioSummaryCard.tsx`)
 - Grid of summary stats: Total Value, Total Cost, Profit/Loss (color-coded), Holdings count.
 - Props: `summary: PortfolioSummary`.
+
+**RecurringOrdersTable** (`views/portfolio/components/RecurringOrdersTable.tsx`)
+- Lists the caller's recurring-order templates. Columns: Security (ticker via `useListingMap`, fallback `#<listing_id>`), Side, Quantity, Frequency (`Weekly · <weekday>` / `Monthly · day <n>`), Status (Badge), Actions.
+- Status-aware actions: `active` → Pause + Cancel; `paused` → Resume + Cancel; `cancelled` → none. Cancel opens `CancelRecurringOrderDialog` and only fires `onCancel` after confirmation. Buttons disabled while `busyId === order.id`.
+- Props: `orders: RecurringOrder[]`, `onPause(id)`, `onResume(id)`, `onCancel(id)`, `busyId?: number`.
+
+**CancelRecurringOrderDialog** (`views/portfolio/components/CancelRecurringOrderDialog.tsx`)
+- Confirmation dialog (on Shadcn `Dialog`) for the irreversible cancel of a recurring order. "Keep order" closes; "Cancel order" confirms.
+- Props: `open`, `onOpenChange`, `onConfirm`, `loading?`.
 
 ---
 
@@ -1187,8 +1199,13 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | Function | Method | Endpoint |
 |---|---|---|
 | `createRecurringOrder(payload)` | POST | `/api/v3/me/recurring-orders` |
+| `getMyRecurringOrders()` | GET | `/api/v3/me/recurring-orders` |
+| `pauseRecurringOrder(id)` | POST | `/api/v3/me/recurring-orders/:id/pause` |
+| `resumeRecurringOrder(id)` | POST | `/api/v3/me/recurring-orders/:id/resume` |
+| `cancelRecurringOrder(id)` | POST | `/api/v3/me/recurring-orders/:id/cancel` |
 
 - Creates a weekly/monthly recurring market-order template. Payload: `{ listing_id, side, quantity, account_id, interval, day_of_week?|day_of_month?, start_date_unix, end_date_unix }`. Returns the created `recurring_order`.
+- `getMyRecurringOrders()` lists the caller's recurring-order templates (returns `recurring_orders ?? []`). `pause`/`resume`/`cancel` transition a template's status (active ⇄ paused, and the terminal `cancelled`); each returns the updated `recurring_order`.
 - `buildRecurringOrderPayload(payload, interval, now?)` (`views/orders/components/buildRecurringOrderPayload.ts`) — pure helper that derives the recurring payload from a buy `CreateOrderPayload` + chosen frequency (weekly → today's `day_of_week`, monthly → today's `day_of_month` capped at 28); returns `null` when `listing_id`/`account_id` are missing.
 
 ### Portfolio API (`lib/api/portfolio.ts`)
@@ -1296,6 +1313,10 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `useApproveOrder()` | React Query | Mutation: approve order; invalidates `['all-orders']` |
 | `useDeclineOrder()` | React Query | Mutation: decline order; invalidates `['all-orders']` |
 | `useCreateRecurringOrder()` | React Query | Mutation: create recurring buy template (POST `/me/recurring-orders`); invalidates `['recurring-orders']` |
+| `useRecurringOrders()` | React Query | Query: list the caller's recurring-order templates (`['recurring-orders']`) |
+| `usePauseRecurringOrder()` | React Query | Mutation: pause a template (POST `/me/recurring-orders/:id/pause`); invalidates `['recurring-orders']` |
+| `useResumeRecurringOrder()` | React Query | Mutation: resume a template (POST `/me/recurring-orders/:id/resume`); invalidates `['recurring-orders']` |
+| `useCancelRecurringOrder()` | React Query | Mutation: cancel a template (POST `/me/recurring-orders/:id/cancel`); invalidates `['recurring-orders']` |
 | `usePortfolio(filters?)` | React Query | Fetch portfolio holdings; query key: `['portfolio', filters]` |
 | `usePortfolioSummary()` | React Query | Fetch portfolio summary; query key: `['portfolio-summary']` |
 | `useMakePublic()` | React Query | Mutation: make holding public; invalidates `['portfolio']` |
@@ -1648,16 +1669,16 @@ Email uniqueness is enforced by the backend (no dedicated check endpoint). When 
 
 ## 12. Test Coverage
 
-_Measured: 2026-05-30 — 220 test suites, 1287 tests, all passing._
+_Measured: 2026-05-30 — 222 test suites, 1307 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **77.83%** |
-| **Branches** | **63.51%** |
-| **Functions** | **60.39%** |
-| **Lines** | **79.35%** |
+| **Statements** | **78.06%** |
+| **Branches** | **63.59%** |
+| **Functions** | **60.74%** |
+| **Lines** | **79.61%** |
 
 > Coverage decreased slightly from the previous measurement due to significant new code added (admin management pages, OTC portal, limits dashboard) that lacks unit test coverage. Cypress e2e tests (28+ test files) provide integration-level coverage for these new features but are not counted in Jest metrics.
 
