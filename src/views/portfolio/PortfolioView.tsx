@@ -27,6 +27,13 @@ import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
 import { FavoritesTable } from '@/views/portfolio/components/FavoritesTable'
+import { RecurringOrdersTable } from '@/views/portfolio/components/RecurringOrdersTable'
+import {
+  useRecurringOrders,
+  usePauseRecurringOrder,
+  useResumeRecurringOrder,
+  useCancelRecurringOrder,
+} from '@/hooks/useRecurringOrders'
 import { notifySuccess } from '@/lib/errors'
 import { getStocks } from '@/lib/api/securities'
 import type { Holding, PortfolioFilters } from '@/types/portfolio'
@@ -40,12 +47,13 @@ const PAGE_SIZE = 10
 
 const PORTFOLIO_FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
-type PortfolioTab = 'holdings' | 'funds' | 'alerts' | 'favorites'
+type PortfolioTab = 'holdings' | 'funds' | 'alerts' | 'favorites' | 'recurring-orders'
 
 function parseTab(value: string | null): PortfolioTab {
   if (value === 'funds') return 'funds'
   if (value === 'alerts') return 'alerts'
   if (value === 'favorites') return 'favorites'
+  if (value === 'recurring-orders') return 'recurring-orders'
   return 'holdings'
 }
 
@@ -117,6 +125,21 @@ export function PortfolioView() {
       }
     )
   }
+
+  const { data: recurringOrders } = useRecurringOrders()
+  const pauseRecurringMutation = usePauseRecurringOrder()
+  const resumeRecurringMutation = useResumeRecurringOrder()
+  const cancelRecurringMutation = useCancelRecurringOrder()
+  const handlePauseRecurring = (id: number) => pauseRecurringMutation.mutate(id)
+  const handleResumeRecurring = (id: number) => resumeRecurringMutation.mutate(id)
+  const handleCancelRecurring = (id: number) => cancelRecurringMutation.mutate(id)
+  const recurringBusyId = pauseRecurringMutation.isPending
+    ? pauseRecurringMutation.variables
+    : resumeRecurringMutation.isPending
+      ? resumeRecurringMutation.variables
+      : cancelRecurringMutation.isPending
+        ? cancelRecurringMutation.variables
+        : undefined
 
   const handleFilterChange = (newFilters: FilterValues) => {
     setFilterValues(newFilters)
@@ -207,6 +230,7 @@ export function PortfolioView() {
           <TabsTrigger value="funds">My Funds</TabsTrigger>
           <TabsTrigger value="alerts">My Price Alerts</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
+          <TabsTrigger value="recurring-orders">Recurring Orders</TabsTrigger>
         </TabsList>
         <TabsContent value="holdings" className="mt-4">
           <FilterBar
@@ -264,6 +288,15 @@ export function PortfolioView() {
                 ? removeFromWatchlistMutation.variables
                 : undefined
             }
+          />
+        </TabsContent>
+        <TabsContent value="recurring-orders" className="mt-4">
+          <RecurringOrdersTable
+            orders={recurringOrders ?? []}
+            onPause={handlePauseRecurring}
+            onResume={handleResumeRecurring}
+            onCancel={handleCancelRecurring}
+            busyId={recurringBusyId}
           />
         </TabsContent>
       </Tabs>
