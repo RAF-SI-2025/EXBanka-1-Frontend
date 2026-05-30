@@ -5,6 +5,7 @@ import { PortfolioView } from '@/views/portfolio/PortfolioView'
 import * as portfolioApi from '@/lib/api/portfolio'
 import * as useFundsHook from '@/hooks/useFunds'
 import * as useAccountsHook from '@/hooks/useAccounts'
+import * as recurringOrdersApi from '@/lib/api/recurringOrders'
 import {
   createMockHolding,
   createMockPortfolioSummary,
@@ -15,6 +16,7 @@ import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 jest.mock('@/lib/api/portfolio')
 jest.mock('@/hooks/useFunds')
 jest.mock('@/hooks/useAccounts')
+jest.mock('@/lib/api/recurringOrders')
 
 const mockNavigate = jest.fn()
 jest.mock('react-router-dom', () => ({
@@ -49,6 +51,22 @@ beforeEach(() => {
     data: { accounts: [], total: 0 },
     isLoading: false,
   } as any)
+  jest.mocked(recurringOrdersApi.getMyRecurringOrders).mockResolvedValue([
+    {
+      id: 1,
+      listing_id: 7,
+      side: 'buy',
+      quantity: 10,
+      account_id: 42,
+      interval: 'monthly',
+      day_of_month: 15,
+      start_date_unix: 1731699200,
+      end_date_unix: 0,
+      status: 'active',
+      created_at: '2026-05-30T00:00:00Z',
+      updated_at: '2026-05-30T00:00:00Z',
+    },
+  ])
 })
 
 describe('PortfolioView', () => {
@@ -78,6 +96,16 @@ describe('PortfolioView', () => {
     jest.mocked(portfolioApi.getPortfolio).mockResolvedValue({ holdings: [], total_count: 0 })
     renderWithProviders(<PortfolioView />)
     await screen.findByText('No holdings found.')
+  })
+
+  it('shows recurring orders when the Recurring Orders tab is selected', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<PortfolioView />)
+
+    await user.click(screen.getByRole('tab', { name: /recurring orders/i }))
+
+    expect(await screen.findByText(/^Quantity$/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^pause$/i })).toBeInTheDocument()
   })
 
   it('navigates to sell order page when Sell clicked', async () => {
