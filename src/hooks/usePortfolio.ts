@@ -6,14 +6,10 @@ import {
   exerciseOption,
   getHoldingTransactions,
 } from '@/lib/api/portfolio'
-import type {
-  PortfolioFilters,
-  MakePublicPayload,
-  HoldingTransactionsFilters,
-} from '@/types/portfolio'
+import type { MakePublicPayload, HoldingTransactionsFilters } from '@/types/portfolio'
 
-export function usePortfolio(filters: PortfolioFilters = {}) {
-  return useQuery({ queryKey: ['portfolio', filters], queryFn: () => getPortfolio(filters) })
+export function usePortfolio() {
+  return useQuery({ queryKey: ['portfolio'], queryFn: () => getPortfolio() })
 }
 
 export function usePortfolioSummary() {

@@ -1,25 +1,48 @@
 {
-  "holdings": [
-    {
-      "id": 30,
-      "security_type": "stock",
-      "ticker": "AAPL",
-      "name": "Apple Inc.",
-      "quantity": 50,
-      "public_quantity": 0,
-      "account_id": 101,
-      "last_modified": "2026-04-20T10:00:00Z"
-    },
-    {
-      "id": 31,
-      "security_type": "futures",
-      "ticker": "ESM26",
-      "name": "E-mini S&P 500 Jun 2026",
-      "quantity": 5,
-      "public_quantity": 2,
-      "account_id": 102,
-      "last_modified": "2026-04-21T12:00:00Z"
-    }
-  ],
-  "total_count": 2
+  "portfolio_id": "client-42",
+  "owner_type": "client",
+  "owner_id": 42,
+  "owner_name": "",
+  "total_value_rsd": "12500.0000",
+  "total_profit_rsd": "1000.0000",
+  "total_profit_pct": "8.6957",
+  "securities": {
+    "total_value_rsd": "12500.0000",
+    "total_profit_rsd": "1000.0000",
+    "total_profit_pct": "8.6957",
+    "positions": [
+      {
+        "asset_type": "stock",
+        "symbol": "AAPL",
+        "holding_id": 30,
+        "quantity": 50,
+        "avg_cost_rsd": "200.0000",
+        "current_price_rsd": "220.0000",
+        "current_value_rsd": "11000.0000",
+        "p_l_rsd": "1000.0000",
+        "p_l_pct": "10.0000",
+        "last_updated": "2026-04-20T10:00:00Z",
+        "dividends_received_rsd": "0.00"
+      },
+      {
+        "asset_type": "future",
+        "symbol": "ESM26",
+        "holding_id": 31,
+        "quantity": 5,
+        "avg_cost_rsd": "300.0000",
+        "current_price_rsd": "300.0000",
+        "current_value_rsd": "1500.0000",
+        "p_l_rsd": "0.0000",
+        "p_l_pct": "0.0000",
+        "last_updated": "2026-04-21T12:00:00Z",
+        "dividends_received_rsd": "0.00"
+      }
+    ]
+  },
+  "funds": {
+    "total_value_rsd": "0",
+    "total_profit_rsd": "0",
+    "total_profit_pct": "0",
+    "positions": []
+  }
 }

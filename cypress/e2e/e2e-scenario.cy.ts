@@ -105,18 +105,52 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     updated_at: '2026-04-25T14:00:00Z',
   }
 
-  const MSFT_HOLDING_10 = {
-    id: 40,
-    security_type: 'stock',
-    ticker: 'MSFT',
-    name: 'Microsoft Corp',
+  // GET /api/v3/me/portfolio shape rewritten in Plan B (spec §48.1, 2026-05-28):
+  // grouped `securities.positions` carrying `holding_id` instead of the old flat
+  // `holdings` array.
+  const MSFT_POSITION_10 = {
+    asset_type: 'stock',
+    symbol: 'MSFT',
+    holding_id: 40,
     quantity: 10,
-    public_quantity: 0,
-    account_id: 3,
-    last_modified: '2026-04-25T10:00:00Z',
+    avg_cost_rsd: '350.0000',
+    current_price_rsd: '375.0000',
+    current_value_rsd: '3750.0000',
+    p_l_rsd: '250.0000',
+    p_l_pct: '7.1429',
+    last_updated: '2026-04-25T10:00:00Z',
+    dividends_received_rsd: '0.00',
   }
 
-  const MSFT_HOLDING_5 = { ...MSFT_HOLDING_10, quantity: 5, last_modified: '2026-04-25T15:00:00Z' }
+  const MSFT_POSITION_5 = {
+    ...MSFT_POSITION_10,
+    quantity: 5,
+    current_value_rsd: '1875.0000',
+    p_l_rsd: '125.0000',
+    last_updated: '2026-04-25T15:00:00Z',
+  }
+
+  const portfolioWith = (positions: Record<string, unknown>[]) => ({
+    portfolio_id: 'bank',
+    owner_type: 'bank',
+    owner_id: 0,
+    owner_name: '',
+    total_value_rsd: '0',
+    total_profit_rsd: '0',
+    total_profit_pct: '0',
+    securities: {
+      total_value_rsd: '0',
+      total_profit_rsd: '0',
+      total_profit_pct: '0',
+      positions,
+    },
+    funds: {
+      total_value_rsd: '0',
+      total_profit_rsd: '0',
+      total_profit_pct: '0',
+      positions: [],
+    },
+  })
 
   // ── DEO 1: Supervisor sets agent limit ────────────────────────────────────
 
@@ -276,8 +310,8 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 5-6: Portfolio shows 10 MSFT after order fills ───────────────────
 
   it('DEO 5-6 — Agent views portfolio: 10 MSFT shares with unrealized profit, marked private', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: { holdings: [MSFT_HOLDING_10], total_count: 1 },
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([MSFT_POSITION_10]),
     }).as('getPortfolio')
     cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {
@@ -310,7 +344,6 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
 
     // Holdings table — scroll into view (charts render between summary and table)
     cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
-    cy.contains('td', 'Microsoft Corp').should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
     cy.contains('1 holdings').scrollIntoView().should('be.visible')
 
@@ -391,8 +424,8 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 9: Portfolio shows 5 MSFT with realized profit ───────────────────
 
   it('DEO 9 — Agent views portfolio after sale: 5 MSFT remaining, realized profit visible, unpaid tax > 0', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: { holdings: [MSFT_HOLDING_5], total_count: 1 },
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([MSFT_POSITION_5]),
     }).as('getPortfolio')
     cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {
@@ -472,8 +505,8 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 11: Agent verifies final state ───────────────────────────────────
 
   it('DEO 11 — Agent verifies final state: 5 MSFT remain, tax_paid_this_year updated to 3937.50 RSD', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: { holdings: [MSFT_HOLDING_5], total_count: 1 },
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([MSFT_POSITION_5]),
     }).as('getPortfolio')
     cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       body: {

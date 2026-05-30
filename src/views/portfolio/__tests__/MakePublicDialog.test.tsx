@@ -1,28 +1,27 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MakePublicDialog } from '@/views/portfolio/components/MakePublicDialog'
-import { createMockHolding } from '@/__tests__/fixtures/portfolio-fixtures'
+import { createMockSecurityPosition } from '@/__tests__/fixtures/portfolio-fixtures'
 
 describe('MakePublicDialog', () => {
-  const holding = createMockHolding({ ticker: 'AAPL', quantity: 10, public_quantity: 3 })
+  const position = createMockSecurityPosition({ symbol: 'AAPL', quantity: 10 })
   const defaultProps = {
     open: true,
     onOpenChange: jest.fn(),
-    holding,
+    position,
     onSubmit: jest.fn(),
     loading: false,
   }
 
   beforeEach(() => jest.clearAllMocks())
 
-  it('renders dialog title with ticker', () => {
+  it('renders dialog title with symbol', () => {
     render(<MakePublicDialog {...defaultProps} />)
     expect(screen.getByText(/make shares public.*aapl/i)).toBeInTheDocument()
   })
 
-  it('shows current public_quantity and total quantity', () => {
+  it('shows total quantity held', () => {
     render(<MakePublicDialog {...defaultProps} />)
-    expect(screen.getByText(/currently public/i)).toBeInTheDocument()
-    expect(screen.getByText(/3/)).toBeInTheDocument()
+    expect(screen.getByText(/you hold/i)).toBeInTheDocument()
     expect(screen.getByText(/10/)).toBeInTheDocument()
   })
 
@@ -43,7 +42,7 @@ describe('MakePublicDialog', () => {
     expect(screen.getByRole('button', { name: /make public/i })).toBeDisabled()
   })
 
-  it('disables submit when quantity exceeds holding quantity', () => {
+  it('disables submit when quantity exceeds held quantity', () => {
     render(<MakePublicDialog {...defaultProps} />)
     fireEvent.change(screen.getByLabelText(/quantity to make public/i), {
       target: { value: '11' },

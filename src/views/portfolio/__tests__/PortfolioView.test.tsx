@@ -7,7 +7,8 @@ import * as useFundsHook from '@/hooks/useFunds'
 import * as useAccountsHook from '@/hooks/useAccounts'
 import * as recurringOrdersApi from '@/lib/api/recurringOrders'
 import {
-  createMockHolding,
+  createMockPortfolioResponse,
+  createMockSecurityPosition,
   createMockPortfolioSummary,
 } from '@/__tests__/fixtures/portfolio-fixtures'
 import { createMockClientFundPosition } from '@/__tests__/fixtures/fund-fixtures'
@@ -28,13 +29,19 @@ const mockRedeemMutate = jest.fn()
 
 beforeEach(() => {
   jest.clearAllMocks()
-  jest.mocked(portfolioApi.getPortfolio).mockResolvedValue({
-    holdings: [createMockHolding({ id: 1, ticker: 'AAPL', quantity: 10, public_quantity: 0 })],
-    total_count: 1,
-  })
+  jest.mocked(portfolioApi.getPortfolio).mockResolvedValue(
+    createMockPortfolioResponse({
+      securities: {
+        total_value_rsd: '2200',
+        total_profit_rsd: '200',
+        total_profit_pct: '10',
+        positions: [createMockSecurityPosition({ holding_id: 1, symbol: 'AAPL', quantity: 10 })],
+      },
+    })
+  )
   jest.mocked(portfolioApi.getPortfolioSummary).mockResolvedValue(createMockPortfolioSummary())
   jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue({ offer: { id: 1 } })
-  jest.mocked(portfolioApi.exerciseOption).mockResolvedValue(createMockHolding())
+  jest.mocked(portfolioApi.exerciseOption).mockResolvedValue(createMockSecurityPosition())
   jest.mocked(useFundsHook.useMyFundPositions).mockReturnValue({
     data: { positions: [] },
     isLoading: false,
@@ -75,7 +82,7 @@ describe('PortfolioView', () => {
     expect(screen.getByText('Portfolio')).toBeInTheDocument()
   })
 
-  it('displays holdings on load', async () => {
+  it('displays positions on load', async () => {
     renderWithProviders(<PortfolioView />)
     await screen.findByText('AAPL')
   })
@@ -93,7 +100,16 @@ describe('PortfolioView', () => {
   })
 
   it('shows empty state', async () => {
-    jest.mocked(portfolioApi.getPortfolio).mockResolvedValue({ holdings: [], total_count: 0 })
+    jest.mocked(portfolioApi.getPortfolio).mockResolvedValue(
+      createMockPortfolioResponse({
+        securities: {
+          total_value_rsd: '0',
+          total_profit_rsd: '0',
+          total_profit_pct: '0',
+          positions: [],
+        },
+      })
+    )
     renderWithProviders(<PortfolioView />)
     await screen.findByText('No holdings found.')
   })
@@ -133,7 +149,7 @@ describe('PortfolioView', () => {
     expect(portfolioApi.makeHoldingPublic).not.toHaveBeenCalled()
   })
 
-  it('submits make-public mutation with the quantity entered in the dialog', async () => {
+  it('submits make-public mutation with the position holding_id and entered quantity', async () => {
     renderWithProviders(<PortfolioView />)
     fireEvent.click(await screen.findByRole('button', { name: /make public/i }))
     fireEvent.change(await screen.findByLabelText(/quantity to make public/i), {

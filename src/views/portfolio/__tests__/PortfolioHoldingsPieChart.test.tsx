@@ -1,33 +1,19 @@
 import { render, screen } from '@testing-library/react'
 import { PortfolioHoldingsPieChart } from '@/views/portfolio/components/PortfolioHoldingsPieChart'
-import type { Holding } from '@/types/portfolio'
-
-function holding(overrides: Partial<Holding> = {}): Holding {
-  return {
-    id: 1,
-    security_type: 'stock',
-    ticker: 'AAPL',
-    name: 'Apple',
-    quantity: 10,
-    public_quantity: 0,
-    account_id: 1,
-    last_modified: '2026-04-01',
-    ...overrides,
-  }
-}
+import { createMockSecurityPosition } from '@/__tests__/fixtures/portfolio-fixtures'
 
 describe('PortfolioHoldingsPieChart', () => {
-  it('shows empty state when there are no holdings', () => {
-    render(<PortfolioHoldingsPieChart holdings={[]} />)
+  it('shows empty state when there are no positions', () => {
+    render(<PortfolioHoldingsPieChart positions={[]} />)
     expect(screen.getByTestId('holdings-pie-empty')).toBeInTheDocument()
   })
 
-  it('renders the chart container when there are holdings', () => {
+  it('renders the chart container when there are positions', () => {
     render(
       <PortfolioHoldingsPieChart
-        holdings={[
-          holding({ id: 1, ticker: 'AAPL', quantity: 60 }),
-          holding({ id: 2, ticker: 'MSFT', quantity: 40 }),
+        positions={[
+          createMockSecurityPosition({ holding_id: 1, symbol: 'AAPL', quantity: 60 }),
+          createMockSecurityPosition({ holding_id: 2, symbol: 'MSFT', quantity: 40 }),
         ]}
       />
     )

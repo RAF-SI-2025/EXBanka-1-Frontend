@@ -2,14 +2,16 @@
 // Only external dependency is the shared axios instance.
 
 import { apiClient } from '@/lib/api/axios'
+import { getPortfolio } from '@/lib/api/portfolio'
+import type { PortfolioResponse } from '@/types/portfolio'
 import type {
   AcceptNegotiationPayload,
   AcceptNegotiationResponse,
   CounterNegotiationPayload,
   CreateOtcOptionPayload,
-  MyHoldingsResponse,
   MyOtcOptionsResponse,
   OtcNegotiation,
+  OtcNegotiationRevisionsResponse,
   OtcNegotiationsResponse,
   OtcOptionsDiscoveryResponse,
   OtcOptionsListFilters,
@@ -177,13 +179,23 @@ async function listMyNegotiations(
   }
 }
 
+// Revisions are read-only audit rows ordered by revision_number ASC.
+// Either the bidder or the listing's poster can call this; anyone else gets 403.
+async function listNegotiationRevisions(
+  negotiationId: number
+): Promise<OtcNegotiationRevisionsResponse> {
+  const { data } = await apiClient.get<OtcNegotiationRevisionsResponse>(
+    `/me/otc/options/negotiations/${negotiationId}/revisions`
+  )
+  return { revisions: data.revisions ?? [] }
+}
+
 // Used by the New-Listing ticker picker (sell direction): the caller can only
-// post sell options on shares they actually hold.
-async function listMyHoldings(): Promise<MyHoldingsResponse> {
-  const { data } = await apiClient.get<MyHoldingsResponse>('/me/portfolio', {
-    params: { security_type: 'stock', page_size: 500 },
-  })
-  return { holdings: data.holdings ?? [], total_count: data.total_count ?? 0 }
+// post sell options on shares they actually hold. Delegates to the shared
+// portfolio loader so this module can't drift from spec §48.1 again — that
+// was the bug that left this picker silently empty after Plan B.
+async function listMyHoldings(): Promise<PortfolioResponse> {
+  return getPortfolio()
 }
 
 // Used by the New-Listing ticker picker (buy direction): the caller can post
@@ -207,6 +219,7 @@ export const otcOptionsApi = {
   withdrawNegotiation,
   listNegotiations,
   listMyNegotiations,
+  listNegotiationRevisions,
   listMyHoldings,
   listStockCatalog,
 }

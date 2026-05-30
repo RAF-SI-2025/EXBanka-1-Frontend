@@ -15,7 +15,11 @@ import {
   useCounterNegotiation,
   useWithdrawNegotiation,
 } from '@/views/otcOptions/hooks/useOtcOptionMutations'
-import { useOtcOptionNegotiations } from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import {
+  useAllMyOtcNegotiations,
+  useOtcNegotiationRevisions,
+} from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
 
 interface Props {
   offer: OtcOptionRow
@@ -31,13 +35,17 @@ function partiesMatch(a: OtcParty, b: OtcParty): boolean {
 
 export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, onPlaceBid }: Props) {
   const offerId = Number(offer.offer_id)
-  const { data, isLoading, error } = useOtcOptionNegotiations(offerId)
+  // Source the bidder's own chain from the caller-scoped endpoint so the
+  // bidder page never reads competitors' chains via /otc/options/:id/...
+  // The /me/... response is already filtered to chains the caller is a party
+  // to; we just narrow to this listing.
+  const { data, isLoading, error } = useAllMyOtcNegotiations()
   const counter = useCounterNegotiation(offerId)
   const withdraw = useWithdrawNegotiation(offerId)
 
   const myChain: OtcNegotiation | undefined = useMemo(
-    () => data?.negotiations?.find((n) => partiesMatch(n.bidder, currentBidder)),
-    [data, currentBidder]
+    () => data?.negotiations?.find((n) => Number(n.parent_offer_id ?? n.offer_id ?? 0) === offerId),
+    [data, offerId]
   )
 
   // Whose move is it? If the chain's last_action_by matches the bidder, the
@@ -70,51 +78,48 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Owner's listing</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <Row label="Quantity" value={String(offer.amount)} />
-            <Row label="Strike price" value={`${offer.strike_price} ${offer.strike_currency}`} />
-            <Row label="Premium" value={`${offer.premium} ${offer.premium_currency}`} />
-            <Row label="Settlement" value={offer.settlement_date?.slice(0, 10)} />
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Owner's listing</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-1">
+          <Row label="Quantity" value={String(offer.amount)} />
+          <Row label="Strike price" value={`${offer.strike_price} ${offer.strike_currency}`} />
+          <Row label="Premium" value={`${offer.premium} ${offer.premium_currency}`} />
+          <Row label="Settlement" value={offer.settlement_date?.slice(0, 10)} />
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Your chain</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            {isLoading && <p className="text-muted-foreground">Loading…</p>}
-            {error && <p className="text-destructive">Could not load chain.</p>}
-            {!isLoading && !error && !myChain && (
-              <div className="space-y-3">
-                <p className="text-muted-foreground">
-                  You haven't placed a bid on this listing yet.
-                </p>
-                <Button size="sm" onClick={() => onPlaceBid(offer)}>
-                  Place bid
-                </Button>
-              </div>
-            )}
-            {!isLoading && !error && myChain && (
-              <YourChainBody
-                chain={myChain}
-                offerId={offerId}
-                whoseTurn={whoseTurn}
-                accounts={accounts}
-                counterPending={counter.isPending}
-                withdrawPending={withdraw.isPending}
-                onCounter={(payload) => counter.mutate({ negotiationId: myChain.id, payload })}
-                onWithdraw={() => withdraw.mutate(myChain.id, { onSuccess: onBack })}
-              />
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Your bidding history</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          {isLoading && <p className="text-muted-foreground">Loading…</p>}
+          {error && <p className="text-destructive">Could not load chain.</p>}
+          {!isLoading && !error && !myChain && (
+            <div className="space-y-3">
+              <p className="text-muted-foreground">You haven't placed a bid on this listing yet.</p>
+              <Button size="sm" onClick={() => onPlaceBid(offer)}>
+                Place bid
+              </Button>
+            </div>
+          )}
+          {!isLoading && !error && myChain && (
+            <YourChainBody
+              chain={myChain}
+              offerId={offerId}
+              whoseTurn={whoseTurn}
+              currentBidder={currentBidder}
+              accounts={accounts}
+              counterPending={counter.isPending}
+              withdrawPending={withdraw.isPending}
+              onCounter={(payload) => counter.mutate({ negotiationId: myChain.id, payload })}
+              onWithdraw={() => withdraw.mutate(myChain.id, { onSuccess: onBack })}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -131,6 +136,7 @@ function Row({ label, value }: { label: string; value: string | undefined }) {
 function YourChainBody({
   chain,
   whoseTurn,
+  currentBidder,
   accounts,
   counterPending,
   withdrawPending,
@@ -140,6 +146,7 @@ function YourChainBody({
   chain: OtcNegotiation
   offerId: number
   whoseTurn: 'you' | 'owner' | null
+  currentBidder: OtcParty
   accounts: Account[]
   counterPending: boolean
   withdrawPending: boolean
@@ -149,16 +156,28 @@ function YourChainBody({
   const [showCounterForm, setShowCounterForm] = useState(false)
   const isTerminal = !(chain.status === 'open' || chain.status === 'countered')
 
+  // The "Your chain" panel now leads with the full revision history so the
+  // bidder sees every back-and-forth with the owner — the snapshot of the
+  // latest revision is already the last row of that table.
+  const revisionsQ = useOtcNegotiationRevisions(chain.id)
+
   return (
     <div className="space-y-3">
       <div className="space-y-1">
         <Row label="Status" value={chain.status.toUpperCase()} />
-        <Row label="Quantity" value={chain.quantity} />
-        <Row label="Strike price" value={chain.strike_price} />
-        <Row label="Premium" value={chain.premium ?? '—'} />
-        <Row label="Settlement" value={chain.settlement_date?.slice(0, 10)} />
         {whoseTurn && (
           <Row label="Waiting on" value={whoseTurn === 'you' ? 'You (owner countered)' : 'Owner'} />
+        )}
+      </div>
+
+      <div className="border-t pt-3">
+        {revisionsQ.isLoading && <p className="text-muted-foreground">Loading history…</p>}
+        {revisionsQ.error && <p className="text-destructive">Could not load revision history.</p>}
+        {!revisionsQ.isLoading && !revisionsQ.error && (
+          <NegotiationRevisionsTable
+            revisions={revisionsQ.data?.revisions ?? []}
+            currentPrincipal={currentBidder}
+          />
         )}
       </div>
 

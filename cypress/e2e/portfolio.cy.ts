@@ -1,8 +1,38 @@
+// GET /api/v3/me/portfolio was rewritten in Plan B (spec § 48.1, 2026-05-28):
+// no query parameters, response is the unified grouped portfolio with
+// `securities.positions` and `funds.positions`. Each securities position
+// carries `holding_id`, used by Make Public and Exercise.
+
+// Helper: build a portfolio response with the given security positions.
+function portfolioWith(positions: Record<string, unknown>[]) {
+  return {
+    portfolio_id: 'client-42',
+    owner_type: 'client',
+    owner_id: 42,
+    owner_name: '',
+    total_value_rsd: '0',
+    total_profit_rsd: '0',
+    total_profit_pct: '0',
+    securities: {
+      total_value_rsd: '0',
+      total_profit_rsd: '0',
+      total_profit_pct: '0',
+      positions,
+    },
+    funds: {
+      total_value_rsd: '0',
+      total_profit_rsd: '0',
+      total_profit_pct: '0',
+      positions: [],
+    },
+  }
+}
+
 describe('Portfolio Page', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', { fixture: 'portfolio-holdings.json' }).as(
-      'getPortfolio'
-    )
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      fixture: 'portfolio-holdings.json',
+    }).as('getPortfolio')
     cy.intercept('GET', '**/api/v3/me/portfolio/summary*', {
       fixture: 'portfolio-summary.json',
     }).as('getSummary')
@@ -29,24 +59,22 @@ describe('Portfolio Page', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
-    // Table headers
-    cy.contains('th', 'Ticker').scrollIntoView().should('be.visible')
-    cy.contains('th', 'Name').should('be.visible')
+    // Table headers (new shape — spec §48.1)
+    cy.contains('th', 'Symbol').scrollIntoView().should('be.visible')
     cy.contains('th', 'Type').should('be.visible')
     cy.contains('th', 'Quantity').should('be.visible')
-    cy.contains('th', 'Public Qty').should('be.visible')
-    cy.contains('th', 'Account').should('be.visible')
-    cy.contains('th', 'Last Modified').should('be.visible')
+    cy.contains('th', 'Avg Cost').should('be.visible')
+    cy.contains('th', 'Current Price').should('be.visible')
+    cy.contains('th', 'Current Value').should('be.visible')
+    cy.contains('th', 'Last Updated').should('be.visible')
     cy.contains('th', 'Actions').should('be.visible')
 
-    // Holding data
+    // Position data
     cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
-    cy.contains('td', 'Apple Inc.').should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
 
     cy.contains('td', 'ESM26').should('be.visible')
-    cy.contains('td', 'E-mini S&P 500 Jun 2026').should('be.visible')
-    cy.contains('td', 'futures').should('be.visible')
+    cy.contains('td', 'future').should('be.visible')
 
     cy.contains('2 holdings').scrollIntoView().should('be.visible')
   })
@@ -69,7 +97,7 @@ describe('Portfolio Page', () => {
     // Phase 8 (spec § 47.1): the FE no longer hits POST /me/portfolio/:id/make-public.
     // It now hits POST /me/otc/stocks with a direction-keyed body:
     //   { direction: 'sell', holding_id, quantity }
-    // Response shape is { offer: OtcStockOfferResponse }.
+    // The holding_id comes from the new portfolio position shape (§48.1).
     cy.intercept('POST', '**/api/v3/me/otc/stocks', {
       statusCode: 201,
       body: { offer: { id: 30, holding_id: 30, public_quantity: 3 } },
@@ -104,8 +132,8 @@ describe('Portfolio Page', () => {
   })
 
   it('should show empty state when no holdings', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: { holdings: [], total_count: 0 },
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([]),
     }).as('getEmptyPortfolio')
 
     cy.loginAsClient('/portfolio')
@@ -116,24 +144,22 @@ describe('Portfolio Page', () => {
 
   // ── Scenario 67: Portfolio prikazuje listu posedovanih hartija ────────────
 
-  it('Scenario 67 — Holdings list shows security type, ticker, quantity and last modified for each row', () => {
+  it('Scenario 67 — Holdings list shows asset type, symbol, quantity and last updated for each row', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
     // AAPL stock row
     cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
-    cy.contains('td', 'Apple Inc.').should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
     cy.contains('td', '50').should('be.visible')
 
-    // ESM26 futures row
+    // ESM26 futures row (spec uses singular 'future')
     cy.contains('td', 'ESM26').should('be.visible')
-    cy.contains('td', 'E-mini S&P 500 Jun 2026').should('be.visible')
-    cy.contains('td', 'futures').should('be.visible')
+    cy.contains('td', 'future').should('be.visible')
     cy.contains('td', '5').should('be.visible')
 
-    // Last Modified column is rendered (dates shown)
-    cy.contains('th', 'Last Modified').should('be.visible')
+    // Last Updated column is rendered
+    cy.contains('th', 'Last Updated').should('be.visible')
     cy.get('tbody tr').should('have.length', 2)
   })
 
@@ -162,7 +188,6 @@ describe('Portfolio Page', () => {
     cy.wait('@getSummary')
 
     cy.contains('Tax Paid (Year)').should('be.visible')
-    // Fixture: tax_paid_this_year = "50.00"
     cy.contains('50.00 RSD').should('be.visible')
   })
 
@@ -192,44 +217,39 @@ describe('Portfolio Page', () => {
   })
 
   // ── Scenario 70: Za akcije postoji opcija javnog režima ──────────────────
+  // Note: the unified portfolio shape (§48.1) no longer surfaces public_quantity
+  // on the position; visibility of the Make Public action is the surviving signal.
 
-  it('Scenario 70 — Public Qty column shows current public_quantity for each holding', () => {
-    cy.loginAsClient('/portfolio')
-    cy.wait('@getPortfolio')
-
-    // AAPL: public_quantity=0; ESM26: public_quantity=2
-    cy.contains('th', 'Public Qty').scrollIntoView().should('be.visible')
-    cy.get('tbody tr').eq(0).contains('td', '0').scrollIntoView().should('be.visible')
-    cy.get('tbody tr').eq(1).contains('td', '2').scrollIntoView().should('be.visible')
-  })
-
-  it('Scenario 70 — Make Public button is shown for stock and futures holdings but not for options', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: {
-        holdings: [
-          {
-            id: 30,
-            security_type: 'stock',
-            ticker: 'AAPL',
-            name: 'Apple Inc.',
-            quantity: 50,
-            public_quantity: 0,
-            account_id: 101,
-            last_modified: '2026-04-20T10:00:00Z',
-          },
-          {
-            id: 32,
-            security_type: 'option',
-            ticker: 'AAPL240621C00170000',
-            name: 'AAPL Call 170',
-            quantity: 5,
-            public_quantity: 0,
-            account_id: 103,
-            last_modified: '2026-04-22T08:00:00Z',
-          },
-        ],
-        total_count: 2,
-      },
+  it('Scenario 70 — Make Public button is shown for stock and future holdings but not for options', () => {
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([
+        {
+          asset_type: 'stock',
+          symbol: 'AAPL',
+          holding_id: 30,
+          quantity: 50,
+          avg_cost_rsd: '200.0000',
+          current_price_rsd: '220.0000',
+          current_value_rsd: '11000.0000',
+          p_l_rsd: '1000.0000',
+          p_l_pct: '10.0000',
+          last_updated: '2026-04-20T10:00:00Z',
+          dividends_received_rsd: '0.00',
+        },
+        {
+          asset_type: 'option',
+          symbol: 'AAPL240621C00170000',
+          holding_id: 32,
+          quantity: 5,
+          avg_cost_rsd: '5.0000',
+          current_price_rsd: '6.0000',
+          current_value_rsd: '30.0000',
+          p_l_rsd: '5.0000',
+          p_l_pct: '20.0000',
+          last_updated: '2026-04-22T08:00:00Z',
+          dividends_received_rsd: '0.00',
+        },
+      ]),
     }).as('getMixedHoldings')
 
     cy.loginAsClient('/portfolio')
@@ -244,22 +264,22 @@ describe('Portfolio Page', () => {
   // ── Scenario 71: Aktuar može da iskoristi opciju in-the-money ────────────
 
   it('Scenario 71 — Exercise button is shown for option holdings', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: {
-        holdings: [
-          {
-            id: 32,
-            security_type: 'option',
-            ticker: 'AAPL240621C00170000',
-            name: 'AAPL Call 170',
-            quantity: 5,
-            public_quantity: 0,
-            account_id: 103,
-            last_modified: '2026-04-22T08:00:00Z',
-          },
-        ],
-        total_count: 1,
-      },
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([
+        {
+          asset_type: 'option',
+          symbol: 'AAPL240621C00170000',
+          holding_id: 32,
+          quantity: 5,
+          avg_cost_rsd: '5.0000',
+          current_price_rsd: '6.0000',
+          current_value_rsd: '30.0000',
+          p_l_rsd: '5.0000',
+          p_l_pct: '20.0000',
+          last_updated: '2026-04-22T08:00:00Z',
+          dividends_received_rsd: '0.00',
+        },
+      ]),
     }).as('getOptionHolding')
 
     cy.loginAsEmployee('/portfolio')
@@ -268,27 +288,27 @@ describe('Portfolio Page', () => {
     cy.contains('button', 'Exercise').scrollIntoView().should('be.visible')
   })
 
-  it('Scenario 71 — Clicking Exercise calls POST /api/v3/me/portfolio/:id/exercise', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: {
-        holdings: [
-          {
-            id: 32,
-            security_type: 'option',
-            ticker: 'AAPL240621C00170000',
-            name: 'AAPL Call 170',
-            quantity: 5,
-            public_quantity: 0,
-            account_id: 103,
-            last_modified: '2026-04-22T08:00:00Z',
-          },
-        ],
-        total_count: 1,
-      },
+  it('Scenario 71 — Clicking Exercise calls POST /api/v3/me/portfolio/:holding_id/exercise', () => {
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([
+        {
+          asset_type: 'option',
+          symbol: 'AAPL240621C00170000',
+          holding_id: 32,
+          quantity: 5,
+          avg_cost_rsd: '5.0000',
+          current_price_rsd: '6.0000',
+          current_value_rsd: '30.0000',
+          p_l_rsd: '5.0000',
+          p_l_pct: '20.0000',
+          last_updated: '2026-04-22T08:00:00Z',
+          dividends_received_rsd: '0.00',
+        },
+      ]),
     }).as('getOptionHolding')
     cy.intercept('POST', '**/api/v3/me/portfolio/32/exercise', {
       statusCode: 200,
-      body: { id: 32, security_type: 'option', quantity: 0 },
+      body: { asset_type: 'option', symbol: 'AAPL240621C00170000', holding_id: 32, quantity: 0 },
     }).as('exerciseOption')
 
     cy.loginAsEmployee('/portfolio')
@@ -300,22 +320,22 @@ describe('Portfolio Page', () => {
   })
 
   it('Scenario 71 — Backend rejects exercise for out-of-the-money option with 400', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: {
-        holdings: [
-          {
-            id: 32,
-            security_type: 'option',
-            ticker: 'AAPL240621C00170000',
-            name: 'AAPL Call 170',
-            quantity: 5,
-            public_quantity: 0,
-            account_id: 103,
-            last_modified: '2026-04-22T08:00:00Z',
-          },
-        ],
-        total_count: 1,
-      },
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([
+        {
+          asset_type: 'option',
+          symbol: 'AAPL240621C00170000',
+          holding_id: 32,
+          quantity: 5,
+          avg_cost_rsd: '5.0000',
+          current_price_rsd: '6.0000',
+          current_value_rsd: '30.0000',
+          p_l_rsd: '5.0000',
+          p_l_pct: '20.0000',
+          last_updated: '2026-04-22T08:00:00Z',
+          dividends_received_rsd: '0.00',
+        },
+      ]),
     }).as('getOptionHolding')
     cy.intercept('POST', '**/api/v3/me/portfolio/32/exercise', {
       statusCode: 400,
@@ -331,16 +351,11 @@ describe('Portfolio Page', () => {
   })
 
   // ── Scenario 72: Klijent ne vidi opciju iskorišćavanja ───────────────────
-  // HoldingTable shows the Exercise button for security_type==='option' regardless
-  // of user role — role-based hiding is not implemented in the current frontend.
-  // Since clients hold only stocks and futures (no options), the Exercise button
-  // is implicitly absent from a client's portfolio.
 
   it('Scenario 72 — Client portfolio with stocks and futures shows no Exercise button', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
-    // Default fixture has stock + futures holdings — no option type → no Exercise button
     cy.contains('button', 'Exercise').should('not.exist')
     cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
     cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
@@ -348,33 +363,31 @@ describe('Portfolio Page', () => {
 
   // ── Scenario 73: Hartija prelazi u portfolio nakon izvršenog BUY ordera ───
 
-  it('Scenario 73 — Newly acquired holding appears in portfolio with public_quantity=0 (private by default)', () => {
-    cy.intercept('GET', '**/api/v3/me/portfolio?*', {
-      body: {
-        holdings: [
-          {
-            id: 33,
-            security_type: 'stock',
-            ticker: 'MSFT',
-            name: 'Microsoft Corp.',
-            quantity: 10,
-            public_quantity: 0,
-            account_id: 101,
-            last_modified: '2026-04-25T14:00:00Z',
-          },
-        ],
-        total_count: 1,
-      },
+  it('Scenario 73 — Newly acquired holding appears in portfolio and can be made public', () => {
+    cy.intercept('GET', '**/api/v3/me/portfolio', {
+      body: portfolioWith([
+        {
+          asset_type: 'stock',
+          symbol: 'MSFT',
+          holding_id: 33,
+          quantity: 10,
+          avg_cost_rsd: '350.0000',
+          current_price_rsd: '360.0000',
+          current_value_rsd: '3600.0000',
+          p_l_rsd: '100.0000',
+          p_l_pct: '2.8571',
+          last_updated: '2026-04-25T14:00:00Z',
+          dividends_received_rsd: '0.00',
+        },
+      ]),
     }).as('getNewHolding')
 
     cy.loginAsClient('/portfolio')
     cy.wait('@getNewHolding')
 
     cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
-    cy.contains('td', 'Microsoft Corp.').should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
-    // public_quantity=0 → holding is private by default
-    cy.get('tbody tr').eq(0).find('td').eq(4).should('have.text', '0')
+    // Newly acquired stocks default to private (no OTC offer), so Make Public is offered.
     cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
   })
 })

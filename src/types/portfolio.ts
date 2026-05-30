@@ -1,12 +1,55 @@
-export interface Holding {
-  id: number
-  security_type: 'stock' | 'futures' | 'option'
-  ticker: string
-  name: string
+// Response shape for GET /api/v3/me/portfolio (spec §48.1, Plan B 2026-05-28).
+// Securities and fund positions are grouped, with full P/L totals computed server-side.
+
+export type SecurityAssetType = 'stock' | 'option' | 'future'
+
+export interface SecurityPosition {
+  asset_type: SecurityAssetType
+  symbol: string
+  holding_id: number
   quantity: number
-  public_quantity: number
-  account_id: number
-  last_modified: string
+  avg_cost_rsd: string
+  current_price_rsd: string
+  current_value_rsd: string
+  p_l_rsd: string
+  p_l_pct: string
+  last_updated: string
+  dividends_received_rsd: string
+}
+
+export type FundLifecycleStatus = 'open' | 'fundraising' | 'active' | 'matured' | 'liquidated' | ''
+
+export interface FundPosition {
+  asset_type: 'investment_fund'
+  fund_id: number
+  fund_name: string
+  amount_invested_rsd: string
+  current_value_rsd: string
+  pct_of_fund: string
+  p_l_rsd: string
+  p_l_pct: string
+  last_updated: string
+  dividends_received_rsd: string
+  fund_status: FundLifecycleStatus
+}
+
+export interface PortfolioGroup<TPosition> {
+  total_value_rsd: string
+  total_profit_rsd: string
+  total_profit_pct: string
+  positions: TPosition[]
+}
+
+export interface PortfolioResponse {
+  portfolio_id: string
+  owner_type: 'client' | 'bank' | 'investment_fund'
+  owner_id: number
+  owner_name: string
+  total_value_rsd: string
+  total_profit_rsd: string
+  total_profit_pct: string
+  securities: PortfolioGroup<SecurityPosition>
+  funds: PortfolioGroup<FundPosition>
 }
 
 export interface PortfolioSummary {
@@ -21,17 +64,6 @@ export interface PortfolioSummary {
   tax_unpaid_total_rsd: string
   open_positions_count: number
   closed_trades_this_year: number
-}
-
-export interface HoldingListResponse {
-  holdings: Holding[]
-  total_count: number
-}
-
-export interface PortfolioFilters {
-  page?: number
-  page_size?: number
-  security_type?: 'stock' | 'futures' | 'option'
 }
 
 export interface MakePublicPayload {

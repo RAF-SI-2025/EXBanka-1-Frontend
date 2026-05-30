@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { HoldingTable } from '@/views/portfolio/components/HoldingTable'
@@ -6,7 +6,6 @@ import { MakePublicDialog } from '@/views/portfolio/components/MakePublicDialog'
 import { PortfolioSummaryCard } from '@/views/portfolio/components/PortfolioSummaryCard'
 import { PortfolioProfitChart } from '@/views/portfolio/components/PortfolioProfitChart'
 import { PortfolioHoldingsPieChart } from '@/views/portfolio/components/PortfolioHoldingsPieChart'
-import { PaginationControls } from '@/components/shared/PaginationControls'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { MyFundsList } from '@/views/funds/components/MyFundsList'
@@ -36,14 +35,12 @@ import {
 } from '@/hooks/useRecurringOrders'
 import { notifySuccess } from '@/lib/errors'
 import { getStocks } from '@/lib/api/securities'
-import type { Holding, PortfolioFilters } from '@/types/portfolio'
+import type { SecurityPosition } from '@/types/portfolio'
 import type { ClientFundPosition, RedeemPayload } from '@/types/fund'
 import type { Account } from '@/types/account'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 import type { CreatePriceAlertPayload, PriceAlert } from '@/types/priceAlert'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
-
-const PAGE_SIZE = 10
 
 const PORTFOLIO_FILTER_FIELDS: FilterFieldDef[] = [{ key: 'search', label: 'Search', type: 'text' }]
 
@@ -63,17 +60,10 @@ export function PortfolioView() {
   const initialTab = parseTab(searchParams.get('tab'))
   const [tab, setTab] = useState<PortfolioTab>(initialTab)
   const [filterValues, setFilterValues] = useState<FilterValues>({})
-  const [page, setPage] = useState(1)
-  const [makePublicHolding, setMakePublicHolding] = useState<Holding | null>(null)
+  const [makePublicPosition, setMakePublicPosition] = useState<SecurityPosition | null>(null)
   const [redeemPosition, setRedeemPosition] = useState<ClientFundPosition | null>(null)
 
-  const apiFilters: PortfolioFilters = {
-    page,
-    page_size: PAGE_SIZE,
-    security_type: (filterValues.security_type as PortfolioFilters['security_type']) || undefined,
-  }
-
-  const { data, isLoading } = usePortfolio(apiFilters)
+  const { data, isLoading } = usePortfolio()
   const { data: summary } = usePortfolioSummary()
   const { data: fundPositionsData } = useMyFundPositions()
   const fundPositions = fundPositionsData?.positions ?? []
@@ -84,7 +74,17 @@ export function PortfolioView() {
   const accounts = isEmployee
     ? (bankAccountsData?.accounts ?? [])
     : (clientAccountsData?.accounts ?? [])
-  const totalPages = Math.max(1, Math.ceil((data?.total_count ?? 0) / PAGE_SIZE))
+
+  const allPositions = useMemo(() => data?.securities.positions ?? [], [data])
+  const searchTerm = ((filterValues.search as string) || '').trim().toLowerCase()
+  const filteredPositions = useMemo(
+    () =>
+      searchTerm
+        ? allPositions.filter((p) => p.symbol.toLowerCase().includes(searchTerm))
+        : allPositions,
+    [allPositions, searchTerm]
+  )
+
   const makePublicMutation = useMakePublic()
   const exerciseMutation = useExerciseOption()
 
@@ -141,60 +141,62 @@ export function PortfolioView() {
         ? cancelRecurringMutation.variables
         : undefined
 
-  const handleFilterChange = (newFilters: FilterValues) => {
-    setFilterValues(newFilters)
-    setPage(1)
-  }
+  const handleFilterChange = (newFilters: FilterValues) => setFilterValues(newFilters)
+
+  const findPosition = useCallback(
+    (holdingId: number) => allPositions.find((p) => p.holding_id === holdingId),
+    [allPositions]
+  )
 
   const handleSell = useCallback(
-    (id: number) => {
-      const holding = data?.holdings.find((h) => h.id === id)
-      if (!holding) return
+    (holdingId: number) => {
+      const position = findPosition(holdingId)
+      if (!position) return
       navigate(
-        `/securities/order/new?direction=sell&securityType=${holding.security_type}&ticker=${encodeURIComponent(holding.ticker)}`
+        `/securities/order/new?direction=sell&securityType=${position.asset_type}&ticker=${encodeURIComponent(position.symbol)}`
       )
     },
-    [navigate, data]
+    [navigate, findPosition]
   )
 
   const handleRowClick = useCallback(
-    (id: number) => {
-      navigate(`/portfolio/holdings/${id}/transactions`)
+    (holdingId: number) => {
+      navigate(`/portfolio/holdings/${holdingId}/transactions`)
     },
     [navigate]
   )
 
   const handleMakePublic = useCallback(
-    (id: number) => {
-      const holding = data?.holdings.find((h) => h.id === id)
-      if (!holding) return
-      setMakePublicHolding(holding)
+    (holdingId: number) => {
+      const position = findPosition(holdingId)
+      if (!position) return
+      setMakePublicPosition(position)
     },
-    [data]
+    [findPosition]
   )
 
   const handleMakePublicSubmit = async (quantity: number) => {
-    if (!makePublicHolding) return
+    if (!makePublicPosition) return
     // /me/otc/stocks (sell direction) requires price_per_unit. Look it up
-    // from the live stock listing matching this holding's ticker; if the
+    // from the live stock listing matching this position's symbol; if the
     // lookup fails we still submit so the backend can return a clear error.
     let price_per_unit: string | undefined
     try {
-      const resp = await getStocks({ search: makePublicHolding.ticker, page_size: 5 })
-      price_per_unit = resp.stocks.find((s) => s.ticker === makePublicHolding.ticker)?.price
+      const resp = await getStocks({ search: makePublicPosition.symbol, page_size: 5 })
+      price_per_unit = resp.stocks.find((s) => s.ticker === makePublicPosition.symbol)?.price
     } catch {
       // Lookup failed — submit without; global error handling will surface
       // a backend rejection if price is genuinely required.
     }
     makePublicMutation.mutate(
-      { id: makePublicHolding.id, payload: { quantity, price_per_unit } },
-      { onSuccess: () => setMakePublicHolding(null) }
+      { id: makePublicPosition.holding_id, payload: { quantity, price_per_unit } },
+      { onSuccess: () => setMakePublicPosition(null) }
     )
   }
 
   const handleExercise = useCallback(
-    (id: number) => {
-      exerciseMutation.mutate(id)
+    (holdingId: number) => {
+      exerciseMutation.mutate(holdingId)
     },
     [exerciseMutation]
   )
@@ -219,7 +221,7 @@ export function PortfolioView() {
             <CardTitle>Holdings Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <PortfolioHoldingsPieChart holdings={data?.holdings ?? []} />
+            <PortfolioHoldingsPieChart positions={allPositions} />
           </CardContent>
         </Card>
       </div>
@@ -240,17 +242,18 @@ export function PortfolioView() {
           />
           {isLoading ? (
             <LoadingState />
-          ) : data?.holdings.length ? (
+          ) : filteredPositions.length ? (
             <>
               <HoldingTable
-                holdings={data.holdings}
+                positions={filteredPositions}
                 onRowClick={handleRowClick}
                 onSell={handleSell}
                 onMakePublic={handleMakePublic}
                 onExercise={handleExercise}
               />
-              <p className="text-sm text-muted-foreground mt-2">{data.total_count} holdings</p>
-              <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+              <p className="text-sm text-muted-foreground mt-2">
+                {filteredPositions.length} holdings
+              </p>
             </>
           ) : (
             <EmptyState title="No holdings found." />
@@ -301,13 +304,13 @@ export function PortfolioView() {
         </TabsContent>
       </Tabs>
 
-      {makePublicHolding && (
+      {makePublicPosition && (
         <MakePublicDialog
           open
           onOpenChange={(open) => {
-            if (!open) setMakePublicHolding(null)
+            if (!open) setMakePublicPosition(null)
           }}
-          holding={makePublicHolding}
+          position={makePublicPosition}
           onSubmit={handleMakePublicSubmit}
           loading={makePublicMutation.isPending}
         />

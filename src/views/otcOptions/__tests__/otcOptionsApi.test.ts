@@ -208,3 +208,37 @@ describe('otcOptionsApi.cancelListing', () => {
     expect(mockDelete).toHaveBeenCalledWith('/me/otc/options/42')
   })
 })
+
+describe('otcOptionsApi.listNegotiationRevisions', () => {
+  it('GETs /me/otc/options/negotiations/:nid/revisions', async () => {
+    const revisions = [
+      {
+        id: 1,
+        negotiation_id: 5,
+        revision_number: 1,
+        action: 'BID',
+        quantity: '10',
+        strike_price: '150.00',
+        premium: '7.50',
+        settlement_date: '2026-07-01T00:00:00Z',
+        action_by_principal_type: 'client',
+        action_by_principal_id: 42,
+        created_at: '2026-06-01T12:00:00Z',
+      },
+    ]
+    mockGet.mockResolvedValue({ data: { revisions } })
+
+    const result = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(mockGet).toHaveBeenCalledWith('/me/otc/options/negotiations/5/revisions')
+    expect(result.revisions).toEqual(revisions)
+  })
+
+  it('defaults missing revisions to an empty array', async () => {
+    mockGet.mockResolvedValue({ data: {} })
+
+    const result = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(result.revisions).toEqual([])
+  })
+})

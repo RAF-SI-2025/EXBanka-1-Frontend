@@ -84,19 +84,17 @@ function CreateOtcOptionForm({
 
   const tickerOptions: TickerOption[] = useMemo(() => {
     if (isSell) {
-      // Only stock holdings with deliverable shares (qty > public_quantity)
-      // can back a sell option — the rest are already committed to the OTC
-      // stock marketplace or other reservations.
+      // Picker sources stock positions from the unified portfolio (spec §48.1).
       const seen = new Set<string>()
       const out: TickerOption[] = []
-      for (const h of holdingsQ.data?.holdings ?? []) {
-        if (h.security_type !== 'stock') continue
-        if (h.quantity <= 0) continue
-        if (seen.has(h.ticker)) continue
-        seen.add(h.ticker)
+      for (const p of holdingsQ.data?.securities.positions ?? []) {
+        if (p.asset_type !== 'stock') continue
+        if (p.quantity <= 0) continue
+        if (seen.has(p.symbol)) continue
+        seen.add(p.symbol)
         out.push({
-          value: h.ticker,
-          label: `${h.ticker} — ${h.name} (you hold ${h.quantity})`,
+          value: p.symbol,
+          label: `${p.symbol} (you hold ${p.quantity})`,
         })
       }
       return out

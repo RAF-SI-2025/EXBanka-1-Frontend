@@ -1,8 +1,8 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
-import type { Holding } from '@/types/portfolio'
+import type { SecurityPosition } from '@/types/portfolio'
 
 interface PortfolioHoldingsPieChartProps {
-  holdings: Holding[]
+  positions: SecurityPosition[]
 }
 
 const COLORS = [
@@ -18,8 +18,8 @@ const COLORS = [
   'oklch(0.75 0.15 90)',
 ]
 
-export function PortfolioHoldingsPieChart({ holdings }: PortfolioHoldingsPieChartProps) {
-  if (holdings.length === 0) {
+export function PortfolioHoldingsPieChart({ positions }: PortfolioHoldingsPieChartProps) {
+  if (positions.length === 0) {
     return (
       <p className="text-sm text-muted-foreground" data-testid="holdings-pie-empty">
         You have no holdings yet — buy your first security to see it here.
@@ -27,11 +27,11 @@ export function PortfolioHoldingsPieChart({ holdings }: PortfolioHoldingsPieChar
     )
   }
 
-  const totalQty = holdings.reduce((sum, h) => sum + h.quantity, 0)
-  const data = holdings.map((h) => ({
-    name: h.ticker,
-    value: h.quantity,
-    percent: totalQty > 0 ? (h.quantity / totalQty) * 100 : 0,
+  const totalQty = positions.reduce((sum, p) => sum + p.quantity, 0)
+  const data = positions.map((p) => ({
+    name: p.symbol,
+    value: p.quantity,
+    percent: totalQty > 0 ? (p.quantity / totalQty) * 100 : 0,
   }))
 
   return (

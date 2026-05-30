@@ -35,9 +35,13 @@ export function OtcOptionsView() {
   const [bidderOffer, setBidderOffer] = useState<OtcOptionRow | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
 
+  // Only the marketplace table consumes `myNegotiationsQ` (for the "Bid" vs
+  // "Counter" label). Suppress it while a detail panel is open so the bidder
+  // page doesn't fire a spurious /me/otc/options/negotiations?statuses=… call.
+  const marketplaceVisible = !activityOffer && !bidderOffer
   const allQ = useAllOtcOptions({})
   const mineQ = useMyOtcOptions({})
-  const myNegotiationsQ = useMyActiveOtcNegotiations()
+  const myNegotiationsQ = useMyActiveOtcNegotiations(marketplaceVisible)
 
   const myBidOfferIds = useMemo(() => {
     const s = new Set<number>()
@@ -77,6 +81,7 @@ export function OtcOptionsView() {
         <OfferActivityPanel
           offer={activityOffer}
           accounts={accounts}
+          currentPrincipal={currentBidder}
           onBack={() => setActivityOffer(null)}
         />
       </ViewShell>

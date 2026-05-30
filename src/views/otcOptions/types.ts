@@ -82,6 +82,28 @@ export interface OtcNegotiationsResponse {
   total: number
 }
 
+// One row of GET /me/otc/options/negotiations/:nid/revisions — the immutable
+// audit log of a chain (BID -> COUNTER* -> ACCEPT/REJECT).
+export type OtcRevisionAction = 'BID' | 'COUNTER' | 'ACCEPT' | 'REJECT'
+
+export interface OtcNegotiationRevision {
+  id: number
+  negotiation_id: number
+  revision_number: number
+  action: OtcRevisionAction
+  quantity: string
+  strike_price: string
+  premium: string | null
+  settlement_date: string
+  action_by_principal_type: OtcOwnerType
+  action_by_principal_id: number
+  created_at: string
+}
+
+export interface OtcNegotiationRevisionsResponse {
+  revisions: OtcNegotiationRevision[]
+}
+
 // ---- Response shapes --------------------------------------------------------
 
 // Subset of the OptionContract surface we need to confirm the formation saga
@@ -103,21 +125,9 @@ export interface AcceptNegotiationResponse {
 
 // ---- Picker lookups ---------------------------------------------------------
 
-// Subset of /me/portfolio Holding the ticker picker needs for sell-direction
-// listings (caller can only sell options on shares they actually hold).
-export interface HoldingLite {
-  id: number
-  security_type: 'stock' | 'futures' | 'option'
-  ticker: string
-  name: string
-  quantity: number
-  public_quantity: number
-}
-
-export interface MyHoldingsResponse {
-  holdings: HoldingLite[]
-  total_count: number
-}
+// Sell-direction ticker picker reads holdings from the shared
+// `PortfolioResponse` (spec §48.1) — see `getPortfolio` / `SecurityPosition`
+// in `@/types/portfolio`. No module-local type needed.
 
 // Subset of /securities/stocks Stock the catalog picker needs for buy-direction
 // listings (any tradable ticker is valid).
