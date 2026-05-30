@@ -1,6 +1,7 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`)_
+_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`; added recurring buy scheduling — on the create-order form (`/securities/order/new`) a client placing a market **buy** can tick "Schedule order", pick Weekly/Monthly, and either "Place order and schedule" (immediate buy + recurring template) or "Schedule" (template only) via POST `/me/recurring-orders`)_
+_Last updated: 2026-05-30_
 
 ---
 
@@ -804,9 +805,17 @@ src/
 
 ### Order Components
 
-**CreateOrderForm** (`components/orders/CreateOrderForm.tsx`)
+**CreateOrderForm** (`views/orders/components/CreateOrderForm.tsx`)
 - Order form: direction (buy/sell), order type, quantity, conditional limit/stop values, account selector.
-- Props: `onSubmit`, `defaultDirection?`, `defaultListingId?`.
+- State/payload logic lives in the `useCreateOrderForm` hook; order-type/limit/stop fields are extracted to `OrderTypeFields`.
+- Scheduling: when `schedulingEnabled` (a client placing a plain market **buy** for themselves) and order type is Market, a **"Schedule order"** checkbox renders `ScheduleOrderFields` (frequency Weekly/Monthly). Checked, the primary button becomes **"Place order and schedule"** (buy now + create recurring order) and a secondary **"Schedule"** button creates the recurring order only.
+- Props: `defaultDirection`, `onSubmit(payload, frequency?)`, `submitting`, `listingId?`, `accounts?`, `depositAccounts?`, `schedulingEnabled?`, `onScheduleOnly?`.
+
+**OrderTypeFields** (`views/orders/components/OrderTypeFields.tsx`)
+- Order-type select with conditional Limit/Stop value inputs. Extracted from `CreateOrderForm`.
+
+**ScheduleOrderFields** (`views/orders/components/ScheduleOrderFields.tsx`)
+- "Schedule order" checkbox + Frequency (Weekly/Monthly) select for recurring buy templates.
 
 **OrderTable** (`components/orders/OrderTable.tsx`)
 - Reusable orders table. Columns: Ticker, Security, Direction, Type, Quantity, Status, Actions.
@@ -1173,6 +1182,15 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `approveOrder(id)` | POST | `/api/orders/{id}/approve` |
 | `declineOrder(id)` | POST | `/api/orders/{id}/reject` |
 
+### Recurring Orders API (`lib/api/recurringOrders.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `createRecurringOrder(payload)` | POST | `/api/v3/me/recurring-orders` |
+
+- Creates a weekly/monthly recurring market-order template. Payload: `{ listing_id, side, quantity, account_id, interval, day_of_week?|day_of_month?, start_date_unix, end_date_unix }`. Returns the created `recurring_order`.
+- `buildRecurringOrderPayload(payload, interval, now?)` (`views/orders/components/buildRecurringOrderPayload.ts`) — pure helper that derives the recurring payload from a buy `CreateOrderPayload` + chosen frequency (weekly → today's `day_of_week`, monthly → today's `day_of_month` capped at 28); returns `null` when `listing_id`/`account_id` are missing.
+
 ### Portfolio API (`lib/api/portfolio.ts`)
 
 | Function | Method | Endpoint |
@@ -1277,6 +1295,7 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `useAllOrders(filters?)` | React Query | Fetch all orders (admin); query key: `['all-orders', filters]` |
 | `useApproveOrder()` | React Query | Mutation: approve order; invalidates `['all-orders']` |
 | `useDeclineOrder()` | React Query | Mutation: decline order; invalidates `['all-orders']` |
+| `useCreateRecurringOrder()` | React Query | Mutation: create recurring buy template (POST `/me/recurring-orders`); invalidates `['recurring-orders']` |
 | `usePortfolio(filters?)` | React Query | Fetch portfolio holdings; query key: `['portfolio', filters]` |
 | `usePortfolioSummary()` | React Query | Fetch portfolio summary; query key: `['portfolio-summary']` |
 | `useMakePublic()` | React Query | Mutation: make holding public; invalidates `['portfolio']` |
@@ -1479,6 +1498,20 @@ MyOrderFilters       { page?, page_size?, status?, direction?, order_type? }
 AdminOrderFilters    extends MyOrderFilters { agent_email? }
 ```
 
+### Recurring Order Types (`types/recurringOrder.ts`)
+
+```typescript
+RecurringOrderInterval      = 'weekly' | 'monthly'
+RecurringOrderStatus        = 'active' | 'paused' | 'cancelled'
+CreateRecurringOrderPayload { listing_id, side: 'buy'|'sell', quantity, account_id, interval,
+                              day_of_week?, day_of_month?, start_date_unix, end_date_unix }
+RecurringOrder              { id, listing_id, side, quantity, account_id, interval,
+                              day_of_week?, day_of_month?, start_date_unix, end_date_unix,
+                              status, created_at, updated_at }
+CreateRecurringOrderResponse { recurring_order: RecurringOrder }
+RecurringOrderListResponse   { recurring_orders: RecurringOrder[] }
+```
+
 ### Portfolio Types (`types/portfolio.ts`)
 
 ```typescript
@@ -1615,16 +1648,16 @@ Email uniqueness is enforced by the backend (no dedicated check endpoint). When 
 
 ## 12. Test Coverage
 
-_Measured: 2026-04-06 — 171 test suites, 872 tests, all passing._
+_Measured: 2026-05-30 — 220 test suites, 1287 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **76%** |
-| **Branches** | **61.81%** |
-| **Functions** | **56.23%** |
-| **Lines** | **77.38%** |
+| **Statements** | **77.83%** |
+| **Branches** | **63.51%** |
+| **Functions** | **60.39%** |
+| **Lines** | **79.35%** |
 
 > Coverage decreased slightly from the previous measurement due to significant new code added (admin management pages, OTC portal, limits dashboard) that lacks unit test coverage. Cypress e2e tests (28+ test files) provide integration-level coverage for these new features but are not counted in Jest metrics.
 

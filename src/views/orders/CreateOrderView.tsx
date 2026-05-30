@@ -11,9 +11,13 @@ import {
 import { useCreateOptionOrder, useListingsForSell } from '@/hooks/useSecurities'
 import { useAccountsByClient, useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
 import { useFunds } from '@/hooks/useFunds'
+import { useCreateRecurringOrder } from '@/hooks/useRecurringOrders'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
+import { notifyError } from '@/lib/errors'
+import { buildRecurringOrderPayload } from '@/views/orders/components/buildRecurringOrderPayload'
 import type { CreateOrderPayload, OrderDirection } from '@/types/order'
+import type { RecurringOrderInterval } from '@/types/recurringOrder'
 import type { CreateOptionOrderPayload } from '@/types/security'
 import type { Client } from '@/types/client'
 import type { Account } from '@/types/account'
@@ -45,6 +49,7 @@ export function CreateOrderView() {
   const createOrderOnBehalfMutation = useCreateOrderOnBehalf()
   const createOrderOnBehalfFundMutation = useCreateOrderOnBehalfFund()
   const createOptionOrderMutation = useCreateOptionOrder()
+  const createRecurringOrderMutation = useCreateRecurringOrder()
   const { triggerPiggy } = usePiggy()
   const { data: clientAccountsData } = useClientAccounts()
   const { data: bankAccountsData } = useBankAccounts(isEmployee)
@@ -95,10 +100,37 @@ export function CreateOrderView() {
 
   const effectiveListingId = isSell ? selectedListingId : listingId
 
-  const handleSubmit = (payload: CreateOrderPayload) => {
+  // Scheduling a recurring buy is only valid for the recurring API's surface:
+  // a plain market buy placed by a client for themselves. The form additionally
+  // gates the checkbox on order_type === 'market'.
+  const schedulingEnabled = direction === 'buy' && !isOption && !isForex && !isEmployee
+
+  const scheduleRecurring = (
+    payload: CreateOrderPayload,
+    frequency: RecurringOrderInterval,
+    onSuccess: () => void
+  ) => {
+    const recurringPayload = buildRecurringOrderPayload(payload, frequency)
+    if (!recurringPayload) return
+    createRecurringOrderMutation.mutate(recurringPayload, {
+      onSuccess,
+      // Buy already succeeded but the schedule did not — surface it and stay put.
+      onError: (err) => notifyError(err),
+    })
+  }
+
+  const handleScheduleOnly = (payload: CreateOrderPayload, frequency: RecurringOrderInterval) => {
+    scheduleRecurring(payload, frequency, () => navigate('/orders'))
+  }
+
+  const handleSubmit = (payload: CreateOrderPayload, frequency?: RecurringOrderInterval) => {
     const onSuccess = () => {
       triggerPiggy(payload.direction === 'sell' ? 'fill' : 'break')
-      navigate('/orders')
+      if (frequency) {
+        scheduleRecurring(payload, frequency, () => navigate('/orders'))
+      } else {
+        navigate('/orders')
+      }
     }
     if (isOption && optionId) {
       const optionPayload: CreateOptionOrderPayload = {
@@ -194,11 +226,14 @@ export function CreateOrderView() {
           <CreateOrderForm
             defaultDirection={direction}
             onSubmit={handleSubmit}
+            onScheduleOnly={handleScheduleOnly}
+            schedulingEnabled={schedulingEnabled}
             submitting={
               createOrderMutation.isPending ||
               createOrderOnBehalfMutation.isPending ||
               createOrderOnBehalfFundMutation.isPending ||
-              createOptionOrderMutation.isPending
+              createOptionOrderMutation.isPending ||
+              createRecurringOrderMutation.isPending
             }
             listingId={effectiveListingId}
             accounts={accounts}
