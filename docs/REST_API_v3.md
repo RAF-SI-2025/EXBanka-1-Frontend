@@ -1562,13 +1562,13 @@ Temporarily block a card for a specified duration in hours. The card is automati
 
 ## 7. Payments
 
-Payments are domestic/foreign transfers from one account to another with optional payment metadata.
+Payments send money from one account to **another person** — a different client, at this bank or at another (peer) bank — with optional payment metadata. (To move money between your **own** accounts, use transfers.)
 
 ---
 
 ### POST /api/v3/me/payments
 
-Initiate a new payment from a client account.
+Initiate a new payment from a client account. The destination may be at this bank (intra-bank) or at a registered peer bank (cross-bank, dispatched via SI-TX — see the inter-bank note below).
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -1579,10 +1579,13 @@ Initiate a new payment from a client account.
 | `from_account_number` | string | Yes | Source account number |
 | `to_account_number` | string | Yes | Destination account number |
 | `amount` | float64 | Yes | Payment amount (in source currency) |
+| `currency` | string | No | Cross-bank only: the SI-TX posting currency. Optional — defaults to the **sender's** account currency (resolved from account-service). |
 | `recipient_name` | string | No | Recipient display name |
 | `payment_code` | string | No | Payment code (e.g., `"289"`) |
 | `reference_number` | string | No | Reference/model number |
 | `payment_purpose` | string | No | Description or purpose of payment |
+
+> **Inter-bank dispatch (SI-TX):** When `to_account_number`'s 3-digit prefix differs from this bank's `OWN_BANK_CODE`, the request is dispatched to `PeerTxService.InitiateOutboundTx` and returns `202 Accepted` with `{transaction_id, poll_url, status}`; poll the returned URL for SI-TX completion. **If the destination bank code is not a registered, active peer bank, the request is rejected with `404 not_found` ("peer bank XXX not registered") before any funds move.** Intra-bank receivers (own prefix) keep the `201 Created` shape below.
 
 **Example Request:**
 ```json
@@ -1717,6 +1720,61 @@ List payments for a specific account, identified by account numeric ID. Supports
 
 ---
 
+### POST /api/v3/me/payments/preview
+
+Preview what a payment would cost **before** creating it, so the frontend can show the fee and total. Payments are single-currency (no exchange): the fee is computed in the sender's account currency and debited on top of the amount, so `total_debit = input_amount + total_fee` and the recipient receives `input_amount`. Works for both intra-bank and cross-bank destinations (the fee is sender-side; the recipient account is not looked up).
+
+**Authentication:** Any JWT (AnyAuthMiddleware)
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `from_account_number` | string | Yes | Source account number |
+| `to_account_number` | string | Yes | Destination account number |
+| `amount` | float64 | Yes | Payment amount (in source currency) |
+
+**Response 200:**
+```json
+{
+  "currency": "RSD",
+  "input_amount": "1000.0000",
+  "total_fee": "10.0000",
+  "fee_breakdown": [ { "fee_type": "percentage", "amount": "10.0000" } ],
+  "total_debit": "1010.0000",
+  "amount_received": "1000.0000"
+}
+```
+
+**Error Responses:**
+- `400` — invalid body or non-positive amount
+- `401` — missing or invalid JWT
+- `500` — fee or account lookup failed
+
+---
+
+### GET /api/v3/me/payments/:id/status
+
+Lightweight status of a payment — mirrors `GET /api/v3/me/transfers/:id/status` so the frontend can poll payments and transfers separately. The `:id` may be either:
+- a **numeric** payment id → intra-bank payment status (`404` if not owned by the caller); or
+- a **UUID** SI-TX transaction id (the `transaction_id` / `poll_url` returned by a cross-bank payment's `202`) → the outbound SI-TX status.
+
+`GET /api/v3/me/payments/:id` accepts the same two id forms. (The cross-bank UUID is unguessable and is only ever handed to the initiator, so knowing it authorizes reading its status.)
+
+**Authentication:** Any JWT (AnyAuthMiddleware)
+
+**Response 200 (intra-bank, numeric id):**
+```json
+{ "payment_id": 99, "status": "completed" }
+```
+
+**Response 200 (cross-bank, UUID id):**
+```json
+{ "transaction_id": "1111-...-5555", "status": "committed", "role": "sender", "last_action_at": "2026-05-30T00:00:00Z", "last_error": "" }
+```
+
+---
+
 ### POST /api/v3/me/payments/:id/execute
 
 Execute a pending payment after verification. The payment must have been created previously via `POST /api/v3/me/payments`. Verification is handled by the verification-service -- pass the `challenge_id` from the completed verification challenge.
@@ -1817,7 +1875,7 @@ Initiate a currency transfer between accounts.
 
 > **Note:** Transfer is created in `pending_verification` status. The browser must create a verification challenge via `POST /api/v3/verifications` and then poll `GET /api/v3/verifications/:id/status` until verified. Once verified, call `POST /api/v3/me/transfers/:id/execute` with the `challenge_id`. Users with `verification.skip` permission skip verification entirely.
 
-> **Inter-bank dispatch (Phase 3):** When `to_account_number`'s 3-digit prefix differs from this bank's `OWN_BANK_CODE`, the request is dispatched to `PeerTxService.InitiateOutboundTx` via gRPC and returns `202 Accepted` with `{transaction_id, poll_url, status}`. Poll the returned URL for SI-TX completion status. Intra-bank receivers (own prefix) keep the legacy `201 Created` shape above.
+> **Intra-bank only:** Transfers are between accounts of the **same client** within this bank (e.g. your own RSD → EUR account, with FX). Both `from_account_number` and `to_account_number` must belong to the same client and to this bank. To send money to **another person or another bank**, use **payments** (`POST /api/v3/me/payments`), which is where cross-bank (SI-TX) dispatch lives. A cross-bank `to_account_number` here is rejected (intra-client/intra-bank validation fails).
 
 > **Fund account restriction (E0, Plan E 2026-05-28):** The source account (`from_account_number`) must NOT belong to an investment fund's RSD account (`account_category = "investment_fund"`). Fund cash may only exit via dedicated fund operations (buy on behalf of fund, dividend payout, investor redemption). Using a fund account as the source returns `403 forbidden` with code `fund_account_outflow_restricted`.
 
@@ -3630,6 +3688,18 @@ Returns all card requests submitted by the authenticated principal.
 
 ---
 
+### GET /api/v3/me/cards/requests/:id
+
+Get a single card request the authenticated client submitted. The `/me` self-version of the employee route `GET /api/v3/cards/requests/:id`, so a client can track one of their own requests without an employee permission. Ownership is enforced from the JWT — a request belonging to another client returns `404`.
+
+**Authentication:** Client JWT (RequireClientToken)
+
+**Response 200:** A single card request object (same shape as the items in `GET /api/v3/me/cards/requests`).
+
+**Response 404:** Not found, or the request is not owned by the caller.
+
+---
+
 ### GET /api/v3/cards/requests
 
 Returns all card requests, optionally filtered by status.
@@ -4118,6 +4188,18 @@ List all loan requests submitted by the authenticated principal.
   "total": 2
 }
 ```
+
+---
+
+### GET /api/v3/me/loan-requests/:id
+
+Get a single loan request the authenticated client submitted. The `/me` self-version of the employee route `GET /api/v3/loan-requests/:id`, so a client can track one of their own requests without an employee permission. Ownership is enforced from the JWT — a request belonging to another client returns `404`.
+
+**Authentication:** Any JWT (AnyAuthMiddleware)
+
+**Response 200:** A single loan request object (same shape as the items in `GET /api/v3/me/loan-requests`).
+
+**Response 404:** Not found, or the request is not owned by the caller.
 
 ---
 
@@ -5332,7 +5414,12 @@ Reject a pending order that requires supervisor approval. Renamed from `/decline
 
 ### POST /api/v3/orders
 
-Place a stock/futures/forex/option order on behalf of a named client. The gateway verifies that the specified `account_id` belongs to the specified `client_id` before forwarding to stock-service. The order is recorded with `acting_employee_id` set to the caller's employee ID.
+Place a stock/futures/forex/option order on behalf of **either** a named client **or** an investment fund. Supply exactly one of `client_id` or `on_behalf_of_fund_id`:
+
+- **On behalf of a client** (`client_id`): the gateway verifies that `account_id` (and `base_account_id`, when present) belongs to `client_id` before forwarding to stock-service.
+- **On behalf of a fund** (`on_behalf_of_fund_id`): `account_id` is the fund's RSD account, not a client account — the client-ownership check is skipped at the gateway. stock-service re-validates that the acting employee is the fund's manager and binds the account to the fund. The fill lands in `fund_holdings`, mirroring `POST /api/v3/me/orders` with `on_behalf_of_fund_id`.
+
+The order is recorded with `acting_employee_id` set to the caller's employee ID.
 
 **Authentication:** Employee JWT + `orders.place-on-behalf` permission
 
@@ -5340,8 +5427,9 @@ Place a stock/futures/forex/option order on behalf of a named client. The gatewa
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `client_id` | uint64 | Yes | Client for whom the order is placed |
-| `account_id` | uint64 | Yes | Account to debit; must belong to `client_id` |
+| `client_id` | uint64 | Conditional | Client for whom the order is placed. Required unless `on_behalf_of_fund_id` is set. Mutually exclusive with `on_behalf_of_fund_id`. |
+| `on_behalf_of_fund_id` | uint64 | Conditional | Investment fund for which the order is placed. Required unless `client_id` is set. Mutually exclusive with `client_id`. Acting employee must be the fund's manager. |
+| `account_id` | uint64 | Yes | Account to debit; for client orders must belong to `client_id`, for fund orders must be the fund's RSD account |
 | `security_type` | string | Optional | `stock`, `futures`, `forex`, or `option`. Required for forex-specific gateway validation. |
 | `listing_id` | uint64 | Yes (buy) | Listing ID (required for buy orders) |
 | `holding_id` | uint64 | Yes (sell) | Holding ID (required for sell orders) |
@@ -5352,13 +5440,25 @@ Place a stock/futures/forex/option order on behalf of a named client. The gatewa
 | `stop_value` | string | Conditional | Required for `stop` or `stop_limit` orders |
 | `all_or_none` | boolean | No | Default: false |
 | `margin` | boolean | No | Default: false |
-| `base_account_id` | uint64 | Yes (forex) | Required when `security_type=forex`. Must belong to `client_id` and differ from `account_id`. |
+| `base_account_id` | uint64 | Yes (forex) | Required when `security_type=forex`. For client orders must belong to `client_id` and differ from `account_id`. |
 
-**Example Request:**
+**Example Request (on behalf of a client):**
 ```json
 {
   "client_id": 5,
   "account_id": 12,
+  "listing_id": 42,
+  "direction": "buy",
+  "order_type": "market",
+  "quantity": 10
+}
+```
+
+**Example Request (on behalf of a fund):**
+```json
+{
+  "on_behalf_of_fund_id": 9,
+  "account_id": 100,
   "listing_id": 42,
   "direction": "buy",
   "order_type": "market",
@@ -5371,8 +5471,8 @@ Place a stock/futures/forex/option order on behalf of a named client. The gatewa
 | Status | Description |
 |---|---|
 | 201 | Order created |
-| 400 | Validation error — including forex direction/`base_account_id` mismatches |
-| 403 | Account (or base account) does not belong to the specified client |
+| 400 | Validation error — including forex direction/`base_account_id` mismatches, or supplying neither/both of `client_id` and `on_behalf_of_fund_id` |
+| 403 | Account (or base account) does not belong to the specified client; or acting employee is not the fund's manager (fund orders, enforced by stock-service) |
 | 403 | Missing `orders.place-on-behalf` permission |
 
 ---
@@ -5571,6 +5671,23 @@ Exercise an options contract.
 
 The exercise route, contract list, contract detail, ratings, and negotiation-history routes from the old §30 are unchanged — they're still at their existing paths under `/me/otc/contracts/...`, `/me/otc/history`, and `/otc/traders/...`.
 
+### GET /api/v3/me/otc/transactions/:txid/status
+
+Status of a **cross-bank** OTC trade's underlying SI-TX transaction, resolved via `PeerTxService.GetTxStatus`. The `:txid` accepts either id a client may hold:
+- the bare idem returned in a dispatch's `poll_url`; or
+- a cross-bank contract's **`crossbank_tx_id`** (form `"<peerCode>:<idem>"`), which `GET /api/v3/me/otc/contracts` already returns on every `peer_contracts[]` entry.
+
+The composite form is split into `(caller_peer_bank_code, transaction_id)` so the status resolves on **both** banks — the dispatching (sender) bank via its outbound row, the receiving bank via its inbound idempotence record. So a client can read their cross-bank contracts and poll each one's status directly, no extra plumbing. The id is only known to the trade's parties, so holding it authorizes reading its status.
+
+**Authentication:** Any JWT (AnyAuthMiddleware)
+
+**Response 200:**
+```json
+{ "transaction_id": "222:aaaa-...-7777", "status": "committed", "role": "sender", "last_action_at": "2026-05-30T00:00:00Z", "last_error": "" }
+```
+
+> Protocol note: this is a local, client-facing read endpoint. It does **not** touch the (frozen, multi-team) cross-bank SI-TX protocol — the transaction id is already persisted locally on `peer_option_contracts.crossbank_tx_id` and the status is read via the existing `GetTxStatus` RPC.
+
 ---
 
 ## 31. Investment Funds (Celina 4)
@@ -5673,6 +5790,8 @@ List investment funds (Discovery page).
 Get one fund detail with enriched statistics (E1, Plan E 2026-05-28).
 
 **Authentication:** Any JWT
+
+> `holdings` is always a JSON array. A fund with no positions returns `"holdings": []` (never `null`).
 
 **Response 200:**
 ```json
@@ -8432,6 +8551,7 @@ Portfolios are identified by a URL-safe `portfolio_id` string:
       {
         "asset_type": "stock",
         "symbol": "AAPL",
+        "holding_id": 153,
         "quantity": 50,
         "avg_cost_rsd": "200.0000",
         "current_price_rsd": "220.0000",
@@ -8462,6 +8582,8 @@ Portfolios are identified by a URL-safe `portfolio_id` string:
   }
 }
 ```
+
+> **`holding_id` on security positions.** Each `securities` position carries `holding_id` — the numeric id of the underlying holdings row (`asset_type` `stock`/`option`/`future`). This is the id required by **make-public** (`POST /api/v3/me/otc/stocks` with `direction=sell`) and **exercise** (`POST /api/v3/me/portfolio/:id/exercise`), so a client can act on a position straight from this response without a separate lookup. Fund positions omit `holding_id` (they are keyed by `fund_id`, not a holding).
 
 ### 48.2 Portfolio by ID (generic form)
 
@@ -8800,6 +8922,45 @@ Response shape:
   "page_size": 50
 }
 ```
+
+**GET /api/v3/admin/audit/saga-logs**
+
+Returns transaction-service saga execution logs (transfer/payment forward + compensation steps), so an admin can review saga history and stuck/compensating flows.
+
+- Authentication: Bearer token (employee only)
+- Permission: `admin.audit.view`
+- Query params: `page` (default 1), `page_size` (default 50, max 200), `saga_id` (filter to one saga), `status` (`pending|completed|failed|compensating|dead_letter`), `transaction_type` (`transfer|payment`), `since`/`until` (`YYYY-MM-DD`)
+
+Response shape:
+
+```json
+{
+  "logs": [
+    {
+      "id": 12,
+      "saga_id": "6f3e…",
+      "transaction_id": 84,
+      "transaction_type": "transfer",
+      "step_number": 2,
+      "step_name": "credit_destination",
+      "status": "completed",
+      "is_compensation": false,
+      "account_number": "111000…",
+      "amount": "100.0000",
+      "error_message": "",
+      "compensation_of": 0,
+      "retry_count": 0,
+      "created_at": 1748520000,
+      "completed_at": 1748520001
+    }
+  ],
+  "total": 7,
+  "page": 1,
+  "page_size": 50
+}
+```
+
+> `logs` is always a JSON array (`[]` when empty). Currently sourced from transaction-service (transfer/payment sagas); credit-service and stock-service saga logs can be added behind the same route as follow-ups.
 
 | Status | Description |
 |--------|-------------|
