@@ -66,8 +66,8 @@ Access tokens expire after 15 minutes. Use the refresh token to obtain a new pai
 26. [Securities](#26-securities)
 27. [Orders](#27-orders)
 28. [Portfolio](#28-portfolio)
-29. [OTC Offers (Public Stock Listings)](#29-otc-offers-public-stock-listings)
-30. [OTC Option Contracts (Celina 4)](#30-otc-option-contracts-celina-4)
+29. [OTC Stocks Marketplace](#29-otc-stocks-marketplace)
+30. [OTC Option Contracts](#30-otc-option-contracts)
 31. [Investment Funds (Celina 4)](#31-investment-funds-celina-4)
 32. [Actuaries](#32-actuaries)
 33. [Tax](#33-tax)
@@ -84,15 +84,16 @@ Access tokens expire after 15 minutes. Use the refresh token to obtain a new pai
 44. [Transfer Status (Celina 4 / SI-TX)](#44-transfer-status-celina-4--si-tx)
 45. [Recurring Securities Orders (Celina 3)](#45-recurring-securities-orders-celina-3)
 46. [Recurring Fund Investments (Celina 4)](#46-recurring-fund-investments-celina-4)
-47. [OTC Marketplace Refactor (Phases 2-6)](#47-otc-marketplace-refactor-phases-2-6)
+47. [OTC Marketplace](#47-otc-marketplace)
 48. [Unified Portfolio Routes (2026-05-28)](#48-unified-portfolio-routes-2026-05-28)
 49. [Admin / Cron Management (C10 — 2026-05-28)](#49-admin--cron-management-c10--2026-05-28)
 50. [Admin / Audit Logs (D4 — 2026-05-28)](#50-admin--audit-logs-d4--2026-05-28)
 51. [Dividends (E4 — 2026-05-28)](#51-dividends-e4--2026-05-28)
 52. [Cross-Bank Protocol](#cross-bank-protocol-cross-bank-protocol)
-53. [Error Response Format](#error-response-format)
-54. [Password Requirements](#password-requirements)
-55. [Notes for Frontend Developers](#notes-for-frontend-developers)
+53. [System Version](#53-system-version)
+54. [Error Response Format](#error-response-format)
+55. [Password Requirements](#password-requirements)
+56. [Notes for Frontend Developers](#notes-for-frontend-developers)
 
 ---
 
@@ -4300,12 +4301,6 @@ Get portfolio summary. See [Section 27: Portfolio](#27-portfolio) for full reque
 
 ---
 
-### POST /api/v3/me/portfolio/:id/make-public
-
-Make a holding available on the OTC market. See [Section 27: Portfolio](#27-portfolio) for full request/response details.
-
----
-
 ### POST /api/v3/me/portfolio/:id/exercise
 
 Exercise an options contract. See [Section 27: Portfolio](#27-portfolio) for full request/response details.
@@ -5543,7 +5538,7 @@ Exercise an option by `option_id`. If `holding_id` is omitted, the backend auto-
 
 ### GET /api/v3/me/portfolio
 
-> **Shape updated in Plan B (2026-05-28).** This endpoint now returns the unified grouped portfolio shape with separate `securities` and `funds` groups, full P/L totals, and per-position `dividends_received_rsd` / `fund_status` fields. See [Section 48.1](#481-my-portfolio-client-or-bank) for the current canonical documentation and response shape.
+Returns the unified grouped portfolio: separate `securities` and `funds` groups, full P/L totals, and per-position `dividends_received_rsd` / `fund_status` fields. See [Section 48.1](#481-my-portfolio-client-or-bank) for the canonical response shape.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 - Client principal → returns caller's own portfolio.
@@ -5615,12 +5610,6 @@ Get portfolio summary (total value, gains/losses, allocation).
 
 ---
 
-### ~~POST /api/v3/me/portfolio/:id/make-public~~ — REMOVED in Phase 8
-
-Use `POST /api/v3/me/otc/stocks` with `direction=sell` instead — see [Section 47.1](#471-stocks-marketplace).
-
----
-
 ### POST /api/v3/me/portfolio/:id/exercise
 
 Exercise an options contract.
@@ -5637,47 +5626,138 @@ Exercise an options contract.
 
 ---
 
-## 29. OTC Stocks Marketplace — moved to §47.1
+## 29. OTC Stocks Marketplace
 
-**Phase 8 reorganisation.** Routes formerly documented here have been moved to the new `/api/v3/otc/stocks/...` namespace under [Section 47.1](#471-stocks-marketplace). The new section also documents the **buy-direction** offers introduced by the Phase 3 refactor (publish a standing offer to buy at a fixed price, backed by an account-service cash reservation). Mapping:
-
-| Old | New |
-|---|---|
-| `GET /api/v3/otc/offers` | `GET /api/v3/otc/stocks` |
-| `POST /api/v3/otc/offers/:id/buy` | `POST /api/v3/otc/stocks/:id/buy` |
-| `POST /api/v3/otc/offers/:id/buy-on-behalf` | `POST /api/v3/otc/stocks/:id/buy-on-behalf` |
-| `POST /api/v3/me/portfolio/:id/make-public` | `POST /api/v3/me/otc/stocks` (direction=sell) |
+The OTC stocks surface (publish/fill standing share offers, both sell- and buy-direction) lives under `/api/v3/otc/stocks/...` and `/api/v3/me/otc/stocks/...`. See [Section 47.1](#471-stocks-marketplace) for the full route documentation.
 
 ---
 
-## 30. OTC Option Contracts (Celina 4) — moved to §47.2
+## 30. OTC Option Contracts
 
-**Phase 8 reorganisation.** The single-chain options surface in this section has been **deleted** and replaced by the per-bidder parallel-negotiation-chain marketplace in [Section 47.2](#472-options-marketplace--parallel-negotiation-chains). The new model is fundamentally different: many bidders can each open their own chain against the same listing, and the first-to-accept wins atomically (parent listing flips to `consumed`; sibling chains cascade-cancel in the same DB transaction). Mapping:
+The OTC options surface — listings, per-bidder parallel negotiation chains, accept/contract-formation, and unified local + cross-bank discovery — lives under `/api/v3/otc/options/...`, `/api/v3/me/otc/options/...`, and `/api/v3/otc/contracts/...`. See [Section 47.2](#472-options-marketplace--parallel-negotiation-chains) for the full route documentation. Ratings live in [Section 42](#42-otc-trader-ratings-celina-3) and negotiation history in [Section 41](#41-otc-negotiation-history-celina-3).
 
-| Old | New |
-|---|---|
-| `POST /api/v3/otc/offers` (create listing) | `POST /api/v3/me/otc/options` |
-| `POST /api/v3/otc/offers/:id/counter` | `POST /api/v3/me/otc/options/:id/negotiations/:nid/counter` |
-| `POST /api/v3/otc/offers/:id/accept` | `POST /api/v3/me/otc/options/:id/negotiations/:nid/accept` |
-| `POST /api/v3/otc/offers/:id/reject` | `POST /api/v3/me/otc/options/:id/negotiations/:nid/reject` |
-| `GET /api/v3/otc/offers/:id` | `GET /api/v3/otc/options/:id` |
-| `GET /api/v3/me/otc/offers` | `GET /api/v3/me/otc/options` |
-| *(new)* | `POST /api/v3/otc/options/:id/bid` (open a negotiation chain) |
-| *(new)* | `DELETE /api/v3/me/otc/options/:id/negotiations/:nid` (bidder withdraws) |
-| *(new)* | `GET /api/v3/otc/options/:id/negotiations` (every chain on a listing — visible to all parties) |
-| *(new)* | `GET /api/v3/me/otc/options/negotiations` (caller's chains) |
-| *(new)* | `GET /api/v3/otc/options` (unified local + remote discovery) |
-| *(new — peer)* | `GET /api/v3/cross-bank-protocol/public-option-offers` (cross-bank discovery endpoint) |
+The option-contract **list** (`GET /api/v3/me/otc/contracts`), **detail** (`GET /api/v3/otc/contracts/:id`), and **exercise** (`POST /api/v3/otc/contracts/:id/exercise`) routes serve LOCAL (intra-bank) and REMOTE (cross-bank) contracts uniformly — documented below.
 
-The exercise route, contract list, contract detail, ratings, and negotiation-history routes from the old §30 are unchanged — they're still at their existing paths under `/me/otc/contracts/...`, `/me/otc/history`, and `/otc/traders/...`.
+#### GET /api/v3/me/otc/contracts (unified local + remote)
+
+Returns the caller's formed option contracts — both LOCAL (intra-bank
+`OptionContract` rows) and REMOTE (cross-bank `peer_option_contracts` mirror
+rows where the caller is a party) — merged into one `contracts` array. Each
+item carries provenance (`kind` / `routing_number` / `bank_code`) plus
+`me_owner`.
+
+**Authentication:** Any JWT + `ResolveIdentity` (AnyAuth — clients and employees accepted)
+
+**Query Parameters:** `role` (`buyer`|`seller`|`either`, default `either`), `page` (default 1), `page_size` (default 20).
+
+**`OptionContractResponse` shape:** in addition to the existing fields, every item now carries:
+
+| Field | Type | Description |
+|---|---|---|
+| `kind` | string | `local` (intra-bank contract) or `remote` (cross-bank peer contract) |
+| `routing_number` | int64 | Owning/hosting bank's routing. For `local`: our own routing. For `remote`: the COUNTERPARTY/peer bank's routing (the side we do NOT host). |
+| `bank_code` | string | Owning/peer bank's code, matching `routing_number`. For `remote` this is the counterparty routing formatted as a string (the peer-contract mirror stores no separate bank-code field). |
+| `me_owner` | bool | `true` ONLY when the caller is the contract's **buyer/holder** — a formed option is the buyer's owned asset, so the seller/writer is `false`. (DIFFERENT from offers/negotiations, where the poster/seller is the owner.) For `remote`: `true` iff the row's `direction == "CREDIT"` (this bank holds the buyer side). |
+
+For `remote` items, `id` is the **local surrogate primary key** of this bank's
+peer-contract mirror row (so callers correlate within this bank's id
+namespace), and the terms (`stock_ticker`, `quantity`, `strike_price`,
+`strike_currency`, `settlement_date`, `status`) are projected from the mirrored
+cross-bank option. The `buyer` / `seller` `PartyRef`s carry the SI-TX
+participant id as `display_name` plus the side's routing number as `bank_code`.
+
+**Paging note:** `page`/`page_size` paginate the LOCAL set; REMOTE contracts
+are appended in full after the local page (never silently truncated). `total`
+reflects the local total only.
+
+Remote contracts appear exclusively in the unified `contracts[]` with `kind="remote"` (there is no separate `peer_contracts[]` / `peer_total` — see [ROUTE-CHANGES.md](./ROUTE-CHANGES.md)).
+
+**Note:** the remote merge is gated to **client** principals (cross-bank
+participant ids are `client-<N>`); an employee acting as the bank skips the
+remote merge and gets local contracts only.
+
+#### GET /api/v3/otc/contracts/:id (unified local + remote)
+
+Resolves a single option contract by id. A LOCAL `OptionContract` is returned
+with `kind="local"`, own routing/bank-code provenance, and `me_owner` = (caller
+is the buyer/holder). When the id is not a local contract, it falls back to the
+cross-bank `peer_option_contracts` mirror (resolved by surrogate id) and returns
+a `kind="remote"` projection with `me_owner` = (`direction == "CREDIT"`).
+
+**Authentication:** Any JWT + `ResolveIdentity` (AnyAuth).
+
+**Response 403:** Caller is neither the buyer nor the seller of a LOCAL contract.
+
+**Response 404:** Neither a local nor a remote contract with that id exists. (A non-NotFound error from the remote mirror lookup surfaces as 500, never masked as 404.)
+
+---
+
+#### POST /api/v3/otc/contracts/:id/exercise (unified local + cross-bank)
+
+Exercise an option contract by id. The dispatch (LOCAL exercise saga vs cross-bank
+SI-TX exercise) is decided **inside stock-service** from the contract's routing,
+so the frontend uses this **one** route regardless of kind.
+
+- **LOCAL contract** (routing == own): runs the local exercise saga.
+  Strike money moves buyer→seller, the reserved seller shares are consumed and
+  credited to the buyer's holding. Accounts come from the persisted contract;
+  `buyer_account_number` is ignored.
+- **REMOTE contract** (a peer-hosted contract this bank holds the BUYER side of):
+  runs the cross-bank SI-TX option-exercise flow. **Only the buyer/holder** may
+  exercise (the writer/seller side and non-parties get `404` — existence must not
+  leak). Supply `buyer_account_number` — the buyer's currency account that pays
+  the strike; this is the only client-supplied resource on the money path, so the
+  gateway gates it before forwarding (`403` on mismatch), authoritatively for ALL
+  principals:
+  - **client caller** → the account must be owned by that client;
+  - **employee acting AS the bank** (no `on_behalf_of_client_id`) → the account
+    must be a **BANK** account — a bank exercise pays its strike only from a bank
+    account, never from a client's account of the matching currency;
+  - **employee on behalf of a client** → the account must be owned by that client.
+
+  stock-service additionally re-asserts the same predicate (bank buyer → bank
+  account; client buyer → that client's account; active + strike-currency match)
+  before dispatch, as defense-in-depth. The contract terms + counterparty come
+  from the persisted remote row.
+
+**Authentication:** Any JWT + one of `otc.trade.accept`, `securities.trade`. Identity middleware: `OwnerIsBankIfEmployee`.
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | uint64 | Contract id (local surrogate id; serves both local and remote rows) |
+
+**Request Body (optional):**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `buyer_account_number` | string | Cross-bank only | The buyer's currency account that pays the strike. Required for a cross-bank (remote) contract; ignored for a local contract. The caller must be entitled to it per the gate above — a client must own it, a bank-acting employee must bind a BANK account, an on-behalf employee must bind that client's account (else `403`). |
+| `on_behalf_of_client_id` | uint64 | No | Employee acting on behalf of a client. |
+| `on_behalf_of_fund_id` | uint64 | No | *E2, Plan E.* When non-zero, exercises on behalf of an investment fund (local path). The acting employee must be the fund's manager; acquired shares land in `fund_holdings`. |
+
+**Response 201:** Exercise result. For a cross-bank exercise the cross-bank
+transaction id rides in `saga_id` (the correlation handle for polling
+`GET /api/v3/me/otc/transactions/:txid/status`) and `status` reflects the SI-TX
+dispatch state (e.g. `pending`).
+
+**Error Responses:**
+- `400` — invalid `id`, or a remote contract exercised without `buyer_account_number`
+- `403` — `on_behalf_of_fund_id` set but acting employee is not the fund's manager; or the supplied strike account is not one the caller is entitled to (client not the owner / bank-acting employee binding a non-bank account / on-behalf employee binding a non-matching account)
+- `404` — contract not found, or the caller is not the buyer/holder of a remote contract
+- `409` — business rule (e.g. contract not active/expired, insufficient funds on the cross-bank strike)
+
+---
 
 ### GET /api/v3/me/otc/transactions/:txid/status
 
 Status of a **cross-bank** OTC trade's underlying SI-TX transaction, resolved via `PeerTxService.GetTxStatus`. The `:txid` accepts either id a client may hold:
 - the bare idem returned in a dispatch's `poll_url`; or
-- a cross-bank contract's **`crossbank_tx_id`** (form `"<peerCode>:<idem>"`), which `GET /api/v3/me/otc/contracts` already returns on every `peer_contracts[]` entry.
+- a composite id of the form `"<peerCode>:<idem>"` (e.g. obtained from the `crossbank_tx_id` column stored internally on `peer_option_contracts`).
 
-The composite form is split into `(caller_peer_bank_code, transaction_id)` so the status resolves on **both** banks — the dispatching (sender) bank via its outbound row, the receiving bank via its inbound idempotence record. So a client can read their cross-bank contracts and poll each one's status directly, no extra plumbing. The id is only known to the trade's parties, so holding it authorizes reading its status.
+Note: the unified `OptionContractResponse` items in `contracts[]` (including `kind=remote` entries) do **not** expose a `crossbank_tx_id` field — that field existed only on the now-removed `peer_contracts[]` / `PeerOptionContractResponse`. The composite tx id can be obtained from the dispatch flow's `poll_url` or from a bank-internal lookup; it is not surfaced in the `GET /api/v3/me/otc/contracts` response.
+
+The composite form is split into `(caller_peer_bank_code, transaction_id)` so the status resolves on **both** banks — the dispatching (sender) bank via its outbound row, the receiving bank via its inbound idempotence record. The id is only known to the trade's parties, so holding it authorizes reading its status.
 
 **Authentication:** Any JWT (AnyAuthMiddleware)
 
@@ -5715,13 +5795,15 @@ Create a new investment fund. Provisions a bank-owned RSD account dedicated to t
 | `name` | string | Yes | Unique fund name |
 | `description` | string | No | Short investment-strategy description |
 | `minimum_contribution_rsd` | string (decimal) | No | Smallest allowed invest amount in RSD (default `0`) |
+| `dividend_mode` | string | No | `payout` (default) credits received stock dividends to the fund's cash; `reinvest` auto-buys more of the dividend-paying stock (DRIP). Also settable via `PUT /api/v3/investment-funds/{id}`. Surfaced as `dividend_mode` on every fund response. (SP4) |
 
 **Example Request:**
 ```json
 {
   "name": "Alpha Growth Fund",
   "description": "IT-sector focus",
-  "minimum_contribution_rsd": "1000.00"
+  "minimum_contribution_rsd": "1000.00",
+  "dividend_mode": "reinvest"
 }
 ```
 
@@ -5762,6 +5844,10 @@ List investment funds (Discovery page).
 | `page_size` | int | 20 | Items per page |
 | `search` | string | — | Case-insensitive substring on `name` |
 | `active_only` | bool | false | When `true`, hide inactive funds |
+| `sort_by` | string | — | `name` \| `value` \| `profit` \| `annualized_return` \| `volatility` \| `reward_to_variability` \| `max_drawdown` (SP3) |
+| `sort_order` | string | desc | `asc` \| `desc` |
+
+Each fund also carries the SP3 statistics (`annualized_return_pct`, `volatility_pct`, `reward_to_variability`, `max_drawdown_pct`, `metrics_available`). When a fund lacks enough snapshot history the numeric metrics are `"0"` and `metrics_available` is `false`. `GET /api/v3/investment-funds/{id}` additionally returns `history` (this fund's daily NAV series: `[{date, total_value_rsd}]`) and `average_history` (the system-average series, each fund indexed to 100 at its first snapshot) for the detail charts.
 
 **Response 200:**
 ```json
@@ -7024,7 +7110,9 @@ Register a new peer bank.
 ```
 
 **Response 201:** Peer bank object (`api_token_preview` returned, never the full token).
-**Response 400:** Validation error (missing required field).
+**Response 400:** Validation error (missing required field, OR `bank_code`/`routing_number` equals this bank's own — peer-collision rejected; SP-2a).
+
+> **Peer-collision guard (SP-2a):** `POST /api/v3/peer-banks` returns `400 validation_error` when `bank_code` or `routing_number` matches this bank's own configuration. This is enforced at the gRPC service layer (transaction-service `CreatePeerBank` returns `InvalidArgument` → gateway maps to 400). The invariant ensures `routing_number == OwnRouting()` reliably distinguishes local rows from remote (folded-in) rows in the unified OTC tables.
 
 ---
 
@@ -7090,34 +7178,134 @@ Remove a peer bank.
 
 ### POST /api/v3/cross-bank-protocol/interbank
 
-Receives the SI-TX `Message<Type>` envelope from peer banks. Phase 3 implementation is fully wired: `NEW_TX` validates postings (UNBALANCED_TX check + per-posting account/asset/active checks), reserves credit-postings via `account-service.ReserveIncoming`, and emits `TransactionVote`. `COMMIT_TX` finalises reservations; `ROLLBACK_TX` releases them. Idempotence-key replay returns the cached vote.
+Receives the SI-TX `Message<Type>` envelope from peer banks. Fully wired: `NEW_TX` validates postings (UNBALANCED_TX check + per-posting account/asset/active checks), reserves credit-postings via `account-service.ReserveIncoming`, and emits a `TransactionVote`. `COMMIT_TX` finalises reservations; `ROLLBACK_TX` releases them. Idempotence-key replay returns the cached vote.
 
 **Authentication:** Hybrid `PeerAuth` middleware. Either:
 - `X-Api-Key: <token>` — looked up against `peer_banks.api_token_plaintext` via the internal `ResolvePeerByAPIToken` RPC.
 - `X-Bank-Code: <code>` + `X-Bank-Signature: <hex SHA-256>` + `X-Timestamp: <RFC3339, ±5min>` + `X-Nonce: <single-use>` — verified against `peer_banks.hmac_inbound_key` via `ResolvePeerByBankCode`.
 
-**Request Body:** SI-TX `Message<Type>` envelope. Shape verbatim from the cohort spec at https://arsen.srht.site/si-tx-proto/.
+#### Envelope: `Message<Type>`
+
+Every inbound message is wrapped in the same envelope. Shape verbatim from the cohort SI-TX-Proto spec.
+
+| Field | Type | Notes |
+|---|---|---|
+| `idempotenceKey` | `{ "routingNumber": int, "locallyGeneratedKey": string }` | Each message (NEW_TX, COMMIT_TX, ROLLBACK_TX) carries its OWN unique idempotence key. Replaying the same key returns the cached result. |
+| `messageType` | string | `"NEW_TX"` \| `"COMMIT_TX"` \| `"ROLLBACK_TX"` |
+| `message` | object | The message body — its shape depends on `messageType` (see below). |
+
+> COMMIT_TX / ROLLBACK_TX correlate back to the original NEW_TX via the `transactionId` field in their body, **not** via the envelope's `idempotenceKey` (which is unique per message).
+
+#### `messageType: "NEW_TX"` — message is a `Transaction`
+
+| Field | Type | Notes |
+|---|---|---|
+| `postings` | `Posting[]` | The legs of the transaction. Must net to zero per asset (else `UNBALANCED_TX`). |
+| `transactionId` | `{ "routingNumber": int, "id": string }` | Identifies this transaction; COMMIT/ROLLBACK reference it. |
+| `message` | string | Free-text description. |
+| `callNumber` | string (optional) | Serbian payment reference / model-and-call-number. |
+| `paymentCode` | string | Serbian payment code (e.g. `"289"`). |
+| `paymentPurpose` | string | Payment purpose text. |
+
+**`Posting`** = `{ "account": TxAccount, "amount": number, "asset": Asset }`
+
+- `amount` is a **SIGNED** JSON number: **negative** = credit / the asset *leaves* this account; **positive** = debit / the asset *arrives* at this account.
+
+**`TxAccount`** — tagged union on `type`:
+
+| `type` | Shape |
+|---|---|
+| `PERSON` | `{ "type": "PERSON", "id": { "routingNumber": int, "id": string } }` |
+| `ACCOUNT` | `{ "type": "ACCOUNT", "num": string }` (18-digit account number) |
+| `OPTION` | `{ "type": "OPTION", "id": { "routingNumber": int, "id": string } }` |
+
+**`Asset`** — tagged union on `type`:
+
+| `type` | Shape |
+|---|---|
+| `MONAS` | `{ "type": "MONAS", "asset": { "currency": string } }` |
+| `STOCK` | `{ "type": "STOCK", "asset": { "ticker": string } }` |
+| `OPTION` | `{ "type": "OPTION", "asset": <OptionDescription> }` |
+
+**Example NEW_TX body** (the canonical "coffee" transfer — 260 RSD from a peer's `ACCOUNT` to one of ours):
 
 ```json
 {
   "idempotenceKey": {
-    "routingNumber": 222,
-    "locallyGeneratedKey": "abc-123"
+    "routingNumber": 111,
+    "locallyGeneratedKey": "k-coffee-1"
   },
   "messageType": "NEW_TX",
   "message": {
     "postings": [
-      {"routingNumber": 222, "accountId": "222000001", "assetId": "RSD", "amount": "100.00", "direction": "DEBIT"},
-      {"routingNumber": 111, "accountId": "111000001", "assetId": "RSD", "amount": "100.00", "direction": "CREDIT"}
-    ]
+      {
+        "account": { "type": "ACCOUNT", "num": "444000100182503611" },
+        "amount": -260,
+        "asset": { "type": "MONAS", "asset": { "currency": "RSD" } }
+      },
+      {
+        "account": { "type": "ACCOUNT", "num": "111000141215476411" },
+        "amount": 260,
+        "asset": { "type": "MONAS", "asset": { "currency": "RSD" } }
+      }
+    ],
+    "transactionId": { "routingNumber": 111, "id": "k-coffee-1" },
+    "message": "coffee",
+    "paymentCode": "289",
+    "paymentPurpose": "debt"
   }
 }
 ```
 
-**Responses:**
-- **200 OK** for `NEW_TX` — body is a `TransactionVote` (`{type: "YES", transactionId: "..."}` or `{type: "NO", noVotes: [...]}` with one or more of the 8 SI-TX reasons: `UNBALANCED_TX`, `NO_SUCH_ACCOUNT`, `NO_SUCH_ASSET`, `UNACCEPTABLE_ASSET`, `INSUFFICIENT_ASSET`, `OPTION_AMOUNT_INCORRECT`, `OPTION_USED_OR_EXPIRED`, `OPTION_NEGOTIATION_NOT_FOUND`).
-- **204 No Content** for `COMMIT_TX` / `ROLLBACK_TX` (both idempotent).
-- **401 Unauthorized** with empty body when auth fails (constant-time compare; no info leak).
+**NEW_TX response — `200 OK` with a `TransactionVote`:**
+
+- YES vote: `{ "vote": "YES" }`
+- NO vote: `{ "vote": "NO", "reasons": [ { "reason": <code>, "posting": <the full offending Posting> } ] }`
+
+Each NO reason echoes back the **entire offending `Posting`** (not an index). Reason codes:
+
+`UNBALANCED_TX`, `NO_SUCH_ACCOUNT`, `NO_SUCH_ASSET`, `UNACCEPTABLE_ASSET`, `INSUFFICIENT_ASSET`, `OPTION_AMOUNT_INCORRECT`, `OPTION_USED_OR_EXPIRED`, `OPTION_NEGOTIATION_NOT_FOUND`.
+
+**Example NO vote:**
+
+```json
+{
+  "vote": "NO",
+  "reasons": [
+    {
+      "reason": "INSUFFICIENT_ASSET",
+      "posting": {
+        "account": { "type": "ACCOUNT", "num": "111000141215476411" },
+        "amount": 260,
+        "asset": { "type": "MONAS", "asset": { "currency": "RSD" } }
+      }
+    }
+  ]
+}
+```
+
+#### `messageType: "COMMIT_TX"` / `"ROLLBACK_TX"` — message is `{ transactionId }`
+
+```json
+{
+  "idempotenceKey": { "routingNumber": 111, "locallyGeneratedKey": "k-coffee-commit-1" },
+  "messageType": "COMMIT_TX",
+  "message": { "transactionId": { "routingNumber": 111, "id": "k-coffee-1" } }
+}
+```
+
+`COMMIT_TX` finalises the reservation made by the matching `NEW_TX`; `ROLLBACK_TX` releases it. Both are idempotent and both respond **204 No Content** with an empty body.
+
+#### Responses
+
+- **200 OK** — `NEW_TX` final vote (`TransactionVote` body).
+- **204 No Content** — `COMMIT_TX` / `ROLLBACK_TX` final, empty body.
+- **202 Accepted** — peer accepted the message but the result is not yet final; the sender should retry later.
+- **401 Unauthorized** — empty body when auth fails (constant-time compare; no info leak).
+
+> **Sender semantics:** `202` = peer accepted, retry later; `200` = final (vote); `204` = final, empty.
+
+> **Receiver-side 202 (async):** For a `NEW_TX` whose local reserve exceeds `SITX_RECEIVE_SYNC_DEADLINE` (transaction-service, default `5s`), the receiver returns **202 Accepted** with an empty body and finishes the reserve in the background. The sender retransmits the same idempotence key; once the reserve completes, the retransmit returns **200** with the vote. `COMMIT_TX` / `ROLLBACK_TX` are always processed synchronously (**204**).
 
 ---
 
@@ -7160,20 +7348,25 @@ Peer-facing OTC discovery — returns stock holdings on this bank flagged for OT
 
 **Authentication:** PeerAuth (X-Api-Key or HMAC bundle).
 
-**Response 200:**
+**Response 200:** A **BARE JSON array** (no `{ "stocks": ... }` wrapper). Each element groups all public sellers of one ticker. There is **no** price or currency on this endpoint — it is a discovery surface only; pricing is negotiated per-offer.
+
 ```json
-{
-  "stocks": [
-    {
-      "ownerId": {"routingNumber": 111, "id": "client-7"},
-      "ticker": "AAPL",
-      "amount": 50,
-      "pricePerStock": "180.50",
-      "currency": "USD"
-    }
-  ]
-}
+[
+  {
+    "stock": { "ticker": "AAPL" },
+    "sellers": [
+      { "seller": { "routingNumber": 111, "id": "client-3" }, "amount": 50 },
+      { "seller": { "routingNumber": 111, "id": "client-9" }, "amount": 20 }
+    ]
+  }
+]
 ```
+
+| Field | Type | Notes |
+|---|---|---|
+| `stock.ticker` | string | The security symbol. |
+| `sellers[].seller` | `{ "routingNumber": int, "id": string }` | The seller's `ForeignBankId`. `routingNumber` is this bank; `id` is the **standard opaque participant id** — `client-<N>` for a client-held holding, `bank` for a bank-held one. This is the SAME value a discovering bank echoes back verbatim as `sellerId` in `POST /negotiations` and it resolves to a local seller. The bank never advertises a bare numeric owner id here (a peer could not address it back). |
+| `sellers[].amount` | int | Quantity this seller has flagged public for that ticker. |
 
 ---
 
@@ -7183,20 +7376,26 @@ Peer initiates a cross-bank OTC negotiation against a publicly-listed holding on
 
 **Authentication:** PeerAuth.
 
-**Request Body:** SI-TX `OtcOffer` payload — verbatim from the cohort spec at <https://arsen.srht.site/si-tx-proto/>. The body IS the `OtcOffer`; there is no wrapping object.
+**Request Body:** SI-TX `OtcOffer` payload — verbatim from the cohort spec at <https://arsen.srht.site/si-tx-proto/>. The body IS the `OtcOffer`; there is no wrapping object. Per SI-TX §2.5 the monetary `amount` fields are JSON **numbers** (the gateway also tolerates a quoted string for peers that still quote).
 
 ```json
 {
   "stock":          { "ticker": "AAPL" },
   "settlementDate": "2026-12-31T00:00:00Z",
-  "pricePerUnit":   { "amount": "180.50", "currency": "USD" },
-  "premium":        { "amount": "700",    "currency": "USD" },
-  "buyerId":        { "routingNumber": 222, "id": "client-1" },
+  "pricePerUnit":   { "amount": 180.50, "currency": "USD" },
+  "premium":        { "amount": 700,    "currency": "USD" },
+  "buyerId":        { "routingNumber": 222, "id": "550e8400-e29b-41d4-a716-446655440000" },
   "sellerId":       { "routingNumber": 111, "id": "client-1" },
   "amount":         50,
-  "lastModifiedBy": { "routingNumber": 222, "id": "client-1" }
+  "lastModifiedBy": { "routingNumber": 222, "id": "550e8400-e29b-41d4-a716-446655440000" }
 }
 ```
+
+**Participant-id validation (SI-TX §2.3):** `buyerId.id`, `sellerId.id`, and `lastModifiedBy.id` are **opaque `ForeignBankId.id` strings**. The gateway enforces ONLY the §2.3 bound — non-empty and ≤ 64 bytes — and does **NOT** format-check the BUYER's id:
+
+- `buyerId.id` belongs to the PEER (`routingNumber` = the authenticated peer). Per §2.3 a bank MUST NOT interpret another bank's opaque id, so **any** scheme is accepted (a UUID like `550e8400-…`, `acc-42`, etc.) and stored verbatim. *(Prior to 2.7.0 the gateway wrongly required `client-<N>`/`employee-<N>` here, which rejected spec-conformant peers — fixed.)*
+- `sellerId.id` is OURS (`sellerId.routingNumber` MUST equal this bank). Because the seller is a local participant — not another bank's opaque id — it MUST be **well-formed**: `bank`, `employee-<digits>`, or `client-<digits>`. *(As of 2.8.0 a malformed seller such as `employee-abc` or `employee-` is rejected `400 validation_error` and **no row is persisted**; previously such an id created an inert junk row — a row-spam vector.)* A `client-<N>` is additionally existence-checked against client-service: a non-existent client → `404 not_found`, no row.
+- `lastModifiedBy.routingNumber` is **DERIVED**, not trusted: an inbound bid was by definition last-modified by the peer that sent it, so the receiving bank persists `lastModifiedBy.routingNumber = the authenticated peer's routing`, **overriding** whatever the payload claimed. *(As of 2.8.1 a forged `lastModifiedBy` claiming this bank's routing is no longer rejected — it is simply overridden to the sender's routing; the inbound bid still succeeds `201`.)* The opaque `lastModifiedBy.id` is kept **verbatim** (§2.3 — a bank MUST NOT interpret another bank's opaque id). Deriving the routing from the authenticated sender (rather than trusting or rejecting the payload) keeps the stored `lastModifiedBy` trustworthy by construction for the accept guard.
 
 **Response 201:** `ForeignBankId` directly (the new negotiation's id, owned by this bank).
 
@@ -7218,7 +7417,15 @@ Counter-offer on an existing negotiation.
 
 **Request Body:** SI-TX `OtcOffer` (same shape as POST).
 
-**Response 200:** Empty body on success.
+**`lastModifiedBy` handling (as of 2.8.1):** `lastModifiedBy.routingNumber` is **DERIVED** from the authenticated sender, not trusted from the payload — an inbound counter was by definition last-modified by the peer that PUT it, so the receiving bank persists `lastModifiedBy.routingNumber = the authenticated peer's routing`, **overriding** any claimed value (the counter still succeeds `200`). The opaque `lastModifiedBy.id` is kept verbatim (§2.3). This keeps the stored `lastModifiedBy` trustworthy for the accept guard by construction: a forged `{thisBank}` counter has its routing overridden to the sender's, so the sender can never self-accept it.
+
+**Turn / closed guards (SI-TX §3.3, as of 2.9.2):** Before persisting the counter the receiving bank checks the stored negotiation row:
+- **Closed:** if the negotiation is no longer ongoing (cancelled / accepted / rejected / expired) → **409 Conflict** (`business_rule_violation`), no mutation.
+- **Out of turn:** a party may counter only when the OTHER side made the last modification. Because the stored `lastModifiedBy.routingNumber` is derived from whoever last acted, the calling peer may PUT a counter only when the stored routing is *this* bank's own routing (we last proposed → it is the peer's turn). If the stored routing is the calling peer's own (it already made the last modification) → **409 Conflict** (`business_rule_violation`), no mutation. Note: immediately after a peer's own bid (`POST /negotiations`) the stored routing is the peer's, so a peer counter right after its own bid is correctly out of turn — the receiving side must counter or accept first.
+
+**Response 200:** Empty body on success (in-turn counter on an ongoing negotiation).
+
+**Response 409:** Out of turn, or the negotiation is closed (per SI-TX §3.3). The stored negotiation is left un-mutated.
 
 ---
 
@@ -7228,14 +7435,14 @@ Read a negotiation's current state.
 
 **Authentication:** PeerAuth.
 
-**Response 200:** SI-TX `OtcNegotiation` = `OtcOffer & { isOngoing: boolean }`.
+**Response 200:** SI-TX `OtcNegotiation` = `OtcOffer & { isOngoing: boolean }`. Monetary `amount` fields are JSON **numbers** per SI-TX §2.5.
 
 ```json
 {
   "stock":          { "ticker": "AAPL" },
   "settlementDate": "2026-12-31T00:00:00Z",
-  "pricePerUnit":   { "amount": "180.50", "currency": "USD" },
-  "premium":        { "amount": "700",    "currency": "USD" },
+  "pricePerUnit":   { "amount": 180.50, "currency": "USD" },
+  "premium":        { "amount": 700,    "currency": "USD" },
   "buyerId":        { "routingNumber": 222, "id": "client-1" },
   "sellerId":       { "routingNumber": 111, "id": "client-1" },
   "amount":         50,
@@ -7263,6 +7470,8 @@ Accept a negotiation. Composes a 4-posting `Transaction` (premium money debit-bu
 
 **Authentication:** PeerAuth.
 
+**Authoritative accept guards (as of 2.8.0; refined 2.8.1):** the accept must come from the **counterparty** — per SI-TX §3.6 the accepting party is "the person whose negotiation term it is" (the side that did NOT last propose), and their bank sends this GET. So on the inbound `/accept` the **stored** `lastModifiedBy.routingNumber` (read from the persisted negotiation row) MUST equal **this bank's** routing (the local side last proposed); otherwise → `403 forbidden`, **no settlement SI-TX dispatched, no contract**. Because the stored routing is **derived from the authenticated sender** at create/counter time (2.8.1) rather than trusted from the payload, it is trustworthy by construction: a peer can never accept its own (or a forged) proposal. Additionally, when this bank hosts the **parent listing**, an accept against a child of a **cancelled/consumed** listing is rejected `409 business_rule_violation` (orphan-accept guard) — authoritatively, regardless of the best-effort sibling cascade-cancel timing.
+
 **Response 200:**
 ```json
 { "transactionId": "tx-uuid", "status": "pending" }
@@ -7282,14 +7491,16 @@ Returns identity info for a counterparty user. Peers call this when displaying u
 - `rid` — must match `OWN_BANK_CODE`'s routing number; otherwise 404 (we don't proxy lookups across banks).
 - `id` — `client-<n>` or `employee-<n>` format; routes to client-service or user-service accordingly.
 
-**Response 200:**
+**Response 200:** (SI-TX §3.7 shape)
 ```json
 {
-  "id":        {"routingNumber": 111, "id": "client-7"},
-  "firstName": "Marko",
-  "lastName":  "Marković"
+  "bankDisplayName": "EXBanka",
+  "displayName":     "Marko Marković"
 }
 ```
+
+- `bankDisplayName` — this bank's human-readable name, from `OWN_BANK_NAME` (falls back to `OWN_BANK_CODE` when unset).
+- `displayName` — the user's first + last name, space-joined.
 
 **Response 404:** Foreign rid or unknown user id.
 
@@ -7377,6 +7588,19 @@ Remove a listing from the caller's watchlist.
 
 **Response 204:** No content on success.
 
+### Named watchlists (SP6)
+
+The legacy `/me/watchlist` routes above operate on the caller's default **"My Watchlist"** (created lazily). Callers can also keep **multiple named lists** (e.g. "tech", "forex pairs"). All routes are `AnyAuthMiddleware`; a list is owned by the caller and can only be touched by its owner. The same listing may live in more than one list.
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/v3/me/watchlists` | List the caller's named watchlists with `{id, name, item_count, created_at}` (always includes the default). |
+| `POST` | `/api/v3/me/watchlists` | Create a named list. Body `{ "name": "tech" }` (1–64 chars). Idempotent on name. Returns `201 {watchlist}`. |
+| `DELETE` | `/api/v3/me/watchlists/:watchlist_id` | Delete a named list and its items. `204` / `404`. |
+| `GET` | `/api/v3/me/watchlists/:watchlist_id/items?listing_type=` | List a named list's items (same enriched shape as `/me/watchlist`). |
+| `POST` | `/api/v3/me/watchlists/:watchlist_id/items` | Add a listing to a named list. Body `{ "listing_id": 1 }`. `201`. |
+| `DELETE` | `/api/v3/me/watchlists/:watchlist_id/items/:listing_id` | Remove a listing from a named list. `204` / `404`. |
+
 **Response 404:** The listing is not on the caller's watchlist.
 
 **Use cases:**
@@ -7387,11 +7611,11 @@ Remove a listing from the caller's watchlist.
 
 ## 41. OTC Negotiation History (Celina 3)
 
-Read-only view of *terminal* OTC offers (accepted, rejected, expired, failed) for the caller. The active `/me/otc/offers` list excludes terminal offers; this endpoint surfaces them with optional status, date-range, and counterparty filters.
+Read-only view of *terminal* OTC negotiations for the caller, **LOCAL (intra-bank) and REMOTE (cross-bank) merged into one list**. The active `/me/otc/options` list excludes terminal offers; this endpoint surfaces them with optional status, date-range, and counterparty filters.
 
 ### GET /api/v3/me/otc/history
 
-List the caller's terminal OTC negotiations.
+List the caller's terminal OTC negotiations (local + remote).
 
 **Authentication:** Any JWT
 
@@ -7402,7 +7626,7 @@ List the caller's terminal OTC negotiations.
 | `status` | string (repeatable) | `ACCEPTED` / `REJECTED` / `EXPIRED` / `FAILED`. Default: all four. |
 | `since` | string (YYYY-MM-DD) | Lower bound on `updated_at`. |
 | `until` | string (YYYY-MM-DD) | Upper bound on `updated_at`. Must be ≥ `since`. |
-| `counterparty_id` | int | Restrict to offers where the OTHER party has this owner id. |
+| `counterparty_id` | int | Restrict to offers where the OTHER party has this owner id (LOCAL items only). |
 | `page` | int | 1-based; default 1. |
 | `page_size` | int | 1..100; default 20. |
 
@@ -7410,13 +7634,25 @@ List the caller's terminal OTC negotiations.
 ```json
 {
   "offers": [
-    { "id": 42, "status": "ACCEPTED", "direction": "sell_initiated", "...": "..." }
+    { "id": 42, "status": "ACCEPTED", "direction": "sell_initiated", "kind": "local",  "routing_number": 111, "bank_code": "111", "me_owner": true,  "...": "..." },
+    { "id": 55, "status": "accepted", "stock_ticker": "ACME",        "kind": "remote", "routing_number": 222, "bank_code": "222", "me_owner": false, "...": "..." }
   ],
   "total": 1
 }
 ```
 
-Sorted by `updated_at` descending. Item shape mirrors `/api/v3/me/otc/offers`.
+Each item carries provenance + ownership fields:
+
+| Field | Type | Meaning |
+|---|---|---|
+| `kind` | string | `local` (this bank hosts the negotiation) or `remote` (resolved from a cross-bank peer chain). |
+| `routing_number` / `bank_code` | int / string | The hosting bank for `local`; the **counterparty/peer** bank for `remote`. |
+| `me_owner` | bool | `true` only when the caller **posted/originated** the offer (initiator side) — a history row where the caller was the bidder/counterparty is `false`. For `remote`: `true` iff WE host the **seller/poster** side (`SellerRoutingNumber == ownRouting`). |
+
+**Local vs remote behavior:**
+- **LOCAL** items are the caller's terminal `OTCOffer` rows (statuses `ACCEPTED` / `REJECTED` / `EXPIRED` / `FAILED`), sorted by `updated_at` descending; item shape mirrors `/api/v3/me/otc/options`.
+- **REMOTE** items are the caller's cross-bank peer negotiation chains in a *terminal* peer status. Only client principals receive remote items (a bank/employee caller has no cross-bank identity and gets local-only). The request `status` filter is mapped onto the peer status vocabulary: `ACCEPTED→accepted`, `REJECTED→{rejected,declined,cancelled}`, `EXPIRED→expired`, `FAILED→(none)`. Remote chain statuses are surfaced in the peer's lowercase vocabulary.
+- **Paging:** `page` / `page_size` apply to the LOCAL set only; remote terminal rows are **appended in full** after the local page (never silently truncated). `total` reflects the local total only, so the `offers` array length may exceed `total` by the remote count. Unified cross-source paging is out of scope for SP-1.
 
 **Response 400:** Invalid `status` value, bad date format, `since > until`.
 
@@ -7840,7 +8076,7 @@ Permanently cancel.
 
 ---
 
-## 47. OTC Marketplace Refactor (Phases 2-6)
+## 47. OTC Marketplace
 
 The OTC surface is split into two clearly-separated marketplaces:
 
@@ -7849,7 +8085,13 @@ The OTC surface is split into two clearly-separated marketplaces:
 
 Both marketplaces support local + cross-bank discovery (peer banks publish their listings via `/api/v3/cross-bank-protocol/public-stock` and `/api/v3/cross-bank-protocol/public-option-offers`; each bank's stock-service polls every ~5 s and merges into an in-memory cache).
 
-> **Migration note:** Phase 8 cleanup deletes the legacy `/api/v3/otc/offers/...` routes. Existing frontends should migrate to the routes below before that lands. See [Section 29](#29-otc-offers-public-stock-listings) and [Section 30](#30-otc-option-contracts-celina-4) for what was there before.
+> **The bank is a first-class cross-bank OTC principal.** An employee acting **as the bank** (via the `bankIfEmp` group, which resolves `owner_type="bank"`) participates in the cross-bank option marketplace exactly like a client, settling against **BANK** accounts/holdings (owner sentinel `1000000000`):
+> - **Bank-owned offers are biddable cross-bank.** When a bank-owned `OTCOffer` is published to peers, its `sellerId` is the stable wire identity `employee-<ActingEmployeeID>` (never the legacy literal `"bank"`); legacy/seed bank offers with no acting employee are not exposed cross-bank. A peer bank may bid on it.
+> - **The bank can bid / counter / accept / reject / cancel / exercise cross-bank.** A bank-driven bid publishes `buyerId=employee-<ActingEmployeeID>`; later wire actions on that chain reuse the **row's** stored `employee-<N>` (a different acting employee keeps the same wire id). Settlement debits/credits BANK accounts and BANK holdings.
+> - **Stable per-resource wire id.** The acting employee is persisted in the `acting_employee_id` column on the offer / mirror row; it is SI-TX **wire identity only** and is never used to look up an employee for ownership — local ownership/settlement always binds the BANK.
+> - **The bank sees its own remote chains in every read view** — `ListMyNegotiations`, the per-listing `negotiations` view, history, timeline, and the `my_negotiation_id` stamp — matched by the `employee-<N>` prefix. Client and bank principal scopes never cross.
+> - **Exercise strike-account gate.** The cross-bank exercise's caller-supplied `buyer_account_number` is gated by the gateway's `ResolveAndCheckAccountByNumber` (a bank-acting employee must bind a BANK account, else `403`), and stock-service re-asserts the bank settlement.
+> - **Inbound back-compat.** A peer that still sends the legacy literal `"bank"` party id is parsed to bank ownership; the wire-conformant `employee-<N>` form is parsed identically (the numeric id is audit-only).
 
 ### 47.1 Stocks marketplace
 
@@ -7915,7 +8157,7 @@ Cancel the caller's sell or buy offer.
 
 #### GET /api/v3/otc/stocks
 
-Unified marketplace listing of sell + buy directions across local + remote peer banks. Same partial-failure semantics as `/otc/options` (cache refreshed every ~5 s; `peers_total` / `peers_reached` / `partial=true` reflect the most recent refresh). Replaces the legacy `GET /api/v3/otc/offers` deleted in Phase 8.
+Unified marketplace listing of sell + buy directions across local + remote peer banks. Same partial-failure semantics as `/otc/options` (cache refreshed every ~5 s; `peers_total` / `peers_reached` / `partial=true` reflect the most recent refresh).
 
 **Query Parameters:** `direction` (`sell`|`buy`), `ticker`, `kind` (`local`|`remote`), `bank_code`, `page`, `page_size` (default 10).
 
@@ -7923,7 +8165,7 @@ Unified marketplace listing of sell + buy directions across local + remote peer 
 
 #### POST /api/v3/otc/stocks/:id/buy
 
-Fill a sell offer with the caller's cash. Race-hardened in Phase 3B follow-up: the seller's holding is `SELECT FOR UPDATE`'d before any money moves, so two concurrent buyers cannot double-spend the same `PublicQuantity` on the same holding. Replaces `POST /api/v3/otc/offers/:id/buy` (deleted in Phase 8).
+Fill a sell offer with the caller's cash. Race-hardened: the seller's holding is `SELECT FOR UPDATE`'d before any money moves, so two concurrent buyers cannot double-spend the same `PublicQuantity` on the same holding.
 
 **Request Body:** `{ "quantity": int, "account_id": int }` (caller's account that pays).
 
@@ -7984,39 +8226,79 @@ Failure at any step reverses the prior steps via compensating account-service ca
 - `ErrOTCStockCurrencyMismatch` — seller's account currency differs from offer's.
 - `ErrOTCBuyOwnOffer` — caller is the buy offer's owner.
 
+---
+
+#### POST /api/v3/otc/stocks/:id/buy-on-behalf
+
+Employee buys a sell offer **on behalf of a client**. The acquired shares land in the named client's holdings and the named client's account pays.
+
+**Authentication:** Employee JWT + (`otc.trade.accept` OR `otc.trade.on_behalf`) + `ResolveIdentity`.
+
+**Path Parameters:**
+- `id` — the sell offer's id (holding id).
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `client_id` | uint64 | yes | The client the purchase is made for. |
+| `account_id` | uint64 | yes | The account that pays — the gateway verifies it belongs to `client_id` (else `403`). |
+| `quantity` | int64 | yes | Positive integer. |
+
+**Response 200:** Purchase result (same shape as `POST /api/v3/otc/stocks/:id/buy`).
+
+**Response 400:** Missing/zero `client_id` or `account_id`, non-positive `quantity`, or invalid offer id.
+
+**Response 403:** `account_id` does not belong to `client_id`.
+
+**Response 404:** Account not found.
+
 ### 47.2 Options marketplace — parallel negotiation chains
 
 Each OTC option listing (an `OTCOffer` posted by a seller or buyer) can accept many parallel **negotiation chains** in the new model. One bidder per chain; the chain has its own counter history and current terms. First chain to accept wins atomically; the parent listing flips to `consumed` and sibling chains cascade-cancel in the same transaction.
 
 #### POST /api/v3/otc/options/:id/bid
 
-Open a new negotiation chain by placing the initial bid on an open listing.
+Open a new negotiation chain by placing the initial bid on an open listing. `:id` may resolve to a **LOCAL** listing (an `OTCOffer` this bank hosts) or a folded-in **REMOTE** listing (a peer-bank listing surfaced via the cross-bank discovery feed). The same route handles both — stock-service dispatches by the parent listing's routing (SP-2b):
+
+- **LOCAL listing** — runs the intra-bank first-accept-wins negotiation path (unchanged). Returns a `kind=local` negotiation.
+- **REMOTE listing** — composes the SI-TX `OtcOffer` (with the caller's `buyerId`, the listing's `sellerId`, the resolved `buyerAccountNumber`, and the listing's cascade-cancel `parentOfferId` lot key) and POSTs it to the seller's bank. Records a local **remote** negotiation mirror row and returns a `kind=remote` negotiation carrying the peer-assigned id. **Both a client AND the bank may bid cross-bank (SP-3):** a client bidder publishes `buyerId=client-<ownerID>`; an **employee acting as the bank** (the `bankIfEmp` group resolves the caller to bank ownership) publishes the stable `buyerId=employee-<actingEmployeeID>` and the bid settles against a **BANK** account — the gateway's `ResolveAndCheckAccount` ownership gate requires a bank-owned `bidder_account_id` for the bank principal (a non-bank account ⇒ 403), and stock-service re-asserts the bank settlement on the wire-identity path. Cross-bank SI-TX has **no FX**, so the bidder account's currency must equal the listing's premium currency.
 
 **Authentication:** Any JWT + `securities.trade` OR `otc.trade.accept` + `ResolveIdentity`
 
-**Path:** `:id` — the parent OTCOffer listing id.
+**Path:** `:id` — the parent OTCOffer listing id (local or remote surrogate id).
 
 **Request Body:**
 
 | Field | Type | Description |
 |---|---|---|
-| `bidder_account_id` | int | Caller's account that will pay/receive premium on accept |
-| `quantity` | string (decimal) | Initial bid quantity |
-| `strike_price` | string (decimal) | Initial bid strike |
-| `premium` | string (decimal) | Initial bid premium |
+| `bidder_account_id` | int | Caller's account that will pay/receive premium on accept. For a remote listing it is re-validated (ownership, active, currency==listing premium currency) and its account number is threaded to the seller's bank. |
+| `quantity` | string (decimal) | Initial bid quantity. Must be **> 0**. |
+| `strike_price` | string (decimal) | Initial bid strike. Must be **> 0**. |
+| `premium` | string (decimal) | Initial bid premium. Must be **>= 0** (zero allowed; negative rejected with 400). |
 | `settlement_date` | string | RFC3339 or YYYY-MM-DD |
 
-**Response 201:** `{ "negotiation": OTCNegotiationResponse }`. Status `open`.
+The gateway validates `quantity`/`strike_price` as strictly positive and `premium` as non-negative decimals before forwarding (a malformed or non-positive amount ⇒ 400). The same checks apply to the `counter` route below.
 
-**Response 400/403/409:** Validation, account-ownership, or chain-already-exists (one chain per bidder per listing).
+**Response 201:** `{ "negotiation": OTCNegotiationResponse }`. Status `open` (local) / `ongoing` (remote, peer status vocabulary). `kind` is `local` or `remote`.
+
+**Response 400/403/409:** Validation, account-ownership, chain-already-exists (one chain per bidder per listing), or — for a remote listing — a premium-currency mismatch (SI-TX has no FX). A bank/employee-acting-as-bank bidder is **accepted** cross-bank (SP-3 lifted the earlier deferral); the bid publishes `employee-<N>` and settles against a bank account.
 
 **Response 412:** Parent listing is no longer open (consumed, cancelled, or expired).
 
 ---
 
+> **Unified local + cross-bank dispatch.** The four per-chain mutation
+> routes below — `counter`, `accept`, `reject`, and the `DELETE …/:nid` cancel —
+> each handle a **LOCAL** chain (this bank hosts the listing) and a **REMOTE**
+> chain (a peer bank hosts the listing) on the **same** route. stock-service
+> dispatches on the chain's parent listing routing: a local chain runs the
+> intra-bank path, a remote chain is forwarded to the peer over SI-TX and the
+> local mirror row is updated to match.
+
 #### POST /api/v3/me/otc/options/:id/negotiations/:nid/counter
 
-Counter the current terms on one of the caller's chains. Either party (the chain's bidder OR the listing's poster) may counter.
+Counter the current terms on one of the caller's chains. Either party (the chain's bidder OR the listing's poster) may counter. Handles local and remote chains uniformly (see the dispatch note above).
 
 **Request Body:** new `{ quantity, strike_price, premium, settlement_date }`.
 
@@ -8085,11 +8367,14 @@ Accept the current terms on a chain. Caller must be the party **opposite** to wh
     "seller_account_id": 99,
     "status":            "ACTIVE",
     "premium_paid_at":   "2026-05-16T03:20:00Z"
-  }
+  },
+  "cross_bank_transaction_id": ""
 }
 ```
 
 `contract` is `null` when the formation saga failed; in that case the negotiation status is `failed`, the parent stays `consumed`, and the front-end can surface a "contract not formed" warning + suggest re-listing.
+
+`cross_bank_transaction_id` (optional) is populated **only when the accepted `:nid` resolves to a folded-in cross-bank (REMOTE) negotiation chain**: it carries the peer bank's SI-TX `transactionId` returned by the peer's `GET .../accept`, so the FE can poll cross-bank settlement via `GET /me/otc/transactions/:txid/status` during the accept→contract-mirror window. It is an empty string for a LOCAL accept (no cross-bank transaction) and for a remote accept whose peer body did not include a decodable `transactionId`.
 
 **Exercise:** the minted `OptionContract` row is consumable by `POST /api/v3/otc/contracts/:id/exercise` (see existing exercise route) — strike money moves buyer→seller, the reserved seller shares are consumed and credited to the buyer's holding. When the contract has `on_behalf_of_fund_id` set, the `exercise` endpoint also accepts `on_behalf_of_fund_id` in the request body (same fund-manager validation applies) and shares land in `fund_holdings`.
 
@@ -8146,9 +8431,9 @@ No funds or shares are unwound — none are reserved at listing-creation time; r
 
 **Response 204:** Listing cancelled. No body.
 
-**Response 403:** Caller is authenticated but is not the listing's initiator (e.g. they are the bound counterparty or a stranger).
+**Response 403:** Caller is authenticated but is not the listing's initiator (e.g. they are the bound counterparty or a stranger). As of 2026-06-05 this also covers a non-participant acting on an existing offer they don't own — `GetOffer` is now public, so the gateway pre-check fetches the offer and the initiator-only check returns 403 (OTC offers are already publicly discoverable, so this confirms nothing a stranger could not learn from `GET /api/v3/otc/options`).
 
-**Response 404:** Offer does not exist, or the caller is not a participant (the gateway's pre-check fetches the offer via the participant-scoped `GetOffer`, which returns NotFound for non-participants — confirming existence of a stranger's listing would itself be a data leak).
+**Response 404:** Offer does not exist (neither a local listing nor a remote mirror row for `id`).
 
 **Response 409:** Listing is no longer open (already accepted/consumed, already cancelled, expired, etc.).
 
@@ -8156,25 +8441,124 @@ No funds or shares are unwound — none are reserved at listing-creation time; r
 
 #### GET /api/v3/otc/options/:id/negotiations
 
-List every negotiation chain against a listing (any status). Used by the listing's poster to see all incoming bids, and by bidders to see what competing counter-bids look like.
+List the negotiation chains against a listing. `:id` is the stable surrogate id from the discovery feed and may resolve to a **LOCAL** listing (an `OTCOffer` this bank hosts, `routing_number=own`) or a **REMOTE** listing (a folded-in remote `OTCOffer` row mirroring a peer-bank listing, `routing_number=<peer>`; SP-2a). (SP-1 Task 8b extends this to remote ids.)
+
+**Authentication:** Any JWT + `ResolveIdentity`.
+
+**LOCAL `:id` — unchanged audience + behavior.** Returns **every** chain on the listing (any status). **Restricted audience:** only the listing's poster (a client whose `principal_id` matches the offer's initiator) or an employee holding the `otc.read.all` permission may call this. A competing bidder — or any other client — receives **403**; bidders see only their own chain via `GET /api/v3/me/otc/options/negotiations`. Each item is now stamped `kind="local"` + own `routing_number` / `bank_code`; `me_owner` is `false` (the field reflects the *chain's* bidder ownership, not the listing's — a bidder is never the owner).
+
+> **Bank-owned LOCAL listing — peer bids included (SP-3 Task 5b).** When the LOCAL listing is **bank-owned** (`owner_type="bank"`) and a **peer** bank bid on it cross-bank, those peer bids live as REMOTE chains where we host the seller as the bank (party id `employee-<N>`). For a bank caller, the response now also merges those peer bids — correlated to this listing by the remote chain's `(remote_parent_routing, remote_parent_native_id)` lot key == the offer's `(routing_number, native_id)`, so only bids on *this* listing appear (each `kind="remote"`, `me_owner=true` because the bank owns the listing). Client-owned listings are unaffected (no bank merge).
+
+**REMOTE `:id` — caller's own chain(s) only.** We do not host the listing, so we can only surface the **caller's own** chain(s) against it — never other parties' chains. Returns the caller's `peer_otc_negotiation` rows whose `(ParentOfferRouting, ParentOfferID)` lot key matches the mirror's `(PeerRoutingNumber, ForeignOfferID)`, each stamped `kind="remote"` with counterparty provenance and `me_owner` per the seller-side rule. If the caller has no chain on it → **empty list** (not 403/404). **Both a client AND the bank have a cross-bank bidder identity (SP-3 Task 5b):** a client matches its exact `client-<N>` chains; an employee acting as the bank matches its `employee-<N>` bid chains (prefix-matched). Any other caller yields an empty list. The two principal scopes never cross.
 
 **Response 200:** `{ "negotiations": [OTCNegotiationResponse...], "total": int }`.
+
+**Response 403:** (LOCAL only) caller is neither the listing's poster nor a permission-gated employee.
+
+**Response 404:** `:id` is neither a local offer nor a remote mirror.
+
+---
+
+#### GET /api/v3/otc/options/:id/timeline
+
+Cross-chain interaction timeline for an offer. `:id` may resolve to a **LOCAL** listing or a **REMOTE** mirror (SP-1 Task 8b extends this to remote ids).
+
+**LOCAL `:id` — unchanged:** the offer plus **every** negotiation chain's revisions, merged into a single stream sorted ascending by `created_at`. This is the offer-owner "front page" view — one call returns the whole offer's history across all bidders, so the frontend never needs to fan out per chain. Each entry carries its chain's `negotiation_id` and bidder identity, so the client can render one flat timeline or regroup into per-bidder swimlanes. **Restricted audience:** identical to `GET /api/v3/otc/options/:id/negotiations` — listing poster or employee with `otc.read.all` only. Competing bidders receive **403**.
+
+**REMOTE `:id` — caller's own chain(s) only:** we do not host the listing, so the timeline surfaces only the **caller's own** chain(s) against it (never other parties'). The folded-in remote `OTCOffer` row provides the `offer` header (`kind="remote"`); each of the caller's matching peer chains (lot key `(ParentOfferRouting, ParentOfferID)` == remote row `(routing_number, native_id)`) becomes **one** timeline entry — the remote row keeps only current terms, not a per-revision history, so there is one entry per chain with `action="COUNTER"`. No matching chain → offer header + **empty timeline** (not 403/404). Only client principals have a cross-bank identity.
+
+**Path:** `:id` — the surrogate listing id (local OTCOffer or folded-in remote OTCOffer row).
+
+**Response 200:**
+
+```json
+{
+  "offer": { /* OTCOfferResponse */ },
+  "timeline": [
+    {
+      "negotiation_id":           100,
+      "bidder_owner_type":        "client",
+      "bidder_owner_id":          7,
+      "revision_number":          1,
+      "action":                   "BID",
+      "quantity":                 "10",
+      "strike_price":             "150.00",
+      "premium":                  "5.00",
+      "settlement_date":          "2026-07-01T00:00:00Z",
+      "action_by_principal_type": "client",
+      "action_by_principal_id":   7,
+      "created_at":               "2026-06-01T12:00:00Z"
+    },
+    {
+      "negotiation_id":           100,
+      "bidder_owner_type":        "client",
+      "bidder_owner_id":          7,
+      "revision_number":          2,
+      "action":                   "COUNTER",
+      "quantity":                 "10",
+      "strike_price":             "155.00",
+      "premium":                  "7.00",
+      "settlement_date":          "2026-07-01T00:00:00Z",
+      "action_by_principal_type": "client",
+      "action_by_principal_id":   1,
+      "created_at":               "2026-06-01T12:05:00Z"
+    }
+  ]
+}
+```
+
+Entries are ordered by `created_at ASC`; ties break by `(negotiation_id, revision_number)` for deterministic ordering (LOCAL only).
+
+**Response 403:** (LOCAL only) caller is neither the listing's poster nor a permission-gated employee.
+
+**Response 404:** `:id` is neither a local offer nor a remote mirror.
 
 ---
 
 #### GET /api/v3/me/otc/options/negotiations
 
-List chains where the caller is the bidder.
+Returns a **unified list** of the caller's negotiation chains — both LOCAL
+(intra-bank chains where the caller is the bidder) and REMOTE (cross-bank
+peer chains where the caller is a party) — merged into one `negotiations`
+array. Each item carries provenance (`kind` / `routing_number` /
+`bank_code`) plus `me_owner`. (SP-1 Task 7)
 
 **Query Parameters:**
 
 | Parameter | Type | Description |
 |---|---|---|
-| `statuses` | string | Comma-separated filter: `open,countered,accepted,rejected,cancelled,expired` |
+| `statuses` | string | Comma-separated filter: `open,countered,accepted,rejected,cancelled,expired` (applied to both local and remote items) |
 | `page` | int | Default 1 |
 | `page_size` | int | Default 20, max 200 |
 
-**`OTCNegotiationResponse` shape:** includes a `minted_contract_id` field (uint64, 0 when absent) populated on `status=accepted` rows that successfully minted a contract.
+**`OTCNegotiationResponse` shape:** in addition to the existing fields and
+`minted_contract_id` (uint64, 0 when absent; populated on `status=accepted`
+rows that successfully minted a contract), every item now carries:
+
+| Field | Type | Description |
+|---|---|---|
+| `kind` | string | `local` (intra-bank chain) or `remote` (cross-bank peer chain) |
+| `routing_number` | int64 | Owning bank's routing. For `local`: our own routing. For `remote`: the COUNTERPARTY/peer bank's routing (the side we do not host). |
+| `bank_code` | string | Owning/peer bank's code, matching `routing_number`. |
+| `me_owner` | bool | `true` ONLY when the caller is the parent listing's poster/seller (someone is bidding on MY listing). A chain the caller opened **as the bidder** is `false`. For `remote`: `true` iff WE host the seller/poster side (`seller_routing == own_routing`). |
+
+For `remote` items, `id` is the **local surrogate primary key** of this
+bank's peer-negotiation mirror row (so callers correlate within this
+bank's id namespace), and the terms (`quantity`, `strike_price`, `premium`,
+`settlement_date`, `status`) are projected from the mirrored cross-bank
+offer.
+
+**Paging note:** `page`/`page_size` paginate the LOCAL set; REMOTE chains
+are appended in full after the local page (never silently truncated).
+`total` reflects the local total only.
+
+**Remote-merge principal scope (SP-3 Task 5b):** the REMOTE merge is keyed on
+the caller's cross-bank bidder identity. A **client** caller matches its exact
+wire principal `client-<N>`. A caller acting **as the bank** (`owner_type="bank"`,
+an employee) now also gets the bank's own cross-bank **bid** chains — matched by
+the `employee-<N>` prefix (the bank has no single wire principal across chains).
+The two scopes never cross: a client never receives bank chains, and a bank
+never receives client chains.
 
 ---
 
@@ -8242,6 +8626,64 @@ History view: every OTC option listing the caller has ever posted, **any status*
 
 ---
 
+#### GET /api/v3/otc/options/:id
+
+Resolve a single OTC option offer by its **stable surrogate id** — the `local_id` surfaced on every row of `GET /api/v3/otc/options`. Works for both **local** offers (this bank's listings) and **remote** offers (a peer-bank listing mirrored locally). The handler first tries the local lookup; if that 404s it falls back to the persistent remote mirror, so a frontend can address any discovered offer — local or remote — by the same id.
+
+**Authentication:** Any JWT + `ResolveIdentity`.
+
+**Path Parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `id` | uint64 | The surrogate id from the discovery feed (`local_id`) |
+
+**Response 200 — local offer** (backward-compatible: the existing `offer` / `revisions` body is preserved, with decoration fields added):
+```json
+{
+  "offer":    { "...": "OTCOfferResponse", "kind": "local", "me_owner": true,
+                "seller_id": "bank",
+                "my_negotiation_id": 88, "my_negotiation_status": "open" },
+  "revisions": [ "..." ]
+}
+```
+- `kind` is always `"local"` here.
+- **Public read (2026-06-05):** the offer body is readable by **any** authenticated caller, mirroring the unified discovery list (`GET /api/v3/otc/options`) — a caller that can see an offer in the list can read its detail. A **non-participant** receives the offer with `me_owner=false` and an **empty `revisions[]`** (the negotiation/counter history stays gated to participants — the listing's poster/seller or the chain's bidder). Reading a non-owned offer triggers no read-receipt. (Previously a non-participant got a `not_found` masked as 500; that reject path is removed.)
+- `me_owner` is `true` when the acting identity owns the listing (client whose `seller_id` is `client-<their owner id>`, or an employee acting as the bank on a `bank`-owned listing), else `false`.
+- **`seller_id`** — the LOCAL read view's SI-TX seller identity of the offer's initiator: `"bank"` for a bank-owned listing, `"client-<N>"` for a client-owned one. The same value the unified marketplace listing surfaces, now stamped uniformly on every single-offer response (create / detail / counter / cancel). Distinct from the cross-bank wire id `"employee-<N>"`, composed only on the SI-TX publish path.
+- **`my_negotiation_id` / `my_negotiation_status` (SP-2b, 2026-06-05):** when the authenticated caller has an own (bidder) negotiation chain against this offer, these carry that chain's surrogate id + status so the FE can jump straight to its chain. **Omitted/0 / "" when the caller has no bidder chain** — note a poster who never bid on their own listing is `me_owner=true` but has NO `my_negotiation_id` (the two are independent). When several chains exist on one offer the **active** one wins: an accepted chain beats a live (`open`/`countered`/`ongoing`) one beats a terminal one; ties break to the most recently created. Works for local and remote offers.
+
+**Response 200 — remote (cross-bank) offer** (resolved from the mirror; flat shape):
+```json
+{
+  "id":               7,
+  "kind":             "remote",
+  "me_owner":         false,
+  "offer_id":         "off-9",
+  "bank_code":        "222",
+  "routing_number":   222,
+  "seller_id":        "client-3",
+  "direction":        "sell_initiated",
+  "ticker":           "AAPL",
+  "amount":           50,
+  "strike_price":     "180.50",
+  "strike_currency":  "USD",
+  "premium":          "700.00",
+  "premium_currency": "USD",
+  "settlement_date":  "2026-12-31T00:00:00Z",
+  "status":           "open",
+  "created_at":       "2026-05-10T14:00:00Z"
+}
+```
+- `kind` is always `"remote"` and `me_owner` is always `false` (a peer hosts the listing — it is never ours).
+- `status` is `open` or `cancelled` (cancelled mirror rows are still returned so the FE can render a terminal state rather than a 404).
+- `my_negotiation_id` / `my_negotiation_status` (SP-2b) are present here too when the caller has bid on this remote offer cross-bank (matched on the chain's remote parent routing+native id); omitted/0/"" otherwise. Both a **client** caller (its `client-<N>` chain) and a caller acting **as the bank** (its `employee-<N>` bid chain, SP-3 Task 5b) are stamped; the two principal scopes never cross.
+
+**Response 400:** `{ "error": { "code": "validation_error", "message": "invalid id" } }`
+**Response 404:** `{ "error": { "code": "not_found", "message": "OTC offer not found" } }` — neither a local offer nor a remote mirror row exists for `id`.
+
+---
+
 #### GET /api/v3/otc/options
 
 Unified cross-bank discovery view: every open OTC option listing on this bank + every peer bank's open listings (refreshed every ~5 s by the OptionRefresher). Filterable, paginated, partial-failure tolerant (the cache exposes `peers_total` / `peers_reached` / `partial=true` if some peers were unreachable in the last refresh).
@@ -8265,6 +8707,7 @@ Unified cross-bank discovery view: every open OTC option listing on this bank + 
       "kind":                "remote",
       "bank_code":           "222",
       "routing_number":      222,
+      "local_id":            17,
       "offer_id":            "42",
       "seller_id":           "client-7",
       "seller_name":         "",
@@ -8278,7 +8721,9 @@ Unified cross-bank discovery view: every open OTC option listing on this bank + 
       "settlement_date":     "2026-12-31T00:00:00Z",
       "created_at":          "2026-05-10T14:00:00Z",
       "best_bid":            "850",
-      "active_chains_count": 3
+      "active_chains_count": 3,
+      "my_negotiation_id":     88,
+      "my_negotiation_status": "open"
     }
   ],
   "total_count":   1,
@@ -8288,6 +8733,23 @@ Unified cross-bank discovery view: every open OTC option listing on this bank + 
   "last_refresh":  "2026-05-16T02:50:00Z"
 }
 ```
+
+**SP-1 provenance + ownership fields (2026-06-04):** Every item in `offers[]` carries:
+
+| Field | Type | Notes |
+|---|---|---|
+| `kind` | string | `"local"` (this bank's listing) or `"remote"` (peer-bank mirror). **Derived from `routing_number`:** `kind="local"` iff `routing_number == OwnRouting()`; `kind="remote"` otherwise. There is no `kind` column in the DB — it is a computed, frontend-only label. |
+| `routing_number` | int64 | Bank routing number identifying the hosting bank. |
+| `bank_code` | string | 3-digit bank code. |
+| `local_id` | uint64 | Stable local surrogate id — the folded-in remote `OTCOffer.id` for remote rows (SP-2a); the numeric offer id for local rows. Use this as `:id` in `GET /api/v3/otc/options/:id`. |
+| `me_owner` | bool | `true` when the acting caller is the listing's poster/seller. Always `false` for remote rows. Omitted (falsy) when not owned. |
+
+**SP-2b caller's-own-chain fields (2026-06-05):** Each item the authenticated caller has an own (bidder) negotiation chain against also carries:
+
+| Field | Type | Notes |
+|---|---|---|
+| `my_negotiation_id` | uint64 | Surrogate id of the caller's own (as **bidder**) negotiation chain on this offer, so the FE can jump straight to its chain. **Omitted when the caller has no chain here** (0). A poster who never bid is `me_owner=true` but has no `my_negotiation_id` — the two are independent. Works for local and remote offers (remote chains match on the chain's remote parent routing+native id). When multiple chains exist, the **active** one wins (accepted > live `open`/`countered`/`ongoing` > terminal; ties → most recently created). |
+| `my_negotiation_status` | string | That chain's status. Omitted when `my_negotiation_id` is absent. |
 
 **Best-bid / best-ask surface (Part A 2026-05-16).** Three optional fields surface aggregated active-chain pricing so a prospective bidder sees that competition is live before placing an offer at the seller's static ask:
 
@@ -8299,7 +8761,7 @@ Unified cross-bank discovery view: every open OTC option listing on this bank + 
 
 All three are **omitted from the JSON when no active chains exist** (or when the row is remote and the peer bank doesn't publish them — graceful older-bank compat: their offers just don't show the surface and the FE renders "—"). Re-aggregated on every cache refresh (~5 s), so a freshly-placed counter shows up within one tick.
 
-After picking a remote offer, bidders drive negotiation via `POST /api/v3/me/peer-otc/negotiations` using `bank_code` as `seller_bank_code` and `seller_id.id` from the discovered row.
+After picking a remote offer, bidders drive negotiation via the unified `POST /api/v3/otc/options/:id/bid` (using the discovered row's `local_id` as `:id`); stock-service dispatches the cross-bank negotiation to the seller's bank.
 
 #### Cross-bank cascade-cancel on accept (Phase 10)
 
@@ -8307,22 +8769,24 @@ Mirrors the intra-bank Phase 2 first-accept-wins cascade for cross-bank negotiat
 
 **The atomic per-listing key.** The user's concern "seller should be able to have two option offers at the same time with same ticker" is honoured because cascade matches on the listing's actual `parent_offer_id` (the OTCOffer row id), NOT on ticker+settlement_date. Two legitimately distinct listings on the same ticker+date have different `parent_offer_id` values → they're in different cascade groups → accepting one never touches the other.
 
-**Capturing the key.** Bidders get it from the discovery payload (`offer_id` + `routing_number` in the `/otc/options` row) and pass it in the initiate body:
+**Capturing the key.** Bidders get it from the discovery payload (`offer_id` + `routing_number` in the `/otc/options` row) and pass it when bidding on the remote listing via the unified `POST /api/v3/otc/options/:id/bid` (stock-service composes the SI-TX `OtcOffer` from this and dispatches it to the seller's bank). The cross-bank-specific fields the dispatch consumes:
 
 ```
-POST /api/v3/me/peer-otc/negotiations
+POST /api/v3/otc/options/:id/bid   (remote listing → cross-bank dispatch)
 {
   "seller_bank_code":  "111",
   "seller_id":         "client-7",
   "stock":             { "ticker": "AAPL" },
   "settlement_date":   "2027-08-01T00:00:00Z",
-  "price_per_unit":    { "amount": "175", "currency": "USD" },
-  "premium":           { "amount": "40",  "currency": "USD" },
+  "price_per_unit":    { "amount": 175, "currency": "USD" },
+  "premium":           { "amount": 40,  "currency": "USD" },
   "amount":            2,
   "bidder_account_id": 13,                                   ← REQUIRED (Fix #1, 2026-05-16)
   "parent_offer_id":   { "routingNumber": 111, "id": "42" }  ← optional
 }
 ```
+
+The `price_per_unit.amount` and `premium.amount` fields are JSON **numbers** (SI-TX §2.5); the gateway also tolerates a quoted decimal string for backward compatibility. They are re-serialized to the seller's bank as JSON numbers in the outbound `OtcOffer`.
 
 **`bidder_account_id` (Fix #1, 2026-05-16).** REQUIRED. The buyer's account that pays the premium on accept. Gateway validates: (a) account exists and belongs to caller; (b) account is `active`; (c) **account currency matches `premium.currency`**. Cross-bank SI-TX has no FX (postings must balance per asset_id across banks, so converting on the buyer's side would break conservation) — open an account in the offer's currency or pick one. The resolved 18-digit account number is threaded into the SI-TX `OtcOffer` as `buyerAccountNumber` so the seller's bank uses this exact account for the buyer-debit posting on accept, instead of resolving `client-<id>` to "first active account in this currency" (which was non-deterministic and silently failed when the buyer had no matching account).
 
@@ -8340,19 +8804,19 @@ POST /api/v3/me/peer-otc/negotiations
 
 The gateway forwards `parentOfferId` in the SI-TX `OtcOffer` body; the seller's bank stores it on `peer_otc_negotiations.parent_offer_routing` / `.parent_offer_id`. The buyer-side mirror also stores it. Free-form bidders (no discovery) omit the field — they're never part of any cascade group, so a seller's free-form listings stay safe.
 
-**Cascade flow on accept.** When seller calls `POST /api/v3/me/peer-otc/negotiations/:rid/:id/accept`:
+**Cascade flow on accept.** When the seller accepts a remote chain via the unified `POST /api/v3/me/otc/options/:id/negotiations/:nid/accept` (stock-service dispatches the cross-bank accept):
 
-1. Existing proxy → SI-TX dispatch → premium move → option contracts on both banks.
-2. Local mirror flip via `MarkNegotiationAccepted` (unchanged).
-3. **NEW**: gateway calls `CascadeCancelSiblings` on stock-service; the response lists every other `ongoing` chain under the same seller with the same `parent_offer_id` (all of which are now flipped to `cancelled` locally on the seller's bank).
-4. **NEW**: for each cancelled sibling, the gateway fires `DELETE /api/v3/negotiations/:rid/:id` to that bidder's bank so the bidder's mirror flips to `cancelled` too.
+1. Proxy GET `.../accept` → SI-TX dispatch → premium move → option contracts on both banks.
+2. Local mirror flip to `accepted` (`MarkNegotiationAccepted` semantics, now run inside stock-service's outbound accept flow).
+3. Stock-service runs the cross-bank cascade (`CascadeCancelSiblings` semantics): every other `ongoing` chain under the same seller with the same `parent_offer_id` is flipped to `cancelled` locally on the seller's bank.
+4. For each cancelled sibling, stock-service fires `DELETE /api/v3/cross-bank-protocol/negotiations/:rid/:id` to that bidder's bank so the bidder's mirror flips to `cancelled` too.
 
 **Out-of-cascade rows preserved.** Rows with NULL `parent_offer_id` (free-form bids) are excluded by the cascade query. The seller can hold two distinct listings on the same ticker+settlement_date without accidental cross-cancel.
 
-**Response shape — parity with intra-bank accept.** The gateway returns `cancelled_siblings` in the cross-bank accept response so the FE can render local and cross-bank accepts with the same component. Each entry projects the same fields the FE already consumes from `GET /me/peer-otc/negotiations` (buyer_id, seller_id, offer, status, role, updated_at) — different business logic backs the two flows, but the presentation shape is the same.
+**Response shape — parity with intra-bank accept.** The accept response carries `cancelled_siblings` so the FE can render local and cross-bank accepts with the same component. Each entry projects the same fields the FE consumes from the unified negotiations list (`GET /api/v3/me/otc/options/negotiations`): buyer_id, seller_id, offer, status, role, updated_at — different business logic backs the two flows, but the presentation shape is the same.
 
 ```json
-POST /api/v3/me/peer-otc/negotiations/{rid}/{id}/accept   ← cross-bank
+POST /api/v3/me/otc/options/:id/negotiations/:nid/accept   ← remote chain → cross-bank dispatch
 
 {
   "transactionId": "tx-...",        // proxied from peer's /accept
@@ -8383,32 +8847,9 @@ POST /api/v3/me/peer-otc/negotiations/{rid}/{id}/accept   ← cross-bank
 
 The intra-bank equivalent (`POST /me/otc/options/:id/negotiations/:nid/accept`) returns the same `cancelled_siblings` key, populated with `OTCNegotiationResponse` rows (`id`, `parent_offer_id`, `bidder_*`, `quantity`, `strike_price`, `premium`, `settlement_date`, `status`, `last_action_*`). FE keys off `cancelled_siblings[*]` without branching the cascade UI on flow type.
 
-#### GET /api/v3/me/peer-otc/negotiations
+#### Listing the caller's cross-bank negotiations
 
-List the caller's cross-bank OTC negotiations (both as buyer and as seller, depending on the `role` filter). Returns ALL rows in ANY status including terminal states (`cancelled`, `accepted`).
-
-**Authentication:** Any JWT (AnyAuth)
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-|---|---|---|
-| `role` | string | `buyer`, `seller`, or omit for both |
-
-**Response 200:** `{ "items": [PeerNegotiationListItem...] }`.
-
-**`PeerNegotiationListItem` shape:**
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `{ routingNumber, id }` | Foreign id on the seller's bank |
-| `buyer_id` | `{ routingNumber, id }` | Buyer's SI-TX participant id |
-| `seller_id` | `{ routingNumber, id }` | Seller's SI-TX participant id |
-| `offer` | `PeerOtcOffer` | Current offer terms |
-| `status` | string | `ongoing`, `accepted`, or `cancelled` |
-| `role` | string | `buyer` or `seller` — the caller's side |
-| `updated_at` | string | ISO-8601 |
-| `local_contract_id` | uint64 | `peer_option_contracts.id` on this bank. Non-zero only on `status=accepted` rows where the option contract was minted on this bank (seller side: DEBIT direction; buyer side: CREDIT direction). 0 when not yet minted or not applicable. |
+The caller's cross-bank OTC negotiations (as buyer and as seller) are returned by the **unified** `GET /api/v3/me/otc/options/negotiations` list alongside intra-bank chains — remote rows carry `kind="remote"`.
 
 #### Notification coverage (2026-05-16)
 
@@ -8462,6 +8903,27 @@ Peer-facing endpoint for cross-bank option discovery. `PeerAuth` middleware vali
 Population rule: `bestBid` is set for `sell_initiated` parents (buyers compete on premium upward); `bestAsk` is set for `buy_initiated` parents (sellers compete on premium downward). `activeChainsCount` is the count of negotiation chains in `open` or `countered` status against the listing.
 
 Each entry corresponds to one `OTCOffer` row on this bank with `status IN ('open','PENDING','COUNTERED')` AND `counterparty_owner_id IS NULL`. `Private=true` rows are dropped unless `PrivateToBankCode` equals the calling peer's bank code.
+
+**Seller-centric discovery — `buy_initiated` offers are NEVER published.** The SI-TX bank-to-bank protocol's OTC discovery model is strictly seller-centric: §3.1 `PublicStock` lists only `sellers`; §3.2 a negotiation is created by a request "sent from a Buyer's bank to a Seller's bank"; §3.6.1 "the option pseudo-account is always in the bank of the seller". A `buy_initiated` listing's poster is a **BUYER** wanting to acquire shares — it has no conformant cross-bank representation (publishing it would mislabel the buyer-poster as a `sellerId` and invert the economic roles on accept/exercise). Therefore **only `sell_initiated` listings are exposed cross-bank**; `buy_initiated` listings are intra-bank only and are filtered out of this endpoint. Symmetrically, on ingest a peer's `buy_initiated` offer (should a non-conformant peer emit one with the proprietary `direction` field set) is dropped at the discovery-poll boundary, so it never becomes a biddable remote listing, and a cross-bank bid against a `buy_initiated` remote listing fails closed with HTTP 409 `business_rule_violation`.
+
+---
+
+## 53. System Version
+
+Public endpoint — no authentication required.
+
+### GET /api/v3/version
+
+Returns the semantic version of the running backend, so front-end developers can confirm which backend build they are talking to. The version is the contents of the repo-root `VERSION` file, baked into the gateway binary at build time.
+
+**Authentication:** None (public)
+
+**Response 200:**
+```json
+{
+  "version": "1.0.0"
+}
+```
 
 ---
 
@@ -8918,6 +9380,46 @@ Response shape:
     }
   ],
   "total": 42,
+  "page": 1,
+  "page_size": 50
+}
+```
+
+**GET /api/v3/admin/audit/business-actions**
+
+Returns the business-action audit log — who changed an employee/actuary limit, reset a usedLimit, approved/rejected an order, changed role/employee permissions, or triggered manual tax collection — persisted by notification-service. The actor is the JWT principal who performed the action.
+
+- Authentication: Bearer token (employee only)
+- Permission: `admin.audit.view`
+
+Query parameters (all optional):
+
+| Param | Type | Notes |
+|---|---|---|
+| `page` | int | default 1 |
+| `page_size` | int | default 50, max 200 |
+| `since` | string | `YYYY-MM-DD` inclusive lower bound |
+| `until` | string | `YYYY-MM-DD` inclusive upper bound |
+| `actor_id` | int | filter by actor employee id |
+| `action` | string | `limit.set` \| `limit.used_reset` \| `order.approve` \| `order.decline` \| `permissions.set` \| `tax.collect` |
+| `target_type` | string | `employee` \| `order` \| `role` \| `tax` |
+
+Response shape:
+
+```json
+{
+  "entries": [
+    {
+      "id": 1,
+      "action": "limit.set",
+      "actor_id": 5,
+      "target_type": "employee",
+      "target_id": "9",
+      "detail": "max_single=5000 max_daily=20000 ...",
+      "timestamp": "2026-06-04T10:00:00Z"
+    }
+  ],
+  "total": 7,
   "page": 1,
   "page_size": 50
 }

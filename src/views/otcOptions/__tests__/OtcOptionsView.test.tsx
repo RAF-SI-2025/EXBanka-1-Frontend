@@ -19,6 +19,7 @@ jest.mock('@/views/otcOptions/api/otcOptionsApi', () => ({
     withdrawNegotiation: jest.fn(),
     listNegotiations: jest.fn(),
     listMyNegotiations: jest.fn(),
+    getOfferTimeline: jest.fn(),
   },
 }))
 
@@ -51,6 +52,7 @@ beforeEach(() => {
   // Default: caller has no active chains anywhere.
   jest.mocked(otcOptionsApi.listMyNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
   jest.mocked(otcOptionsApi.listMine).mockResolvedValue({ offers: [], total_count: 0 })
+  jest.mocked(otcOptionsApi.getOfferTimeline).mockResolvedValue({ offer: {}, timeline: [] })
   jest.mocked(accountsApi.getClientAccounts).mockResolvedValue({
     accounts: [
       {
@@ -123,7 +125,7 @@ describe('OtcOptionsView', () => {
     expect(screen.getByRole('button', { name: /^bid$/i })).toBeInTheDocument()
   })
 
-  it("shows Activity (not Place bid) on the user's own listing", async () => {
+  it('shows Counter on a non-owner row where the caller already has a chain', async () => {
     jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
       offers: [
         {
@@ -131,7 +133,7 @@ describe('OtcOptionsView', () => {
           bank_code: '111',
           routing_number: 111,
           offer_id: '42',
-          seller_id: 'client-5', // matches user id
+          seller_id: 'client-99',
           direction: 'sell_initiated',
           ticker: 'AAPL',
           amount: 10,
@@ -141,6 +143,41 @@ describe('OtcOptionsView', () => {
           premium_currency: 'USD',
           settlement_date: '2026-12-31T00:00:00Z',
           created_at: '2026-05-10T14:00:00Z',
+          // numeric my_negotiation_id ⇒ a bid chain is already underway.
+          my_negotiation_id: 88,
+          my_negotiation_status: 'open',
+        },
+      ],
+      total_count: 1,
+    })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    expect(await screen.findByText('AAPL')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /counter/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
+  })
+
+  it("shows Activity (not Place bid) on the user's own listing", async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          offer_id: '42',
+          seller_id: 'client-5',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          // Backend marks the caller as the listing's poster.
+          me_owner: true,
         },
       ],
       total_count: 1,
@@ -229,6 +266,8 @@ describe('OtcOptionsView', () => {
           settlement_date: '2026-12-31T00:00:00Z',
           created_at: '2026-05-10T14:00:00Z',
           active_chains_count: 0,
+          // Backend resolves the employee-acting-as-bank caller as the poster.
+          me_owner: true,
         },
       ],
       total_count: 1,
@@ -242,8 +281,8 @@ describe('OtcOptionsView', () => {
 
     // Wait for the row to appear, then click it (not the Activity button — the
     // row body itself dispatches via onRowOpen which calls handleRowOpen and,
-    // because isOwnRow short-circuits to true for employee + local + bank,
-    // routes us into the OWNER panel (OfferActivityPanel), not BidderActivityPanel.
+    // because the row's me_owner flag is true, routes us into the OWNER panel
+    // (OfferActivityPanel), not BidderActivityPanel.
     const tickerCell = await screen.findByText('AAPL')
     const row = tickerCell.closest('tr')
     expect(row).not.toBeNull()

@@ -180,6 +180,28 @@ describe('exerciseOtcOptionContract', () => {
     expect(mockPost).toHaveBeenCalledWith('/otc/contracts/5001/exercise', {})
   })
 
+  it('forwards buyer_account_number and on_behalf_of_fund_id when provided', async () => {
+    mockPost.mockResolvedValue({
+      data: {
+        contract: createMockOptionContract({ status: 'EXERCISED' }),
+        holding: {
+          id: 9001,
+          stock_id: 42,
+          quantity: '100',
+          owner: { owner_type: 'client', owner_id: 7 },
+        },
+      },
+    })
+    await exerciseOtcOptionContract(5001, {
+      buyer_account_number: '111000123456789011',
+      on_behalf_of_fund_id: 101,
+    })
+    expect(mockPost).toHaveBeenCalledWith('/otc/contracts/5001/exercise', {
+      buyer_account_number: '111000123456789011',
+      on_behalf_of_fund_id: 101,
+    })
+  })
+
   it("normalises the returned contract's buyer/seller", async () => {
     mockPost.mockResolvedValue({
       data: {

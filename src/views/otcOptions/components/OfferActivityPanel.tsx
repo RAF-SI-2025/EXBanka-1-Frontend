@@ -33,12 +33,13 @@ import {
   useRejectNegotiation,
 } from '@/views/otcOptions/hooks/useOtcOptionMutations'
 import {
-  useAllOfferRevisions,
+  useOtcOfferTimeline,
   useOtcNegotiationRevisions,
   useOtcOptionNegotiations,
 } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
 import { OfferHistoryTable } from '@/views/otcOptions/components/OfferHistoryTable'
+import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 
 interface Props {
   offer: OtcOptionRow
@@ -64,11 +65,11 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
 
   const negotiations = data?.negotiations ?? []
 
-  // History table fans out one /me/otc/options/negotiations/:nid/revisions
-  // call per chain (in parallel), then flattens and sorts by created_at so
-  // the owner sees every bid/counter/accept/reject event in one timeline,
-  // not just the latest per chain.
-  const revisionsQ = useAllOfferRevisions(negotiations)
+  // History table is populated by GET /otc/options/:id/timeline — the backend
+  // merges every chain's bid/counter/accept/reject revisions into one stream
+  // for the listing owner, so the FE makes a single call instead of fanning
+  // out per chain.
+  const revisionsQ = useOtcOfferTimeline(offerId)
 
   const handleAccept = (neg: OtcNegotiation, acceptorAccountId: number) => {
     accept.mutate(
@@ -151,7 +152,7 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
               </TableHeader>
               <TableBody>
                 {negotiations.map((neg) => {
-                  const isActive = neg.status === 'open' || neg.status === 'countered'
+                  const isActive = isNegotiationActive(neg.status)
                   return (
                     <Fragment key={neg.id}>
                       <TableRow>

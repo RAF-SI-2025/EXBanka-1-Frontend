@@ -10,12 +10,7 @@ import { PlaceBidDialog } from '@/views/otcOptions/components/PlaceBidDialog'
 import { CreateOtcOptionDialog } from '@/views/otcOptions/components/CreateOtcOptionDialog'
 import { OfferActivityPanel } from '@/views/otcOptions/components/OfferActivityPanel'
 import { BidderActivityPanel } from '@/views/otcOptions/components/BidderActivityPanel'
-import { isOwnRow } from '@/views/otcOptions/lib/ownership'
-import {
-  useAllOtcOptions,
-  useMyActiveOtcNegotiations,
-  useMyOtcOptions,
-} from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import { useAllOtcOptions, useMyOtcOptions } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { useBidOrCounter } from '@/views/otcOptions/hooks/useBidOrCounter'
 import { useCreateOtcOption } from '@/views/otcOptions/hooks/useOtcOptionMutations'
 import type { OtcOptionRow, OtcOptionsMode, OtcOwnerType } from '@/views/otcOptions/types'
@@ -35,22 +30,8 @@ export function OtcOptionsView() {
   const [bidderOffer, setBidderOffer] = useState<OtcOptionRow | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
 
-  // Only the marketplace table consumes `myNegotiationsQ` (for the "Bid" vs
-  // "Counter" label). Suppress it while a detail panel is open so the bidder
-  // page doesn't fire a spurious /me/otc/options/negotiations?statuses=… call.
-  const marketplaceVisible = !activityOffer && !bidderOffer
   const allQ = useAllOtcOptions({})
   const mineQ = useMyOtcOptions({})
-  const myNegotiationsQ = useMyActiveOtcNegotiations(marketplaceVisible)
-
-  const myBidOfferIds = useMemo(() => {
-    const s = new Set<number>()
-    for (const n of myNegotiationsQ.data?.negotiations ?? []) {
-      const id = n.parent_offer_id ?? n.offer_id
-      if (id != null) s.add(Number(id))
-    }
-    return s
-  }, [myNegotiationsQ.data])
 
   const bidOrCounter = useBidOrCounter()
   const createListing = useCreateOtcOption()
@@ -106,7 +87,10 @@ export function OtcOptionsView() {
   }
 
   const handleRowOpen = (row: OtcOptionRow) => {
-    const own = mode === 'my' || isOwnRow(row, currentBidder)
+    // `me_owner` (spec §47.2) authoritatively marks the caller as the listing's
+    // poster — owners open the offer-activity panel, everyone else opens the
+    // bidder panel for their own chain.
+    const own = mode === 'my' || row.me_owner === true
     if (own) setActivityOffer(row)
     else setBidderOffer(row)
   }
@@ -133,9 +117,7 @@ export function OtcOptionsView() {
           {!loading && !error && (
             <OtcOptionsTable
               rows={rows}
-              currentBidder={currentBidder}
               forceOwn={mode === 'my'}
-              myBidOfferIds={myBidOfferIds}
               onBid={(row) => setBidOffer(row)}
               onActivity={(row) => setActivityOffer(row)}
               onRowOpen={handleRowOpen}

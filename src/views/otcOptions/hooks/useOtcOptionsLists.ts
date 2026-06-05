@@ -1,7 +1,6 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { otcOptionsApi } from '@/views/otcOptions/api/otcOptionsApi'
 import type {
-  OtcNegotiation,
   OtcNegotiationRevision,
   OtcOptionsListFilters,
   OtcParty,
@@ -28,22 +27,6 @@ export function useOtcOptionNegotiations(offerId: number | null) {
     queryKey: [OTC_OPTIONS_QUERY_KEY, 'negotiations', offerId],
     queryFn: () => otcOptionsApi.listNegotiations(offerId as number),
     enabled: offerId != null && offerId > 0,
-  })
-}
-
-// Used as the upfront "have I already bid on this listing?" precheck so the
-// row's button can show "Counter" instead of "Bid". Filtered to active
-// statuses only — terminal chains (cancelled/rejected/expired) don't block a
-// fresh /bid call, so they shouldn't drive the label either.
-//
-// `enabled` gates the query — the only consumer is the marketplace table, so
-// the parent view passes `false` while a detail panel is open to suppress
-// the network call.
-export function useMyActiveOtcNegotiations(enabled = true) {
-  return useQuery({
-    queryKey: [OTC_OPTIONS_QUERY_KEY, 'my-negotiations', 'open,countered'],
-    queryFn: () => otcOptionsApi.listMyNegotiations({ statuses: 'open,countered' }),
-    enabled,
   })
 }
 
@@ -78,39 +61,39 @@ export interface RevisionWithChain extends OtcNegotiationRevision {
   chain_bidder_name?: string
 }
 
-// Fan-out: fetch /me/otc/options/negotiations/:nid/revisions for every chain
-// on a listing in parallel and aggregate into one flat list. The result is
-// sorted newest-first by revision.created_at so the owner sees the full bid
-// activity timeline, not just the latest snapshot per chain.
-export function useAllOfferRevisions(chains: OtcNegotiation[]): {
+// Cross-chain activity timeline for a listing the caller owns. One call to
+// GET /otc/options/:id/timeline returns every bidder's revisions merged
+// server-side, so the owner History table no longer fans out per chain. Each
+// timeline entry carries its bidder identity flat; we lift it onto the shared
+// `RevisionWithChain` shape so OfferHistoryTable renders the rows unchanged.
+// Disabled until a real offer id is supplied (panels pass `null` while idle).
+export function useOtcOfferTimeline(offerId: number | null): {
   revisions: RevisionWithChain[]
   isLoading: boolean
   error: unknown
 } {
-  const results = useQueries({
-    queries: chains.map((c) => ({
-      queryKey: [OTC_OPTIONS_QUERY_KEY, 'revisions', c.id],
-      queryFn: () => otcOptionsApi.listNegotiationRevisions(c.id),
-      enabled: c.id > 0,
-    })),
+  const { data, isLoading, error } = useQuery({
+    queryKey: [OTC_OPTIONS_QUERY_KEY, 'timeline', offerId],
+    queryFn: () => otcOptionsApi.getOfferTimeline(offerId as number),
+    enabled: offerId != null && offerId > 0,
   })
 
-  const isLoading = results.some((r) => r.isLoading)
-  const error = results.find((r) => r.error)?.error ?? null
-
-  const revisions: RevisionWithChain[] = []
-  results.forEach((r, i) => {
-    const chain = chains[i]
-    if (!chain) return
-    for (const rev of r.data?.revisions ?? []) {
-      revisions.push({
-        ...rev,
-        chain_id: chain.id,
-        chain_bidder: chain.bidder,
-        chain_bidder_name: chain.bidder_name,
-      })
-    }
-  })
+  const revisions: RevisionWithChain[] = (data?.timeline ?? []).map((e) => ({
+    id: e.revision_number,
+    negotiation_id: e.negotiation_id,
+    revision_number: e.revision_number,
+    action: e.action,
+    quantity: e.quantity,
+    strike_price: e.strike_price,
+    premium: e.premium,
+    settlement_date: e.settlement_date,
+    action_by_principal_type: e.action_by_principal_type,
+    action_by_principal_id: e.action_by_principal_id,
+    created_at: e.created_at,
+    chain_id: e.negotiation_id,
+    chain_bidder: { owner_type: e.bidder_owner_type, owner_id: e.bidder_owner_id },
+  }))
+  // Spec returns ASC by created_at; show newest-first to match the prior UX.
   revisions.sort((a, b) => b.created_at.localeCompare(a.created_at))
 
   return { revisions, isLoading, error }
