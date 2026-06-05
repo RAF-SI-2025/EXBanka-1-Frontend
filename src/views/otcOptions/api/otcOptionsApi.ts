@@ -13,6 +13,7 @@ import type {
   OtcNegotiation,
   OtcNegotiationRevisionsResponse,
   OtcNegotiationsResponse,
+  OtcOfferTimelineResponse,
   OtcOptionsDiscoveryResponse,
   OtcOptionsListFilters,
   OtcParty,
@@ -190,6 +191,15 @@ async function listNegotiationRevisions(
   return { revisions: data.revisions ?? [] }
 }
 
+// Cross-chain activity timeline for a listing the caller OWNS — every bidder's
+// bid/counter/accept/reject revisions merged server-side into one stream
+// (spec §47.2 `GET /otc/options/:id/timeline`). One call replaces the per-chain
+// revisions fan-out the owner Activity view used to do.
+async function getOfferTimeline(offerId: number): Promise<OtcOfferTimelineResponse> {
+  const { data } = await apiClient.get<OtcOfferTimelineResponse>(`/otc/options/${offerId}/timeline`)
+  return { offer: data.offer, timeline: data.timeline ?? [] }
+}
+
 // Used by the New-Listing ticker picker (sell direction): the caller can only
 // post sell options on shares they actually hold. Delegates to the shared
 // portfolio loader so this module can't drift from spec §48.1 again — that
@@ -220,6 +230,7 @@ export const otcOptionsApi = {
   listNegotiations,
   listMyNegotiations,
   listNegotiationRevisions,
+  getOfferTimeline,
   listMyHoldings,
   listStockCatalog,
 }
