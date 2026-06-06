@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,6 +15,7 @@ import { FormField } from '@/components/shared/FormField'
 import { PhoneInput } from '@/views/employees/components/PhoneInput'
 import { EMPLOYEE_ROLES as ROLES, GENDERS, formatRoleLabel } from '@/lib/utils/constants'
 import { todayISO } from '@/lib/utils/dateFormatter'
+import { phoneSchema, dateOfBirthStringSchema } from '@/lib/utils/validation'
 import type { CreateEmployeeRequest } from '@/types/employee'
 
 const createFormSchema = z.object({
@@ -25,13 +27,10 @@ const createFormSchema = z.object({
     .string()
     .min(1, 'Last name is required')
     .max(20, 'Last name must be at most 20 characters'),
-  date_of_birth: z
-    .string()
-    .optional()
-    .refine((val) => !val || new Date(val) <= new Date(), 'Date of birth cannot be in the future'),
+  date_of_birth: dateOfBirthStringSchema,
   gender: z.string().optional(),
   email: z.string().email('Invalid email address'),
-  phone: z.string().max(15, 'Phone number must be at most 15 digits').optional(),
+  phone: phoneSchema.optional().or(z.literal('')),
   address: z.string().optional(),
   username: z.string().min(1, 'Username is required'),
   position: z.string().optional(),
@@ -50,19 +49,31 @@ type CreateFormData = z.infer<typeof createFormSchema>
 interface EmployeeCreateFormProps {
   onSubmit: (data: CreateEmployeeRequest) => void
   isLoading: boolean
+  externalEmailError?: string
 }
 
-export function EmployeeCreateForm({ onSubmit, isLoading }: EmployeeCreateFormProps) {
+export function EmployeeCreateForm({
+  onSubmit,
+  isLoading,
+  externalEmailError,
+}: EmployeeCreateFormProps) {
   const {
     register,
     handleSubmit,
     setValue,
+    setError,
     watch,
     formState: { errors },
   } = useForm<CreateFormData>({
     resolver: zodResolver(createFormSchema),
     defaultValues: { active: true },
   })
+
+  useEffect(() => {
+    if (externalEmailError) {
+      setError('email', { type: 'server', message: externalEmailError })
+    }
+  }, [externalEmailError, setError])
 
   const role = watch('role')
   const active = watch('active') ?? true

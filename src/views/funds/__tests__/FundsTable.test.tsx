@@ -44,4 +44,10 @@ describe('FundsTable', () => {
     const link = screen.getByRole('link', { name: 'X Fund' })
     expect(link).toHaveAttribute('href', '/funds/99')
   })
+
+  it('renders a See Details link that points to the fund portfolio route', () => {
+    renderTable({ funds: [createMockFund({ id: 77, name: 'Pf Fund' })] })
+    const link = screen.getByRole('link', { name: /see details/i })
+    expect(link).toHaveAttribute('href', '/funds/77/portfolio')
+  })
 })

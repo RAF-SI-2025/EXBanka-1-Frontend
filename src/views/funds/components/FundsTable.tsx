@@ -7,7 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import type { Fund } from '@/types/fund'
 import { hoverLift, rowEnter } from '@/views/shared'
 
@@ -16,7 +17,8 @@ interface FundsTableProps {
   onInvest: (fund: Fund) => void
 }
 
-function formatRsd(value: string): string {
+function formatRsd(value: string | null | undefined): string {
+  if (value === null || value === undefined) return '—'
   const num = Number(value)
   if (Number.isNaN(num)) return value
   return new Intl.NumberFormat('sr-RS', {
@@ -40,7 +42,7 @@ export function FundsTable({ funds, onInvest }: FundsTableProps) {
           <TableHead>Fund value</TableHead>
           <TableHead>Profit</TableHead>
           <TableHead>Min. contribution</TableHead>
-          <TableHead className="w-32 text-right">Actions</TableHead>
+          <TableHead className="w-56 text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -61,14 +63,22 @@ export function FundsTable({ funds, onInvest }: FundsTableProps) {
             <TableCell>{formatRsd(fund.profit_rsd)}</TableCell>
             <TableCell>{formatRsd(fund.minimum_contribution_rsd)}</TableCell>
             <TableCell className="text-right">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onInvest(fund)}
-                disabled={!fund.active}
-              >
-                Invest
-              </Button>
+              <div className="flex justify-end gap-2">
+                <Link
+                  to={`/funds/${fund.id}/portfolio`}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                >
+                  See Details
+                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onInvest(fund)}
+                  disabled={!fund.active}
+                >
+                  Invest
+                </Button>
+              </div>
             </TableCell>
           </TableRow>
         ))}

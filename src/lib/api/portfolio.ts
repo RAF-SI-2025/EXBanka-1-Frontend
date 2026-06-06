@@ -1,20 +1,31 @@
 import { apiClient } from '@/lib/api/axios'
 import type {
-  HoldingListResponse,
+  PortfolioResponse,
   PortfolioSummary,
-  PortfolioFilters,
-  Holding,
+  SecurityPosition,
   MakePublicPayload,
   MakePublicResponse,
   HoldingTransactionsResponse,
   HoldingTransactionsFilters,
 } from '@/types/portfolio'
 
-export async function getPortfolio(filters: PortfolioFilters = {}): Promise<HoldingListResponse> {
-  const { data } = await apiClient.get<HoldingListResponse>('/me/portfolio', {
-    params: filters,
-  })
-  return { ...data, holdings: data.holdings ?? [] }
+const EMPTY_GROUP = { total_value_rsd: '0', total_profit_rsd: '0', total_profit_pct: '0' }
+
+export async function getPortfolio(): Promise<PortfolioResponse> {
+  const { data } = await apiClient.get<PortfolioResponse>('/me/portfolio')
+  return {
+    ...data,
+    securities: {
+      ...EMPTY_GROUP,
+      ...(data.securities ?? {}),
+      positions: data.securities?.positions ?? [],
+    },
+    funds: {
+      ...EMPTY_GROUP,
+      ...(data.funds ?? {}),
+      positions: data.funds?.positions ?? [],
+    },
+  }
 }
 
 export async function getPortfolioSummary(): Promise<PortfolioSummary> {
@@ -24,22 +35,16 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
 
 /**
  * Publish shares from a holding onto the OTC stock marketplace.
- *
- * Phase 8 renamed the underlying route. The old endpoint was:
- *   POST /api/v3/me/portfolio/:id/make-public  { quantity }
- *
- * It is now (spec § 47.1):
- *   POST /api/v3/me/otc/stocks  { direction: "sell", holding_id, quantity }
- *
- * The function signature is unchanged for callers — only the wire shape moved.
+ * The `holdingId` argument is the `holding_id` of the SecurityPosition,
+ * not the offer id. Spec §47.1.
  */
 export async function makeHoldingPublic(
-  id: number,
+  holdingId: number,
   payload: MakePublicPayload
 ): Promise<MakePublicResponse> {
   const body: Record<string, unknown> = {
     direction: 'sell',
-    holding_id: id,
+    holding_id: holdingId,
     quantity: payload.quantity,
   }
   if (payload.price_per_unit !== undefined) {
@@ -49,8 +54,8 @@ export async function makeHoldingPublic(
   return data
 }
 
-export async function exerciseOption(id: number): Promise<Holding> {
-  const { data } = await apiClient.post<Holding>(`/me/portfolio/${id}/exercise`)
+export async function exerciseOption(holdingId: number): Promise<SecurityPosition> {
+  const { data } = await apiClient.post<SecurityPosition>(`/me/portfolio/${holdingId}/exercise`)
   return data
 }
 

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createOrder,
   createOrderOnBehalf,
+  createOrderOnBehalfFund,
   getMyOrders,
   cancelOrder,
   getAllOrders,
@@ -13,6 +14,7 @@ import type {
   AdminOrderFilters,
   CreateOrderPayload,
   CreateOrderOnBehalfPayload,
+  CreateOrderOnBehalfFundPayload,
 } from '@/types/order'
 
 export function useMyOrders(filters: MyOrderFilters = {}) {
@@ -37,6 +39,18 @@ export function useCreateOrderOnBehalf() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
       qc.invalidateQueries({ queryKey: ['portfolio'] })
+    },
+  })
+}
+
+export function useCreateOrderOnBehalfFund() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateOrderOnBehalfFundPayload) => createOrderOnBehalfFund(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      qc.invalidateQueries({ queryKey: ['portfolio'] })
+      qc.invalidateQueries({ queryKey: ['funds'] })
     },
   })
 }

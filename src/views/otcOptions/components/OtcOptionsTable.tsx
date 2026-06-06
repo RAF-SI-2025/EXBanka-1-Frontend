@@ -7,21 +7,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { isOwnRow } from '@/views/otcOptions/lib/ownership'
+import { hasOwnNegotiationChain } from '@/views/otcOptions/lib/myNegotiation'
 import type { OtcOptionRow } from '@/views/otcOptions/types'
 import { hoverLift, rowEnter } from '@/views/shared'
 
 interface Props {
   rows: OtcOptionRow[]
-  currentBidder: { owner_type: string; owner_id: number | null } | null
   // When true, every row is treated as owned by the caller — used by the
   // "My" tab, which is fed by /me/otc/options (already filtered server-side).
   forceOwn?: boolean
-  // Set of parent-offer ids the caller has an active chain on (precheck via
-  // GET /me/otc/options/negotiations). Drives "Bid" vs "Counter" label so the
-  // user knows up front which call will run — we never use /bid 409 as a
-  // discovery probe for the label.
-  myBidOfferIds?: ReadonlySet<number>
   onBid: (row: OtcOptionRow) => void
   onActivity: (row: OtcOptionRow) => void
   // Called when the row body (anything outside the inline action button) is
@@ -35,15 +29,7 @@ function fmt(value: string | number | undefined | null, fallback = '—'): strin
   return String(value)
 }
 
-export function OtcOptionsTable({
-  rows,
-  currentBidder,
-  forceOwn,
-  myBidOfferIds,
-  onBid,
-  onActivity,
-  onRowOpen,
-}: Props) {
+export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }: Props) {
   if (rows.length === 0) {
     return <p className="text-sm text-muted-foreground py-8 text-center">No offers found.</p>
   }
@@ -65,8 +51,12 @@ export function OtcOptionsTable({
       </TableHeader>
       <TableBody>
         {rows.map((row) => {
-          const own = forceOwn || isOwnRow(row, currentBidder)
-          const hasBid = !own && (myBidOfferIds?.has(Number(row.offer_id)) ?? false)
+          // The backend tells us directly: `me_owner` ⇒ the caller posted this
+          // listing (Activity); otherwise `my_negotiation_id` being a real
+          // (numeric) id means a bid chain is already underway (Counter) vs not
+          // (Bid). See spec §47.2 and hasOwnNegotiationChain.
+          const own = forceOwn || row.me_owner === true
+          const hasBid = !own && hasOwnNegotiationChain(row.my_negotiation_id)
           const bestPrice = row.direction === 'sell_initiated' ? row.best_bid : row.best_ask
           return (
             <TableRow

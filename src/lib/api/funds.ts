@@ -24,7 +24,6 @@ export async function getFund(id: number): Promise<FundDetailResponse> {
   return {
     ...data,
     holdings: data.holdings ?? [],
-    performance: data.performance ?? [],
   }
 }
 

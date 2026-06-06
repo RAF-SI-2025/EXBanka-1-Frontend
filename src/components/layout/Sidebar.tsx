@@ -21,6 +21,7 @@ import {
   Briefcase,
   FileQuestion,
   Files,
+  FileText,
   UserCheck,
   Building2,
   CheckSquare,
@@ -236,6 +237,11 @@ function EmployeeNav({
             </NavItem>
           )}
         </NavGroup>
+      )}
+      {isAdmin && (
+        <NavItem to="/admin/audit" icon={FileText}>
+          Logs
+        </NavItem>
       )}
       {isAdmin && (
         <NavItem to="/admin/settings" icon={Settings}>

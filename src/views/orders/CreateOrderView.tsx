@@ -1,21 +1,31 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { ClientSelector } from '@/views/accounts/components/ClientSelector'
 import { Label } from '@/components/ui/label'
-import { useCreateOrder, useCreateOrderOnBehalf } from '@/hooks/useOrders'
+import {
+  useCreateOrder,
+  useCreateOrderOnBehalf,
+  useCreateOrderOnBehalfFund,
+} from '@/hooks/useOrders'
 import { useCreateOptionOrder, useListingsForSell } from '@/hooks/useSecurities'
 import { useAccountsByClient, useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
+import { useFunds } from '@/hooks/useFunds'
+import { useCreateRecurringOrder } from '@/hooks/useRecurringOrders'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
+import { notifyError } from '@/lib/errors'
+import { buildRecurringOrderPayload } from '@/views/orders/components/buildRecurringOrderPayload'
 import type { CreateOrderPayload, OrderDirection } from '@/types/order'
+import type { RecurringOrderInterval } from '@/types/recurringOrder'
 import type { CreateOptionOrderPayload } from '@/types/security'
 import type { Client } from '@/types/client'
+import type { Account } from '@/types/account'
 import { usePiggy } from '@/hooks/usePiggy'
 import { CreateOrderForm } from '@/views/orders/components/CreateOrderForm'
 import { ViewShell } from '@/views/shared'
 
-type ChargeMode = 'bank' | 'client'
+type ChargeMode = 'bank' | 'client' | 'fund'
 
 export function CreateOrderView() {
   const [searchParams] = useSearchParams()
@@ -29,6 +39,7 @@ export function CreateOrderView() {
   const isSell = direction === 'sell'
   const ticker = searchParams.get('ticker') ?? undefined
   const userType = useAppSelector(selectUserType)
+  const isEmployee = userType === 'employee'
 
   const [chargeMode, setChargeMode] = useState<ChargeMode>('bank')
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
@@ -36,33 +47,92 @@ export function CreateOrderView() {
 
   const createOrderMutation = useCreateOrder()
   const createOrderOnBehalfMutation = useCreateOrderOnBehalf()
+  const createOrderOnBehalfFundMutation = useCreateOrderOnBehalfFund()
   const createOptionOrderMutation = useCreateOptionOrder()
+  const createRecurringOrderMutation = useCreateRecurringOrder()
   const { triggerPiggy } = usePiggy()
   const { data: clientAccountsData } = useClientAccounts()
-  const { data: bankAccountsData } = useBankAccounts()
+  const { data: bankAccountsData } = useBankAccounts(isEmployee)
   const { data: clientSpecificData } = useAccountsByClient(selectedClient?.id ?? 0)
+  const { data: fundsData } = useFunds({ active_only: true, page_size: 200 })
   const sellListings = useListingsForSell(
     isSell ? securityType : undefined,
     isSell ? ticker : undefined
   )
 
-  const bankAccounts = bankAccountsData?.accounts ?? []
+  const rawBankAccounts = bankAccountsData?.accounts
+  const bankAccounts = rawBankAccounts ?? []
 
-  const accounts =
-    userType === 'employee'
-      ? chargeMode === 'bank'
-        ? bankAccounts
-        : (clientSpecificData?.accounts ?? [])
-      : (clientAccountsData?.accounts ?? [])
+  // When chargeMode === 'fund', surface only the bank-owned accounts that are
+  // attached to active funds (one RSD account per fund). The dropdown labels
+  // are augmented with the fund name so the user picks a fund, not a raw account.
+  const { fundAccounts, fundIdByAccountId } = useMemo(() => {
+    const funds = fundsData?.funds ?? []
+    const accountById = new Map((rawBankAccounts ?? []).map((a) => [a.id, a]))
+    const list: Account[] = []
+    const fundIds = new Map<number, number>()
+    for (const fund of funds) {
+      const acc = accountById.get(fund.rsd_account_id)
+      if (!acc) continue
+      list.push({ ...acc, account_name: `${fund.name} (${acc.account_name})` })
+      fundIds.set(acc.id, fund.id)
+    }
+    return { fundAccounts: list, fundIdByAccountId: fundIds }
+  }, [fundsData, rawBankAccounts])
 
-  const depositAccounts = isForex && userType === 'employee' ? bankAccounts : undefined
+  // Bank mode excludes accounts attached to investment funds — those are
+  // reachable only through the dedicated Fund mode (and submit with
+  // on_behalf_of_fund_id), not via the generic bank-on-behalf flow.
+  const bankOnlyAccounts = useMemo(
+    () => bankAccounts.filter((a) => !fundIdByAccountId.has(a.id)),
+    [bankAccounts, fundIdByAccountId]
+  )
+
+  const accounts = isEmployee
+    ? chargeMode === 'bank'
+      ? bankOnlyAccounts
+      : chargeMode === 'client'
+        ? (clientSpecificData?.accounts ?? [])
+        : fundAccounts
+    : (clientAccountsData?.accounts ?? [])
+
+  const depositAccounts = isForex && isEmployee ? bankOnlyAccounts : undefined
 
   const effectiveListingId = isSell ? selectedListingId : listingId
 
-  const handleSubmit = (payload: CreateOrderPayload) => {
+  // Scheduling a recurring buy maps to the recurring API's surface: a plain
+  // market buy. Available to clients and employees in any charge mode — note
+  // /me/recurring-orders is caller-scoped, so an employee's template is created
+  // under the employee principal (with the chosen account_id), not the client
+  // or fund being charged. The form additionally gates on order_type === 'market'.
+  const schedulingEnabled = direction === 'buy' && !isOption && !isForex
+
+  const scheduleRecurring = (
+    payload: CreateOrderPayload,
+    frequency: RecurringOrderInterval,
+    onSuccess: () => void
+  ) => {
+    const recurringPayload = buildRecurringOrderPayload(payload, frequency)
+    if (!recurringPayload) return
+    createRecurringOrderMutation.mutate(recurringPayload, {
+      onSuccess,
+      // Buy already succeeded but the schedule did not — surface it and stay put.
+      onError: (err) => notifyError(err),
+    })
+  }
+
+  const handleScheduleOnly = (payload: CreateOrderPayload, frequency: RecurringOrderInterval) => {
+    scheduleRecurring(payload, frequency, () => navigate('/orders'))
+  }
+
+  const handleSubmit = (payload: CreateOrderPayload, frequency?: RecurringOrderInterval) => {
     const onSuccess = () => {
       triggerPiggy(payload.direction === 'sell' ? 'fill' : 'break')
-      navigate('/orders')
+      if (frequency) {
+        scheduleRecurring(payload, frequency, () => navigate('/orders'))
+      } else {
+        navigate('/orders')
+      }
     }
     if (isOption && optionId) {
       const optionPayload: CreateOptionOrderPayload = {
@@ -76,7 +146,14 @@ export function CreateOrderView() {
         margin: payload.margin,
       }
       createOptionOrderMutation.mutate({ optionId, payload: optionPayload }, { onSuccess })
-    } else if (userType === 'employee' && chargeMode === 'client' && selectedClient) {
+    } else if (isEmployee && chargeMode === 'fund' && payload.account_id) {
+      const fundId = fundIdByAccountId.get(payload.account_id)
+      if (!fundId) return
+      createOrderOnBehalfFundMutation.mutate(
+        { ...payload, on_behalf_of_fund_id: fundId },
+        { onSuccess }
+      )
+    } else if (isEmployee && chargeMode === 'client' && selectedClient) {
       createOrderOnBehalfMutation.mutate(
         { ...payload, client_id: selectedClient.id },
         { onSuccess }
@@ -118,7 +195,7 @@ export function CreateOrderView() {
             </div>
           )}
 
-          {userType === 'employee' && (
+          {isEmployee && (
             <div className="space-y-4 max-w-md">
               <div>
                 <Label htmlFor="charge-mode">Charge As</Label>
@@ -132,6 +209,7 @@ export function CreateOrderView() {
                 >
                   <option value="bank">Bank</option>
                   {!isForex && <option value="client">Client</option>}
+                  {!isForex && <option value="fund">Fund</option>}
                 </select>
               </div>
 
@@ -150,10 +228,14 @@ export function CreateOrderView() {
           <CreateOrderForm
             defaultDirection={direction}
             onSubmit={handleSubmit}
+            onScheduleOnly={handleScheduleOnly}
+            schedulingEnabled={schedulingEnabled}
             submitting={
               createOrderMutation.isPending ||
               createOrderOnBehalfMutation.isPending ||
-              createOptionOrderMutation.isPending
+              createOrderOnBehalfFundMutation.isPending ||
+              createOptionOrderMutation.isPending ||
+              createRecurringOrderMutation.isPending
             }
             listingId={effectiveListingId}
             accounts={accounts}

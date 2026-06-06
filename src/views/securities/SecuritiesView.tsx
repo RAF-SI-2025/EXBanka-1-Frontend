@@ -1,19 +1,30 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { PaginationControls } from '@/components/shared/PaginationControls'
 import { useStocks, useFutures, useForexPairs } from '@/hooks/useSecurities'
+import { useCreatePriceAlert } from '@/hooks/usePriceAlerts'
+import { useAddToWatchlist, useRemoveFromWatchlist, useWatchlist } from '@/hooks/useWatchlist'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
+import { notifySuccess } from '@/lib/errors'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
 import type { Stock, FuturesContract, ForexPair } from '@/types/security'
+import type { CreatePriceAlertPayload } from '@/types/priceAlert'
 import { ForexTable } from '@/views/securities/components/ForexTable'
 import { FuturesTable } from '@/views/securities/components/FuturesTable'
 import { OptionsTab } from '@/views/securities/components/OptionsTab'
 import { StockTable } from '@/views/securities/components/StockTable'
+import { PriceAlertDialog } from '@/views/priceAlerts/components/PriceAlertDialog'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
+
+interface AlertListing {
+  listing_id: number
+  ticker: string
+  name: string
+}
 
 const PAGE_SIZE = 10
 
@@ -104,6 +115,46 @@ export function SecuritiesView() {
     [navigate]
   )
 
+  const [alertListing, setAlertListing] = useState<AlertListing | null>(null)
+  const createAlertMutation = useCreatePriceAlert()
+
+  const openAlertForStock = useCallback((s: Stock) => {
+    setAlertListing({ listing_id: s.listing_id ?? s.id, ticker: s.ticker, name: s.name })
+  }, [])
+  const openAlertForFutures = useCallback((f: FuturesContract) => {
+    setAlertListing({ listing_id: f.listing_id ?? f.id, ticker: f.ticker, name: f.name })
+  }, [])
+  const openAlertForForex = useCallback((p: ForexPair) => {
+    setAlertListing({ listing_id: p.listing_id ?? p.id, ticker: p.ticker, name: p.name })
+  }, [])
+
+  const handleCreateAlert = (payload: CreatePriceAlertPayload) => {
+    createAlertMutation.mutate(payload, {
+      onSuccess: () => {
+        notifySuccess('Price alert created.')
+        setAlertListing(null)
+      },
+    })
+  }
+
+  const { data: watchlistData } = useWatchlist()
+  const watchlistIds = useMemo(
+    () => new Set((watchlistData?.items ?? []).map((i) => i.listing_id)),
+    [watchlistData]
+  )
+  const addToWatchlistMutation = useAddToWatchlist()
+  const removeFromWatchlistMutation = useRemoveFromWatchlist()
+  const handleToggleWatchlist = useCallback(
+    (listingId: number, inWatchlist: boolean) => {
+      if (inWatchlist) {
+        removeFromWatchlistMutation.mutate(listingId)
+      } else {
+        addToWatchlistMutation.mutate(listingId)
+      }
+    },
+    [addToWatchlistMutation, removeFromWatchlistMutation]
+  )
+
   return (
     <ViewShell
       title="Securities"
@@ -138,6 +189,9 @@ export function SecuritiesView() {
                     stocks={stockData.stocks}
                     onRowClick={(id) => navigate(`/securities/stocks/${id}`)}
                     onBuy={handleBuyStock}
+                    onCreateAlert={openAlertForStock}
+                    watchlistIds={watchlistIds}
+                    onToggleWatchlist={handleToggleWatchlist}
                   />
                   <p className="text-sm text-muted-foreground mt-2">
                     {stockData.total_count} stocks
@@ -174,6 +228,9 @@ export function SecuritiesView() {
                     futures={futuresData.futures}
                     onRowClick={(id) => navigate(`/securities/futures/${id}`)}
                     onBuy={handleBuyFutures}
+                    onCreateAlert={openAlertForFutures}
+                    watchlistIds={watchlistIds}
+                    onToggleWatchlist={handleToggleWatchlist}
                   />
                   <p className="text-sm text-muted-foreground mt-2">
                     {futuresData.total_count} futures
@@ -211,6 +268,9 @@ export function SecuritiesView() {
                       pairs={forexData.forex_pairs}
                       onRowClick={(id) => navigate(`/securities/forex/${id}`)}
                       onBuy={handleBuyForex}
+                      onCreateAlert={openAlertForForex}
+                      watchlistIds={watchlistIds}
+                      onToggleWatchlist={handleToggleWatchlist}
                     />
                     <p className="text-sm text-muted-foreground mt-2">
                       {forexData.total_count} forex pairs
@@ -230,11 +290,21 @@ export function SecuritiesView() {
         <TabsContent value="options">
           <Card>
             <CardContent className="pt-6">
-              <OptionsTab />
+              <OptionsTab watchlistIds={watchlistIds} onToggleWatchlist={handleToggleWatchlist} />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {alertListing && (
+        <PriceAlertDialog
+          open
+          onOpenChange={(o) => !o && setAlertListing(null)}
+          listing={alertListing}
+          onSubmit={handleCreateAlert}
+          loading={createAlertMutation.isPending}
+        />
+      )}
     </ViewShell>
   )
 }

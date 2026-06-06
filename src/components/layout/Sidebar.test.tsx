@@ -57,6 +57,28 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('link', { name: /order approval/i })).not.toBeInTheDocument()
   })
 
+  it('shows Logs link when role is EmployeeAdmin', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeAdmin' }),
+        }),
+      },
+    })
+    expect(screen.getByRole('link', { name: /logs/i })).toHaveAttribute('href', '/admin/audit')
+  })
+
+  it('hides Logs link for non-admin employee roles', () => {
+    renderWithProviders(<Sidebar />, {
+      preloadedState: {
+        auth: createMockAuthState({
+          user: createMockAuthUser({ role: 'EmployeeSupervisor' }),
+        }),
+      },
+    })
+    expect(screen.queryByRole('link', { name: /logs/i })).not.toBeInTheDocument()
+  })
+
   it('shows logout button', () => {
     renderWithProviders(<Sidebar />, {
       preloadedState: { auth: createMockAuthState() },

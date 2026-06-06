@@ -5,6 +5,7 @@ import { useRequestCard, useRequestCardForAuthorizedPerson } from '@/hooks/useCa
 import { CardRequestForm } from '@/views/cards/components/CardRequestForm'
 import { AuthorizedPersonForm } from '@/views/cards/components/AuthorizedPersonForm'
 import { Button } from '@/components/ui/button'
+import { isDuplicateEmailError } from '@/lib/errors'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
 import type { CardBrand } from '@/types/card'
 import { LoadingState, ViewShell } from '@/views/shared'
@@ -15,8 +16,15 @@ export function CardRequestView() {
   const navigate = useNavigate()
   const { data: accountsData, isLoading } = useClientAccounts()
   const accounts = accountsData?.accounts ?? []
+  const [emailDuplicate, setEmailDuplicate] = useState<string | undefined>()
   const requestCard = useRequestCard()
-  const requestForAP = useRequestCardForAuthorizedPerson()
+  const requestForAP = useRequestCardForAuthorizedPerson({
+    onError: (err) => {
+      if (isDuplicateEmailError(err)) {
+        setEmailDuplicate('Email is already in use')
+      }
+    },
+  })
   const [step, setStep] = useState<Step>('select')
   const [selectedAccount, setSelectedAccount] = useState('')
   const [selectedBrand, setSelectedBrand] = useState<CardBrand | undefined>()
@@ -63,6 +71,7 @@ export function CardRequestView() {
 
   const handleRequestForAP = (data: CreateAuthorizedPersonRequest) => {
     setError(null)
+    setEmailDuplicate(undefined)
     const acc = accounts.find((a) => a.account_number === selectedAccount)
     requestForAP.mutate(
       { ...data, account_id: acc?.id ?? 0 },
@@ -76,7 +85,11 @@ export function CardRequestView() {
             { onSuccess: () => setStep('success'), onError: onMutationError }
           )
         },
-        onError: onMutationError,
+        onError: (err) => {
+          if (!isDuplicateEmailError(err)) {
+            onMutationError()
+          }
+        },
       }
     )
   }
@@ -112,6 +125,7 @@ export function CardRequestView() {
         <AuthorizedPersonForm
           onSubmit={handleRequestForAP}
           loading={requestForAP.isPending || requestCard.isPending}
+          externalEmailError={emailDuplicate}
         />
       </ViewShell>
     )

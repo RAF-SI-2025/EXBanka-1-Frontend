@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getCards,
+  getMyCard,
   getAccountCards,
   requestCard,
   blockCard,
@@ -27,6 +28,14 @@ export function useCards() {
   return useQuery({
     queryKey: ['cards', 'me'],
     queryFn: () => getCards(),
+  })
+}
+
+export function useMyCard(id: number | null) {
+  return useQuery({
+    queryKey: ['card', 'me', id],
+    queryFn: () => getMyCard(id!),
+    enabled: id != null && id > 0,
   })
 }
 
@@ -105,10 +114,11 @@ export function useDeactivateCard() {
   })
 }
 
-export function useRequestCardForAuthorizedPerson() {
+export function useRequestCardForAuthorizedPerson(options?: { onError?: (err: unknown) => void }) {
   return useMutation({
     mutationFn: (payload: CreateAuthorizedPersonRequest & { account_id: number }) =>
       requestCardForAuthorizedPerson(payload),
+    onError: options?.onError,
   })
 }
 

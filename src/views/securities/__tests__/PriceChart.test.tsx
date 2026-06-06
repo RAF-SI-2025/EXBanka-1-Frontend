@@ -3,15 +3,16 @@ import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PriceChart } from '@/views/securities/components/PriceChart'
 import { createMockPriceHistory } from '@/__tests__/fixtures/security-fixtures'
 
-// Mock Recharts to avoid SVG rendering issues in JSDOM
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  LineChart: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="line-chart">{children}</div>
+  ComposedChart: ({ children, data }: { children: React.ReactNode; data: unknown[] }) => (
+    <div data-testid="composed-chart" data-rows={data.length}>
+      {children}
+    </div>
   ),
-  Line: () => <div data-testid="line" />,
+  Bar: ({ dataKey }: { dataKey: string }) => <div data-testid={`bar-${dataKey}`} />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
@@ -43,14 +44,40 @@ describe('PriceChart', () => {
     expect(defaultProps.onPeriodChange).toHaveBeenCalledWith('week')
   })
 
-  it('renders chart when data is present', () => {
+  it('renders a single candle Bar (merged wick + body) when data is present', () => {
     renderWithProviders(<PriceChart {...defaultProps} />)
-    expect(screen.getByTestId('line-chart')).toBeInTheDocument()
+    expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
+    expect(screen.getByTestId('bar-range')).toBeInTheDocument()
+    expect(screen.queryByTestId('bar-wick')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('bar-body')).not.toBeInTheDocument()
+  })
+
+  it('passes the full data row count to the chart', () => {
+    renderWithProviders(<PriceChart {...defaultProps} data={createMockPriceHistory(7)} />)
+    expect(screen.getByTestId('composed-chart')).toHaveAttribute('data-rows', '7')
+  })
+
+  it('renders a single candle when data has exactly 1 entry', () => {
+    renderWithProviders(
+      <PriceChart
+        data={createMockPriceHistory(1)}
+        selectedPeriod="month"
+        onPeriodChange={jest.fn()}
+      />
+    )
+    expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
+    expect(screen.getByTestId('composed-chart')).toHaveAttribute('data-rows', '1')
   })
 
   it('shows loading state when isLoading is true', () => {
     renderWithProviders(<PriceChart {...defaultProps} isLoading />)
     expect(screen.getByText('Loading chart...')).toBeInTheDocument()
-    expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument()
+  })
+
+  it('shows "No historical data available" when data is empty', () => {
+    renderWithProviders(<PriceChart data={[]} selectedPeriod="month" onPeriodChange={jest.fn()} />)
+    expect(screen.getByText(/no historical data/i)).toBeInTheDocument()
+    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument()
   })
 })

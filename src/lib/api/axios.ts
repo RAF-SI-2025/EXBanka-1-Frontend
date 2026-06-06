@@ -4,7 +4,7 @@ import { getCurrentHost } from '@/lib/api/backendHost'
 // Build-time constant injected by Vite's `define` from VITE_API_VERSION
 // (see vite.config.ts and .env.development / .env.production). The host is
 // no longer build-time fixed — it is selected at runtime via backendHost.ts
-// so users can switch between localhost / bytenity instances / a custom URL.
+// so users can switch between localhost / vlupsic instances / a custom URL.
 declare const __API_VERSION__: string | undefined
 
 export const API_VERSION = typeof __API_VERSION__ !== 'undefined' ? __API_VERSION__ : 'v3'

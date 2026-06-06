@@ -59,4 +59,11 @@ describe('TaxView', () => {
     fireEvent.click(screen.getByRole('button', { name: /collect taxes/i }))
     await waitFor(() => expect(taxApi.collect).toHaveBeenCalled())
   })
+
+  it('disables Collect Taxes button when there are no tax records', async () => {
+    jest.mocked(taxApi.list).mockResolvedValue({ tax_records: [], total_count: 0 })
+    renderWithProviders(<TaxView />)
+    await screen.findByText('No tax records found.')
+    expect(screen.getByRole('button', { name: /collect taxes/i })).toBeDisabled()
+  })
 })

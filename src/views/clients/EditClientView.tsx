@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useClient, useUpdateClient } from '@/hooks/useClients'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { EditClientForm } from '@/views/clients/components/EditClientForm'
+import { isDuplicateEmailError, notifyError } from '@/lib/errors'
 import type { UpdateClientRequest } from '@/types/client'
 import { EmptyState, LoadingState, ViewShell } from '@/views/shared'
 
@@ -10,8 +12,17 @@ export function EditClientView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const clientId = Number(id)
+  const [emailDuplicate, setEmailDuplicate] = useState<string | undefined>()
   const { data: client, isLoading } = useClient(clientId)
-  const updateClient = useUpdateClient(clientId)
+  const updateClient = useUpdateClient(clientId, {
+    onError: (err) => {
+      if (isDuplicateEmailError(err)) {
+        setEmailDuplicate('Email is already in use')
+        return
+      }
+      notifyError(err)
+    },
+  })
 
   if (isLoading) {
     return (
@@ -29,6 +40,7 @@ export function EditClientView() {
   }
 
   const handleSubmit = (data: UpdateClientRequest) => {
+    setEmailDuplicate(undefined)
     updateClient.mutate(data, { onSuccess: () => navigate('/admin/clients') })
   }
 
@@ -40,8 +52,9 @@ export function EditClientView() {
             client={client}
             onSubmit={handleSubmit}
             submitting={updateClient.isPending}
+            externalEmailError={emailDuplicate}
           />
-          {updateClient.isError && (
+          {updateClient.isError && !emailDuplicate && (
             <p className="text-sm text-destructive mt-2">Error saving. Please try again.</p>
           )}
           <Button

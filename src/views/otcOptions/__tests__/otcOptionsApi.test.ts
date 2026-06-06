@@ -53,6 +53,16 @@ describe('otcOptionsApi.listAll', () => {
     })
     expect(result).toEqual(payload)
   })
+
+  it('forwards the kind and bank_code discovery filters', async () => {
+    mockGet.mockResolvedValue({ data: { offers: [], total_count: 0 } })
+
+    await otcOptionsApi.listAll({ kind: 'remote', bank_code: '222', page: 1 })
+
+    expect(mockGet).toHaveBeenCalledWith('/otc/options', {
+      params: { kind: 'remote', bank_code: '222', page: 1 },
+    })
+  })
 })
 
 describe('otcOptionsApi.listMine', () => {
@@ -165,6 +175,20 @@ describe('otcOptionsApi.acceptNegotiation', () => {
     })
     expect(result.winning.status).toBe('accepted')
   })
+
+  it('forwards on_behalf_of_fund_id for a fund-manager accept', async () => {
+    mockPost.mockResolvedValue({ data: { winning: { id: 7, status: 'accepted' } } })
+
+    await otcOptionsApi.acceptNegotiation(42, 7, {
+      acceptor_account_id: 5,
+      on_behalf_of_fund_id: 101,
+    })
+
+    expect(mockPost).toHaveBeenCalledWith('/me/otc/options/42/negotiations/7/accept', {
+      acceptor_account_id: 5,
+      on_behalf_of_fund_id: 101,
+    })
+  })
 })
 
 describe('otcOptionsApi.rejectNegotiation', () => {
@@ -199,6 +223,41 @@ describe('otcOptionsApi.listNegotiations', () => {
   })
 })
 
+describe('otcOptionsApi.getOfferTimeline', () => {
+  it('GETs /otc/options/:id/timeline and returns the merged stream', async () => {
+    const timeline = [
+      {
+        negotiation_id: 100,
+        bidder_owner_type: 'client',
+        bidder_owner_id: 7,
+        revision_number: 1,
+        action: 'BID',
+        quantity: '10',
+        strike_price: '150.00',
+        premium: '5.00',
+        settlement_date: '2026-07-01T00:00:00Z',
+        action_by_principal_type: 'client',
+        action_by_principal_id: 7,
+        created_at: '2026-06-01T12:00:00Z',
+      },
+    ]
+    mockGet.mockResolvedValue({ data: { offer: { offer_id: '42' }, timeline } })
+
+    const result = await otcOptionsApi.getOfferTimeline(42)
+
+    expect(mockGet).toHaveBeenCalledWith('/otc/options/42/timeline')
+    expect(result.timeline).toEqual(timeline)
+  })
+
+  it('defaults a missing timeline to an empty array', async () => {
+    mockGet.mockResolvedValue({ data: { offer: {} } })
+
+    const result = await otcOptionsApi.getOfferTimeline(42)
+
+    expect(result.timeline).toEqual([])
+  })
+})
+
 describe('otcOptionsApi.cancelListing', () => {
   it('DELETEs the owner-listing', async () => {
     mockDelete.mockResolvedValue({ data: undefined })
@@ -206,5 +265,39 @@ describe('otcOptionsApi.cancelListing', () => {
     await otcOptionsApi.cancelListing(42)
 
     expect(mockDelete).toHaveBeenCalledWith('/me/otc/options/42')
+  })
+})
+
+describe('otcOptionsApi.listNegotiationRevisions', () => {
+  it('GETs /me/otc/options/negotiations/:nid/revisions', async () => {
+    const revisions = [
+      {
+        id: 1,
+        negotiation_id: 5,
+        revision_number: 1,
+        action: 'BID',
+        quantity: '10',
+        strike_price: '150.00',
+        premium: '7.50',
+        settlement_date: '2026-07-01T00:00:00Z',
+        action_by_principal_type: 'client',
+        action_by_principal_id: 42,
+        created_at: '2026-06-01T12:00:00Z',
+      },
+    ]
+    mockGet.mockResolvedValue({ data: { revisions } })
+
+    const result = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(mockGet).toHaveBeenCalledWith('/me/otc/options/negotiations/5/revisions')
+    expect(result.revisions).toEqual(revisions)
+  })
+
+  it('defaults missing revisions to an empty array', async () => {
+    mockGet.mockResolvedValue({ data: {} })
+
+    const result = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(result.revisions).toEqual([])
   })
 })

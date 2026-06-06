@@ -86,7 +86,12 @@ export function AccountTable({
                   Cards
                 </Button>
                 {onViewActivity && (
-                  <Button size="sm" variant="outline" onClick={() => onViewActivity(acc.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onViewActivity(acc.id)}
+                    disabled={acc.account_category === 'personal'}
+                  >
                     Activity
                   </Button>
                 )}

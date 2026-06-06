@@ -6,15 +6,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { useStock } from '@/hooks/useSecurities'
 import type { FundHolding } from '@/types/fund'
 
 interface FundHoldingsTableProps {
-  holdings: FundHolding[]
+  holdings: FundHolding[] | null
 }
 
 export function FundHoldingsTable({ holdings }: FundHoldingsTableProps) {
-  if (holdings.length === 0) {
+  if (!holdings || holdings.length === 0) {
     return <p className="text-sm text-muted-foreground">This fund holds no securities yet.</p>
   }
   return (
@@ -22,26 +21,36 @@ export function FundHoldingsTable({ holdings }: FundHoldingsTableProps) {
       <TableHeader>
         <TableRow>
           <TableHead>Ticker</TableHead>
-          <TableHead>Quantity</TableHead>
+          <TableHead className="text-right">Quantity</TableHead>
+          <TableHead className="text-right">Avg price</TableHead>
+          <TableHead className="text-right">Current price</TableHead>
+          <TableHead className="text-right">Current value</TableHead>
           <TableHead>Acquired</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {holdings.map((h) => (
-          <HoldingRow key={h.stock_id} holding={h} />
+          <TableRow key={`${h.security_id}-${h.acquired_at}`}>
+            <TableCell className="font-mono font-semibold">{h.ticker}</TableCell>
+            <TableCell className="text-right">{String(h.quantity)}</TableCell>
+            <TableCell className="text-right">{formatRsd(h.average_price_rsd)}</TableCell>
+            <TableCell className="text-right">{formatRsd(h.current_price_rsd)}</TableCell>
+            <TableCell className="text-right">{formatRsd(h.current_value_rsd)}</TableCell>
+            <TableCell>{new Date(h.acquired_at).toLocaleDateString()}</TableCell>
+          </TableRow>
         ))}
       </TableBody>
     </Table>
   )
 }
 
-function HoldingRow({ holding }: { holding: FundHolding }) {
-  const { data: stock } = useStock(holding.stock_id)
-  return (
-    <TableRow>
-      <TableCell className="font-medium">{stock?.ticker ?? `#${holding.stock_id}`}</TableCell>
-      <TableCell>{holding.quantity}</TableCell>
-      <TableCell>{new Date(holding.acquired_at).toLocaleDateString()}</TableCell>
-    </TableRow>
-  )
+function formatRsd(value: string | null | undefined): string {
+  if (value === null || value === undefined || value === '') return '—'
+  const num = Number(value)
+  if (!Number.isFinite(num)) return value
+  return new Intl.NumberFormat('sr-RS', {
+    style: 'currency',
+    currency: 'RSD',
+    maximumFractionDigits: 2,
+  }).format(num)
 }

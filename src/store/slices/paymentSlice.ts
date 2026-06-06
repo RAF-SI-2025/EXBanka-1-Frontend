@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit'
 import { createPayment } from '@/lib/api/payments'
 import { createTransfer } from '@/lib/api/transfers'
+import { parseApiError, notifyError } from '@/lib/errors'
 import type { CreatePaymentRequest, CreateInternalTransferRequest } from '@/types/payment'
 
 export type PaymentFlowType = 'payment' | 'internal'
@@ -48,8 +49,8 @@ export const submitPayment = createAsyncThunk(
       }
       return await createPayment(payload.data as CreatePaymentRequest)
     } catch (err: unknown) {
-      const error = err as { response?: { data?: { error?: { message?: string } } } }
-      return rejectWithValue(error.response?.data?.error?.message ?? 'Payment failed')
+      notifyError(err)
+      return rejectWithValue(parseApiError(err).message)
     }
   }
 )

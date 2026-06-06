@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import type { Fund, InvestPayload } from '@/types/fund'
 import type { Account } from '@/types/account'
+import { formatCurrency } from '@/lib/utils/format'
 
 interface Props {
   open: boolean
@@ -31,6 +32,7 @@ interface Props {
 }
 
 const DECIMAL_RE = /^\d+(\.\d{1,2})?$/
+const MIN_CONTRIBUTION_RSD = 100
 
 export function InvestInFundDialog({
   open,
@@ -48,10 +50,14 @@ export function InvestInFundDialog({
   const currency = account?.currency_code ?? 'RSD'
 
   const decimalOk = DECIMAL_RE.test(amount)
-  const aboveMinimum =
-    !decimalOk || currency !== 'RSD' || Number(amount) >= Number(fund.minimum_contribution_rsd)
+  const fundMin = Number(fund.minimum_contribution_rsd)
+  const effectiveMin = currency === 'RSD' ? Math.max(fundMin, MIN_CONTRIBUTION_RSD) : null
+  const aboveMinimum = effectiveMin === null || !decimalOk || Number(amount) >= effectiveMin
 
-  const isValid = accountId !== undefined && decimalOk && aboveMinimum
+  const withinBalance =
+    !decimalOk || account === undefined || Number(amount) <= account.available_balance
+
+  const isValid = accountId !== undefined && decimalOk && aboveMinimum && withinBalance
 
   const handleSubmit = () => {
     if (!isValid || !account) return
@@ -66,13 +72,17 @@ export function InvestInFundDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Invest in {fund.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
-            Minimum: <strong>{fund.minimum_contribution_rsd} RSD</strong>
+            Minimum:{' '}
+            <strong>
+              {currency === 'RSD' ? effectiveMin : (fund.minimum_contribution_rsd ?? '—')}{' '}
+              {currency === 'RSD' ? 'RSD' : currency}
+            </strong>
           </p>
           <div>
             <Label htmlFor="invest-account">Source account</Label>
@@ -80,13 +90,19 @@ export function InvestInFundDialog({
               value={accountId?.toString() ?? ''}
               onValueChange={(v) => v && setAccountId(Number(v))}
             >
-              <SelectTrigger id="invest-account" aria-label="Source account">
-                <SelectValue placeholder="Select account" />
+              <SelectTrigger className="w-full" id="invest-account" aria-label="Source account">
+                <SelectValue placeholder="Select account">
+                  {account ? (
+                    <span className="block min-w-0 truncate">
+                      {account.account_number} — {account.account_name} ({account.currency_code})
+                    </span>
+                  ) : null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.account_name} ({a.currency_code})
+                    {a.account_number} — {a.account_name} ({a.currency_code})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -100,14 +116,20 @@ export function InvestInFundDialog({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              aria-invalid={amount.length > 0 && !decimalOk}
+              aria-invalid={amount.length > 0 && (!decimalOk || !withinBalance)}
             />
             {amount.length > 0 && !decimalOk && (
               <p className="text-xs text-destructive mt-1">Use a decimal value (e.g. 1000.00).</p>
             )}
             {decimalOk && !aboveMinimum && (
               <p className="text-xs text-destructive mt-1">
-                Minimum contribution is {fund.minimum_contribution_rsd} RSD.
+                Minimum contribution is {effectiveMin} RSD.
+              </p>
+            )}
+            {decimalOk && aboveMinimum && !withinBalance && (
+              <p className="text-xs text-destructive mt-1">
+                Insufficient balance. Available:{' '}
+                {formatCurrency(account.available_balance, currency)}.
               </p>
             )}
           </div>

@@ -23,6 +23,7 @@ import type { Account } from '@/types/account'
 import type {
   OtcNegotiation,
   OtcOptionRow,
+  OtcParty,
   CounterNegotiationPayload,
 } from '@/views/otcOptions/types'
 import {
@@ -31,16 +32,27 @@ import {
   useCounterNegotiation,
   useRejectNegotiation,
 } from '@/views/otcOptions/hooks/useOtcOptionMutations'
-import { useOtcOptionNegotiations } from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import {
+  useOtcOfferTimeline,
+  useOtcNegotiationRevisions,
+  useOtcOptionNegotiations,
+} from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
+import { OfferHistoryTable } from '@/views/otcOptions/components/OfferHistoryTable'
+import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 
 interface Props {
   offer: OtcOptionRow
   accounts: Account[]
+  /** Caller's identity — used to render their own revisions as "You". */
+  currentPrincipal?: OtcParty | null
   onBack: () => void
 }
 
-export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
+export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }: Props) {
   const offerId = Number(offer.offer_id)
+  // Bidders table renders the current-state-per-chain snapshot directly from
+  // the listing-scoped /otc/options/:id/negotiations response.
   const { data, isLoading, error } = useOtcOptionNegotiations(offerId)
   const accept = useAcceptNegotiation(offerId)
   const reject = useRejectNegotiation(offerId)
@@ -49,8 +61,15 @@ export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
 
   const [counteringId, setCounteringId] = useState<number | null>(null)
   const [acceptingId, setAcceptingId] = useState<number | null>(null)
+  const [historyChain, setHistoryChain] = useState<OtcNegotiation | null>(null)
 
   const negotiations = data?.negotiations ?? []
+
+  // History table is populated by GET /otc/options/:id/timeline — the backend
+  // merges every chain's bid/counter/accept/reject revisions into one stream
+  // for the listing owner, so the FE makes a single call instead of fanning
+  // out per chain.
+  const revisionsQ = useOtcOfferTimeline(offerId)
 
   const handleAccept = (neg: OtcNegotiation, acceptorAccountId: number) => {
     accept.mutate(
@@ -65,6 +84,17 @@ export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
 
   const handleCancelListing = () => {
     cancelListing.mutate(offerId, { onSuccess: onBack })
+  }
+
+  if (historyChain) {
+    return (
+      <ChainRevisionsView
+        offer={offer}
+        chain={historyChain}
+        currentPrincipal={currentPrincipal ?? undefined}
+        onBack={() => setHistoryChain(null)}
+      />
+    )
   }
 
   return (
@@ -122,7 +152,7 @@ export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
               </TableHeader>
               <TableBody>
                 {negotiations.map((neg) => {
-                  const isActive = neg.status === 'open' || neg.status === 'countered'
+                  const isActive = isNegotiationActive(neg.status)
                   return (
                     <Fragment key={neg.id}>
                       <TableRow>
@@ -140,35 +170,38 @@ export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
                           {neg.settlement_date?.slice(0, 10)}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isActive ? (
-                            <div className="flex gap-1 justify-end">
-                              <Button
-                                size="sm"
-                                onClick={() => setAcceptingId(neg.id)}
-                                disabled={accept.isPending}
-                              >
-                                Accept
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setCounteringId(neg.id)}
-                                disabled={counter.isPending}
-                              >
-                                Counter
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => reject.mutate(neg.id)}
-                                disabled={reject.isPending}
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
+                          <div className="flex gap-1 justify-end flex-wrap">
+                            <Button size="sm" variant="ghost" onClick={() => setHistoryChain(neg)}>
+                              See history
+                            </Button>
+                            {isActive && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => setAcceptingId(neg.id)}
+                                  disabled={accept.isPending}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setCounteringId(neg.id)}
+                                  disabled={counter.isPending}
+                                >
+                                  Counter
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => reject.mutate(neg.id)}
+                                  disabled={reject.isPending}
+                                >
+                                  Reject
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                       {acceptingId === neg.id && (
@@ -193,6 +226,73 @@ export function OfferActivityPanel({ offer, accounts, onBack }: Props) {
                 })}
               </TableBody>
             </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">History ({revisionsQ.revisions.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {revisionsQ.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {!!revisionsQ.error && (
+            <p className="text-sm text-destructive">Could not load bid history.</p>
+          )}
+          {!revisionsQ.isLoading && !revisionsQ.error && (
+            <OfferHistoryTable
+              revisions={revisionsQ.revisions}
+              currentPrincipal={currentPrincipal}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function ChainRevisionsView({
+  offer,
+  chain,
+  currentPrincipal,
+  onBack,
+}: {
+  offer: OtcOptionRow
+  chain: OtcNegotiation
+  currentPrincipal?: OtcParty
+  onBack: () => void
+}) {
+  const { data, isLoading, error } = useOtcNegotiationRevisions(chain.id)
+  const bidderLabel =
+    chain.bidder_name ??
+    (chain.bidder ? `${chain.bidder.owner_type}-${chain.bidder.owner_id ?? '?'}` : '—')
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 min-w-0">
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+        <div className="min-w-0">
+          <h2 className="text-xl font-semibold truncate">
+            {offer.ticker} · chain #{chain.id}
+          </h2>
+          <p className="text-xs text-muted-foreground">Bidder: {bidderLabel}</p>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Revision history</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+          {error && <p className="text-sm text-destructive">Could not load revisions.</p>}
+          {!isLoading && !error && (
+            <NegotiationRevisionsTable
+              revisions={data?.revisions ?? []}
+              currentPrincipal={currentPrincipal}
+            />
           )}
         </CardContent>
       </Card>

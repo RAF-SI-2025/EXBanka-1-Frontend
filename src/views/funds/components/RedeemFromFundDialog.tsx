@@ -50,6 +50,8 @@ export function RedeemFromFundDialog({
     if (next) setAmount(position.current_value_rsd)
   }
 
+  const account = accounts.find((a) => a.id === accountId)
+
   const decimalOk = DECIMAL_RE.test(amount)
   const withinPosition = decimalOk && Number(amount) <= Number(position.current_value_rsd)
   const isValid = accountId !== undefined && decimalOk && withinPosition
@@ -66,7 +68,7 @@ export function RedeemFromFundDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Redeem from {position.fund_name}</DialogTitle>
         </DialogHeader>
@@ -110,13 +112,19 @@ export function RedeemFromFundDialog({
               value={accountId?.toString() ?? ''}
               onValueChange={(v) => v && setAccountId(Number(v))}
             >
-              <SelectTrigger id="redeem-account" aria-label="Target account">
-                <SelectValue placeholder="Select account" />
+              <SelectTrigger className="w-full" id="redeem-account" aria-label="Target account">
+                <SelectValue placeholder="Select account">
+                  {account ? (
+                    <span className="block min-w-0 truncate">
+                      {account.account_number} — {account.account_name} ({account.currency_code})
+                    </span>
+                  ) : null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.account_name} ({a.currency_code})
+                    {a.account_number} — {a.account_name} ({a.currency_code})
                   </SelectItem>
                 ))}
               </SelectContent>

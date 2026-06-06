@@ -6,6 +6,7 @@ import * as tiersApi from '@/lib/api/interestRateTiers'
 import * as marginsApi from '@/lib/api/bankMargins'
 import type { InterestRateTier } from '@/types/interestRateTiers'
 import type { BankMargin } from '@/types/bankMargins'
+import type { ApplyTierResponse } from '@/lib/api/interestRateTiers'
 
 jest.mock('@/lib/api/interestRateTiers')
 jest.mock('@/lib/api/bankMargins')
@@ -125,5 +126,57 @@ describe('InterestRatesView', () => {
     expect(editButtons).toHaveLength(2)
     expect(deleteButtons).toHaveLength(2)
     expect(applyButtons).toHaveLength(2)
+  })
+
+  it('shows informative message when 0 loans are affected by tier apply', async () => {
+    const user = userEvent.setup()
+    jest.mocked(tiersApi.applyTier).mockResolvedValue({ affected_loans: 0 } as ApplyTierResponse)
+
+    renderWithProviders(<InterestRatesView />)
+
+    await screen.findByText('0 - 50,000')
+
+    const applyButtons = screen.getAllByRole('button', { name: /apply to loans/i })
+    await user.click(applyButtons[0])
+
+    // Confirm in the apply confirmation dialog
+    const confirmButton = await screen.findByRole('button', { name: /^apply$/i })
+    await user.click(confirmButton)
+
+    await screen.findByText('No variable-rate loans were found in this tier range.')
+  })
+
+  it('shows singular "loan" message when 1 loan is affected by tier apply', async () => {
+    const user = userEvent.setup()
+    jest.mocked(tiersApi.applyTier).mockResolvedValue({ affected_loans: 1 } as ApplyTierResponse)
+
+    renderWithProviders(<InterestRatesView />)
+
+    await screen.findByText('0 - 50,000')
+
+    const applyButtons = screen.getAllByRole('button', { name: /apply to loans/i })
+    await user.click(applyButtons[0])
+
+    const confirmButton = await screen.findByRole('button', { name: /^apply$/i })
+    await user.click(confirmButton)
+
+    await screen.findByText('1 loan updated.')
+  })
+
+  it('shows plural "loans" message when multiple loans are affected by tier apply', async () => {
+    const user = userEvent.setup()
+    jest.mocked(tiersApi.applyTier).mockResolvedValue({ affected_loans: 5 } as ApplyTierResponse)
+
+    renderWithProviders(<InterestRatesView />)
+
+    await screen.findByText('0 - 50,000')
+
+    const applyButtons = screen.getAllByRole('button', { name: /apply to loans/i })
+    await user.click(applyButtons[0])
+
+    const confirmButton = await screen.findByRole('button', { name: /^apply$/i })
+    await user.click(confirmButton)
+
+    await screen.findByText('5 loans updated.')
   })
 })

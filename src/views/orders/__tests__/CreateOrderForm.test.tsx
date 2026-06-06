@@ -79,6 +79,68 @@ describe('CreateOrderForm', () => {
     expect(screen.getByRole('button', { name: /place order/i })).toBeDisabled()
   })
 
+  describe('scheduling', () => {
+    it('does not render the Schedule order checkbox when schedulingEnabled is false', () => {
+      renderWithProviders(<CreateOrderForm {...defaultProps} />)
+      expect(screen.queryByLabelText(/schedule order/i)).not.toBeInTheDocument()
+    })
+
+    it('renders the Schedule order checkbox when schedulingEnabled and order type is market', () => {
+      renderWithProviders(<CreateOrderForm {...defaultProps} schedulingEnabled />)
+      expect(screen.getByLabelText(/schedule order/i)).toBeInTheDocument()
+    })
+
+    it('hides the Schedule order checkbox when order type is not market', () => {
+      renderWithProviders(<CreateOrderForm {...defaultProps} schedulingEnabled />)
+      fireEvent.change(screen.getByLabelText('Order Type'), { target: { value: 'limit' } })
+      expect(screen.queryByLabelText(/schedule order/i)).not.toBeInTheDocument()
+    })
+
+    it('reveals the Frequency select and two buttons when the box is checked', () => {
+      renderWithProviders(<CreateOrderForm {...defaultProps} schedulingEnabled />)
+      fireEvent.click(screen.getByLabelText(/schedule order/i))
+      expect(screen.getByLabelText('Frequency')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /place order and schedule/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^schedule$/i })).toBeInTheDocument()
+    })
+
+    it('calls onSubmit with payload and frequency when "Place order and schedule" is clicked', () => {
+      const onSubmit = jest.fn()
+      renderWithProviders(
+        <CreateOrderForm {...defaultProps} onSubmit={onSubmit} schedulingEnabled />
+      )
+      fireEvent.click(screen.getByLabelText(/schedule order/i))
+      fireEvent.change(screen.getByLabelText('Frequency'), { target: { value: 'weekly' } })
+      fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '3' } })
+      fireEvent.click(screen.getByRole('button', { name: /place order and schedule/i }))
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.objectContaining({ quantity: 3, direction: 'buy', order_type: 'market' }),
+        'weekly'
+      )
+    })
+
+    it('calls onScheduleOnly with payload and frequency when "Schedule" is clicked', () => {
+      const onScheduleOnly = jest.fn()
+      const onSubmit = jest.fn()
+      renderWithProviders(
+        <CreateOrderForm
+          {...defaultProps}
+          onSubmit={onSubmit}
+          onScheduleOnly={onScheduleOnly}
+          schedulingEnabled
+        />
+      )
+      fireEvent.click(screen.getByLabelText(/schedule order/i))
+      fireEvent.change(screen.getByLabelText('Quantity'), { target: { value: '4' } })
+      fireEvent.click(screen.getByRole('button', { name: /^schedule$/i }))
+      expect(onScheduleOnly).toHaveBeenCalledWith(
+        expect.objectContaining({ quantity: 4, direction: 'buy', order_type: 'market' }),
+        'monthly'
+      )
+      expect(onSubmit).not.toHaveBeenCalled()
+    })
+  })
+
   describe('forex mode (depositAccounts prop provided)', () => {
     const depositAccounts = [
       {

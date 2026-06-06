@@ -10,11 +10,15 @@ export function useSearchClients(query: string) {
   })
 }
 
-export function useAllClients(filters?: ClientFilters, options?: { enabled?: boolean }) {
+export function useAllClients(
+  filters?: ClientFilters,
+  options?: { enabled?: boolean; suppressGlobalError?: boolean }
+) {
   return useQuery({
     queryKey: ['clients', 'all', filters],
     queryFn: () => getClients(filters),
     enabled: options?.enabled ?? true,
+    meta: { suppressGlobalError: options?.suppressGlobalError ?? false },
   })
 }
 
@@ -33,17 +37,22 @@ export function useClientMe() {
   })
 }
 
-export function useCreateClient() {
+interface MutationCallbacks {
+  onError?: (err: unknown) => void
+}
+
+export function useCreateClient(options?: MutationCallbacks) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateClientRequest) => createClient(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] })
     },
+    onError: options?.onError,
   })
 }
 
-export function useUpdateClient(id: number) {
+export function useUpdateClient(id: number, options?: MutationCallbacks) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (payload: UpdateClientRequest) => updateClient(id, payload),
@@ -51,5 +60,6 @@ export function useUpdateClient(id: number) {
       queryClient.invalidateQueries({ queryKey: ['clients'] })
       queryClient.invalidateQueries({ queryKey: ['client', id] })
     },
+    onError: options?.onError,
   })
 }

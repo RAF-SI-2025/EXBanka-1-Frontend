@@ -19,6 +19,12 @@ export interface Card {
   is_virtual?: boolean
   usage_type?: VirtualCardUsageType
   max_uses?: number
+  /**
+   * When present (non-null/non-undefined), indicates the card already has a PIN set.
+   * Returned by `GET /me/cards` at runtime even though it's not in the v3 API docs.
+   * Used by the SetCardPinDialog to decide whether to require the current PIN.
+   */
+  pin?: string | null
 }
 
 export interface CreateCardPayload {

@@ -47,7 +47,7 @@ export function AdminLoanRequestsView() {
     page,
     page_size: PAGE_SIZE,
   })
-  const { data: clientsData } = useAllClients()
+  const { data: clientsData } = useAllClients(undefined, { suppressGlobalError: true })
   const approve = useApproveLoanRequest()
   const reject = useRejectLoanRequest()
 

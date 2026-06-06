@@ -2,25 +2,29 @@ export interface Fund {
   id: number
   name: string
   description: string
-  minimum_contribution_rsd: string
+  minimum_contribution_rsd: string | null
   manager_employee_id: number
   rsd_account_id: number
-  fund_value_rsd: string
-  liquid_cash_rsd: string
-  profit_rsd: string
   active: boolean
   created_at: string
+  updated_at?: string
+  // Computed financials returned by the LIST endpoint only.
+  // The detail endpoint exposes equivalents at the response top level
+  // (see FundDetailResponse). Optional so both shapes typecheck.
+  fund_value_rsd?: string | null
+  liquid_cash_rsd?: string | null
+  profit_rsd?: string | null
 }
 
 export interface FundHolding {
-  stock_id: number
-  quantity: string
+  security_type: string
+  security_id: number
+  ticker: string
+  quantity: string | number
+  average_price_rsd: string
+  current_price_rsd: string
+  current_value_rsd: string
   acquired_at: string
-}
-
-export interface FundPerformancePoint {
-  as_of: string
-  fund_value_rsd: string
 }
 
 export interface ClientFundPosition {
@@ -84,7 +88,14 @@ export interface FundListResponse {
 export interface FundDetailResponse {
   fund: Fund
   holdings: FundHolding[]
-  performance: FundPerformancePoint[]
+  investor_count: number
+  liquid_rsd_balance: string
+  total_contributed_rsd: string
+  total_holdings_value_rsd: string
+  total_value_rsd: string
+  total_dividends_paid_rsd: string
+  profit_rsd: string
+  profit_pct: string
 }
 
 export interface MyFundPositionsResponse {

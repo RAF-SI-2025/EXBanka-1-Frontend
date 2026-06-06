@@ -21,8 +21,8 @@ describe('PasswordResetForm', () => {
     await userEvent.type(screen.getByLabelText(/confirm password/i), 'weak')
     await userEvent.click(screen.getByRole('button', { name: /reset password/i }))
     await waitFor(() => {
-      // Should show a password validation error
-      expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument()
+      // Should show a password validation error (Zod form error)
+      expect(screen.getAllByText(/at least 8 characters/i).length).toBeGreaterThan(0)
     })
     expect(mockOnSubmit).not.toHaveBeenCalled()
   })
@@ -57,5 +57,21 @@ describe('PasswordResetForm', () => {
     )
     expect(screen.getByText(/password reset successfully/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /log in/i })).toBeInTheDocument()
+  })
+
+  it('shows password requirement indicators that turn green when met', async () => {
+    renderWithProviders(<PasswordResetForm onSubmit={jest.fn()} isLoading={false} />)
+    const input = screen.getByLabelText(/new password/i)
+
+    // All requirements start red (not satisfied)
+    expect(screen.getByText(/at least 8 characters/i)).toHaveClass('text-destructive')
+
+    // Type a password that satisfies all rules
+    await userEvent.type(input, 'Secure12')
+
+    expect(screen.getByText(/at least 8 characters/i)).toHaveClass('text-green-600')
+    expect(screen.getByText(/2 numbers/i)).toHaveClass('text-green-600')
+    expect(screen.getByText(/uppercase/i)).toHaveClass('text-green-600')
+    expect(screen.getByText(/lowercase/i)).toHaveClass('text-green-600')
   })
 })

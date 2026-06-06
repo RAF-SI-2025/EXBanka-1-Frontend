@@ -10,6 +10,7 @@ interface CreateFundFormProps {
 }
 
 const DECIMAL_RE = /^\d+(\.\d{1,2})?$/
+const MAX_MINIMUM_RSD = 10_000_000
 
 export function CreateFundForm({ onSubmit, submitting }: CreateFundFormProps) {
   const [name, setName] = useState('')
@@ -17,13 +18,19 @@ export function CreateFundForm({ onSubmit, submitting }: CreateFundFormProps) {
   const [minimum, setMinimum] = useState('')
   const [touched, setTouched] = useState(false)
 
+  const minimumIsDecimal = minimum.length === 0 || DECIMAL_RE.test(minimum)
+  const minimumTooLarge =
+    minimumIsDecimal && minimum.length > 0 && Number(minimum) > MAX_MINIMUM_RSD
+
   const nameError = touched && name.trim().length === 0 ? 'Name is required.' : null
   const minimumError =
     touched && minimum.length > 0 && !DECIMAL_RE.test(minimum)
       ? 'Use a decimal value (e.g. 1000.00).'
-      : null
+      : touched && minimumTooLarge
+        ? 'Minimum contribution cannot exceed 10,000,000 RSD.'
+        : null
 
-  const isValid = name.trim().length > 0 && (minimum.length === 0 || DECIMAL_RE.test(minimum))
+  const isValid = name.trim().length > 0 && minimumIsDecimal && !minimumTooLarge
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

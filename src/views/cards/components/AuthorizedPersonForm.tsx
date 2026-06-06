@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
@@ -21,15 +22,27 @@ type FormValues = z.infer<typeof authorizedPersonSchema>
 interface AuthorizedPersonFormProps {
   onSubmit: (data: CreateAuthorizedPersonRequest) => void
   loading: boolean
+  externalEmailError?: string
 }
 
-export function AuthorizedPersonForm({ onSubmit, loading }: AuthorizedPersonFormProps) {
+export function AuthorizedPersonForm({
+  onSubmit,
+  loading,
+  externalEmailError,
+}: AuthorizedPersonFormProps) {
   const {
     register,
     handleSubmit,
     control,
+    setError,
     formState: { errors },
   } = useForm<FormValues>({ resolver: zodResolver(authorizedPersonSchema) })
+
+  useEffect(() => {
+    if (externalEmailError) {
+      setError('email', { type: 'server', message: externalEmailError })
+    }
+  }, [externalEmailError, setError])
 
   const handleFormSubmit = (data: FormValues) => {
     onSubmit({
@@ -105,6 +118,7 @@ export function AuthorizedPersonForm({ onSubmit, loading }: AuthorizedPersonForm
           <div>
             <Label htmlFor="ap-phone">Phone</Label>
             <Input id="ap-phone" {...register('phone')} aria-label="Phone" />
+            {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
           </div>
           <div>
             <Label htmlFor="ap-address">Address</Label>

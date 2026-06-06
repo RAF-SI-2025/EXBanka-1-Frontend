@@ -7,18 +7,18 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import type { Holding } from '@/types/portfolio'
+import type { SecurityPosition } from '@/types/portfolio'
 
 interface HoldingTableProps {
-  holdings: Holding[]
-  onRowClick: (id: number) => void
-  onSell: (id: number) => void
-  onMakePublic: (id: number) => void
-  onExercise: (id: number) => void
+  positions: SecurityPosition[]
+  onRowClick: (holdingId: number) => void
+  onSell: (holdingId: number) => void
+  onMakePublic: (holdingId: number) => void
+  onExercise: (holdingId: number) => void
 }
 
 export function HoldingTable({
-  holdings,
+  positions,
   onRowClick,
   onSell,
   onMakePublic,
@@ -28,42 +28,46 @@ export function HoldingTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Ticker</TableHead>
-          <TableHead>Name</TableHead>
+          <TableHead>Symbol</TableHead>
           <TableHead>Type</TableHead>
-          <TableHead>Quantity</TableHead>
-          <TableHead>Public Qty</TableHead>
-          <TableHead>Account</TableHead>
-          <TableHead>Last Modified</TableHead>
+          <TableHead className="text-right">Quantity</TableHead>
+          <TableHead className="text-right">Avg Cost</TableHead>
+          <TableHead className="text-right">Current Price</TableHead>
+          <TableHead className="text-right">Current Value</TableHead>
+          <TableHead className="text-right">P&amp;L</TableHead>
+          <TableHead>Last Updated</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {holdings.map((holding) => (
+        {positions.map((p) => (
           <TableRow
-            key={holding.id}
+            key={p.holding_id}
             className="cursor-pointer"
-            onClick={() => onRowClick(holding.id)}
+            onClick={() => onRowClick(p.holding_id)}
           >
-            <TableCell className="font-mono font-semibold">{holding.ticker}</TableCell>
-            <TableCell>{holding.name}</TableCell>
-            <TableCell>{holding.security_type}</TableCell>
-            <TableCell>{holding.quantity}</TableCell>
-            <TableCell>{holding.public_quantity}</TableCell>
-            <TableCell>{holding.account_id}</TableCell>
-            <TableCell>{new Date(holding.last_modified).toLocaleDateString()}</TableCell>
+            <TableCell className="font-mono font-semibold">{p.symbol}</TableCell>
+            <TableCell>{p.asset_type}</TableCell>
+            <TableCell className="text-right">{p.quantity}</TableCell>
+            <TableCell className="text-right">{p.avg_cost_rsd}</TableCell>
+            <TableCell className="text-right">{p.current_price_rsd}</TableCell>
+            <TableCell className="text-right">{p.current_value_rsd}</TableCell>
+            <TableCell className="text-right">
+              {p.p_l_rsd} ({p.p_l_pct}%)
+            </TableCell>
+            <TableCell>{new Date(p.last_updated).toLocaleDateString()}</TableCell>
             <TableCell>
               <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                <Button size="sm" variant="outline" onClick={() => onSell(holding.id)}>
+                <Button size="sm" variant="outline" onClick={() => onSell(p.holding_id)}>
                   Sell
                 </Button>
-                {holding.security_type !== 'option' && (
-                  <Button size="sm" variant="outline" onClick={() => onMakePublic(holding.id)}>
+                {p.asset_type !== 'option' && (
+                  <Button size="sm" variant="outline" onClick={() => onMakePublic(p.holding_id)}>
                     Make Public
                   </Button>
                 )}
-                {holding.security_type === 'option' && (
-                  <Button size="sm" variant="outline" onClick={() => onExercise(holding.id)}>
+                {p.asset_type === 'option' && (
+                  <Button size="sm" variant="outline" onClick={() => onExercise(p.holding_id)}>
                     Exercise
                   </Button>
                 )}

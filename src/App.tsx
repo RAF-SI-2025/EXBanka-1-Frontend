@@ -52,11 +52,18 @@ import { AdminFeesView } from '@/views/adminFees'
 import { PeerBanksView } from '@/views/peerBanks'
 import { OtcView } from '@/views/otc'
 import { OtcPortalView } from '@/views/otcPortal'
-import { BankFundPositionsView, CreateFundView, FundDetailsView, FundsView } from '@/views/funds'
+import {
+  BankFundPositionsView,
+  CreateFundView,
+  FundDetailsView,
+  FundPortfolioView,
+  FundsView,
+} from '@/views/funds'
 import { OtcContractDetailView, OtcContractsView } from '@/views/otcContracts'
 import { OtcOptionsView } from '@/views/otcOptions'
 import { NotificationTemplatesView } from '@/views/notificationTemplates'
 import { SettingsView } from '@/views/settings'
+import { AuditLogsView } from '@/views/audit'
 
 export default function App() {
   return (
@@ -133,7 +140,7 @@ export default function App() {
         <Route
           path="/admin/bank-accounts/:id/activity"
           element={
-            <ProtectedRoute requiredPermission="bank-accounts.manage">
+            <ProtectedRoute requiredRole="Employee">
               <BankAccountActivityView />
             </ProtectedRoute>
           }
@@ -361,6 +368,7 @@ export default function App() {
           }
         />
         <Route path="/funds/:id" element={<FundDetailsView />} />
+        <Route path="/funds/:id/portfolio" element={<FundPortfolioView />} />
         <Route path="/portfolio" element={<PortfolioView />} />
         <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsView />} />
 
@@ -378,6 +386,14 @@ export default function App() {
           element={
             <ProtectedRoute requireAdmin>
               <TaxView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuditLogsView />
             </ProtectedRoute>
           }
         />

@@ -43,7 +43,13 @@ export interface OptionContract {
 }
 
 export interface ExerciseContractPayload {
+  // Required for a cross-bank (remote) contract: the buyer's currency account
+  // that pays the strike. Ignored for a local contract. Spec §30 exercise body.
+  buyer_account_number?: string
   on_behalf_of_client_id?: number
+  // Optional (spec §30, E2/Plan E). When non-zero, exercises on behalf of an
+  // investment fund (local path); acquired shares land in `fund_holdings`.
+  on_behalf_of_fund_id?: number
 }
 
 export interface MyContractsFilters {

@@ -14,6 +14,7 @@ import {
   createMockFund,
   createMockFundContribution,
   createMockClientFundPosition,
+  createMockFundDetailResponse,
 } from '@/__tests__/fixtures/fund-fixtures'
 
 jest.mock('@/lib/api/funds')
@@ -33,11 +34,9 @@ describe('useFunds', () => {
 
 describe('useFund', () => {
   it('fetches a single fund', async () => {
-    jest.mocked(fundsApi.getFund).mockResolvedValue({
-      fund: createMockFund({ id: 5 }),
-      holdings: [],
-      performance: [],
-    })
+    jest
+      .mocked(fundsApi.getFund)
+      .mockResolvedValue(createMockFundDetailResponse({ fund: createMockFund({ id: 5 }) }))
     const { result } = renderHook(() => useFund(5), { wrapper: createQueryWrapper() })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(fundsApi.getFund).toHaveBeenCalledWith(5)

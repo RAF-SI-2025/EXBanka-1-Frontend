@@ -26,7 +26,7 @@ describe('BackendSelector', () => {
     await waitFor(() => {
       expect(localStorage.getItem(STORAGE_KEY_PRESET)).toBe('instance1')
     })
-    expect(getCurrentHost()).toBe('https://project-exbanka.bytenity.com/instance1')
+    expect(getCurrentHost()).toBe('https://exbanka.vlupsic.dev/instance1')
   })
 
   it('shows a URL input when "Custom" is selected and saves it via Apply', async () => {
@@ -69,7 +69,7 @@ describe('BackendSelector', () => {
     await userEvent.click(await screen.findByRole('option', { name: /instance 3/i }))
 
     await waitFor(() => {
-      expect(onHostChange).toHaveBeenCalledWith('https://project-exbanka.bytenity.com/instance3')
+      expect(onHostChange).toHaveBeenCalledWith('https://exbanka.vlupsic.dev/instance3')
     })
   })
 })

@@ -46,4 +46,20 @@ describe('ActivationForm', () => {
     expect(screen.getByText(/account activated successfully/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /log in/i })).toBeInTheDocument()
   })
+
+  it('shows password requirement indicators that turn green when met', async () => {
+    renderWithProviders(<ActivationForm onSubmit={jest.fn()} isLoading={false} />)
+    const input = screen.getByLabelText(/^password$/i)
+
+    // All requirements start red (not satisfied)
+    expect(screen.getByText(/at least 8 characters/i)).toHaveClass('text-destructive')
+
+    // Type a password that satisfies all rules
+    await userEvent.type(input, 'Secure12')
+
+    expect(screen.getByText(/at least 8 characters/i)).toHaveClass('text-green-600')
+    expect(screen.getByText(/2 numbers/i)).toHaveClass('text-green-600')
+    expect(screen.getByText(/uppercase/i)).toHaveClass('text-green-600')
+    expect(screen.getByText(/lowercase/i)).toHaveClass('text-green-600')
+  })
 })

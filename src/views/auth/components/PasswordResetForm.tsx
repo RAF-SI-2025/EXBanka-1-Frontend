@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormField } from '@/components/shared/FormField'
 import { AuthFormCard } from '@/views/auth/components/AuthFormCard'
+import { PasswordRequirements } from '@/views/auth/components/PasswordRequirements'
 
 const schema = z
   .object({
@@ -36,10 +37,13 @@ export function PasswordResetForm({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
   })
+
+  const passwordValue = watch('new_password') ?? ''
 
   return (
     <AuthFormCard
@@ -59,6 +63,7 @@ export function PasswordResetForm({
         <FormField label="New Password" id="new_password" error={errors.new_password?.message}>
           <Input id="new_password" type="password" {...register('new_password')} />
         </FormField>
+        <PasswordRequirements value={passwordValue} />
         <FormField
           label="Confirm Password"
           id="confirm_password"

@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api/axios'
 import {
   createOrder,
   createOrderOnBehalf,
+  createOrderOnBehalfFund,
   getMyOrders,
   getMyOrder,
   cancelOrder,
@@ -49,6 +50,24 @@ describe('createOrderOnBehalf', () => {
     }
     const result = await createOrderOnBehalf(payload)
     expect(mockPost).toHaveBeenCalledWith('/orders', payload)
+    expect(result).toEqual(order)
+  })
+})
+
+describe('createOrderOnBehalfFund', () => {
+  it('posts to /me/orders with on_behalf_of_fund_id and order payload', async () => {
+    const order = createMockOrder()
+    mockPost.mockResolvedValue({ data: order })
+    const payload = {
+      on_behalf_of_fund_id: 7,
+      listing_id: 42,
+      direction: 'buy' as const,
+      order_type: 'market' as const,
+      quantity: 10,
+      account_id: 200,
+    }
+    const result = await createOrderOnBehalfFund(payload)
+    expect(mockPost).toHaveBeenCalledWith('/me/orders', payload)
     expect(result).toEqual(order)
   })
 })

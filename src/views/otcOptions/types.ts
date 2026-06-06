@@ -7,6 +7,10 @@ export type OtcOptionListingStatus = 'open' | 'consumed' | 'cancelled' | 'expire
 
 export type OtcNegotiationStatus =
   | 'open'
+  // `ongoing` is the peer status vocabulary cross-bank/remote chains use for
+  // an active negotiation (spec §47.2 — bid returns `open` local / `ongoing`
+  // remote). Treated as active alongside `open`/`countered`.
+  | 'ongoing'
   | 'countered'
   | 'accepted'
   | 'rejected'
@@ -42,6 +46,15 @@ export interface OtcOptionRow {
   best_bid?: string
   best_ask?: string
   active_chains_count?: number
+  // SP-1/SP-2b ownership + own-chain fields (spec §47.2). `me_owner` is true
+  // when the caller is this listing's poster (always false for remote rows;
+  // omitted when not owned). `my_negotiation_id` is the caller's own
+  // bidder-chain id on this offer — a positive number once a chain exists,
+  // omitted/0 when the caller has never bid here. `my_negotiation_status` is
+  // that chain's status when present.
+  me_owner?: boolean
+  my_negotiation_id?: number | string | null
+  my_negotiation_status?: string
 }
 
 export interface OtcOptionsDiscoveryResponse {
@@ -82,6 +95,57 @@ export interface OtcNegotiationsResponse {
   total: number
 }
 
+// One row of GET /me/otc/options/negotiations/:nid/revisions — the immutable
+// audit log of a chain (BID -> COUNTER* -> ACCEPT/REJECT).
+export type OtcRevisionAction = 'BID' | 'COUNTER' | 'ACCEPT' | 'REJECT'
+
+export interface OtcNegotiationRevision {
+  id: number
+  negotiation_id: number
+  revision_number: number
+  action: OtcRevisionAction
+  quantity: string
+  strike_price: string
+  premium: string | null
+  settlement_date: string
+  action_by_principal_type: OtcOwnerType
+  action_by_principal_id: number
+  created_at: string
+}
+
+export interface OtcNegotiationRevisionsResponse {
+  revisions: OtcNegotiationRevision[]
+}
+
+// ---- Offer timeline (GET /otc/options/:id/timeline) -------------------------
+
+// One entry of a listing's cross-chain activity timeline — every bidder's
+// revisions merged server-side into a single stream (spec §47.2). Owner-only
+// view: the listing poster (or an `otc.read.all` employee) sees all chains;
+// competing bidders get 403. Bidder identity rides flat on each entry, so the
+// hook lifts it onto the shared `RevisionWithChain` shape for rendering.
+export interface OtcTimelineEntry {
+  negotiation_id: number
+  bidder_owner_type: OtcOwnerType
+  bidder_owner_id: number | null
+  revision_number: number
+  action: OtcRevisionAction
+  quantity: string
+  strike_price: string
+  premium: string | null
+  settlement_date: string
+  action_by_principal_type: OtcOwnerType
+  action_by_principal_id: number
+  created_at: string
+}
+
+export interface OtcOfferTimelineResponse {
+  // Listing header (OTCOfferResponse). The owner Activity panel already has the
+  // offer via props and renders only `timeline`, so this is typed loosely.
+  offer?: unknown
+  timeline: OtcTimelineEntry[]
+}
+
 // ---- Response shapes --------------------------------------------------------
 
 // Subset of the OptionContract surface we need to confirm the formation saga
@@ -103,21 +167,9 @@ export interface AcceptNegotiationResponse {
 
 // ---- Picker lookups ---------------------------------------------------------
 
-// Subset of /me/portfolio Holding the ticker picker needs for sell-direction
-// listings (caller can only sell options on shares they actually hold).
-export interface HoldingLite {
-  id: number
-  security_type: 'stock' | 'futures' | 'option'
-  ticker: string
-  name: string
-  quantity: number
-  public_quantity: number
-}
-
-export interface MyHoldingsResponse {
-  holdings: HoldingLite[]
-  total_count: number
-}
+// Sell-direction ticker picker reads holdings from the shared
+// `PortfolioResponse` (spec §48.1) — see `getPortfolio` / `SecurityPosition`
+// in `@/types/portfolio`. No module-local type needed.
 
 // Subset of /securities/stocks Stock the catalog picker needs for buy-direction
 // listings (any tradable ticker is valid).
@@ -161,6 +213,10 @@ export interface CounterNegotiationPayload {
 
 export interface AcceptNegotiationPayload {
   acceptor_account_id: number
+  // Optional (spec §47.2). When non-zero, accepts on behalf of an investment
+  // fund; `acceptor_account_id` must equal the fund's RSD account and the
+  // caller must be the fund's manager. The minted contract records the fund id.
+  on_behalf_of_fund_id?: number
 }
 
 // What the UI passes to the smart bid-or-counter hook. The hook decides
@@ -185,6 +241,10 @@ export type OtcOptionsMode = 'all' | 'my'
 export interface OtcOptionsListFilters {
   ticker?: string
   direction?: OtcOptionDirection
+  // Discovery filters per spec §47.2 (`GET /otc/options`). `kind`/`bank_code`
+  // are accepted but redundant on `GET /me/otc/options` (always kind=local).
+  kind?: 'local' | 'remote'
+  bank_code?: string
   page?: number
   page_size?: number
 }
