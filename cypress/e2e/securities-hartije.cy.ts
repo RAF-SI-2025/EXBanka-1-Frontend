@@ -340,7 +340,7 @@ describe('Hartije od vrednosti — Securities', () => {
     it('Scenario 23 — Settlement date range filter sends correct params and narrows futures results', () => {
       cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
       cy.intercept('GET', '**/api/v3/securities/futures*', { fixture: 'futures-list.json' }).as('getFutures')
-      cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+      cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total_count: 0 } })
 
       cy.loginAsEmployee('/securities')
       cy.wait('@getFutures')
@@ -349,7 +349,7 @@ describe('Hartije od vrednosti — Securities', () => {
 
       // Register filtered intercept AFTER switching tab (LIFO)
       cy.intercept('GET', '**/api/v3/securities/futures*', {
-        body: { futures: [], total: 0 },
+        body: { futures: [], total_count: 0 },
       }).as('getFilteredFutures')
 
       cy.get('input[placeholder="Settle From"]').type('2026-06-01')
@@ -370,7 +370,7 @@ describe('Hartije od vrednosti — Securities', () => {
       cy.intercept('GET', '**/api/v3/me/accounts*', { fixture: 'home-accounts.json' })
       cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
       cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
-      cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+      cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
     })
 
     it('Scenario 24 — Quantity input has min=1 constraint and type=number', () => {

@@ -20,6 +20,11 @@ const FUND = {
   fund_value_rsd: '2600000.00',
   liquid_cash_rsd: '1500000.00',
   profit_rsd: '5000.00',
+  annualized_return_pct: '12.40',
+  volatility_pct: '9.00',
+  reward_to_variability: '1.31',
+  max_drawdown_pct: '-7.20',
+  metrics_available: true,
 }
 
 const FUND_DETAIL = {
@@ -44,6 +49,16 @@ const FUND_DETAIL = {
   total_dividends_paid_rsd: '0.00',
   profit_rsd: '5000.00',
   profit_pct: '0.1000',
+  history: [
+    { date: '2026-05-01', total_value_rsd: '4800000.00' },
+    { date: '2026-05-02', total_value_rsd: '4900000.00' },
+    { date: '2026-05-03', total_value_rsd: '5000000.00' },
+  ],
+  average_history: [
+    { date: '2026-05-01', total_value_rsd: '100.00' },
+    { date: '2026-05-02', total_value_rsd: '101.50' },
+    { date: '2026-05-03', total_value_rsd: '103.00' },
+  ],
 }
 
 const CLIENT_RSD_ACCOUNT = {

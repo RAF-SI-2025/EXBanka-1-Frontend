@@ -21,11 +21,10 @@ import {
 import { useMyFundPositions, useRedeemFund } from '@/hooks/useFunds'
 import { useDeletePriceAlert, usePriceAlerts, useUpdatePriceAlert } from '@/hooks/usePriceAlerts'
 import { useListingMap } from '@/hooks/useSecurities'
-import { useRemoveFromWatchlist, useWatchlist } from '@/hooks/useWatchlist'
 import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { selectUserType } from '@/store/selectors/authSelectors'
-import { FavoritesTable } from '@/views/portfolio/components/FavoritesTable'
+import { WatchlistPanel } from '@/views/portfolio/components/WatchlistPanel'
 import { RecurringOrdersTable } from '@/views/portfolio/components/RecurringOrdersTable'
 import {
   useRecurringOrders,
@@ -95,11 +94,6 @@ export function PortfolioView() {
     else searchParams.set('tab', value)
     setSearchParams(searchParams, { replace: true })
   }
-
-  const { data: watchlistData } = useWatchlist()
-  const watchlistItems = watchlistData?.items ?? []
-  const removeFromWatchlistMutation = useRemoveFromWatchlist()
-  const handleRemoveFavorite = (listingId: number) => removeFromWatchlistMutation.mutate(listingId)
 
   const { data: priceAlerts } = usePriceAlerts()
   const updateAlertMutation = useUpdatePriceAlert()
@@ -283,15 +277,7 @@ export function PortfolioView() {
           />
         </TabsContent>
         <TabsContent value="favorites" className="mt-4">
-          <FavoritesTable
-            items={watchlistItems}
-            onRemove={handleRemoveFavorite}
-            busyListingId={
-              removeFromWatchlistMutation.isPending
-                ? removeFromWatchlistMutation.variables
-                : undefined
-            }
-          />
+          <WatchlistPanel />
         </TabsContent>
         <TabsContent value="recurring-orders" className="mt-4">
           <RecurringOrdersTable

@@ -17,7 +17,7 @@ interface OptionsTableProps {
   onRowClick: (id: number) => void
   onBuy: (option: Option) => void
   watchlistIds?: Set<number>
-  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
+  onOpenWatchlist?: (listingId: number, ticker: string) => void
 }
 
 export function OptionsTable({
@@ -25,7 +25,7 @@ export function OptionsTable({
   onRowClick,
   onBuy,
   watchlistIds,
-  onToggleWatchlist,
+  onOpenWatchlist,
 }: OptionsTableProps) {
   return (
     <Table>
@@ -70,12 +70,12 @@ export function OptionsTable({
                 >
                   Buy
                 </Button>
-                {onToggleWatchlist && (
+                {onOpenWatchlist && (
                   <WatchlistButton
                     listingId={option.id}
                     ticker={option.ticker}
                     inWatchlist={watchlistIds?.has(option.id) ?? false}
-                    onToggle={onToggleWatchlist}
+                    onOpen={onOpenWatchlist}
                   />
                 )}
               </div>

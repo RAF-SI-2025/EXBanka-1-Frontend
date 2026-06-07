@@ -18,3 +18,25 @@ export interface WatchlistResponse {
 export interface WatchlistFilters {
   listing_type?: WatchlistSecurityType
 }
+
+/** A named watchlist (e.g. the default "My Watchlist", or "tech", "forex pairs"). */
+export interface Watchlist {
+  id: number
+  name: string
+  item_count: number
+  created_at: number
+}
+
+export interface WatchlistsResponse {
+  watchlists: Watchlist[]
+}
+
+export interface CreateWatchlistPayload {
+  name: string
+}
+
+/** Identifies an item within a specific named list. */
+export interface WatchlistItemRef {
+  watchlistId: number
+  listingId: number
+}

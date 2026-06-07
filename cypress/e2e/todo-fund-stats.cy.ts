@@ -1,11 +1,11 @@
 // "todo test" — Feature: Statistika fondova (Scenarios 73–77)
 //
 // IMPORTANT: the SP3 fund metrics (annualized return, reward-to-variability,
-// max drawdown, volatility) are supported by the backend/REST spec but are NOT
-// rendered by the current frontend. The funds Discovery table shows only Name /
-// Description / Fund value / Profit / Min. contribution, there is NO sorting UI,
-// and the fund detail page has NO performance/history chart. These tests assert
-// the actual FE state and document the gaps so the suite stays honest.
+// max drawdown, volatility) are now rendered on the fund DETAIL page (hero
+// cards + a NAV-vs-system-average performance chart + risk-metric cards). The
+// funds Discovery table, however, still shows only Name / Description / Fund
+// value / Profit / Min. contribution, with NO metric columns and NO sorting UI.
+// These tests assert the actual FE state and document the remaining gaps.
 
 export {}
 
@@ -21,6 +21,12 @@ const FUND = {
   fund_value_rsd: '2600000.00',
   liquid_cash_rsd: '1500000.00',
   profit_rsd: '5000.00',
+  // SP3 risk/return metrics carried on the fund object.
+  annualized_return_pct: '12.40',
+  volatility_pct: '9.00',
+  reward_to_variability: '1.31',
+  max_drawdown_pct: '-7.20',
+  metrics_available: true,
 }
 
 const FUND_DETAIL = {
@@ -34,6 +40,17 @@ const FUND_DETAIL = {
   total_dividends_paid_rsd: '0.00',
   profit_rsd: '5000.00',
   profit_pct: '0.1000',
+  // Daily NAV series + system-average benchmark for the detail chart.
+  history: [
+    { date: '2026-05-01', total_value_rsd: '4800000.00' },
+    { date: '2026-05-02', total_value_rsd: '4900000.00' },
+    { date: '2026-05-03', total_value_rsd: '5000000.00' },
+  ],
+  average_history: [
+    { date: '2026-05-01', total_value_rsd: '100.00' },
+    { date: '2026-05-02', total_value_rsd: '101.50' },
+    { date: '2026-05-03', total_value_rsd: '103.00' },
+  ],
 }
 
 describe('todo test — Statistika fondova', () => {
@@ -81,17 +98,21 @@ describe('todo test — Statistika fondova', () => {
   })
 
   // ── Scenario 75: Grafikon istorijske vrednosti fonda ──────────────────────
-  // Not implemented: the fund detail renders the metrics panel + holdings only;
-  // there is no historical-value chart or system-average comparison chart.
-  it('Scenario 75 — the fund detail has no performance/history chart (metrics + holdings only)', () => {
+  // The fund detail now renders a NAV-vs-system-average performance chart and a
+  // risk-metrics panel (annualized return, volatility, Sharpe, max drawdown)
+  // alongside the hero cards, allocation pie, fund details, and holdings.
+  it('Scenario 75 — the fund detail shows a performance chart and risk metrics', () => {
     cy.intercept('GET', '**/api/v3/investment-funds/7', { body: FUND_DETAIL }).as('getFund')
     cy.intercept('GET', '**/api/v3/me/accounts', { body: { accounts: [], total: 0 } })
 
     cy.loginAsClient('/funds/7')
     cy.wait('@getFund')
 
+    cy.contains('Performance vs. system average').should('be.visible')
+    cy.contains('Annualized return').should('be.visible')
+    cy.contains('12.40%').should('be.visible')
+    cy.contains('Max drawdown').should('be.visible')
     cy.contains('Holdings').should('be.visible')
-    cy.contains(/historical value|performance chart|average performance/i).should('not.exist')
   })
 
   // ── Scenario 76: Sortiranje fondova po godišnjem prinosu ───────────────────

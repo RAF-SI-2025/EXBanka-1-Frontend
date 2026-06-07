@@ -466,9 +466,12 @@ describe('todo test — Price Alert', () => {
     cy.intercept('GET', '**/api/v3/securities/stocks*', { fixture: 'stocks-list.json' }).as(
       'getStocks'
     )
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/me/watchlist*', { body: { items: [] } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', {
+      body: { forex_pairs: [], total_count: 0 },
+    })
+    cy.intercept('GET', '**/api/v3/me/watchlists', { body: { watchlists: [] } })
+    cy.intercept('GET', '**/api/v3/me/watchlists/*/items*', { body: { items: [] } })
   }
 
   // ── Scenario 26: Postavljanje price alert-a za rast cene (ABOVE) ───────────
@@ -591,9 +594,11 @@ describe('todo test — Price Alert', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe('todo test — Istorija ordera', () => {
   beforeEach(() => {
-    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', {
+      body: { forex_pairs: [], total_count: 0 },
+    })
   })
 
   // ── Scenario 30: Klijent vidi sve svoje prošle ordere ─────────────────────
