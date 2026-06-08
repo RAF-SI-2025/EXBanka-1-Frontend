@@ -3,7 +3,9 @@
 _Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`; added recurring buy scheduling — on the create-order form (`/securities/order/new`) a client or employee placing a market **buy** can tick "Schedule order", pick Weekly/Monthly, and either "Place order and schedule" (immediate buy + recurring template) or "Schedule" (template only) via POST `/me/recurring-orders` (caller-scoped: an employee's template is created under the employee principal); added a **Recurring Orders** tab on `/portfolio` (`?tab=recurring-orders`) that lists the caller's recurring-order templates via GET `/me/recurring-orders` and supports Pause/Resume/Cancel via POST `/me/recurring-orders/:id/{pause,resume,cancel}` — Cancel is gated behind a confirmation dialog)_
 
 _Updated: 2026-05-30_
-_Last updated: 2026-05-30_
+_Last updated: 2026-06-07b (fund detail stats redesign — `FundDetailsView` (`/funds/:id`) now mirrors the Portfolio page: `FundSummaryCards` hero stats (total value / profit ± % / total contributed / investors), a `FundNavChart` (this fund's daily NAV indexed to 100 vs. the system-average benchmark from `history`/`average_history`), a `FundAllocationPieChart` (value-weighted holdings), and `FundRiskMetrics` cards (annualized return, volatility, Sharpe = reward_to_variability, max drawdown — hidden behind a notice when `metrics_available === false`). `FundDetailsPanel` slimmed to a secondary "Fund details" card. New optional fund types: SP3 metrics on `Fund`, `FundNavPoint`, `history`/`average_history` on `FundDetailResponse`.)_
+
+_Last updated: 2026-06-07 (named watchlists — replaced the single default `/me/watchlist` calls with multi-list `/me/watchlists` + `/me/watchlists/:id/items`; the Portfolio → Favorites tab now renders `WatchlistPanel` with a list dropdown (default list shown as "Favorites"), a "New list" button → `CreateWatchlistDialog`, and a per-list delete; the securities heart now opens `AddToWatchlistDialog` to pick which list to add to, and shows filled when a listing is in any of the caller's lists. Owner (client vs. bank) is resolved server-side from the JWT.)_
 
 ---
 
@@ -138,7 +140,9 @@ src/
 │   │   ├── ForexTable.tsx + .test.tsx         # Forex pairs list table
 │   │   ├── PriceChart.tsx + .test.tsx         # Recharts line chart with period selector
 │   │   ├── SecurityInfoPanel.tsx + .test.tsx  # Key-value detail info panel
-│   │   └── OptionsChain.tsx + .test.tsx       # Calls/Puts options chain table
+│   │   ├── OptionsChain.tsx + .test.tsx       # Calls/Puts options chain table
+│   │   ├── WatchlistButton.tsx + .test.tsx    # Per-row heart; opens the add-to-list picker
+│   │   └── AddToWatchlistDialog.tsx + .test.tsx # Pick which watchlist to add a listing to
 │   ├── accounts/
 │   │   ├── LimitsUsageCard.tsx + .test.tsx    # Daily/monthly spending usage progress bars
 │   │   └── AccountSelector.tsx + .test.tsx   # Search-as-you-type account picker; businessOnly prop filters to business accounts
@@ -164,9 +168,13 @@ src/
 │   │   └── BuyOnBehalfOtcDialog.tsx + .test.tsx    # Dialog to buy on behalf of a client (employee variant)
 │   ├── funds/
 │   │   ├── FundsTable.tsx + .test.tsx              # Discovery table; rows linked to /funds/:id
-│   │   ├── FundDetailsPanel.tsx                    # Header card; resolves manager via useEmployee
+│   │   ├── FundDetailsPanel.tsx + .test.tsx        # Secondary "Fund details" card (manager via useEmployee)
+│   │   ├── FundSummaryCards.tsx + .test.tsx        # Hero stat cards (value/profit/contributed/investors)
+│   │   ├── FundNavChart.tsx + .test.tsx            # NAV-vs-system-average performance line chart
+│   │   ├── FundAllocationPieChart.tsx + .test.tsx  # Value-weighted holdings allocation pie
+│   │   ├── FundRiskMetrics.tsx + .test.tsx         # SP3 risk/return metric cards (metrics_available guard)
+│   │   ├── fundFormat.ts                           # Shared formatRsd/formatPct/signClass helpers
 │   │   ├── FundHoldingsTable.tsx                   # Per-row useStock to resolve ticker
-│   │   ├── FundPerformanceChart.tsx                # Recharts line over performance[]
 │   │   ├── CreateFundForm.tsx + .test.tsx          # name + description + minimum_contribution_rsd
 │   │   ├── InvestInFundDialog.tsx + .test.tsx      # Source account + amount + currency; asBank toggle
 │   │   ├── RedeemFromFundDialog.tsx + .test.tsx    # Amount or "withdraw full"; asBank toggle
@@ -179,7 +187,10 @@ src/
 │   │   ├── HoldingsTable.tsx + .test.tsx      # Alternative holdings table variant
 │   │   ├── MakePublicDialog.tsx + .test.tsx   # Dialog to set holding public quantity
 │   │   ├── SellOrderDialog.tsx + .test.tsx    # Dialog to create sell order from portfolio
-│   │   └── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
+│   │   ├── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
+│   │   ├── WatchlistPanel.tsx + .test.tsx     # Favorites tab: list dropdown, New list, delete, items
+│   │   ├── CreateWatchlistDialog.tsx + .test.tsx # New named-list form (1–64 chars)
+│   │   └── FavoritesTable.tsx + .test.tsx     # Tracked listings of the selected list
 │   ├── tax/
 │   │   ├── TaxTable.tsx + .test.tsx           # Tax records table (used in TaxPage)
 │   │   └── TaxTrackingTable.tsx + .test.tsx   # Tax tracking table (used in TaxTrackingPage)
@@ -274,7 +285,7 @@ src/
 │   ├── TaxTrackingPage.tsx + .test.tsx   # (not yet routed)
 │   ├── OtcPortalPage.tsx + .test.tsx     # /otc — role-aware: clients use BuyOtcDialog, employees use BuyOnBehalfOtcDialog
 │   ├── FundsDiscoveryPage.tsx            # /funds — search + active-only + InvestInFundDialog
-│   ├── FundDetailsPage.tsx               # /funds/:id — Panel + Holdings + Performance + Invest
+│   ├── FundDetailsPage.tsx               # /funds/:id — hero cards + NAV chart + allocation pie + risk metrics + details + holdings + Invest
 │   ├── FundPortfolioView.tsx             # /funds/:id/portfolio — portfolio-style page (summary + perf + enriched holdings)
 │   ├── CreateFundPage.tsx                # /funds/new — gated on funds.manage
 │   ├── ActuaryPerformancePage.tsx        # /admin/profit/actuaries — gated on actuaries.read.all
@@ -323,6 +334,7 @@ src/
 │   ├── useSecurities.ts + .test.ts   # React Query: stocks, futures, forex, options hooks
 │   ├── useOrders.ts + .test.ts       # React Query: orders CRUD hooks (my + admin)
 │   ├── usePortfolio.ts + .test.ts    # React Query: portfolio, holdings, exercise hooks
+│   ├── useWatchlist.ts + .test.ts    # React Query: named watchlists + items + membership hooks
 │   ├── useTax.ts + .test.ts          # React Query: tax records + collect hooks
 │   ├── useOtc.ts + .test.ts          # React Query: OTC offers + buy hooks
 │   ├── useRoles.ts                   # React Query: roles CRUD hooks
@@ -354,6 +366,7 @@ src/
 │   │   ├── securities.ts + .test.ts # Securities API calls (stocks, futures, forex, options)
 │   │   ├── orders.ts + .test.ts     # Orders API calls (create, cancel, approve, decline)
 │   │   ├── portfolio.ts + .test.ts  # Portfolio API calls (holdings, make public, exercise)
+│   │   ├── watchlist.ts + .test.ts  # Named watchlist API calls (lists + items)
 │   │   ├── tax.ts + .test.ts        # Tax API calls (records, collect)
 │   │   ├── otc.ts + .test.ts        # OTC API calls (offers, buy)
 │   │   ├── fees.ts                  # Transfer fees API calls (CRUD)
@@ -364,6 +377,7 @@ src/
 │       ├── banking.ts                # CARD_BRANDS, CARD_STATUSES, CARD_STATUS_LABELS, CARD_STATUS_VARIANT, CARD_LIMITS
 │       ├── format.ts + .test.ts      # maskCardNumber (spaced format), formatAccountNumber, formatCurrency
 │       ├── dateFormatter.ts + .test.ts  # todayISO, formatDateDisplay, formatDateLocale
+│       ├── watchlist.ts + .test.ts   # Watchlist label helpers (default list → "Favorites")
 │       ├── jwt.ts + .test.ts         # JWT decode utility
 │       └── validation.ts + .test.ts  # Zod schemas
 │
@@ -389,6 +403,7 @@ src/
 │   ├── security.ts                  # Stock, FuturesContract, ForexPair, Option, PriceHistory types + filters
 │   ├── order.ts                     # Order, CreateOrderPayload, OrderFilters types
 │   ├── portfolio.ts                 # Holding, PortfolioSummary, PortfolioFilters types
+│   ├── watchlist.ts                 # WatchlistItem, Watchlist, WatchlistsResponse, CreateWatchlistPayload types
 │   ├── tax.ts                       # TaxRecord, TaxFilters, CollectTaxResponse types
 │   ├── otc.ts                       # OtcOffer, OtcOfferListResponse, OtcBuyRequest, OtcFilters types
 │   ├── fee.ts                       # TransferFee, FeeListResponse, CreateFeePayload, UpdateFeePayload types
@@ -581,7 +596,7 @@ src/
 - Renders `PortfolioSummaryCard` + security_type filter + `HoldingTable` + pagination.
 - Actions: Make Public (opens `MakePublicDialog`), Exercise (for options).
 - Make Public uses `useMakePublic` mutation; Exercise uses `useExerciseOption` mutation.
-- Tabs (URL-synced via `?tab=`): My Holdings, My Funds, My Price Alerts, Favorites, and **Recurring Orders** (`?tab=recurring-orders`). The Recurring Orders tab renders `RecurringOrdersTable` from `useRecurringOrders()` with Pause/Resume/Cancel wired to `usePause/Resume/CancelRecurringOrder` mutations.
+- Tabs (URL-synced via `?tab=`): My Holdings, My Funds, My Price Alerts, Favorites, and **Recurring Orders** (`?tab=recurring-orders`). The Recurring Orders tab renders `RecurringOrdersTable` from `useRecurringOrders()` with Pause/Resume/Cancel wired to `usePause/Resume/CancelRecurringOrder` mutations. The **Favorites** tab renders `WatchlistPanel` — a list dropdown (default shown as "Favorites"), a "New list" button, per-list delete, and the selected list's `FavoritesTable` (named watchlists via `/me/watchlists`).
 
 ### AdminOrdersPage
 - Supervisor view for order approval. Requires `orders.approve` permission.
@@ -804,6 +819,16 @@ src/
 - Calls/Puts options chain table with ITM/OTM coloring.
 - Props: `options: Option[]`, `currentPrice: string`.
 
+**WatchlistButton** (`views/securities/components/WatchlistButton.tsx`)
+- Heart toggle rendered per row in the Stocks/Futures/Forex/Options tables. Filled when the listing is in **any** of the caller's lists (`inWatchlist`). Clicking always opens the add-to-list picker — removal is done from the Favorites tab.
+- Props: `listingId`, `ticker`, `inWatchlist`, `disabled?`, `onOpen(listingId, ticker)`.
+
+**AddToWatchlistDialog** (`views/securities/components/AddToWatchlistDialog.tsx`)
+- Dialog opened by the heart. A `Select` of the caller's watchlists (default shown as "Favorites" via `displayWatchlistName`); confirming POSTs to `/me/watchlists/:id/items`. Disabled when the caller has no lists.
+- Props: `open`, `onOpenChange`, `listing: { listing_id, ticker }`, `watchlists: Watchlist[]`, `onSubmit(watchlistId)`, `loading`.
+
+> The four securities tables (`StockTable`, `FuturesTable`, `ForexTable`, `OptionsTable`) take `watchlistIds?: Set<number>` (membership for the filled heart) and `onOpenWatchlist?: (listingId, ticker) => void`.
+
 ---
 
 ### Order Components
@@ -859,6 +884,18 @@ src/
 **CancelRecurringOrderDialog** (`views/portfolio/components/CancelRecurringOrderDialog.tsx`)
 - Confirmation dialog (on Shadcn `Dialog`) for the irreversible cancel of a recurring order. "Keep order" closes; "Cancel order" confirms.
 - Props: `open`, `onOpenChange`, `onConfirm`, `loading?`.
+
+**WatchlistPanel** (`views/portfolio/components/WatchlistPanel.tsx`)
+- Container rendered in the Portfolio → Favorites tab. A `Select` of the caller's watchlists (default labelled "Favorites", each option suffixed with its item count), a **New list** button opening `CreateWatchlistDialog`, and — for non-default lists — a **Delete list** button. Initially selects the default list and fetches its items via `useWatchlistItems`; selecting another list switches the fetch. Renders `FavoritesTable` wired to `useRemoveFromWatchlistItems` for the selected list.
+- No props (self-contained; uses `useWatchlists` / `useWatchlistItems` / `useCreateWatchlist` / `useDeleteWatchlist` / `useRemoveFromWatchlistItems`).
+
+**CreateWatchlistDialog** (`views/portfolio/components/CreateWatchlistDialog.tsx`)
+- Small form to create a named list. Name input validated to 1–64 characters; submits the trimmed name (POST `/me/watchlists`).
+- Props: `open`, `onOpenChange`, `onSubmit(name)`, `loading`.
+
+**FavoritesTable** (`views/portfolio/components/FavoritesTable.tsx`)
+- Table of a list's tracked listings. Columns: Ticker, Type, Price, Change, Change %, Added, Actions (Remove). Empty-state prompt when the list has no items.
+- Props: `items: WatchlistItem[]`, `onRemove(listingId)`, `busyListingId?: number`.
 
 ---
 
@@ -1217,6 +1254,19 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `makeHoldingPublic(id, payload)` | POST | `/api/me/portfolio/{id}/public` |
 | `exerciseOption(id)` | POST | `/api/me/portfolio/{id}/exercise` |
 
+### Watchlist API (`lib/api/watchlist.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getWatchlists()` | GET | `/api/v3/me/watchlists` |
+| `createWatchlist(name)` | POST | `/api/v3/me/watchlists` |
+| `deleteWatchlist(watchlistId)` | DELETE | `/api/v3/me/watchlists/:id` |
+| `getWatchlistItems(watchlistId, filters?)` | GET | `/api/v3/me/watchlists/:id/items` |
+| `addToWatchlistItems(watchlistId, listing_id)` | POST | `/api/v3/me/watchlists/:id/items` |
+| `removeFromWatchlistItems(watchlistId, listing_id)` | DELETE | `/api/v3/me/watchlists/:id/items/:listing_id` |
+
+- Named watchlists replace the legacy single `/me/watchlist` calls. `getWatchlists()` tolerates either a `{ watchlists }` envelope or a bare array and defaults to `[]`; `getWatchlistItems` defaults `items` to `[]`. Owner (client vs. bank) is resolved server-side from the JWT. The default list comes back named `"My Watchlist"` and is displayed as `"Favorites"` via `displayWatchlistName` (`lib/utils/watchlist.ts`).
+
 ### Tax API (`lib/api/tax.ts`)
 
 | Function | Method | Endpoint |
@@ -1321,6 +1371,13 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `usePortfolioSummary()` | React Query | Fetch portfolio summary; query key: `['portfolio-summary']` |
 | `useMakePublic()` | React Query | Mutation: make holding public; invalidates `['portfolio']` |
 | `useExerciseOption()` | React Query | Mutation: exercise option; invalidates `['portfolio']` |
+| `useWatchlists()` | React Query | List the caller's named watchlists; query key: `['watchlists']` |
+| `useWatchlistItems(watchlistId, filters?)` | React Query | Fetch one list's items; key `['watchlist-items', id, filters]`; disabled when `watchlistId == null` |
+| `useCreateWatchlist()` | React Query | Mutation: create a named list; invalidates `['watchlists']` |
+| `useDeleteWatchlist()` | React Query | Mutation: delete a list; invalidates `['watchlists']` + `['watchlist-items']` |
+| `useAddToWatchlistItems()` | React Query | Mutation `{ watchlistId, listingId }`: add to a list; invalidates `['watchlists']` + `['watchlist-items']` |
+| `useRemoveFromWatchlistItems()` | React Query | Mutation `{ watchlistId, listingId }`: remove from a list; invalidates `['watchlists']` + `['watchlist-items']` |
+| `useWatchlistMembership()` | React Query | `useQueries` over every list, unioned into a `Set<number>` of listing ids in any list (drives the filled-heart state) |
 | `useTaxRecords(filters?)` | React Query | Fetch tax records; query key: `['tax', filters]` |
 | `useCollectTaxes()` | React Query | Mutation: collect taxes; invalidates `['tax']` |
 | `useOtcOffers(filters?)` | React Query | Fetch OTC offers; query key: `['otc-offers', filters]` |
@@ -1546,6 +1603,22 @@ PortfolioFilters     { page?, page_size?, security_type? }
 MakePublicPayload    { quantity: number }
 ```
 
+### Watchlist Types (`types/watchlist.ts`)
+
+```typescript
+WatchlistSecurityType = 'stock' | 'option' | 'futures' | 'forex'
+WatchlistItem         { id, listing_id, security_type, ticker, current_price,
+                        daily_change, daily_change_percent, added_at_unix }
+WatchlistResponse     { items: WatchlistItem[] }
+WatchlistFilters      { listing_type? }
+Watchlist             { id, name, item_count, created_at }       // a named list
+WatchlistsResponse    { watchlists: Watchlist[] }
+CreateWatchlistPayload { name }
+WatchlistItemRef      { watchlistId, listingId }
+```
+
+Display helpers live in `lib/utils/watchlist.ts`: `DEFAULT_WATCHLIST_NAME` (`'My Watchlist'`), `FAVORITES_LABEL` (`'Favorites'`), `displayWatchlistName(name)`, `isDefaultWatchlist(list)`.
+
 ### Tax Types (`types/tax.ts`)
 
 ```typescript
@@ -1669,16 +1742,18 @@ Email uniqueness is enforced by the backend (no dedicated check endpoint). When 
 
 ## 12. Test Coverage
 
-_Measured: 2026-05-30 — 222 test suites, 1307 tests, all passing._
+_Measured: 2026-06-07 — 228 test suites, 1353 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **78.06%** |
-| **Branches** | **63.59%** |
-| **Functions** | **60.74%** |
-| **Lines** | **79.61%** |
+| **Statements** | **78.33%** |
+| **Branches** | **63.61%** |
+| **Functions** | **61.37%** |
+| **Lines** | **79.85%** |
+
+> The named-watchlist feature is fully unit-tested: `lib/api/watchlist.ts`, `hooks/useWatchlist.ts`, and `lib/utils/watchlist.ts` at 100%; `WatchlistButton` 100%, `AddToWatchlistDialog`/`CreateWatchlistDialog` ~94% statements, `WatchlistPanel` ~84%.
 
 > Coverage decreased slightly from the previous measurement due to significant new code added (admin management pages, OTC portal, limits dashboard) that lacks unit test coverage. Cypress e2e tests (28+ test files) provide integration-level coverage for these new features but are not counted in Jest metrics.
 
@@ -1704,6 +1779,13 @@ _Measured: 2026-05-30 — 222 test suites, 1307 tests, all passing._
 | `lib/api/actuaries.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/stockExchanges.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/watchlist.ts` | 100% | 100% | 100% | 100% |
+| `hooks/useWatchlist.ts` | 100% | 100% | 100% | 100% |
+| `lib/utils/watchlist.ts` | 100% | 100% | 100% | 100% |
+| `views/securities/WatchlistButton` | 100% | 100% | 100% | 100% |
+| `views/securities/AddToWatchlistDialog` | 94.73% | 75% | 100% | 100% |
+| `views/portfolio/CreateWatchlistDialog` | 94.11% | 80% | 100% | 100% |
+| `views/portfolio/WatchlistPanel` | 83.72% | 70.37% | 80% | 87.5% |
 | `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
 | `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
 | `pages/StockExchangesPage.tsx` | 100% | 100% | 100% | 100% |

@@ -2,8 +2,8 @@ describe('Create Order Page', () => {
   beforeEach(() => {
     cy.intercept('GET', '**/api/v3/me/accounts*', { fixture: 'home-accounts.json' }).as('getAccounts')
     cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
-    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
   })
 
   it('should display the create order form with query params', () => {

@@ -18,7 +18,7 @@ interface StockTableProps {
   onBuy: (stock: Stock) => void
   onCreateAlert?: (stock: Stock) => void
   watchlistIds?: Set<number>
-  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
+  onOpenWatchlist?: (listingId: number, ticker: string) => void
 }
 
 export function StockTable({
@@ -27,7 +27,7 @@ export function StockTable({
   onBuy,
   onCreateAlert,
   watchlistIds,
-  onToggleWatchlist,
+  onOpenWatchlist,
 }: StockTableProps) {
   return (
     <Table>
@@ -86,12 +86,12 @@ export function StockTable({
                       <Bell className="h-4 w-4" />
                     </Button>
                   )}
-                  {onToggleWatchlist && (
+                  {onOpenWatchlist && (
                     <WatchlistButton
                       listingId={listingId}
                       ticker={stock.ticker}
                       inWatchlist={watchlistIds?.has(listingId) ?? false}
-                      onToggle={onToggleWatchlist}
+                      onOpen={onOpenWatchlist}
                     />
                   )}
                 </div>

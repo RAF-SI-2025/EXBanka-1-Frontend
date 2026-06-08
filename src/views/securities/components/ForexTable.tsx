@@ -18,7 +18,7 @@ interface ForexTableProps {
   onBuy: (pair: ForexPair) => void
   onCreateAlert?: (pair: ForexPair) => void
   watchlistIds?: Set<number>
-  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
+  onOpenWatchlist?: (listingId: number, ticker: string) => void
 }
 
 export function ForexTable({
@@ -27,7 +27,7 @@ export function ForexTable({
   onBuy,
   onCreateAlert,
   watchlistIds,
-  onToggleWatchlist,
+  onOpenWatchlist,
 }: ForexTableProps) {
   return (
     <Table>
@@ -86,12 +86,12 @@ export function ForexTable({
                       <Bell className="h-4 w-4" />
                     </Button>
                   )}
-                  {onToggleWatchlist && (
+                  {onOpenWatchlist && (
                     <WatchlistButton
                       listingId={listingId}
                       ticker={pair.ticker}
                       inWatchlist={watchlistIds?.has(listingId) ?? false}
-                      onToggle={onToggleWatchlist}
+                      onOpen={onOpenWatchlist}
                     />
                   )}
                 </div>

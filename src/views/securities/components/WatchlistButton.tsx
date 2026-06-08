@@ -5,9 +5,11 @@ import { cn } from '@/lib/utils'
 interface WatchlistButtonProps {
   listingId: number
   ticker: string
+  /** True when the listing is in at least one of the caller's lists. */
   inWatchlist: boolean
   disabled?: boolean
-  onToggle: (listingId: number, inWatchlist: boolean) => void
+  /** Opens the "add to list" picker for this listing. */
+  onOpen: (listingId: number, ticker: string) => void
 }
 
 export function WatchlistButton({
@@ -15,18 +17,18 @@ export function WatchlistButton({
   ticker,
   inWatchlist,
   disabled,
-  onToggle,
+  onOpen,
 }: WatchlistButtonProps) {
   return (
     <Button
       size="icon"
       variant="outline"
       disabled={disabled}
-      aria-label={inWatchlist ? `Remove ${ticker} from watchlist` : `Add ${ticker} to watchlist`}
+      aria-label={inWatchlist ? `Manage ${ticker} in watchlists` : `Add ${ticker} to watchlist`}
       aria-pressed={inWatchlist}
       onClick={(e) => {
         e.stopPropagation()
-        onToggle(listingId, inWatchlist)
+        onOpen(listingId, ticker)
       }}
     >
       <Heart

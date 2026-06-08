@@ -18,7 +18,7 @@ interface FuturesTableProps {
   onBuy: (future: FuturesContract) => void
   onCreateAlert?: (future: FuturesContract) => void
   watchlistIds?: Set<number>
-  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
+  onOpenWatchlist?: (listingId: number, ticker: string) => void
 }
 
 export function FuturesTable({
@@ -27,7 +27,7 @@ export function FuturesTable({
   onBuy,
   onCreateAlert,
   watchlistIds,
-  onToggleWatchlist,
+  onOpenWatchlist,
 }: FuturesTableProps) {
   return (
     <Table>
@@ -88,12 +88,12 @@ export function FuturesTable({
                       <Bell className="h-4 w-4" />
                     </Button>
                   )}
-                  {onToggleWatchlist && (
+                  {onOpenWatchlist && (
                     <WatchlistButton
                       listingId={listingId}
                       ticker={future.ticker}
                       inWatchlist={watchlistIds?.has(listingId) ?? false}
-                      onToggle={onToggleWatchlist}
+                      onOpen={onOpenWatchlist}
                     />
                   )}
                 </div>

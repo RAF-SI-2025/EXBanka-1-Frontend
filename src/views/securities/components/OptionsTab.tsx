@@ -13,10 +13,10 @@ const PAGE_SIZE = 10
 
 interface OptionsTabProps {
   watchlistIds?: Set<number>
-  onToggleWatchlist?: (listingId: number, inWatchlist: boolean) => void
+  onOpenWatchlist?: (listingId: number, ticker: string) => void
 }
 
-export function OptionsTab({ watchlistIds, onToggleWatchlist }: OptionsTabProps = {}) {
+export function OptionsTab({ watchlistIds, onOpenWatchlist }: OptionsTabProps = {}) {
   const navigate = useNavigate()
   const [stockSearch, setStockSearch] = useState('')
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
@@ -136,7 +136,7 @@ export function OptionsTab({ watchlistIds, onToggleWatchlist }: OptionsTabProps 
                 onRowClick={(id) => navigate(`/securities/options/${id}`)}
                 onBuy={handleBuyOption}
                 watchlistIds={watchlistIds}
-                onToggleWatchlist={onToggleWatchlist}
+                onOpenWatchlist={onOpenWatchlist}
               />
               <p className="text-sm text-muted-foreground mt-2">
                 {optionsData.total_count} options
