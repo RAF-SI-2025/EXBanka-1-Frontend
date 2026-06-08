@@ -2,6 +2,7 @@ import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { SecuritiesView } from '@/views/securities/SecuritiesView'
 import * as securitiesApi from '@/lib/api/securities'
+import * as watchlistHooks from '@/hooks/useWatchlist'
 import {
   createMockStock,
   createMockFutures,
@@ -11,6 +12,7 @@ import {
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 
 jest.mock('@/lib/api/securities')
+jest.mock('@/hooks/useWatchlist')
 
 jest.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -49,6 +51,13 @@ beforeEach(() => {
     options: [createMockOption()],
     total_count: 1,
   })
+  jest.mocked(watchlistHooks.useWatchlistMembership).mockReturnValue(new Set())
+  jest.mocked(watchlistHooks.useWatchlists).mockReturnValue({
+    data: [{ id: 1, name: 'My Watchlist', item_count: 0, created_at: 1 }],
+  } as never)
+  jest
+    .mocked(watchlistHooks.useAddToWatchlistItems)
+    .mockReturnValue({ mutate: jest.fn(), isPending: false } as never)
 })
 
 describe('SecuritiesView', () => {
@@ -106,6 +115,13 @@ describe('SecuritiesView', () => {
     jest.mocked(securitiesApi.getStocks).mockResolvedValue({ stocks: [], total_count: 0 })
     renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
     await screen.findByText('No stocks found.')
+  })
+
+  it('opens the add-to-watchlist dialog when a row heart is clicked', async () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    await screen.findByText('AAPL')
+    fireEvent.click(screen.getByRole('button', { name: /add AAPL to watchlist/i }))
+    expect(await screen.findByRole('button', { name: /add to list/i })).toBeInTheDocument()
   })
 
   it('calls API with search filter when typing', async () => {

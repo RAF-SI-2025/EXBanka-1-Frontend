@@ -38,32 +38,27 @@ describe('FundDetailsPanel', () => {
     mockUseEmployee.mockClear()
   })
 
-  it('renders the new top-level financial metrics from FundDetailResponse', () => {
+  it('renders the secondary fund-detail metrics (headline stats live in the hero cards)', () => {
     const detail = createMockFundDetailResponse({
       fund: createMockFund({ name: 'Nova torbica', minimum_contribution_rsd: '100' }),
-      investor_count: 1,
       liquid_rsd_balance: '100921.73',
-      total_contributed_rsd: '101000.00',
       total_holdings_value_rsd: '0.00',
-      total_value_rsd: '100921.73',
       total_dividends_paid_rsd: '0.00',
-      profit_rsd: '-78.27',
-      profit_pct: '-0.0775',
     })
     renderWithProviders(<FundDetailsPanel detail={detail} />, {
       preloadedState: { auth: adminAuth },
     })
 
-    expect(screen.getByText(/Total value/i)).toBeInTheDocument()
-    expect(screen.getByText(/Total contributed/i)).toBeInTheDocument()
     expect(screen.getByText(/Holdings value/i)).toBeInTheDocument()
     expect(screen.getByText(/Liquid cash/i)).toBeInTheDocument()
     expect(screen.getByText(/Dividends paid/i)).toBeInTheDocument()
-    expect(screen.getByText(/Investors/i)).toBeInTheDocument()
     expect(screen.getByText(/Min\. contribution/i)).toBeInTheDocument()
     expect(screen.getByText(/Manager/i)).toBeInTheDocument()
-    expect(screen.getByText('1')).toBeInTheDocument() // investor_count
-    expect(screen.getByText(/-0\.08%/)).toBeInTheDocument() // profit_pct rounded to 2dp
+    expect(screen.getByText(/Account #/i)).toBeInTheDocument()
+    // Headline stats (Total value / Profit / Total contributed / Investors) are
+    // shown by FundSummaryCards, not this panel.
+    expect(screen.queryByText(/Total value/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Total contributed/i)).not.toBeInTheDocument()
   })
 
   it('renders "— RSD" instead of "undefined RSD" when a numeric field is null/empty', () => {

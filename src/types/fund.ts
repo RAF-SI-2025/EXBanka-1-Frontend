@@ -14,6 +14,20 @@ export interface Fund {
   fund_value_rsd?: string | null
   liquid_cash_rsd?: string | null
   profit_rsd?: string | null
+  // SP3 risk/return statistics carried on fund objects. Numeric metrics are
+  // decimal strings ("0" with metrics_available=false when a fund lacks
+  // enough NAV-snapshot history). reward_to_variability ≈ Sharpe ratio.
+  annualized_return_pct?: string | null
+  volatility_pct?: string | null
+  reward_to_variability?: string | null
+  max_drawdown_pct?: string | null
+  metrics_available?: boolean
+}
+
+/** One point on a fund's daily NAV series. */
+export interface FundNavPoint {
+  date: string
+  total_value_rsd: string
 }
 
 export interface FundHolding {
@@ -96,6 +110,11 @@ export interface FundDetailResponse {
   total_dividends_paid_rsd: string
   profit_rsd: string
   profit_pct: string
+  // Daily NAV series for the detail charts. `history` is this fund's series;
+  // `average_history` is the system-average benchmark (each fund indexed to
+  // 100 at its first snapshot). Absent when the backend has no snapshots yet.
+  history?: FundNavPoint[]
+  average_history?: FundNavPoint[]
 }
 
 export interface MyFundPositionsResponse {

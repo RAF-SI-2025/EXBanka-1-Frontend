@@ -4,6 +4,7 @@ import type {
   ClientFundPosition,
   FundContribution,
   FundDetailResponse,
+  FundNavPoint,
 } from '@/types/fund'
 
 export function createMockFund(overrides: Partial<Fund> = {}): Fund {
@@ -20,8 +21,21 @@ export function createMockFund(overrides: Partial<Fund> = {}): Fund {
     active: true,
     created_at: '2020-05-15T00:00:00Z',
     updated_at: '2020-05-15T00:00:00Z',
+    annualized_return_pct: '12.40',
+    volatility_pct: '9.00',
+    reward_to_variability: '1.31',
+    max_drawdown_pct: '-7.20',
+    metrics_available: true,
     ...overrides,
   }
+}
+
+export function createMockFundNavSeries(): FundNavPoint[] {
+  return [
+    { date: '2026-05-01', total_value_rsd: '2400000.00' },
+    { date: '2026-05-02', total_value_rsd: '2450000.00' },
+    { date: '2026-05-03', total_value_rsd: '2600000.00' },
+  ]
 }
 
 export function createMockFundHolding(overrides: Partial<FundHolding> = {}): FundHolding {
@@ -52,6 +66,12 @@ export function createMockFundDetailResponse(
     total_dividends_paid_rsd: '0.00',
     profit_rsd: '100000.00',
     profit_pct: '4.0000',
+    history: createMockFundNavSeries(),
+    average_history: [
+      { date: '2026-05-01', total_value_rsd: '100.00' },
+      { date: '2026-05-02', total_value_rsd: '101.50' },
+      { date: '2026-05-03', total_value_rsd: '104.00' },
+    ],
     ...overrides,
   }
 }

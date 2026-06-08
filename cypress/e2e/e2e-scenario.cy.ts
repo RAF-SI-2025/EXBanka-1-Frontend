@@ -188,8 +188,10 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: { stocks: [MSFT_STOCK], total_count: 1 },
     }).as('getStocks')
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', {
+      body: { forex_pairs: [], total_count: 0 },
+    })
 
     cy.loginAsEmployee('/securities')
     cy.wait('@getStocks')
@@ -251,8 +253,8 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.intercept('GET', '**/api/v3/bank-accounts*', {
       body: { accounts: [USD_BANK_ACCOUNT] },
     }).as('getBankAccounts')
-    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
 
     cy.intercept('POST', '**/api/v3/me/orders', {
@@ -283,9 +285,11 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 4: Supervisor approves BUY order ─────────────────────────────────
 
   it('DEO 4 — Supervisor approves pending BUY order for 10 MSFT (status: pending → approved)', () => {
-    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', {
+      body: { forex_pairs: [], total_count: 0 },
+    })
     cy.intercept('GET', '**/api/v3/orders*', {
       body: { orders: [PENDING_BUY_ORDER], total_count: 1 },
     }).as('getOrders')
@@ -365,7 +369,7 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.intercept('GET', '**/api/v3/securities/stocks*', {
       body: { stocks: [MSFT_STOCK], total_count: 1 },
     }).as('getStocksForListing')
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
 
     cy.intercept('POST', '**/api/v3/me/orders', {
@@ -399,9 +403,11 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
   // ── DEO 8: Supervisor approves SELL order ────────────────────────────────
 
   it('DEO 8 — Supervisor approves pending SELL order for 5 MSFT (status: pending → approved)', () => {
-    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', {
+      body: { forex_pairs: [], total_count: 0 },
+    })
     cy.intercept('GET', '**/api/v3/orders*', {
       body: { orders: [PENDING_SELL_ORDER], total_count: 1 },
     }).as('getOrders')

@@ -10,6 +10,10 @@ import { selectUserType } from '@/store/selectors/authSelectors'
 import { useFund, useInvestFund } from '@/hooks/useFunds'
 import { notifySuccess } from '@/lib/errors'
 import { FundDetailsPanel } from '@/views/funds/components/FundDetailsPanel'
+import { FundSummaryCards } from '@/views/funds/components/FundSummaryCards'
+import { FundNavChart } from '@/views/funds/components/FundNavChart'
+import { FundAllocationPieChart } from '@/views/funds/components/FundAllocationPieChart'
+import { FundRiskMetrics } from '@/views/funds/components/FundRiskMetrics'
 import { FundHoldingsTable } from '@/views/funds/components/FundHoldingsTable'
 import { InvestInFundDialog } from '@/views/funds/components/InvestInFundDialog'
 import { ViewShell } from '@/views/shared'
@@ -59,7 +63,32 @@ export function FundDetailsView() {
         </Button>
       }
     >
-      <FundDetailsPanel detail={data} />
+      <FundSummaryCards detail={data} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance vs. system average</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FundNavChart history={data.history} averageHistory={data.average_history} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Allocation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FundAllocationPieChart holdings={holdings} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <FundRiskMetrics fund={fund} />
+
+      <div className="mb-6">
+        <FundDetailsPanel detail={data} />
+      </div>
 
       <Card>
         <CardHeader>

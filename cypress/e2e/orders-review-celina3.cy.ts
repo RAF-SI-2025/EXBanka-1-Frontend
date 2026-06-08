@@ -17,7 +17,7 @@ describe('Celina3 - Orderi-Review', () => {
     cy.intercept('GET', '**/api/v3/bank-accounts*', { body: { accounts: [] } })
     cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
   }
 
@@ -28,7 +28,7 @@ describe('Celina3 - Orderi-Review', () => {
     cy.intercept('GET', '**/api/v3/me/accounts*', { body: { accounts: [] } })
     cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/me/orders*', { body: { orders: [], total_count: 0 } })
   }
 
@@ -36,7 +36,7 @@ describe('Celina3 - Orderi-Review', () => {
   const stubAdminOrdersPage = () => {
     cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
     cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total_count: 0 } })
   }
 
   // ── Scenario 48: Client order auto-approves ───────────────────────────────

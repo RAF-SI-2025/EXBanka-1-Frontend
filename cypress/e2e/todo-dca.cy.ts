@@ -82,9 +82,11 @@ describe('todo test — DCA: izvršavanje i upravljanje', () => {
       'getRecurring'
     )
     // Portfolio shell + listing map
-    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total: 0 } })
-    cy.intercept('GET', '**/api/v3/securities/forex*', { body: { forex_pairs: [], total: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/stocks*', { body: { stocks: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/futures*', { body: { futures: [], total_count: 0 } })
+    cy.intercept('GET', '**/api/v3/securities/forex*', {
+      body: { forex_pairs: [], total_count: 0 },
+    })
     cy.intercept('GET', '**/api/v3/me/accounts', {
       body: { accounts: [CLIENT_RSD_ACCOUNT], total: 1 },
     })
