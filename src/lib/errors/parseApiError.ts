@@ -45,11 +45,32 @@ export function parseApiError(err: unknown): AppError {
     if (err.response) {
       const status = err.response.status
       const data = err.response.data as { error?: unknown; code?: unknown } | undefined
-      const message = typeof data?.error === 'string' ? data.error : defaultByStatus(status)
+      const rawError = data?.error
+
+      let message: string
+      let code: string | undefined = typeof data?.code === 'string' ? data.code : undefined
+
+      if (typeof rawError === 'string') {
+        message = rawError
+      } else if (
+        status < 500 &&
+        Boolean(rawError) &&
+        typeof rawError === 'object' &&
+        typeof (rawError as { message?: unknown }).message === 'string'
+      ) {
+        message = (rawError as { message: string }).message
+        const nestedCode = (rawError as { code?: unknown }).code
+        if (typeof nestedCode === 'string') {
+          code = nestedCode
+        }
+      } else {
+        message = defaultByStatus(status)
+      }
+
       return {
         title: titleByStatus(status),
         message,
-        ...(typeof data?.code === 'string' ? { code: data.code } : {}),
+        ...(typeof code === 'string' ? { code } : {}),
         status,
       }
     }
