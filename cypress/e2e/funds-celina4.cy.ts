@@ -116,8 +116,13 @@ describe('Celina 4 — Investicioni fondovi: Discovery i detalji', () => {
       }
     }).as('getFilteredFunds')
 
+    // Search re-queries on every keystroke (no debounce), so the alias captures
+    // search=A, search=Al, … search=Alpha. Assert that one of those requests
+    // carried the full term rather than waiting on the first (search=A).
     cy.get('#funds-search').type('Alpha')
-    cy.wait('@getFilteredFunds').its('request.url').should('include', 'search=Alpha')
+    cy.get('@getFilteredFunds.all').should((calls) => {
+      expect(calls.some((c) => c.request.url.includes('search=Alpha'))).to.be.true
+    })
   })
 
   // ── Scenario 31: Klijent otvara detaljan prikaz fonda ─────────────────────
@@ -131,16 +136,17 @@ describe('Celina 4 — Investicioni fondovi: Discovery i detalji', () => {
     cy.wait('@getFund')
 
     cy.contains('h1', 'Alpha Growth').should('be.visible')
-    // Detail metrics
-    cy.contains('Manager').should('be.visible')
-    cy.contains('Liquid cash').should('be.visible')
-    cy.contains('Investors').should('be.visible')
-    cy.contains('Min. contribution').should('be.visible')
+    // Detail metrics. The page scrolls inside <main overflow-y-auto>, so content
+    // below the fold must be scrolled into view before asserting visibility.
+    cy.contains('Manager').scrollIntoView().should('be.visible')
+    cy.contains('Liquid cash').scrollIntoView().should('be.visible')
+    cy.contains('Investors').scrollIntoView().should('be.visible')
+    cy.contains('Min. contribution').scrollIntoView().should('be.visible')
     // Holdings table (Ticker, Quantity, Avg/Current price, Current value, Acquired)
-    cy.contains('Holdings').should('be.visible')
-    cy.contains('th', 'Ticker').should('be.visible')
-    cy.contains('th', 'Quantity').should('be.visible')
-    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('Holdings').scrollIntoView().should('be.visible')
+    cy.contains('th', 'Ticker').scrollIntoView().should('be.visible')
+    cy.contains('th', 'Quantity').scrollIntoView().should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
   })
 
   // ── Scenario 32: Supervizor vidi dugme za prodaju pored svake hartije ─────
@@ -155,8 +161,8 @@ describe('Celina 4 — Investicioni fondovi: Discovery i detalji', () => {
     cy.loginAsEmployee('/funds/7')
     cy.wait('@getFund')
 
-    cy.contains('Holdings').should('be.visible')
-    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('Holdings').scrollIntoView().should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
     cy.get('table').contains('button', 'Sell').should('not.exist')
   })
 })
@@ -183,7 +189,9 @@ describe('Celina 4 — Investicioni fondovi: Ulaganje i povlačenje', () => {
 
     // Radix Select — open and pick the RSD source account (portalled options).
     cy.get('#invest-account').realClick()
-    cy.contains('[role="option"]', 'Tekući račun').realClick()
+    cy.get('[data-slot="select-content"]:visible')
+      .contains('[role="option"]', 'Tekući račun')
+      .realClick()
 
     cy.get('#invest-amount').type('5000')
     cy.get('[role="dialog"]').contains('button', 'Invest').click()
@@ -212,7 +220,9 @@ describe('Celina 4 — Investicioni fondovi: Ulaganje i povlačenje', () => {
 
     cy.contains('button', 'Invest').click()
     cy.get('#invest-account').realClick()
-    cy.contains('[role="option"]', 'Tekući račun').realClick()
+    cy.get('[data-slot="select-content"]:visible')
+      .contains('[role="option"]', 'Tekući račun')
+      .realClick()
 
     cy.get('#invest-amount').type('500') // below the 1000 RSD minimum
     cy.get('[role="dialog"]').within(() => {
@@ -255,7 +265,9 @@ describe('Celina 4 — Investicioni fondovi: Ulaganje i povlačenje', () => {
     cy.get('[role="dialog"]').contains('Redeem from Alpha Growth').should('be.visible')
     cy.get('#redeem-amount').type('2000')
     cy.get('#redeem-account').realClick()
-    cy.contains('[role="option"]', 'Tekući račun').realClick()
+    cy.get('[data-slot="select-content"]:visible')
+      .contains('[role="option"]', 'Tekući račun')
+      .realClick()
     cy.get('[role="dialog"]').contains('button', 'Redeem').click()
 
     cy.wait('@redeem')
@@ -481,14 +493,14 @@ describe('Celina 4 — Moj portfolio: Moji fondovi i upravljanje zaposlenima', (
   })
 
   // ── Scenario 44: Supervizor pregleda fondove kojima upravlja ──────────────
-  // The "Moj portfolio" page is client-only in the FE (ProtectedRoute
-  // requiredRole="Client"). Supervisors manage funds via the fund detail and the
-  // admin "Bank Fund Positions" portal instead, so an employee is redirected off
-  // /portfolio.
-  it('Scenario 44 — the Portfolio page is client-only; an employee is redirected away', () => {
+  // The /portfolio route is not role-gated: PortfolioView adapts per role, and an
+  // employee principal is served the *bank's* portfolio (API identity rule
+  // OwnerIsBankIfEmployee). So a supervisor reaches the Portfolio page rather than
+  // being redirected, and manages fund positions from there.
+  it('Scenario 44 — an employee can open the Portfolio page (served the bank portfolio)', () => {
     cy.loginAsEmployee('/portfolio')
-    cy.contains('h1', 'Portfolio').should('not.exist')
-    cy.url().should('not.include', '/portfolio')
+    cy.contains('h1', 'Portfolio').should('be.visible')
+    cy.url().should('include', '/portfolio')
   })
 
   // ── Scenario 45: Procenat fonda se menja kada drugi klijent uloži ─────────
@@ -536,6 +548,7 @@ describe('Celina 4 — Moj portfolio: Moji fondovi i upravljanje zaposlenima', (
 
     cy.contains('h1', 'Edit Employee').should('be.visible')
     cy.get('#role').should('exist')
-    cy.contains('button', 'Save').should('be.visible')
+    // Save sits at the bottom of a long form inside <main overflow-y-auto>.
+    cy.contains('button', 'Save').scrollIntoView().should('be.visible')
   })
 })
