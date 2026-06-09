@@ -121,7 +121,7 @@ describe('Celina 4 — Investicioni fondovi: Discovery i detalji', () => {
     // carried the full term rather than waiting on the first (search=A).
     cy.get('#funds-search').type('Alpha')
     cy.get('@getFilteredFunds.all').should((calls) => {
-      expect(calls.some((c) => c.request.url.includes('search=Alpha'))).to.be.true
+      expect(calls.some((c) => c.request.url.includes('search=Alpha'))).to.equal(true)
     })
   })
 

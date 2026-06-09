@@ -4,8 +4,6 @@ import type {
   OtcFilters,
   OtcBuyRequest,
   OtcBuyOnBehalfRequest,
-  PeerOtcNegotiationRequest,
-  PeerOtcNegotiationResponse,
 } from '@/types/otc'
 
 export async function getOtcOffers(filters?: OtcFilters): Promise<OtcOfferListResponse> {
@@ -37,14 +35,4 @@ export async function buyOtcOfferOnBehalf(
   payload: OtcBuyOnBehalfRequest
 ): Promise<void> {
   await apiClient.post(`/otc/stocks/${id}/buy-on-behalf`, payload)
-}
-
-export async function createPeerOtcNegotiation(
-  payload: PeerOtcNegotiationRequest
-): Promise<PeerOtcNegotiationResponse> {
-  const { data } = await apiClient.post<PeerOtcNegotiationResponse>(
-    '/me/peer-otc/negotiations',
-    payload
-  )
-  return data
 }

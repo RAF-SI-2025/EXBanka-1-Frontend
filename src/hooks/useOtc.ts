@@ -1,11 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  getOtcOffers,
-  buyOtcOffer,
-  buyOtcOfferOnBehalf,
-  createPeerOtcNegotiation,
-} from '@/lib/api/otc'
-import type { OtcFilters, PeerOtcNegotiationRequest } from '@/types/otc'
+import { getOtcOffers, buyOtcOffer, buyOtcOfferOnBehalf } from '@/lib/api/otc'
+import { otcOptionsApi } from '@/views/otcOptions/api/otcOptionsApi'
+import type { OtcFilters } from '@/types/otc'
+import type { PlaceBidPayload } from '@/views/otcOptions/types'
 
 export function useOtcOffers(filters?: OtcFilters, options?: { enabled?: boolean }) {
   return useQuery({
@@ -54,10 +51,18 @@ export function useBuyOtcOfferOnBehalf() {
   })
 }
 
-export function useCreatePeerOtcNegotiation() {
+export function useRemoteOptionOffers() {
+  return useQuery({
+    queryKey: ['otc-option-offers', 'remote'],
+    queryFn: () => otcOptionsApi.listAll({ kind: 'remote' }),
+  })
+}
+
+export function usePlaceBidOnRemoteOffer() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (payload: PeerOtcNegotiationRequest) => createPeerOtcNegotiation(payload),
+    mutationFn: ({ offerId, ...payload }: { offerId: number } & PlaceBidPayload) =>
+      otcOptionsApi.placeBid(offerId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['otc-offers'] })
       queryClient.invalidateQueries({ queryKey: ['otc-option-offers'] })
