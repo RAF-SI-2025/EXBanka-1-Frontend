@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectUserType } from '@/store/selectors/authSelectors'
 import {
   getStocks,
   getStock,
@@ -58,8 +60,12 @@ export function useFutureHistory(id: number, filters: PriceHistoryFilters = {}) 
   })
 }
 
-export function useForexPairs(filters: ForexFilters = {}) {
-  return useQuery({ queryKey: ['forex', filters], queryFn: () => getForexPairs(filters) })
+export function useForexPairs(filters: ForexFilters = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['forex', filters],
+    queryFn: () => getForexPairs(filters),
+    enabled,
+  })
 }
 
 export function useForexPair(id: number) {
@@ -161,9 +167,12 @@ export function useListingsForSell(
 
 /** Builds a Map<listingId, {ticker, name}> from all stocks, futures, and forex pairs. */
 export function useListingMap(): Map<number, { ticker: string; name: string }> {
+  // Forex is an employee-only surface; clients must never call the forex API
+  // (this hook backs My Orders, Portfolio, Price Alerts, Recurring Orders).
+  const isClient = useAppSelector(selectUserType) === 'client'
   const { data: stocksData } = useStocks({ page_size: 500 })
   const { data: futuresData } = useFutures({ page_size: 500 })
-  const { data: forexData } = useForexPairs({ page_size: 500 })
+  const { data: forexData } = useForexPairs({ page_size: 500 }, !isClient)
 
   return useMemo(() => {
     const map = new Map<number, { ticker: string; name: string }>()

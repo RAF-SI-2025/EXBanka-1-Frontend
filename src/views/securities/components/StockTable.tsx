@@ -36,6 +36,7 @@ export function StockTable({
           <TableHead>Ticker</TableHead>
           <TableHead>Name</TableHead>
           <TableHead>Price</TableHead>
+          <TableHead>Currency</TableHead>
           <TableHead>Change</TableHead>
           <TableHead>Volume</TableHead>
           <TableHead>Exchange</TableHead>
@@ -55,6 +56,7 @@ export function StockTable({
               <TableCell className="font-mono font-semibold">{stock.ticker}</TableCell>
               <TableCell>{stock.name}</TableCell>
               <TableCell>{stock.price}</TableCell>
+              <TableCell className="font-mono">{stock.currency}</TableCell>
               <TableCell className={Number(stock.change) >= 0 ? 'text-green-600' : 'text-red-600'}>
                 {Number(stock.change) >= 0 ? '+' : ''}
                 {stock.change}

@@ -83,6 +83,17 @@ describe('SecuritiesView', () => {
     expect(screen.getByText('Options')).toBeInTheDocument()
   })
 
+  it('does not call the forex API when a client is logged in', async () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: clientAuth } })
+    await screen.findByText('AAPL')
+    expect(securitiesApi.getForexPairs).not.toHaveBeenCalled()
+  })
+
+  it('calls the forex API for employees', async () => {
+    renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
+    await waitFor(() => expect(securitiesApi.getForexPairs).toHaveBeenCalled())
+  })
+
   it('Options tab shows stock search prompt when no stock selected', async () => {
     renderWithProviders(<SecuritiesView />, { preloadedState: { auth: employeeAuth } })
     fireEvent.click(screen.getByText('Options'))

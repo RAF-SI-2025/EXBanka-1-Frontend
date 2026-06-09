@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { createQueryWrapper } from '@/__tests__/utils/test-utils'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 import {
   useStocks,
   useStock,
@@ -227,5 +228,22 @@ describe('useListingMap', () => {
     })
     // Security's own id (10) should NOT be in the map
     expect(result.current.get(10)).toBeUndefined()
+  })
+
+  it('does not call the forex API for clients (still maps stocks/futures)', async () => {
+    const stock = createMockStock({ id: 10, listing_id: 101, ticker: 'AAPL', name: 'Apple Inc.' })
+    jest.mocked(securitiesApi.getStocks).mockResolvedValue({ stocks: [stock], total_count: 1 })
+    jest.mocked(securitiesApi.getFutures).mockResolvedValue({ futures: [], total_count: 0 })
+    jest.mocked(securitiesApi.getForexPairs).mockResolvedValue({ forex_pairs: [], total_count: 0 })
+
+    const clientAuth = createMockAuthState({ user: createMockAuthUser(), userType: 'client' })
+    const { result } = renderHook(() => useListingMap(), {
+      wrapper: createQueryWrapper({ auth: clientAuth }),
+    })
+
+    await waitFor(() =>
+      expect(result.current.get(101)).toEqual({ ticker: 'AAPL', name: 'Apple Inc.' })
+    )
+    expect(securitiesApi.getForexPairs).not.toHaveBeenCalled()
   })
 })
