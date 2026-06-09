@@ -46,11 +46,10 @@ export function OtcPortalView() {
   const { data, isLoading } = useOtcOffers()
   const { data: remoteOptionData } = useRemoteOptionOffers()
 
-  // Local stock offers from /otc/stocks + remote option offers from /otc/options?kind=remote.
-  // Remote stock entries from /otc/stocks carry no id and cannot be bid on; remote option rows
-  // from the options discovery feed carry a local surrogate offer_id required by /otc/options/:id/bid.
+  // All /otc/stocks entries (local + remote stocks, the latter without id) plus remote option rows
+  // from /otc/options?kind=remote which carry a local surrogate offer_id for POST /otc/options/:id/bid.
   const offers: OtcOffer[] = [
-    ...(data?.offers ?? []).filter((o) => o.kind === 'local'),
+    ...(data?.offers ?? []),
     ...(remoteOptionData?.offers ?? []).filter((o) => o.kind === 'remote').map(remoteOptionToOffer),
   ]
 
@@ -79,6 +78,8 @@ export function OtcPortalView() {
 
     if (selectedOffer.kind === 'remote') {
       const remoteOffer: OtcRemoteOffer = selectedOffer
+      const optionOfferId = remoteOffer.id
+      if (!optionOfferId) return null // remote stock without option id — view-only, not biddable
       return (
         <BuyRemoteOtcDialog
           open
@@ -89,7 +90,7 @@ export function OtcPortalView() {
           accounts={clientAccounts}
           onSubmit={(payload: PlaceBidPayload) =>
             placeBidMutation.mutate(
-              { offerId: remoteOffer.id, ...payload },
+              { offerId: optionOfferId, ...payload },
               {
                 onSuccess: () => {
                   notifySuccess('Bid submitted to peer bank.')

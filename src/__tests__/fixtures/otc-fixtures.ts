@@ -20,7 +20,7 @@ export function createMockOtcOffer(overrides: Partial<OtcLocalOffer> = {}): OtcL
 export function createMockRemoteOtcOffer(overrides: Partial<OtcRemoteOffer> = {}): OtcRemoteOffer {
   return {
     kind: 'remote',
-    id: 10,
+    id: 10, // default: biddable (options-style). Pass id: undefined for a view-only remote stock.
     bank_code: '333',
     owner_id: '0',
     security_type: 'stock',

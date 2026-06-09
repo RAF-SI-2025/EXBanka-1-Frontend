@@ -20,8 +20,10 @@ export interface OtcLocalOffer {
 
 export interface OtcRemoteOffer {
   kind: 'remote'
-  /** Local surrogate id assigned by stock-service discovery cache — used to address /otc/options/:id/bid. */
-  id: number
+  /** Local surrogate id from the options discovery feed — only present for entries sourced from
+   *  GET /otc/options?kind=remote. Absent for raw remote stocks from GET /otc/stocks.
+   *  Required by POST /otc/options/:id/bid; omission means the offer is view-only. */
+  id?: number
   bank_code: string
   owner_id: string
   security_type: 'stock' | 'futures'
