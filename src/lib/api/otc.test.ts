@@ -1,10 +1,5 @@
 import { apiClient } from '@/lib/api/axios'
-import {
-  getOtcOffers,
-  buyOtcOffer,
-  buyOtcOfferOnBehalf,
-  createPeerOtcNegotiation,
-} from '@/lib/api/otc'
+import { getOtcOffers, buyOtcOffer, buyOtcOfferOnBehalf } from '@/lib/api/otc'
 import { createMockOtcOfferListResponse } from '@/__tests__/fixtures/otc-fixtures'
 
 jest.mock('@/lib/api/axios', () => ({
@@ -82,26 +77,5 @@ describe('buyOtcOfferOnBehalf', () => {
       account_id: 12,
       quantity: 3,
     })
-  })
-})
-
-describe('createPeerOtcNegotiation', () => {
-  it('POST /me/peer-otc/negotiations with the negotiation payload', async () => {
-    const responseBody = { routingNumber: 333, id: 'neg-1' }
-    mockPost.mockResolvedValue({ data: responseBody })
-
-    const payload = {
-      seller_bank_code: '333',
-      seller_id: '0',
-      stock: { ticker: 'MSFT' },
-      amount: 2,
-      settlement_date: '2027-08-01T00:00:00.000Z',
-      price_per_unit: { amount: '175', currency: 'USD' },
-      premium: { amount: '40', currency: 'USD' },
-    }
-    const result = await createPeerOtcNegotiation(payload)
-
-    expect(mockPost).toHaveBeenCalledWith('/me/peer-otc/negotiations', payload)
-    expect(result).toEqual(responseBody)
   })
 })

@@ -46,13 +46,16 @@ describe('OtcPortalView', () => {
       .mocked(useOtcHook.useOtcOffers)
       .mockReturnValue(anyVal({ data: { offers, total_count: 1 }, isLoading: false }))
     jest
+      .mocked(useOtcHook.useRemoteOptionOffers)
+      .mockReturnValue(anyVal({ data: { offers: [], total_count: 0 }, isLoading: false }))
+    jest
       .mocked(useOtcHook.useBuyOtcOffer)
       .mockReturnValue(anyVal({ mutate: buyMutateFn, isPending: false }))
     jest
       .mocked(useOtcHook.useBuyOtcOfferOnBehalf)
       .mockReturnValue(anyVal({ mutate: buyOnBehalfMutateFn, isPending: false }))
     jest
-      .mocked(useOtcHook.useCreatePeerOtcNegotiation)
+      .mocked(useOtcHook.usePlaceBidOnRemoteOffer)
       .mockReturnValue(anyVal({ mutate: jest.fn(), isPending: false }))
     jest
       .mocked(useAccountsHook.useClientAccounts)
