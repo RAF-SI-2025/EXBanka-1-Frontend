@@ -57,6 +57,13 @@ describe('OtcOffersTable', () => {
     expect(onBuy).toHaveBeenCalledWith(remote)
   })
 
+  it('shows "View only" for remote stock offers that have no option id (not biddable)', () => {
+    const remoteStock = createMockRemoteOtcOffer({ ticker: 'IBM', id: undefined })
+    render(<OtcOffersTable offers={[remoteStock]} onBuy={onBuy} />)
+    expect(screen.getByText(/view only/i)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /negotiate/i })).not.toBeInTheDocument()
+  })
+
   it('renders price with currency for remote offers with non-zero price', () => {
     const remote = createMockRemoteOtcOffer({ price_per_unit: '420.50', currency: 'EUR' })
     render(<OtcOffersTable offers={[remote]} onBuy={onBuy} />)

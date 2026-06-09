@@ -25,7 +25,10 @@ interface Props {
 
 function offerKey(offer: OtcOffer): string {
   if (offer.kind === 'local') return `local-${offer.id}`
-  return `remote-${offer.bank_code}-${offer.owner_id}-${offer.ticker}`
+  // Append the option surrogate id when present so a stock and an option on the
+  // same ticker from the same bank get distinct keys.
+  const suffix = offer.id != null ? `-${offer.id}` : ''
+  return `remote-${offer.bank_code}-${offer.owner_id}-${offer.ticker}${suffix}`
 }
 
 function formatPrice(offer: OtcOffer): string {
@@ -92,6 +95,8 @@ export function OtcOffersTable({ offers, onBuy, currentUserId, isCurrentUserEmpl
             <TableCell className="text-right">
               {isOwnedByViewer(offer) ? (
                 <span className="text-sm text-muted-foreground italic">Your offer</span>
+              ) : offer.kind === 'remote' && offer.id == null ? (
+                <span className="text-sm text-muted-foreground italic">View only</span>
               ) : (
                 <Button size="sm" variant="outline" onClick={() => onBuy(offer)}>
                   {offer.kind === 'local' ? 'Buy' : 'Negotiate'}
