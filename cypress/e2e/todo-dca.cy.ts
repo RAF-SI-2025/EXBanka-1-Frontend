@@ -60,6 +60,10 @@ describe('todo test — DCA: kreiranje trajnog naloga', () => {
 
     cy.loginAsClient('/securities/order/new?direction=buy&securityType=stock&listingId=1')
 
+    // The charging account must be chosen explicitly — the recurring payload is
+    // dropped (no POST) without an account_id, just like a real submission.
+    cy.wait('@getAccounts')
+    cy.get('#account').select('1')
     cy.get('#quantity').type('5')
     cy.get('input[aria-label="Schedule order"]').check()
     cy.get('#frequency').select('weekly')
@@ -151,10 +155,18 @@ describe('todo test — DCA: izvršavanje i upravljanje', () => {
 
   // ── Scenario 53: UsedLimit aktuara se uračunava pri DCA izvršavanju ────────
   // The cron routes an over-limit auto-order to supervisor approval — entirely
-  // backend. There is no FE surface: the portfolio (and its Recurring Orders
-  // tab) is client-only, so an employee is redirected away.
-  it('Scenario 53 — actuary DCA limit handling is backend (no employee portfolio surface)', () => {
+  // backend. The /portfolio route is shared (an employee is served the bank
+  // portfolio, see funds-celina4 Scenario 44), so there is no redirect. The
+  // actuary used-limit handling has NO FE surface: the recurring-orders tab
+  // exposes only quantity/frequency and pause/cancel — no limit control.
+  it('Scenario 53 — actuary DCA limit handling is backend (no FE limit control)', () => {
+    stubRecurringList([recurringOrder({ status: 'active' })])
+
     cy.loginAsEmployee('/portfolio?tab=recurring-orders')
-    cy.url().should('not.include', '/portfolio')
+    cy.wait('@getRecurring')
+
+    cy.url().should('include', '/portfolio')
+    cy.contains('th', 'Frequency').should('be.visible')
+    cy.contains('th', 'Limit').should('not.exist')
   })
 })
