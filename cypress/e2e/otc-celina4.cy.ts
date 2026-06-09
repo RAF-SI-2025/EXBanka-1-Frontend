@@ -348,7 +348,30 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
     }).as('getContracts')
     cy.intercept('POST', '**/api/v3/otc/contracts/26/exercise', {
       statusCode: 200,
-      body: { status: 'EXERCISED' },
+      // The API normalizes the returned `contract` (and `holding`), so the mock
+      // must mirror the real response shape — a bare { status } would make
+      // normalizeContract throw and route the mutation to the error path.
+      body: {
+        contract: {
+          id: 26,
+          status: 'EXERCISED',
+          ticker: 'AAPL',
+          quantity: 10,
+          strike_price: '150.00',
+          premium_paid: '5.00',
+          settlement_date: '2026-12-31',
+          buyer_owner_type: 'client',
+          buyer_owner_id: 42,
+          seller_owner_type: 'client',
+          seller_owner_id: 99,
+        },
+        holding: {
+          id: 1,
+          stock_id: 1,
+          quantity: '10',
+          owner: { owner_type: 'client', owner_id: 42 },
+        },
+      },
     }).as('exercise')
 
     cy.loginAsClient('/otc/contracts')

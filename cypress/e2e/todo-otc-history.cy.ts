@@ -197,8 +197,11 @@ describe('todo test — Istorija pregovora', () => {
 
     cy.contains('th', 'Action').should('be.visible')
     cy.contains('th', 'Strike').should('be.visible')
-    cy.contains('BID').should('be.visible')
-    cy.contains('COUNTER').should('be.visible')
+    // The action is uppercased via CSS only — the DOM text stays lowercase, so
+    // match the actual cell text (scoped to <td> to avoid the "bidding history"
+    // heading).
+    cy.contains('td', 'bid').should('be.visible')
+    cy.contains('td', 'counter').should('be.visible')
   })
 
   // ── Scenario 66: Filtriranje istorije po statusu ──────────────────────────
