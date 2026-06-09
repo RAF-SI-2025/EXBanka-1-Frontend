@@ -13,7 +13,10 @@ describe('Celina 0.1: Kreiranje zaposlenog', () => {
     // Fill required fields
     cy.get('#first_name').type('Nikola')
     cy.get('#last_name').type('Petrović')
-    cy.get('#date_of_birth').type('1990-01-01')
+    // Guard against an actionability race: the date input can be momentarily
+    // non-interactive while the view's enter animation/mount settles. A retrying
+    // be.enabled assertion waits that window out before .type()'s one-shot check.
+    cy.get('#date_of_birth').should('be.enabled').type('1990-01-01')
     cy.get('#email').type('nikola.petrovic@example.com')
     cy.get('#username').type('npetrovic')
     cy.get('#jmbg').type('1234567890123')
@@ -56,6 +59,10 @@ describe('Celina 0.1: Kreiranje zaposlenog', () => {
     // Fill form with a duplicate email
     cy.get('#first_name').type('Marko')
     cy.get('#last_name').type('Markovic')
+    // Guard against an actionability race: the date input can be momentarily
+    // non-interactive while the view's enter animation/mount settles. A retrying
+    // be.enabled assertion waits that window out before .type()'s one-shot check.
+    cy.get('#date_of_birth').should('be.enabled').type('1990-01-01')
     cy.get('#email').type('marko.markovic@example.com')
     cy.get('#username').type('mmarkovic')
     cy.get('#jmbg').type('9876543210123')
@@ -68,10 +75,10 @@ describe('Celina 0.1: Kreiranje zaposlenog', () => {
     cy.contains('button', 'Save').click({ force: true })
     cy.wait('@createEmployeeDuplicate')
 
-    // Frontend shows generic error (not the API message)
-    // Note: spec says "Nalog sa ovom email adresom već postoji" but frontend renders
-    // the hardcoded string from CreateEmployeePage.tsx: "Failed to create employee."
-    cy.contains('Failed to create employee.').should('be.visible')
+    // On a duplicate-email 409, CreateEmployeeView treats it as a duplicate email
+    // (isDuplicateEmailError → true for any 409) and surfaces an inline field error
+    // on the email input rather than the generic "Failed to create employee." banner.
+    cy.contains('Email is already in use').should('be.visible')
 
     // Admin stays on the form
     cy.url().should('include', '/employees/new')
