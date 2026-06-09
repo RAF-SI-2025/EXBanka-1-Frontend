@@ -80,6 +80,31 @@ describe('parseApiError', () => {
     expect(parseApiError(makeAxiosError(404, {})).title).toBe('Not found')
   })
 
+  it('uses nested error.message + error.code for a 400 business-rule body', () => {
+    const result = parseApiError(
+      makeAxiosError(400, {
+        error: { code: 'INSUFFICIENT_FUNDS', message: 'Nedovoljno sredstava na računu' },
+      })
+    )
+    expect(result).toEqual({
+      title: 'Invalid request',
+      message: 'Nedovoljno sredstava na računu',
+      code: 'INSUFFICIENT_FUNDS',
+      status: 400,
+    })
+  })
+
+  it('uses nested error.message + error.code for a 404 body', () => {
+    const result = parseApiError(
+      makeAxiosError(404, {
+        error: { code: 'ACCOUNT_NOT_FOUND', message: 'Uneti račun ne postoji' },
+      })
+    )
+    expect(result.message).toBe('Uneti račun ne postoji')
+    expect(result.code).toBe('ACCOUNT_NOT_FOUND')
+    expect(result.status).toBe(404)
+  })
+
   it('falls back to default 500 message when error is an object (e.g. raw SQL overflow)', () => {
     const err = {
       isAxiosError: true,

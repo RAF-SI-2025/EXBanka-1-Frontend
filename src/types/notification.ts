@@ -7,6 +7,12 @@ export type NotificationType =
   | 'loan_approved'
   | 'loan_rejected'
   | 'password_changed'
+  // OTC SI-TX event notifications (SCREAMING_SNAKE_CASE per inter-bank protocol)
+  | 'OTC_OFFER_RECEIVED'
+  | 'OTC_OFFER_COUNTERED'
+  | 'OTC_OFFER_REJECTED'
+  | 'OTC_OFFER_ACCEPTED'
+  | 'OTC_OFFER_CANCELLED'
 
 export interface Notification {
   id: number

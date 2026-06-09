@@ -17,43 +17,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { OtcRemoteOffer, PeerOtcNegotiationRequest } from '@/types/otc'
+import type { OtcRemoteOffer } from '@/types/otc'
+import type { Account } from '@/types/account'
+import type { PlaceBidPayload } from '@/views/otcOptions/types'
 
 interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   offer: OtcRemoteOffer
-  onSubmit: (payload: PeerOtcNegotiationRequest) => void
+  accounts: Account[]
+  onSubmit: (payload: PlaceBidPayload) => void
   loading: boolean
 }
 
-const CURRENCIES = ['USD', 'EUR', 'RSD', 'GBP', 'CHF']
-
-export function BuyRemoteOtcDialog({ open, onOpenChange, offer, onSubmit, loading }: Props) {
-  const [amount, setAmount] = useState(1)
+export function BuyRemoteOtcDialog({
+  open,
+  onOpenChange,
+  offer,
+  accounts,
+  onSubmit,
+  loading,
+}: Props) {
+  const [accountId, setAccountId] = useState<number | undefined>(accounts[0]?.id)
+  const [quantity, setQuantity] = useState('1')
+  const [strikePrice, setStrikePrice] = useState('')
+  const [premium, setPremium] = useState('0')
   const [settlementDate, setSettlementDate] = useState('')
-  const [priceAmount, setPriceAmount] = useState('')
-  const [priceCurrency, setPriceCurrency] = useState(offer.currency || 'USD')
-  const [premiumAmount, setPremiumAmount] = useState('')
-  const [premiumCurrency, setPremiumCurrency] = useState(offer.currency || 'USD')
 
   const isValid =
-    amount > 0 &&
-    amount <= offer.quantity &&
-    settlementDate.length > 0 &&
-    Number(priceAmount) > 0 &&
-    Number(premiumAmount) >= 0
+    accountId !== undefined &&
+    Number(quantity) > 0 &&
+    Number(quantity) <= offer.quantity &&
+    Number(strikePrice) > 0 &&
+    Number(premium) >= 0 &&
+    settlementDate.length > 0
 
   const handleSubmit = () => {
     if (!isValid) return
     onSubmit({
-      seller_bank_code: offer.bank_code,
-      seller_id: offer.owner_id,
-      stock: { ticker: offer.ticker },
-      amount,
-      settlement_date: new Date(settlementDate).toISOString(),
-      price_per_unit: { amount: priceAmount, currency: priceCurrency },
-      premium: { amount: premiumAmount || '0', currency: premiumCurrency },
+      bidder_account_id: accountId!,
+      quantity,
+      strike_price: strikePrice,
+      premium,
+      settlement_date: settlementDate,
     })
   }
 
@@ -62,10 +68,10 @@ export function BuyRemoteOtcDialog({ open, onOpenChange, offer, onSubmit, loadin
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            Negotiate {offer.ticker} with bank {offer.bank_code}
+            Bid on {offer.ticker} — bank {offer.bank_code}
           </DialogTitle>
           <DialogDescription>
-            Cross-bank OTC option negotiation — initiates an SI-TX offer against the seller bank.
+            Cross-bank OTC option bid — dispatched to the seller's bank via SI-TX.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
@@ -73,14 +79,51 @@ export function BuyRemoteOtcDialog({ open, onOpenChange, offer, onSubmit, loadin
             Available: <strong>{offer.quantity}</strong>
           </p>
           <div>
-            <Label htmlFor="remote-amount">Amount</Label>
+            <Label htmlFor="remote-account">Account</Label>
+            <Select value={accountId?.toString()} onValueChange={(v) => setAccountId(Number(v))}>
+              <SelectTrigger id="remote-account">
+                <SelectValue placeholder="Select account" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id.toString()}>
+                    {a.account_name} ({a.currency_code})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="remote-quantity">Quantity</Label>
             <Input
-              id="remote-amount"
+              id="remote-quantity"
               type="number"
               min={1}
               max={offer.quantity}
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="remote-strike">Strike price</Label>
+            <Input
+              id="remote-strike"
+              type="number"
+              step="0.01"
+              min={0}
+              value={strikePrice}
+              onChange={(e) => setStrikePrice(e.target.value)}
+            />
+          </div>
+          <div>
+            <Label htmlFor="remote-premium">Premium</Label>
+            <Input
+              id="remote-premium"
+              type="number"
+              step="0.01"
+              min={0}
+              value={premium}
+              onChange={(e) => setPremium(e.target.value)}
             />
           </div>
           <div>
@@ -92,69 +135,13 @@ export function BuyRemoteOtcDialog({ open, onOpenChange, offer, onSubmit, loadin
               onChange={(e) => setSettlementDate(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-[1fr_8rem] gap-2">
-            <div>
-              <Label htmlFor="remote-price-amount">Price per unit</Label>
-              <Input
-                id="remote-price-amount"
-                type="number"
-                step="0.01"
-                min={0}
-                value={priceAmount}
-                onChange={(e) => setPriceAmount(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="remote-price-currency">Currency</Label>
-              <Select value={priceCurrency} onValueChange={(v) => v && setPriceCurrency(v)}>
-                <SelectTrigger id="remote-price-currency" aria-label="Price currency">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-[1fr_8rem] gap-2">
-            <div>
-              <Label htmlFor="remote-premium-amount">Premium</Label>
-              <Input
-                id="remote-premium-amount"
-                type="number"
-                step="0.01"
-                min={0}
-                value={premiumAmount}
-                onChange={(e) => setPremiumAmount(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="remote-premium-currency">Currency</Label>
-              <Select value={premiumCurrency} onValueChange={(v) => v && setPremiumCurrency(v)}>
-                <SelectTrigger id="remote-premium-currency" aria-label="Premium currency">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={!isValid || loading}>
-            {loading ? 'Submitting…' : 'Submit negotiation'}
+            {loading ? 'Submitting…' : 'Submit bid'}
           </Button>
         </DialogFooter>
       </DialogContent>

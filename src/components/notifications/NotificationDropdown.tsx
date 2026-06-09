@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import {
   useNotifications,
   useMarkNotificationRead,
@@ -8,9 +9,19 @@ import { Button } from '@/components/ui/button'
 import { NotificationItem } from './NotificationItem'
 import type { Notification } from '@/types/notification'
 
+function resolveNavigationPath(n: Notification): string | null {
+  // OTC event notifications (SCREAMING_SNAKE_CASE per SI-TX protocol) direct
+  // the user to the OTC Options view where they can find their chain via
+  // GET /me/otc/options/negotiations. ref_id is not always populated for
+  // cross-bank events, so we navigate to the view without a specific offer id.
+  if (n.type.startsWith('OTC_')) return '/otc/options'
+  return null
+}
+
 const PAGE_SIZE = 10
 
 export function NotificationDropdown() {
+  const navigate = useNavigate()
   const { data, isLoading, isError } = useNotifications({ page: 1, page_size: PAGE_SIZE })
   const markOne = useMarkNotificationRead()
   const markAll = useMarkAllNotificationsRead()
@@ -20,6 +31,8 @@ export function NotificationDropdown() {
 
   const handleItemClick = (n: Notification) => {
     if (!n.is_read) markOne.mutate(n.id)
+    const path = resolveNavigationPath(n)
+    if (path) navigate(path)
   }
 
   return (

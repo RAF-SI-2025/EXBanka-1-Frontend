@@ -2,12 +2,21 @@ import { screen, fireEvent, waitFor } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { NotificationDropdown } from './NotificationDropdown'
 import * as notificationsApi from '@/lib/api/notifications'
-import { mockNotifications } from '@/__tests__/fixtures/notification-fixtures'
+import {
+  mockNotifications,
+  createMockNotification,
+} from '@/__tests__/fixtures/notification-fixtures'
 
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}))
 jest.mock('@/lib/api/notifications')
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockNavigate.mockClear()
   jest.mocked(notificationsApi.getNotifications).mockResolvedValue({
     notifications: mockNotifications,
     total: mockNotifications.length,
@@ -52,6 +61,40 @@ describe('NotificationDropdown', () => {
     await screen.findByText(mockNotifications[0].title)
     fireEvent.click(screen.getByRole('button', { name: /mark all as read/i }))
     await waitFor(() => expect(notificationsApi.markAllNotificationsRead).toHaveBeenCalledTimes(1))
+  })
+
+  it('navigates to /otc/options when an OTC counter notification is clicked', async () => {
+    const otcNotification = createMockNotification({
+      id: 10,
+      type: 'OTC_OFFER_COUNTERED',
+      title: 'Counter received',
+      message: 'The owner countered your bid.',
+      is_read: false,
+      ref_type: 'otc_negotiation',
+      ref_id: null,
+    })
+    jest.mocked(notificationsApi.getNotifications).mockResolvedValue({
+      notifications: [otcNotification],
+      total: 1,
+    })
+
+    renderWithProviders(<NotificationDropdown />)
+    const item = await screen.findByRole('button', { name: /counter received/i })
+    fireEvent.click(item)
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/otc/options'))
+  })
+
+  it('does not navigate for standard (non-OTC) notification types', async () => {
+    jest.mocked(notificationsApi.getNotifications).mockResolvedValue({
+      notifications: [createMockNotification({ id: 5, type: 'money_received', is_read: false })],
+      total: 1,
+    })
+
+    renderWithProviders(<NotificationDropdown />)
+    const item = await screen.findByRole('button', { name: /money received/i })
+    fireEvent.click(item)
+    await waitFor(() => expect(notificationsApi.markNotificationRead).toHaveBeenCalledWith(5))
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   it('hides "Mark all as read" when there are no unread items', async () => {

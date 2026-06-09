@@ -4,17 +4,21 @@ import {
   useOtcOffers,
   useBuyOtcOffer,
   useBuyOtcOfferOnBehalf,
-  useCreatePeerOtcNegotiation,
+  usePlaceBidOnRemoteOffer,
 } from '@/hooks/useOtc'
 import * as otcApi from '@/lib/api/otc'
+import * as otcOptionsApiModule from '@/views/otcOptions/api/otcOptionsApi'
 import { createMockOtcOfferListResponse } from '@/__tests__/fixtures/otc-fixtures'
 
 jest.mock('@/lib/api/otc')
+jest.mock('@/views/otcOptions/api/otcOptionsApi', () => ({
+  otcOptionsApi: { placeBid: jest.fn() },
+}))
 
 const mockGetOtcOffers = jest.mocked(otcApi.getOtcOffers)
 const mockBuyOtcOffer = jest.mocked(otcApi.buyOtcOffer)
 const mockBuyOtcOfferOnBehalf = jest.mocked(otcApi.buyOtcOfferOnBehalf)
-const mockCreatePeerOtcNegotiation = jest.mocked(otcApi.createPeerOtcNegotiation)
+const mockPlaceBid = jest.mocked(otcOptionsApiModule.otcOptionsApi.placeBid)
 
 beforeEach(() => jest.clearAllMocks())
 
@@ -28,25 +32,32 @@ describe('useOtcOffers', () => {
   })
 })
 
-describe('useCreatePeerOtcNegotiation', () => {
-  it('forwards the negotiation payload to the api', async () => {
-    mockCreatePeerOtcNegotiation.mockResolvedValue({ routingNumber: 333, id: 'abc' })
-    const { result } = renderHook(() => useCreatePeerOtcNegotiation(), {
+describe('usePlaceBidOnRemoteOffer', () => {
+  it('calls otcOptionsApi.placeBid with the offerId and bid payload', async () => {
+    mockPlaceBid.mockResolvedValue({ negotiation: {} as any })
+    const { result } = renderHook(() => usePlaceBidOnRemoteOffer(), {
       wrapper: createQueryWrapper(),
     })
-    const payload = {
-      seller_bank_code: '333',
-      seller_id: '0',
-      stock: { ticker: 'MSFT' },
-      amount: 2,
-      settlement_date: '2027-08-01T00:00:00.000Z',
-      price_per_unit: { amount: '420.50', currency: 'USD' },
-      premium: { amount: '40', currency: 'USD' },
+    const input = {
+      offerId: 42,
+      bidder_account_id: 13,
+      quantity: '2',
+      strike_price: '175.00',
+      premium: '40.00',
+      settlement_date: '2027-08-01',
     }
     await act(async () => {
-      result.current.mutate(payload)
+      result.current.mutate(input)
     })
-    await waitFor(() => expect(mockCreatePeerOtcNegotiation).toHaveBeenCalledWith(payload))
+    await waitFor(() =>
+      expect(mockPlaceBid).toHaveBeenCalledWith(42, {
+        bidder_account_id: 13,
+        quantity: '2',
+        strike_price: '175.00',
+        premium: '40.00',
+        settlement_date: '2027-08-01',
+      })
+    )
   })
 })
 
