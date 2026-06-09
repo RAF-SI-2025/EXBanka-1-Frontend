@@ -4,7 +4,7 @@ import { OtcPortalView } from '@/views/otcPortal/OtcPortalView'
 import * as useOtcHook from '@/hooks/useOtc'
 import * as useAccountsHook from '@/hooks/useAccounts'
 import * as useClientsHook from '@/hooks/useClients'
-import { createMockOtcOffer } from '@/__tests__/fixtures/otc-fixtures'
+import { createMockOtcOffer, createMockRemoteOtcOffer } from '@/__tests__/fixtures/otc-fixtures'
 import { createMockAccount } from '@/__tests__/fixtures/account-fixtures'
 import { createMockClient } from '@/__tests__/fixtures/client-fixtures'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
@@ -80,6 +80,16 @@ describe('OtcPortalView', () => {
   it('renders offers in the table', () => {
     renderWithProviders(<OtcPortalView />, { preloadedState: clientAuth() })
     expect(screen.getByText('AAPL')).toBeInTheDocument()
+  })
+
+  it('renders remote stock entries from /otc/stocks in the table (view-only, no negotiate button)', () => {
+    const remoteStock = createMockRemoteOtcOffer({ ticker: 'TSLA', id: undefined })
+    jest
+      .mocked(useOtcHook.useOtcOffers)
+      .mockReturnValue({ data: { offers: [remoteStock], total_count: 1 }, isLoading: false } as any)
+    renderWithProviders(<OtcPortalView />, { preloadedState: clientAuth() })
+    expect(screen.getByText('TSLA')).toBeInTheDocument()
+    expect(screen.getByText(/view only/i)).toBeInTheDocument()
   })
 
   it('shows the loading state while fetching', () => {
