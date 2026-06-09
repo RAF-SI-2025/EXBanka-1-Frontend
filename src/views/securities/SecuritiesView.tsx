@@ -91,7 +91,9 @@ export function SecuritiesView() {
     base_currency: (forexFilters.base_currency as string) || undefined,
     quote_currency: (forexFilters.quote_currency as string) || undefined,
   }
-  const { data: forexData, isLoading: forexLoading } = useForexPairs(forexApiFilters)
+  // Forex is an employee-only surface (the tab is hidden for clients), so don't
+  // call the forex API when a client is logged in.
+  const { data: forexData, isLoading: forexLoading } = useForexPairs(forexApiFilters, !isClient)
 
   const handleBuyStock = useCallback(
     (stock: Stock) => {
