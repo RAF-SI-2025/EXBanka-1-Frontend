@@ -22,6 +22,7 @@ import {
 import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 import { hasOwnNegotiationChain } from '@/views/otcOptions/lib/myNegotiation'
+import { resolveListingId } from '@/views/otcOptions/lib/listingId'
 
 interface Props {
   offer: OtcOptionRow
@@ -36,7 +37,7 @@ function partiesMatch(a: OtcParty, b: OtcParty): boolean {
 }
 
 export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, onPlaceBid }: Props) {
-  const offerId = Number(offer.offer_id)
+  const offerId = resolveListingId(offer)
   // Source the bidder's own chain from the caller-scoped endpoint so the
   // bidder page never reads competitors' chains via /otc/options/:id/...
   // The /me/... response is already filtered to chains the caller is a party
@@ -76,7 +77,7 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
           </Button>
           <div className="min-w-0">
             <h2 className="text-xl font-semibold truncate">
-              {offer.ticker} · #{String(offer.offer_id)}
+              {offer.ticker} · #{String(offerId)}
             </h2>
             <p className="text-xs text-muted-foreground">
               {offer.direction === 'sell_initiated' ? 'Sell listing' : 'Buy listing'} ·{' '}

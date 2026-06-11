@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select'
 import type { OtcRemoteOffer } from '@/types/otc'
 import type { Account } from '@/types/account'
+import { formatAccountOption } from '@/lib/utils/format'
 import type { PlaceBidPayload } from '@/views/otcOptions/types'
 
 interface Props {
@@ -39,6 +40,7 @@ export function BuyRemoteOtcDialog({
   loading,
 }: Props) {
   const [accountId, setAccountId] = useState<number | undefined>(accounts[0]?.id)
+  const selectedAccount = accounts.find((a) => a.id === accountId)
   const [quantity, setQuantity] = useState('1')
   const [strikePrice, setStrikePrice] = useState('')
   const [premium, setPremium] = useState('0')
@@ -82,12 +84,14 @@ export function BuyRemoteOtcDialog({
             <Label htmlFor="remote-account">Account</Label>
             <Select value={accountId?.toString()} onValueChange={(v) => setAccountId(Number(v))}>
               <SelectTrigger id="remote-account">
-                <SelectValue placeholder="Select account" />
+                <SelectValue placeholder="Select account">
+                  {selectedAccount ? formatAccountOption(selectedAccount) : null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.account_name} ({a.currency_code})
+                    {formatAccountOption(a)}
                   </SelectItem>
                 ))}
               </SelectContent>

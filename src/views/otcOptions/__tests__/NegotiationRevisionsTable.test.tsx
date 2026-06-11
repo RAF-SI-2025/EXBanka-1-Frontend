@@ -69,4 +69,14 @@ describe('NegotiationRevisionsTable', () => {
     expect(screen.getByText('client-42')).toBeInTheDocument()
     expect(screen.queryByText('You')).not.toBeInTheDocument()
   })
+
+  it('shows the trade role (not "<role>-undefined") when the actor has no numeric id', () => {
+    render(
+      <NegotiationRevisionsTable
+        revisions={[rev({ action_by_principal_type: 'buyer', action_by_principal_id: null })]}
+      />
+    )
+    expect(screen.getByText('Buyer')).toBeInTheDocument()
+    expect(screen.queryByText(/buyer-/i)).not.toBeInTheDocument()
+  })
 })

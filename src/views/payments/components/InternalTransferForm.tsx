@@ -56,7 +56,7 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
+                  <SelectTrigger className="min-w-[16rem]">
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
@@ -82,7 +82,7 @@ export function InternalTransferForm({ accounts, onSubmit }: InternalTransferFor
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger>
+                  <SelectTrigger className="min-w-[16rem]">
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>

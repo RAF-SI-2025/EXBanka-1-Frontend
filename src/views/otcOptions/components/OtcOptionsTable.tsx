@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { hasOwnNegotiationChain } from '@/views/otcOptions/lib/myNegotiation'
+import { otcRowKey } from '@/views/otcOptions/lib/listingId'
 import type { OtcOptionRow } from '@/views/otcOptions/types'
 import { hoverLift, rowEnter } from '@/views/shared'
 
@@ -23,6 +24,11 @@ interface Props {
   // bidders. Inline button clicks stopPropagation so they don't trigger this.
   onRowOpen: (row: OtcOptionRow) => void
 }
+
+// Shown across the strike + premium columns when a listing was posted without
+// starting terms (`has_preset_terms === false`) — the first bidder opens the
+// position, so there are no seller numbers to display.
+const NO_PRESET_TERMS_LABEL = "This option doesn't have a starting position"
 
 function fmt(value: string | number | undefined | null, fallback = '—'): string {
   if (value == null || value === '') return fallback
@@ -50,7 +56,7 @@ export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((row) => {
+        {rows.map((row, index) => {
           // The backend tells us directly: `me_owner` ⇒ the caller posted this
           // listing (Activity); otherwise `my_negotiation_id` being a real
           // (numeric) id means a bid chain is already underway (Counter) vs not
@@ -60,7 +66,7 @@ export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }
           const bestPrice = row.direction === 'sell_initiated' ? row.best_bid : row.best_ask
           return (
             <TableRow
-              key={`${row.bank_code}-${row.offer_id}`}
+              key={otcRowKey(row, index)}
               onClick={() => onRowOpen(row)}
               className={`${hoverLift} ${rowEnter}`}
             >
@@ -69,12 +75,20 @@ export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }
                 {row.direction === 'sell_initiated' ? 'SELL' : 'BUY'}
               </TableCell>
               <TableCell className="text-right">{fmt(row.amount)}</TableCell>
-              <TableCell className="text-right">
-                {row.strike_price} {row.strike_currency}
-              </TableCell>
-              <TableCell className="text-right">
-                {row.premium} {row.premium_currency}
-              </TableCell>
+              {row.has_preset_terms === false ? (
+                <TableCell colSpan={2} className="text-center text-xs italic text-muted-foreground">
+                  {NO_PRESET_TERMS_LABEL}
+                </TableCell>
+              ) : (
+                <>
+                  <TableCell className="text-right">
+                    {row.strike_price} {row.strike_currency}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {row.premium} {row.premium_currency}
+                  </TableCell>
+                </>
+              )}
               <TableCell className="text-right">{fmt(bestPrice)}</TableCell>
               <TableCell className="text-right">{fmt(row.active_chains_count, '0')}</TableCell>
               <TableCell className="text-xs">

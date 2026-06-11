@@ -12,6 +12,7 @@ import { OfferActivityPanel } from '@/views/otcOptions/components/OfferActivityP
 import { BidderActivityPanel } from '@/views/otcOptions/components/BidderActivityPanel'
 import { useAllOtcOptions, useMyOtcOptions } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { useBidOrCounter } from '@/views/otcOptions/hooks/useBidOrCounter'
+import { resolveListingId } from '@/views/otcOptions/lib/listingId'
 import { useCreateOtcOption } from '@/views/otcOptions/hooks/useOtcOptionMutations'
 import type { OtcOptionRow, OtcOptionsMode, OtcOwnerType } from '@/views/otcOptions/types'
 import { ViewShell, LoadingState, ErrorState, panelEnter } from '@/views/shared'
@@ -136,7 +137,7 @@ export function OtcOptionsView() {
           if (!bidOffer || !currentBidder) return
           bidOrCounter.mutate(
             {
-              offer_id: Number(bidOffer.offer_id),
+              offer_id: resolveListingId(bidOffer),
               account_id: input.account_id,
               quantity: input.quantity,
               strike_price: input.strike_price,

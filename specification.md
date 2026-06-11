@@ -3,6 +3,8 @@
 _Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`; added recurring buy scheduling — on the create-order form (`/securities/order/new`) a client or employee placing a market **buy** can tick "Schedule order", pick Weekly/Monthly, and either "Place order and schedule" (immediate buy + recurring template) or "Schedule" (template only) via POST `/me/recurring-orders` (caller-scoped: an employee's template is created under the employee principal); added a **Recurring Orders** tab on `/portfolio` (`?tab=recurring-orders`) that lists the caller's recurring-order templates via GET `/me/recurring-orders` and supports Pause/Resume/Cancel via POST `/me/recurring-orders/:id/{pause,resume,cancel}` — Cancel is gated behind a confirmation dialog)_
 
 _Updated: 2026-05-30_
+_Last updated: 2026-06-11 (OTC Options view module — slim create payload, updateListing API, useUpdateOtcOption hook, AmountEditor in OfferActivityPanel)_
+
 _Last updated: 2026-06-07b (fund detail stats redesign — `FundDetailsView` (`/funds/:id`) now mirrors the Portfolio page: `FundSummaryCards` hero stats (total value / profit ± % / total contributed / investors), a `FundNavChart` (this fund's daily NAV indexed to 100 vs. the system-average benchmark from `history`/`average_history`), a `FundAllocationPieChart` (value-weighted holdings), and `FundRiskMetrics` cards (annualized return, volatility, Sharpe = reward_to_variability, max drawdown — hidden behind a notice when `metrics_available === false`). `FundDetailsPanel` slimmed to a secondary "Fund details" card. New optional fund types: SP3 metrics on `Fund`, `FundNavPoint`, `history`/`average_history` on `FundDetailResponse`.)_
 
 _Last updated: 2026-06-07 (named watchlists — replaced the single default `/me/watchlist` calls with multi-list `/me/watchlists` + `/me/watchlists/:id/items`; the Portfolio → Favorites tab now renders `WatchlistPanel` with a list dropdown (default list shown as "Favorites"), a "New list" button → `CreateWatchlistDialog`, and a per-list delete; the securities heart now opens `AddToWatchlistDialog` to pick which list to add to, and shows filled when a listing is in any of the caller's lists. Owner (client vs. bank) is resolved server-side from the JWT.)_
@@ -912,6 +914,20 @@ src/
 
 ---
 
+### OTC Options View Module Components (`views/otcOptions/components/`)
+
+**CreateOtcOptionDialog** (`views/otcOptions/components/CreateOtcOptionDialog.tsx`)
+- Dialog for listing owners to post a new OTC option. Collects: direction (buy/sell), ticker, quantity, and settlement account (`account_id`).
+- Strike price, premium, and settlement date are NOT collected here — bidders name those terms when they place a bid.
+- Submits via `useCreateOtcOption` mutation (POST `/me/otc/options`).
+
+**OfferActivityPanel** (`views/otcOptions/components/OfferActivityPanel.tsx`)
+- Owner-only panel showing cross-chain timeline for a listing. Contains an inline `AmountEditor` sub-component allowing the listing owner to change the stock amount:
+  - Edit button reveals a numeric input; Save is disabled unless a positive number is entered.
+  - Save calls `useUpdateOtcOption` mutation (PUT `/me/otc/options/:id` with `{ quantity }`).
+
+---
+
 ### Admin Management Components
 
 **RolesTable** (`components/admin/RolesTable.tsx`)
@@ -1203,6 +1219,31 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `getMyOtcOptionContracts(filters?)` | GET | `/me/otc/contracts` |
 | `exerciseOtcOptionContract(id, payload)` | POST | `/otc/contracts/{id}/exercise` — 5-phase SAGA |
 
+### OTC Options View-Module API (`views/otcOptions/api/otcOptionsApi.ts`)
+
+Self-contained API surface for the `views/otcOptions/` module (spec §47.2). All functions call `/me/otc/options` or `/otc/options` routes on the shared `apiClient`.
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `listAll(filters?)` | GET | `/otc/options` — discovery feed; supports `ticker`, `direction`, `kind`, `bank_code`, `page`, `page_size` |
+| `listMine(filters?)` | GET | `/me/otc/options` — caller's own open listings |
+| `createListing(payload)` | POST | `/me/otc/options` — body `CreateOtcOptionPayload { direction, ticker, quantity, account_id }` |
+| `updateListing(offerId, payload)` | PUT | `/me/otc/options/:id` — owner-only; body `UpdateOtcOptionPayload { quantity }` |
+| `cancelListing(offerId)` | DELETE | `/me/otc/options/:id` |
+| `placeBid(offerId, payload)` | POST | `/otc/options/:id/bid` |
+| `counter(offerId, negotiationId, payload)` | POST | `/me/otc/options/:id/negotiations/:nid/counter` |
+| `acceptNegotiation(offerId, negotiationId, payload)` | POST | `/me/otc/options/:id/negotiations/:nid/accept` |
+| `rejectNegotiation(offerId, negotiationId)` | POST | `/me/otc/options/:id/negotiations/:nid/reject` |
+| `withdrawNegotiation(offerId, negotiationId)` | DELETE | `/me/otc/options/:id/negotiations/:nid` |
+| `listNegotiations(offerId)` | GET | `/otc/options/:id/negotiations` |
+| `listMyNegotiations(filters?)` | GET | `/me/otc/options/negotiations` — bidder's own chains |
+| `listNegotiationRevisions(negotiationId)` | GET | `/me/otc/options/negotiations/:nid/revisions` |
+| `getOfferTimeline(offerId)` | GET | `/otc/options/:id/timeline` — owner cross-chain activity stream |
+| `listMyHoldings()` | GET | delegates to `getPortfolio()` — used by sell-direction ticker picker |
+| `listStockCatalog()` | GET | `/securities/stocks` — used by buy-direction ticker picker |
+
+Raw `negotiation` and `revision` responses are normalized at the API boundary (`normalizeNegotiation`, `normalizeRevision`) to unify flat backend fields into the typed `OtcNegotiation` / `OtcNegotiationRevision` shapes.
+
 ### Securities API (`lib/api/securities.ts`)
 
 | Function | Method | Endpoint |
@@ -1382,6 +1423,7 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `useCollectTaxes()` | React Query | Mutation: collect taxes; invalidates `['tax']` |
 | `useOtcOffers(filters?)` | React Query | Fetch OTC offers; query key: `['otc-offers', filters]` |
 | `useBuyOtcOffer()` | React Query | Mutation: buy OTC offer; invalidates `['otc-offers']` + `['portfolio']` |
+| `useUpdateOtcOption()` | React Query | Mutation (OTC Options module): PUT `/me/otc/options/:id` with `{ quantity }`; onSuccess toasts "Amount updated" + invalidates OTC options lists; no custom onError (global toast) |
 | `useRoles()` | React Query | Fetch roles; query key: `['roles']` |
 | `useCreateRole()` | React Query | Mutation: create role; invalidates `['roles']` |
 | `useUpdateRolePermissions()` | React Query | Mutation: update role permissions; invalidates `['roles']` |
@@ -1638,6 +1680,23 @@ OtcBuyRequest        { quantity: number; account_id: number }
 OtcFilters           { page?, page_size?, security_type?, ticker? }
 ```
 
+### OTC Options View-Module Types (`views/otcOptions/types.ts`)
+
+Module-private types; kept in the view module for self-containment.
+
+```typescript
+CreateOtcOptionPayload { direction: OtcOptionDirection; ticker: string; quantity: string; account_id: number }
+  // NOTE: strike_price, premium, and settlement_date are NOT part of the create payload.
+  // Bidders name those terms when placing a bid; the listing is direction/ticker/quantity/account only.
+
+UpdateOtcOptionPayload { quantity: string }
+  // PUT /me/otc/options/:id — owner-only; re-sizes the listing's stock amount.
+
+PlaceBidPayload        { bidder_account_id: number; quantity: string; strike_price: string; premium: string; settlement_date: string }
+CounterNegotiationPayload { quantity: string; strike_price: string; premium: string; settlement_date: string }
+AcceptNegotiationPayload  { acceptor_account_id: number; on_behalf_of_fund_id?: number }
+```
+
 ### Fee Types (`types/fee.ts`)
 
 ```typescript
@@ -1742,16 +1801,16 @@ Email uniqueness is enforced by the backend (no dedicated check endpoint). When 
 
 ## 12. Test Coverage
 
-_Measured: 2026-06-07 — 228 test suites, 1353 tests, all passing._
+_Measured: 2026-06-11 — 240 test suites, 1419 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **78.33%** |
-| **Branches** | **63.61%** |
-| **Functions** | **61.37%** |
-| **Lines** | **79.85%** |
+| **Statements** | **79.61%** |
+| **Branches** | **65.69%** |
+| **Functions** | **63.03%** |
+| **Lines** | **81.22%** |
 
 > The named-watchlist feature is fully unit-tested: `lib/api/watchlist.ts`, `hooks/useWatchlist.ts`, and `lib/utils/watchlist.ts` at 100%; `WatchlistButton` 100%, `AddToWatchlistDialog`/`CreateWatchlistDialog` ~94% statements, `WatchlistPanel` ~84%.
 
@@ -1786,6 +1845,11 @@ _Measured: 2026-06-07 — 228 test suites, 1353 tests, all passing._
 | `views/securities/AddToWatchlistDialog` | 94.73% | 75% | 100% | 100% |
 | `views/portfolio/CreateWatchlistDialog` | 94.11% | 80% | 100% | 100% |
 | `views/portfolio/WatchlistPanel` | 83.72% | 70.37% | 80% | 87.5% |
+| `views/otcOptions` (module total) | 82.08% | 80% | 53.33% | 85.71% |
+| `views/otcOptions/api/otcOptionsApi.ts` | 87.17% | 59.75% | 84.21% | 87.17% |
+| `views/otcOptions/components` | 73.02% | 60.42% | 44.56% | 75.09% |
+| `views/otcOptions/hooks` | 79.13% | 71.42% | 65.21% | 78.57% |
+| `views/otcOptions/lib` | 100% | 93.75% | 100% | 100% |
 | `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
 | `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
 | `pages/StockExchangesPage.tsx` | 100% | 100% | 100% | 100% |

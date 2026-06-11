@@ -7,6 +7,7 @@ import type {
   AcceptNegotiationPayload,
   CounterNegotiationPayload,
   CreateOtcOptionPayload,
+  UpdateOtcOptionPayload,
 } from '@/views/otcOptions/types'
 
 function useInvalidateLists() {
@@ -28,6 +29,18 @@ export function useCreateOtcOption() {
     onSuccess: () => {
       notifySuccess('Listing posted')
       invalidate()
+    },
+  })
+}
+
+export function useUpdateOtcOption() {
+  const invalidate = useInvalidateLists()
+  return useMutation({
+    mutationFn: ({ offerId, payload }: { offerId: number; payload: UpdateOtcOptionPayload }) =>
+      otcOptionsApi.updateListing(offerId, payload),
+    onSuccess: (_d, { offerId }) => {
+      notifySuccess('Amount updated')
+      invalidate(offerId)
     },
   })
 }

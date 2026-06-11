@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import type { OtcLocalOffer, OtcBuyOnBehalfRequest } from '@/types/otc'
 import type { Account } from '@/types/account'
+import { formatAccountOption } from '@/lib/utils/format'
 import type { Client } from '@/types/client'
 
 interface Props {
@@ -58,7 +59,7 @@ export function BuyOnBehalfOtcDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Buy {offer.ticker} on behalf of client</DialogTitle>
         </DialogHeader>
@@ -96,7 +97,7 @@ export function BuyOnBehalfOtcDialog({
               <SelectContent>
                 {accountsForClient.map((a) => (
                   <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.account_name} ({a.currency_code})
+                    {formatAccountOption(a)}
                   </SelectItem>
                 ))}
               </SelectContent>
