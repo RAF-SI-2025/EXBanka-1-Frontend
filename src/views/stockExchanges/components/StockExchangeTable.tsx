@@ -24,6 +24,7 @@ export function StockExchangeTable({ exchanges }: StockExchangeTableProps) {
           <TableHead>Country</TableHead>
           <TableHead>Currency</TableHead>
           <TableHead>Time Zone</TableHead>
+          <TableHead>Working</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -38,6 +39,7 @@ export function StockExchangeTable({ exchanges }: StockExchangeTableProps) {
               UTC{Number(exchange.time_zone) >= 0 ? '+' : ''}
               {exchange.time_zone}
             </TableCell>
+            <TableCell>{exchange.is_open ? 'Yes' : 'No'}</TableCell>
           </TableRow>
         ))}
       </TableBody>

@@ -2,11 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getPortfolio,
   getPortfolioSummary,
-  makeHoldingPublic,
   exerciseOption,
   getHoldingTransactions,
 } from '@/lib/api/portfolio'
-import type { MakePublicPayload, HoldingTransactionsFilters } from '@/types/portfolio'
+import type { HoldingTransactionsFilters } from '@/types/portfolio'
 
 export function usePortfolio() {
   return useQuery({ queryKey: ['portfolio'], queryFn: () => getPortfolio() })
@@ -16,15 +15,6 @@ export function usePortfolioSummary() {
   return useQuery({
     queryKey: ['portfolio', 'summary'],
     queryFn: () => getPortfolioSummary(),
-  })
-}
-
-export function useMakePublic() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: MakePublicPayload }) =>
-      makeHoldingPublic(id, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['portfolio'] }),
   })
 }
 

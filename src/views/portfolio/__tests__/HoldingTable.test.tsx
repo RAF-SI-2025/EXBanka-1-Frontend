@@ -23,7 +23,6 @@ describe('HoldingTable', () => {
     positions: mockPositions,
     onRowClick: jest.fn(),
     onSell: jest.fn(),
-    onMakePublic: jest.fn(),
     onExercise: jest.fn(),
   }
 
@@ -58,15 +57,9 @@ describe('HoldingTable', () => {
     expect(defaultProps.onSell).toHaveBeenCalledWith(1)
   })
 
-  it('shows Make Public button for non-option positions', () => {
+  it('does not render a Make Public button (feature removed)', () => {
     renderWithProviders(<HoldingTable {...defaultProps} />)
-    expect(screen.getByRole('button', { name: /make public/i })).toBeInTheDocument()
-  })
-
-  it('calls onMakePublic with the holding_id when Make Public clicked', () => {
-    renderWithProviders(<HoldingTable {...defaultProps} />)
-    fireEvent.click(screen.getByRole('button', { name: /make public/i }))
-    expect(defaultProps.onMakePublic).toHaveBeenCalledWith(1)
+    expect(screen.queryByRole('button', { name: /make public/i })).not.toBeInTheDocument()
   })
 
   it('shows Exercise button for option positions', () => {

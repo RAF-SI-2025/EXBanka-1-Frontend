@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { FilterBar } from '@/components/ui/FilterBar'
 import { HoldingTable } from '@/views/portfolio/components/HoldingTable'
-import { MakePublicDialog } from '@/views/portfolio/components/MakePublicDialog'
 import { PortfolioSummaryCard } from '@/views/portfolio/components/PortfolioSummaryCard'
 import { PortfolioProfitChart } from '@/views/portfolio/components/PortfolioProfitChart'
 import { PortfolioHoldingsPieChart } from '@/views/portfolio/components/PortfolioHoldingsPieChart'
@@ -12,12 +11,7 @@ import { MyFundsList } from '@/views/funds/components/MyFundsList'
 import { RedeemFromFundDialog } from '@/views/funds/components/RedeemFromFundDialog'
 import { MyPriceAlertsTable } from '@/views/priceAlerts/components/MyPriceAlertsTable'
 import { PriceAlertDialog } from '@/views/priceAlerts/components/PriceAlertDialog'
-import {
-  usePortfolio,
-  usePortfolioSummary,
-  useMakePublic,
-  useExerciseOption,
-} from '@/hooks/usePortfolio'
+import { usePortfolio, usePortfolioSummary, useExerciseOption } from '@/hooks/usePortfolio'
 import { useMyFundPositions, useRedeemFund } from '@/hooks/useFunds'
 import { useDeletePriceAlert, usePriceAlerts, useUpdatePriceAlert } from '@/hooks/usePriceAlerts'
 import { useListingMap } from '@/hooks/useSecurities'
@@ -33,8 +27,6 @@ import {
   useCancelRecurringOrder,
 } from '@/hooks/useRecurringOrders'
 import { notifySuccess } from '@/lib/errors'
-import { getStocks } from '@/lib/api/securities'
-import type { SecurityPosition } from '@/types/portfolio'
 import type { ClientFundPosition, RedeemPayload } from '@/types/fund'
 import type { Account } from '@/types/account'
 import type { FilterFieldDef, FilterValues } from '@/types/filters'
@@ -59,7 +51,6 @@ export function PortfolioView() {
   const initialTab = parseTab(searchParams.get('tab'))
   const [tab, setTab] = useState<PortfolioTab>(initialTab)
   const [filterValues, setFilterValues] = useState<FilterValues>({})
-  const [makePublicPosition, setMakePublicPosition] = useState<SecurityPosition | null>(null)
   const [redeemPosition, setRedeemPosition] = useState<ClientFundPosition | null>(null)
 
   const { data, isLoading } = usePortfolio()
@@ -84,7 +75,6 @@ export function PortfolioView() {
     [allPositions, searchTerm]
   )
 
-  const makePublicMutation = useMakePublic()
   const exerciseMutation = useExerciseOption()
 
   const handleTabChange = (next: string) => {
@@ -160,34 +150,6 @@ export function PortfolioView() {
     [navigate]
   )
 
-  const handleMakePublic = useCallback(
-    (holdingId: number) => {
-      const position = findPosition(holdingId)
-      if (!position) return
-      setMakePublicPosition(position)
-    },
-    [findPosition]
-  )
-
-  const handleMakePublicSubmit = async (quantity: number) => {
-    if (!makePublicPosition) return
-    // /me/otc/stocks (sell direction) requires price_per_unit. Look it up
-    // from the live stock listing matching this position's symbol; if the
-    // lookup fails we still submit so the backend can return a clear error.
-    let price_per_unit: string | undefined
-    try {
-      const resp = await getStocks({ search: makePublicPosition.symbol, page_size: 5 })
-      price_per_unit = resp.stocks.find((s) => s.ticker === makePublicPosition.symbol)?.price
-    } catch {
-      // Lookup failed — submit without; global error handling will surface
-      // a backend rejection if price is genuinely required.
-    }
-    makePublicMutation.mutate(
-      { id: makePublicPosition.holding_id, payload: { quantity, price_per_unit } },
-      { onSuccess: () => setMakePublicPosition(null) }
-    )
-  }
-
   const handleExercise = useCallback(
     (holdingId: number) => {
       exerciseMutation.mutate(holdingId)
@@ -242,7 +204,6 @@ export function PortfolioView() {
                 positions={filteredPositions}
                 onRowClick={handleRowClick}
                 onSell={handleSell}
-                onMakePublic={handleMakePublic}
                 onExercise={handleExercise}
               />
               <p className="text-sm text-muted-foreground mt-2">
@@ -289,18 +250,6 @@ export function PortfolioView() {
           />
         </TabsContent>
       </Tabs>
-
-      {makePublicPosition && (
-        <MakePublicDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) setMakePublicPosition(null)
-          }}
-          position={makePublicPosition}
-          onSubmit={handleMakePublicSubmit}
-          loading={makePublicMutation.isPending}
-        />
-      )}
 
       {redeemPosition && (
         <PortfolioRedeemConnector

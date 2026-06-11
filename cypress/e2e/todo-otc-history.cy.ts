@@ -19,6 +19,9 @@ const RSD_ACCOUNT = {
 const optionRow = (over: Record<string, unknown> = {}) => ({
   kind: 'local',
   bank_code: 'SI-LOCAL',
+  // `id` is the stable surrogate id the FE routes on (the live API field); for a
+  // local row it is numeric.
+  id: 1,
   offer_id: 1,
   seller_id: 99,
   direction: 'sell_initiated',

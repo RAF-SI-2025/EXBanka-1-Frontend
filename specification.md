@@ -9,6 +9,12 @@ _Last updated: 2026-06-07b (fund detail stats redesign — `FundDetailsView` (`/
 
 _Last updated: 2026-06-07 (named watchlists — replaced the single default `/me/watchlist` calls with multi-list `/me/watchlists` + `/me/watchlists/:id/items`; the Portfolio → Favorites tab now renders `WatchlistPanel` with a list dropdown (default list shown as "Favorites"), a "New list" button → `CreateWatchlistDialog`, and a per-list delete; the securities heart now opens `AddToWatchlistDialog` to pick which list to add to, and shows filled when a listing is in any of the caller's lists. Owner (client vs. bank) is resolved server-side from the JWT.)_
 
+_Last updated: 2026-06-11c (OTC offer activity panels — the header now shows the listing's surrogate `id` (not the native `offer_id`) next to the ticker. `BidderActivityPanel`'s "Your bidding history" is now fetched directly from `GET /me/otc/options/negotiations/:id/revisions` keyed on the offer row's `my_negotiation_id` stamp, instead of first locating the chain in the caller's negotiations list. The old approach matched the list on `Number(offer.offer_id)` (→ `NaN` for the non-numeric native key) and silently rendered nothing; the history now populates even when the chain is absent from the list (the chain object is synthesized from the latest revision for the status/counter/withdraw controls).)_
+
+_Last updated: 2026-06-11b (OTC options route id fix — every `/otc/options/:id/...` route (the `POST .../bid`, per-listing negotiations/timeline, per-chain counter/accept/reject/withdraw, listing cancel) and the single-offer detail now address a listing by its **stable surrogate id** — the live discovery feed's `id` field (`local_id` under the older spec name) — never the native `offer_id`, which for folded-in remote listings is a non-numeric key like `"ps:333:client-1:AAPL"` (so `Number(offer_id)` would be `NaN`). Added `id`/`local_id` to `OtcOptionRow` and a `getListingRouteId(row)` helper (`views/otcOptions/lib/listingId.ts`, returns `Number(row.id ?? row.local_id)`) used by `OtcOptionsView` (bid), `OfferActivityPanel`, and `BidderActivityPanel`; `offer_id` is retained only for display and native-id chain matching against a negotiation's `parent_offer_id`.)_
+
+_Last updated: 2026-06-11 (OTC hub trimmed to two tabs — removed the legacy stock-offers "Market" portal (`OtcPortalView` / `otcPortal` module, its `useOtc`/`lib/api/otc`/`types/otc`/`otc-fixtures` data layer, and the buy-driven SAGA Cypress scenarios). The options marketplace is now the default surface and its tab is relabelled "Market" (route stays `/otc/options`; `/otc` and `/otc/market` redirect there). Removed the **Make Public** holding action and its full chain (`MakePublicDialog`, `useMakePublic`, `makeHoldingPublic`, `MakePublic*`/`OtcStockOffer*` types, and the related Cypress assertions). The OTC Options marketplace table (`OtcOptionsTable`) now shows the caller's own **latest bid** (the negotiation chain's current/newest-revision strike & premium) in the Strike/Premium columns for offers they've bid on, falling back to the listing terms otherwise.)_
+
 ---
 
 ## Table of Contents
@@ -164,10 +170,6 @@ src/
 │   │   ├── LoadingSpinner.tsx                     # Existing
 │   │   ├── PaginationControls.tsx                 # Existing
 │   │   └── ProtectedRoute.tsx + .test.tsx         # Existing
-│   ├── otc/
-│   │   ├── OtcOffersTable.tsx + .test.tsx          # OTC offers list with Buy action
-│   │   ├── BuyOtcDialog.tsx + .test.tsx            # Dialog to buy an OTC offer (client variant)
-│   │   └── BuyOnBehalfOtcDialog.tsx + .test.tsx    # Dialog to buy on behalf of a client (employee variant)
 │   ├── funds/
 │   │   ├── FundsTable.tsx + .test.tsx              # Discovery table; rows linked to /funds/:id
 │   │   ├── FundDetailsPanel.tsx + .test.tsx        # Secondary "Fund details" card (manager via useEmployee)
@@ -185,9 +187,8 @@ src/
 │   │   ├── ActuaryPerformanceTable.tsx + .test.tsx # Sorted by realised_profit_rsd desc
 │   │   └── BankFundPositionsTable.tsx              # Linked to /funds/:id with Invest/Redeem actions
 │   ├── portfolio/
-│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Make Public/Exercise actions
+│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Sell/Exercise actions
 │   │   ├── HoldingsTable.tsx + .test.tsx      # Alternative holdings table variant
-│   │   ├── MakePublicDialog.tsx + .test.tsx   # Dialog to set holding public quantity
 │   │   ├── SellOrderDialog.tsx + .test.tsx    # Dialog to create sell order from portfolio
 │   │   ├── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
 │   │   ├── WatchlistPanel.tsx + .test.tsx     # Favorites tab: list dropdown, New list, delete, items
@@ -285,7 +286,6 @@ src/
 │   ├── AdminOrdersPage.tsx + .test.tsx
 │   ├── TaxPage.tsx + .test.tsx
 │   ├── TaxTrackingPage.tsx + .test.tsx   # (not yet routed)
-│   ├── OtcPortalPage.tsx + .test.tsx     # /otc — role-aware: clients use BuyOtcDialog, employees use BuyOnBehalfOtcDialog
 │   ├── FundsDiscoveryPage.tsx            # /funds — search + active-only + InvestInFundDialog
 │   ├── FundDetailsPage.tsx               # /funds/:id — hero cards + NAV chart + allocation pie + risk metrics + details + holdings + Invest
 │   ├── FundPortfolioView.tsx             # /funds/:id/portfolio — portfolio-style page (summary + perf + enriched holdings)
@@ -338,7 +338,6 @@ src/
 │   ├── usePortfolio.ts + .test.ts    # React Query: portfolio, holdings, exercise hooks
 │   ├── useWatchlist.ts + .test.ts    # React Query: named watchlists + items + membership hooks
 │   ├── useTax.ts + .test.ts          # React Query: tax records + collect hooks
-│   ├── useOtc.ts + .test.ts          # React Query: OTC offers + buy hooks
 │   ├── useRoles.ts                   # React Query: roles CRUD hooks
 │   ├── usePermissions.ts             # React Query: permissions + employee role/permission assignment
 │   ├── useFees.ts                    # React Query: transfer fees CRUD hooks
@@ -370,7 +369,6 @@ src/
 │   │   ├── portfolio.ts + .test.ts  # Portfolio API calls (holdings, make public, exercise)
 │   │   ├── watchlist.ts + .test.ts  # Named watchlist API calls (lists + items)
 │   │   ├── tax.ts + .test.ts        # Tax API calls (records, collect)
-│   │   ├── otc.ts + .test.ts        # OTC API calls (offers, buy)
 │   │   ├── fees.ts                  # Transfer fees API calls (CRUD)
 │   │   ├── limits.ts                # Employee/client limits + template API calls
 │   │   └── permissions.ts + .test.ts # Permissions API + employee role/permission assignment
@@ -407,7 +405,6 @@ src/
 │   ├── portfolio.ts                 # Holding, PortfolioSummary, PortfolioFilters types
 │   ├── watchlist.ts                 # WatchlistItem, Watchlist, WatchlistsResponse, CreateWatchlistPayload types
 │   ├── tax.ts                       # TaxRecord, TaxFilters, CollectTaxResponse types
-│   ├── otc.ts                       # OtcOffer, OtcOfferListResponse, OtcBuyRequest, OtcFilters types
 │   ├── fee.ts                       # TransferFee, FeeListResponse, CreateFeePayload, UpdateFeePayload types
 │   ├── limits.ts                    # EmployeeLimits, ClientLimits, LimitTemplate, update payload types
 │   └── verification.ts              # Verification interfaces
@@ -596,8 +593,8 @@ src/
 ### PortfolioPage
 - Fetches holdings via `usePortfolio(filters)` and summary via `usePortfolioSummary()`.
 - Renders `PortfolioSummaryCard` + security_type filter + `HoldingTable` + pagination.
-- Actions: Make Public (opens `MakePublicDialog`), Exercise (for options).
-- Make Public uses `useMakePublic` mutation; Exercise uses `useExerciseOption` mutation.
+- Actions: Sell (navigates to the sell-order page), Exercise (for option holdings).
+- Exercise uses `useExerciseOption` mutation. (The former "Make Public" action and its `MakePublicDialog`/`useMakePublic`/`makeHoldingPublic` chain were removed.)
 - Tabs (URL-synced via `?tab=`): My Holdings, My Funds, My Price Alerts, Favorites, and **Recurring Orders** (`?tab=recurring-orders`). The Recurring Orders tab renders `RecurringOrdersTable` from `useRecurringOrders()` with Pause/Resume/Cancel wired to `usePause/Resume/CancelRecurringOrder` mutations. The **Favorites** tab renders `WatchlistPanel` — a list dropdown (default shown as "Favorites"), a "New list" button, per-list delete, and the selected list's `FavoritesTable` (named watchlists via `/me/watchlists`).
 
 ### AdminOrdersPage
@@ -657,11 +654,10 @@ src/
 - **Remove** confirms via dialog before `DELETE /api/v3/peer-banks/:id`.
 - API: `lib/api/peerBanks.ts`. Hooks: `usePeerBanks`, `useCreatePeerBank`, `useUpdatePeerBank`, `useDeletePeerBank` (`hooks/usePeerBanks.ts`). Types: `types/peerBank.ts`.
 
-### OtcPortalPage
-- OTC trading portal for clients.
-- Fetches OTC offers via `useOtcOffers()`; fetches client accounts via `useClientAccounts()`.
-- Renders `OtcOffersTable`. Selecting an offer opens `BuyOtcDialog` to specify quantity and account.
-- Buy action uses `useBuyOtcOffer` mutation; invalidates `['otc-offers']` and `['portfolio']`.
+### OTC hub (`OtcView`)
+- Single sidebar entry at `/otc`; renders a tab strip + animated `<Outlet/>`.
+- Two tabs: **Market** (→ `/otc/options`, the `OtcOptionsView` marketplace, default surface) and **Contracts** (→ `/otc/contracts`, `OtcContractsView`).
+- The legacy stock-offers portal (formerly the "Market" tab / `OtcPortalView` at `/otc/market`) was removed; `/otc/market` now redirects to `/otc/options`, and `/otc` redirects to `/otc/options`.
 
 ### TaxTrackingPage _(created, not yet routed)_
 - Alternative tax tracking page (complements `TaxPage`).
@@ -789,7 +785,7 @@ src/
 ### Stock Exchange Components
 
 **StockExchangeTable** (`components/stockExchanges/StockExchangeTable.tsx`)
-- Displays stock exchanges in a Shadcn `Table` with columns: Name, Acronym, MIC Code, Country, Currency, Time Zone.
+- Displays stock exchanges in a Shadcn `Table` with columns: Name, Acronym, MIC Code, Country, Currency, Time Zone, Working ("Yes"/"No" from the `is_open` flag — whether the exchange is currently operating).
 - Props: `exchanges: StockExchange[]`.
 - Time zone displayed as `UTC+/-X` format.
 
@@ -867,10 +863,6 @@ src/
 **HoldingsTable** (`components/portfolio/HoldingsTable.tsx`)
 - Alternative holdings table variant (complements `HoldingTable`).
 
-**MakePublicDialog** (`components/portfolio/MakePublicDialog.tsx`)
-- Dialog to set a holding's public quantity.
-- Props: `open`, `holding: Holding`, `onClose`, `onConfirm(quantity: number)`.
-
 **SellOrderDialog** (`components/portfolio/SellOrderDialog.tsx`)
 - Dialog to pre-fill and submit a sell order directly from the portfolio view.
 
@@ -901,16 +893,14 @@ src/
 
 ---
 
-### OTC Components
+### OTC Options Components
 
-**OtcOffersTable** (`components/otc/OtcOffersTable.tsx`)
-- Displays OTC offers. Columns: Ticker, Name, Type, Quantity, Price, Actions.
-- Props: `offers: OtcOffer[]`, `onBuy: (offer: OtcOffer) => void`.
+**OtcOptionsTable** (`views/otcOptions/components/OtcOptionsTable.tsx`)
+- Marketplace table of OTC option offers. Columns: Ticker, Direction, Qty, Strike, Premium, Best Bid/Ask, Bidders, Settles, Bank, Action.
+- For offers the caller has bid on (`my_negotiation_id` matching a chain in the optional `myBids` map), the **Strike** and **Premium** columns show the caller's own latest bid (the chain's current, newest-revision terms) instead of the owner's listing terms; rows with no bid show the listing terms.
+- Props: `rows: OtcOptionRow[]`, `forceOwn?`, `myBids?: Map<number, { strike_price; premium }>`, `onBid`, `onActivity`, `onRowOpen`.
 
-**BuyOtcDialog** (`components/otc/BuyOtcDialog.tsx`)
-- Shadcn Dialog to buy an OTC offer. Fields: quantity, account selector.
-- Props: `open`, `onOpenChange`, `offer: OtcOffer`, `accounts: Account[]`.
-- Submits via `useBuyOtcOffer` mutation.
+_(The legacy stock-offers portal components — `OtcOffersTable`, `BuyOtcDialog`, `BuyOnBehalfOtcDialog`, `BuyRemoteOtcDialog`, `OtcPeersStatusBanner` — were removed along with the `otcPortal` module.)_
 
 ---
 
@@ -1180,12 +1170,6 @@ Errors are surfaced to the user through one canonical pipeline. **No silent fail
 | `markNotificationRead(id)` | POST | `/me/notifications/{id}/read` |
 | `markAllNotificationsRead()` | POST | `/me/notifications/read-all` |
 
-### OTC API (extension — `lib/api/otc.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `buyOtcOfferOnBehalf(id, payload)` | POST | `/otc/offers/{id}/buy-on-behalf` — body `{ client_id, account_id, quantity }` (employee variant) |
-
 ### Investment Funds API (`lib/api/funds.ts`)
 
 | Function | Method | Endpoint |
@@ -1292,7 +1276,6 @@ Raw `negotiation` and `revision` responses are normalized at the API boundary (`
 |---|---|---|
 | `getPortfolio(filters?)` | GET | `/api/me/portfolio` |
 | `getPortfolioSummary()` | GET | `/api/me/portfolio/summary` |
-| `makeHoldingPublic(id, payload)` | POST | `/api/me/portfolio/{id}/public` |
 | `exerciseOption(id)` | POST | `/api/me/portfolio/{id}/exercise` |
 
 ### Watchlist API (`lib/api/watchlist.ts`)
@@ -1314,13 +1297,6 @@ Raw `negotiation` and `revision` responses are normalized at the API boundary (`
 |---|---|---|
 | `getTaxRecords(filters?)` | GET | `/api/tax` |
 | `collectTaxes()` | POST | `/api/tax/collect` |
-
-### OTC API (`lib/api/otc.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `getOtcOffers(filters?)` | GET | `/api/otc/offers` — supports `page`, `page_size`, `security_type`, `ticker` query params |
-| `buyOtcOffer(id, payload)` | POST | `/api/otc/offers/{id}/buy` — body `{ quantity, account_id }` |
 
 ### Fees API (`lib/api/fees.ts`)
 
@@ -1377,7 +1353,6 @@ Raw `negotiation` and `revision` responses are normalized at the API boundary (`
 | `useUnreadNotificationCount()` | React Query | Fetch unread count; query key: `['notifications', 'unread-count']`; polls every 60s while tab is visible |
 | `useMarkNotificationRead()` | React Query | Mutation: POST mark single notification read; invalidates `['notifications']` |
 | `useMarkAllNotificationsRead()` | React Query | Mutation: POST mark all read; invalidates `['notifications']` |
-| `useBuyOtcOfferOnBehalf()` | React Query | Mutation: employee POST `/otc/offers/:id/buy-on-behalf`; invalidates `['otc-offers']` |
 | `useFunds(filters?)` | React Query | List funds; `['funds', filters]` |
 | `useFund(id)` | React Query | Fund detail; `['funds', id]`, disabled when id is null |
 | `useMyFundPositions()` | React Query | `['funds', 'me']` |
@@ -1410,7 +1385,6 @@ Raw `negotiation` and `revision` responses are normalized at the API boundary (`
 | `useCancelRecurringOrder()` | React Query | Mutation: cancel a template (POST `/me/recurring-orders/:id/cancel`); invalidates `['recurring-orders']` |
 | `usePortfolio(filters?)` | React Query | Fetch portfolio holdings; query key: `['portfolio', filters]` |
 | `usePortfolioSummary()` | React Query | Fetch portfolio summary; query key: `['portfolio-summary']` |
-| `useMakePublic()` | React Query | Mutation: make holding public; invalidates `['portfolio']` |
 | `useExerciseOption()` | React Query | Mutation: exercise option; invalidates `['portfolio']` |
 | `useWatchlists()` | React Query | List the caller's named watchlists; query key: `['watchlists']` |
 | `useWatchlistItems(watchlistId, filters?)` | React Query | Fetch one list's items; key `['watchlist-items', id, filters]`; disabled when `watchlistId == null` |
@@ -1421,8 +1395,6 @@ Raw `negotiation` and `revision` responses are normalized at the API boundary (`
 | `useWatchlistMembership()` | React Query | `useQueries` over every list, unioned into a `Set<number>` of listing ids in any list (drives the filled-heart state) |
 | `useTaxRecords(filters?)` | React Query | Fetch tax records; query key: `['tax', filters]` |
 | `useCollectTaxes()` | React Query | Mutation: collect taxes; invalidates `['tax']` |
-| `useOtcOffers(filters?)` | React Query | Fetch OTC offers; query key: `['otc-offers', filters]` |
-| `useBuyOtcOffer()` | React Query | Mutation: buy OTC offer; invalidates `['otc-offers']` + `['portfolio']` |
 | `useUpdateOtcOption()` | React Query | Mutation (OTC Options module): PUT `/me/otc/options/:id` with `{ quantity }`; onSuccess toasts "Amount updated" + invalidates OTC options lists; no custom onError (global toast) |
 | `useRoles()` | React Query | Fetch roles; query key: `['roles']` |
 | `useCreateRole()` | React Query | Mutation: create role; invalidates `['roles']` |
@@ -1566,8 +1538,8 @@ SetApprovalPayload   { need_approval: boolean }
 ### Stock Exchange Types (`types/stockExchange.ts`)
 
 ```typescript
-StockExchange        { id: number; exchange_name: string; exchange_acronym: string;
-                       exchange_mic_code: string; polity: string; currency: string; time_zone: string }
+StockExchange        { id: number; name: string; acronym: string; mic_code: string;
+                       polity: string; currency: string; time_zone: string; is_open: boolean }
 StockExchangeListResponse  { exchanges: StockExchange[]; total_count: number }
 StockExchangeFilters       { page?: number; page_size?: number; search?: string }
 TestingModeResponse        { testing_mode: boolean }
@@ -1642,7 +1614,6 @@ PortfolioSummary     { total_value, total_cost, total_profit_loss, total_profit_
                        holdings_count }
 HoldingListResponse  { holdings: Holding[]; total_count: number }
 PortfolioFilters     { page?, page_size?, security_type? }
-MakePublicPayload    { quantity: number }
 ```
 
 ### Watchlist Types (`types/watchlist.ts`)
@@ -1669,15 +1640,6 @@ TaxRecord            { id, user_type: 'client'|'actuary', user_name, user_email,
 TaxListResponse      { tax_records: TaxRecord[]; total_count: number }
 TaxFilters           { page?, page_size?, user_type?, search? }
 CollectTaxResponse   { collected_count, total_collected_rsd, failed_count }
-```
-
-### OTC Types (`types/otc.ts`)
-
-```typescript
-OtcOffer             { id, ticker, name, security_type: 'stock'|'futures', quantity, price, seller_id }
-OtcOfferListResponse { offers: OtcOffer[]; total_count: number }
-OtcBuyRequest        { quantity: number; account_id: number }
-OtcFilters           { page?, page_size?, security_type?, ticker? }
 ```
 
 ### OTC Options View-Module Types (`views/otcOptions/types.ts`)
@@ -1801,16 +1763,16 @@ Email uniqueness is enforced by the backend (no dedicated check endpoint). When 
 
 ## 12. Test Coverage
 
-_Measured: 2026-06-11 — 240 test suites, 1419 tests, all passing._
+_Measured: 2026-06-11 — 230 test suites, 1359 tests, all passing._
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **79.61%** |
-| **Branches** | **65.69%** |
-| **Functions** | **63.03%** |
-| **Lines** | **81.22%** |
+| **Statements** | **79.43%** |
+| **Branches** | **65.35%** |
+| **Functions** | **62.64%** |
+| **Lines** | **80.96%** |
 
 > The named-watchlist feature is fully unit-tested: `lib/api/watchlist.ts`, `hooks/useWatchlist.ts`, and `lib/utils/watchlist.ts` at 100%; `WatchlistButton` 100%, `AddToWatchlistDialog`/`CreateWatchlistDialog` ~94% statements, `WatchlistPanel` ~84%.
 
@@ -1859,7 +1821,6 @@ _Measured: 2026-06-11 — 240 test suites, 1419 tests, all passing._
 | `pages/TaxPage.tsx` | ~90% | ~92% | ~67% | ~90% |
 | `pages/AdminOrdersPage.tsx` | ~90% | ~92% | ~67% | ~90% |
 | `pages/MyOrdersPage.tsx` | ~90% | 100% | ~67% | ~90% |
-| `pages/OtcPortalPage.tsx` | ~79% | 60% | 25% | ~82% |
 | `pages/TaxTrackingPage.tsx` | ~79% | ~57% | ~33% | ~87% |
 | `pages/PortfolioPage.tsx` | ~85% | 100% | 25% | ~85% |
 | `pages/AdminFeesPage.tsx` | low — new, no unit tests | — | — | — |

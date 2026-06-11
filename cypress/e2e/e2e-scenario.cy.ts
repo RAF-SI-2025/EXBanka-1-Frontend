@@ -351,9 +351,9 @@ describe('E2E Scenario: Kompletan radni dan na berzi', () => {
     cy.contains('td', 'stock').should('be.visible')
     cy.contains('1 holdings').scrollIntoView().should('be.visible')
 
-    // Holding is private — Make Public button visible
-    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
-    // Sell button also present
+    // The Make Public action was removed; the Sell action is the surviving
+    // holding action.
+    cy.contains('button', 'Make Public').should('not.exist')
     cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
   })
 

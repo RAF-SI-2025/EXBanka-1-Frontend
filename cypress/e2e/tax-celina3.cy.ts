@@ -11,10 +11,12 @@ describe('Celina3 - Takse', () => {
           {
             id: 1, name: 'New York Stock Exchange', acronym: 'NYSE',
             mic_code: 'XNYS', polity: 'United States', currency: 'USD', time_zone: '-5',
+            is_open: true,
           },
           {
             id: 2, name: 'NASDAQ', acronym: 'NASDAQ',
             mic_code: 'XNAS', polity: 'United States', currency: 'USD', time_zone: '-5',
+            is_open: false,
           },
         ],
         total_count: 2,
@@ -176,6 +178,7 @@ describe('Celina3 - Takse', () => {
     cy.contains('th', 'MIC Code').should('be.visible')
     cy.contains('th', 'Currency').should('be.visible')
     cy.contains('th', 'Time Zone').should('be.visible')
+    cy.contains('th', 'Working').should('be.visible')
 
     cy.contains('New York Stock Exchange').should('be.visible')
     cy.contains('NYSE').should('be.visible')

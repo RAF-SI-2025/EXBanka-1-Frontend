@@ -2,9 +2,12 @@
 // (Scenarios 14–28)
 //
 // FE routes:
-//   /otc/market    → OtcPortalView    (offers marketplace, buy/negotiate)
-//   /otc/options   → OtcOptionsView   ("Aktivne ponude" — listings & negotiations)
+//   /otc/options   → OtcOptionsView   ("Market" tab — listings & negotiations,
+//                                       the OTC hub's default surface)
 //   /otc/contracts → OtcContractsView ("Sklopljeni ugovori" — signed contracts)
+//
+// The legacy stock-offers portal (formerly the "Market" tab at /otc/market)
+// has been removed; that URL now redirects to /otc/options.
 //
 // NOTE on access control: the /otc/* routes are NOT permission-gated in the
 // frontend router — any authenticated user reaches the shell, and OTC trading
@@ -17,21 +20,6 @@ const RSD_ACCOUNT = {
   account_name: 'Tekući račun',
   currency_code: 'RSD',
   available_balance: 1_000_000,
-}
-
-const LOCAL_OFFER = {
-  kind: 'local',
-  id: 10,
-  bank_code: 'SI-LOCAL',
-  seller_id: 99, // not the logged-in client (id 42) → "Buy" button shows
-  seller_name: 'Prodavac d.o.o.',
-  seller_type: 'client',
-  security_type: 'stock',
-  ticker: 'AAPL',
-  name: 'Apple Inc.',
-  quantity: 50,
-  price_per_unit: '20000.00',
-  direction: 'sell',
 }
 
 const offersBody = (offers: unknown[]) => ({
@@ -84,42 +72,9 @@ const stubOptionsLists = (allRows: unknown[], myRows: unknown[] = []) => {
 }
 
 describe('Celina 4 — OTC Trgovina: Pristup i prikaz', () => {
-  // ── Scenario 14: Klijent sa permisijom vidi OTC portal ────────────────────
-  it('Scenario 14 — client with trading access sees the OTC portal and offers list', () => {
-    cy.intercept('GET', '**/api/v3/otc/stocks*', offersBody([LOCAL_OFFER])).as('getOffers')
-    cy.intercept('GET', '**/api/v3/me/accounts', {
-      body: { accounts: [RSD_ACCOUNT], total: 1 },
-    })
-
-    cy.loginAsClient('/otc/market')
-    cy.wait('@getOffers')
-
-    cy.contains('h1', 'OTC Trading Portal').should('be.visible')
-    // Same securities-style tabular layout: ticker / name / type / source / qty / price
-    cy.contains('th', 'Ticker').should('be.visible')
-    cy.contains('th', 'Name').should('be.visible')
-    cy.contains('th', 'Type').should('be.visible')
-    cy.contains('th', 'Quantity').should('be.visible')
-    cy.contains('th', 'Price').should('be.visible')
-    cy.contains('td', 'AAPL').should('be.visible')
-    cy.contains('button', 'Buy').should('be.visible')
-  })
-
-  // ── Scenario 15: Klijent bez permisije nema pristup ───────────────────────
-  // The route is open in the FE; OTC access is backend-enforced. With the offers
-  // endpoint rejecting (403), no tradable offers render.
-  it('Scenario 15 — without trading access the offers endpoint is denied and nothing is tradable', () => {
-    cy.intercept('GET', '**/api/v3/otc/stocks*', {
-      statusCode: 403,
-      body: { message: 'Forbidden' },
-    }).as('getOffers')
-
-    cy.loginAsClient('/otc/market')
-    cy.wait('@getOffers')
-
-    // No offer rows / Buy actions are available to an unauthorized client.
-    cy.contains('button', 'Buy').should('not.exist')
-  })
+  // Scenarios 14 & 15 (the legacy stock-offers "Market" portal at /otc/market)
+  // were removed along with that feature — the OTC hub now opens straight onto
+  // the options marketplace ("Market" tab) at /otc/options.
 
   // ── Scenario 16: Supervizor vidi OTC portal i može kreirati ponudu ────────
   it('Scenario 16 — supervisor sees OTC options and can create a listing for negotiation', () => {

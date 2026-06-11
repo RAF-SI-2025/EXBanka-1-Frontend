@@ -6,6 +6,8 @@ export interface StockExchange {
   polity: string
   currency: string
   time_zone: string
+  // Whether the exchange is currently operating (within trading hours).
+  is_open: boolean
 }
 
 export interface StockExchangeListResponse {
