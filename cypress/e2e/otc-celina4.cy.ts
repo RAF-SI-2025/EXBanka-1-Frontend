@@ -48,6 +48,9 @@ const offersBody = (offers: unknown[]) => ({
 const optionRow = (overrides: Record<string, unknown> = {}) => ({
   kind: 'local',
   bank_code: 'SI-LOCAL',
+  // `local_id` is the addressable surrogate the FE uses on /otc/options/:id
+  // routes (spec §47.2). Local rows carry it; `offer_id` is the peer-native id.
+  local_id: 1,
   offer_id: 1,
   seller_id: 99,
   direction: 'sell_initiated',
@@ -63,6 +66,9 @@ const optionRow = (overrides: Record<string, unknown> = {}) => ({
   active_chains_count: 0,
   me_owner: false,
   my_negotiation_id: null,
+  // Listing carries its own starting strike/premium. When `false`, the table
+  // shows a "no starting position" placeholder across those two columns.
+  has_preset_terms: true,
   ...overrides,
 })
 
@@ -72,6 +78,9 @@ const stubOptionsLists = (allRows: unknown[], myRows: unknown[] = []) => {
   cy.intercept('GET', '**/api/v3/me/accounts', {
     body: { accounts: [RSD_ACCOUNT], total: 1 },
   }).as('getMyAccounts')
+  cy.intercept('PUT', '**/api/v3/me/otc/options/*', { statusCode: 200, body: {} }).as(
+    'updateOtcOption'
+  )
 }
 
 describe('Celina 4 — OTC Trgovina: Pristup i prikaz', () => {
@@ -204,6 +213,27 @@ describe('Celina 4 — OTC Pregovaranje', () => {
 
     cy.contains('button', 'My').click()
     cy.contains('button', 'Activity').should('be.visible')
+  })
+
+  // ── Scenario 16b: Vlasnik listinga menja iznos akcija via PUT /me/otc/options/:id
+  it('Scenario 16b — listing owner re-sizes the amount via PUT /me/otc/options/:id', () => {
+    stubOptionsLists([optionRow({ me_owner: true })])
+    cy.intercept('GET', '**/api/v3/otc/options/*/negotiations', {
+      body: { negotiations: [], total: 0 },
+    })
+    cy.intercept('GET', '**/api/v3/otc/options/*/timeline', {
+      body: { offer: {}, timeline: [] },
+    })
+
+    cy.loginAsClient('/otc/options')
+    cy.wait('@getAllOptions')
+
+    cy.contains('button', 'Activity').click()
+    cy.contains('button', 'Edit').click()
+    cy.get('#edit-amount').clear().type('25')
+    cy.contains('button', 'Save').click()
+
+    cy.wait('@updateOtcOption').its('request.body').should('deep.equal', { quantity: '25' })
   })
 
   // ── Scenario 21: Prodavac ne može imati ugovore za više akcija nego poseduje
@@ -348,7 +378,30 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
     }).as('getContracts')
     cy.intercept('POST', '**/api/v3/otc/contracts/26/exercise', {
       statusCode: 200,
-      body: { status: 'EXERCISED' },
+      // The API normalizes the returned `contract` (and `holding`), so the mock
+      // must mirror the real response shape — a bare { status } would make
+      // normalizeContract throw and route the mutation to the error path.
+      body: {
+        contract: {
+          id: 26,
+          status: 'EXERCISED',
+          ticker: 'AAPL',
+          quantity: 10,
+          strike_price: '150.00',
+          premium_paid: '5.00',
+          settlement_date: '2026-12-31',
+          buyer_owner_type: 'client',
+          buyer_owner_id: 42,
+          seller_owner_type: 'client',
+          seller_owner_id: 99,
+        },
+        holding: {
+          id: 1,
+          stock_id: 1,
+          quantity: '10',
+          owner: { owner_type: 'client', owner_id: 42 },
+        },
+      },
     }).as('exercise')
 
     cy.loginAsClient('/otc/contracts')

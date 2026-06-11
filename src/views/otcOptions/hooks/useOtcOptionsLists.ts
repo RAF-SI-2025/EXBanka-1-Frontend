@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { otcOptionsApi } from '@/views/otcOptions/api/otcOptionsApi'
+import { toPrincipalId } from '@/views/otcOptions/lib/actor'
 import type {
   OtcNegotiationRevision,
   OtcOptionsListFilters,
@@ -88,7 +89,9 @@ export function useOtcOfferTimeline(offerId: number | null): {
     premium: e.premium,
     settlement_date: e.settlement_date,
     action_by_principal_type: e.action_by_principal_type,
-    action_by_principal_id: e.action_by_principal_id,
+    action_by_principal_id: toPrincipalId(
+      e.action_by_principal_id ?? e.action_by_owner_id ?? e.action_by_id ?? e.actor_id
+    ),
     created_at: e.created_at,
     chain_id: e.negotiation_id,
     chain_bidder: { owner_type: e.bidder_owner_type, owner_id: e.bidder_owner_id },

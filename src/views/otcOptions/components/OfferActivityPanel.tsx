@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Account } from '@/types/account'
+import { formatAccountOption } from '@/lib/utils/format'
 import type {
   OtcNegotiation,
   OtcOptionRow,
@@ -31,6 +32,7 @@ import {
   useCancelOtcOption,
   useCounterNegotiation,
   useRejectNegotiation,
+  useUpdateOtcOption,
 } from '@/views/otcOptions/hooks/useOtcOptionMutations'
 import {
   useOtcOfferTimeline,
@@ -40,6 +42,7 @@ import {
 import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
 import { OfferHistoryTable } from '@/views/otcOptions/components/OfferHistoryTable'
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
+import { resolveListingId } from '@/views/otcOptions/lib/listingId'
 
 interface Props {
   offer: OtcOptionRow
@@ -50,7 +53,7 @@ interface Props {
 }
 
 export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }: Props) {
-  const offerId = Number(offer.offer_id)
+  const offerId = resolveListingId(offer)
   // Bidders table renders the current-state-per-chain snapshot directly from
   // the listing-scoped /otc/options/:id/negotiations response.
   const { data, isLoading, error } = useOtcOptionNegotiations(offerId)
@@ -107,14 +110,14 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
           </Button>
           <div className="min-w-0">
             <h2 className="text-xl font-semibold truncate">
-              {offer.ticker} · #{String(offer.offer_id)}
+              {offer.ticker} · #{String(offerId)}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {offer.direction === 'sell_initiated' ? 'Sell listing' : 'Buy listing'} ·{' '}
-              {offer.amount} @ {offer.strike_price} {offer.strike_currency} · premium{' '}
-              {offer.premium} {offer.premium_currency} · settles{' '}
-              {offer.settlement_date?.slice(0, 10)}
+              {offer.direction === 'sell_initiated' ? 'Sell listing' : 'Buy listing'} · strike{' '}
+              {offer.strike_price} {offer.strike_currency} · premium {offer.premium}{' '}
+              {offer.premium_currency} · settles {offer.settlement_date?.slice(0, 10)}
             </p>
+            <AmountEditor offerId={offerId} amount={offer.amount} />
           </div>
         </div>
         <Button
@@ -314,6 +317,7 @@ function AcceptRow({
   submitting: boolean
 }) {
   const [accId, setAccId] = useState<number | undefined>(accounts[0]?.id)
+  const selectedAccount = accounts.find((a) => a.id === accId)
   return (
     <TableRow className="bg-muted/30">
       <TableCell colSpan={7}>
@@ -322,12 +326,14 @@ function AcceptRow({
             <Label htmlFor={`accept-acc-${neg.id}`}>Settlement account</Label>
             <Select value={accId?.toString() ?? ''} onValueChange={(v) => setAccId(Number(v))}>
               <SelectTrigger id={`accept-acc-${neg.id}`} className="w-full">
-                <SelectValue placeholder="Select account" />
+                <SelectValue placeholder="Select account">
+                  {selectedAccount ? formatAccountOption(selectedAccount) : null}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((a) => (
                   <SelectItem key={a.id} value={a.id.toString()}>
-                    {a.account_name} ({a.currency_code})
+                    {formatAccountOption(a)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -419,5 +425,64 @@ function CounterRow({
         </div>
       </TableCell>
     </TableRow>
+  )
+}
+
+function AmountEditor({ offerId, amount }: { offerId: number; amount: number | string }) {
+  const update = useUpdateOtcOption()
+  const [editing, setEditing] = useState(false)
+  const [value, setValue] = useState(String(amount))
+
+  if (!editing) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+        <span>Amount: {amount}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 px-2"
+          onClick={() => {
+            setValue(String(amount))
+            setEditing(true)
+          }}
+        >
+          Edit
+        </Button>
+      </div>
+    )
+  }
+
+  const numeric = Number(value)
+  const valid = value.trim() !== '' && !Number.isNaN(numeric) && numeric > 0
+
+  return (
+    <div className="flex items-center gap-2 mt-1">
+      <Label htmlFor="edit-amount" className="text-xs">
+        Amount
+      </Label>
+      <Input
+        id="edit-amount"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="h-7 w-28"
+      />
+      <Button
+        size="sm"
+        className="h-7"
+        disabled={!valid || update.isPending}
+        onClick={() =>
+          update.mutate(
+            { offerId, payload: { quantity: value } },
+            { onSuccess: () => setEditing(false) }
+          )
+        }
+      >
+        {update.isPending ? 'Saving…' : 'Save'}
+      </Button>
+      <Button size="sm" variant="ghost" className="h-7" onClick={() => setEditing(false)}>
+        Cancel
+      </Button>
+    </div>
   )
 }

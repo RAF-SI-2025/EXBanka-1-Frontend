@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/table'
 import type { RevisionWithChain } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import type { OtcParty } from '@/views/otcOptions/types'
+import { formatActor } from '@/views/otcOptions/lib/actor'
 
 interface Props {
   revisions: RevisionWithChain[]
@@ -18,18 +19,11 @@ interface Props {
 function chainBidderLabel(r: RevisionWithChain): string {
   if (r.chain_bidder_name) return r.chain_bidder_name
   if (!r.chain_bidder) return '—'
-  return `${r.chain_bidder.owner_type}-${r.chain_bidder.owner_id ?? '?'}`
+  return formatActor(r.chain_bidder.owner_type, r.chain_bidder.owner_id)
 }
 
 function actorLabel(r: RevisionWithChain, currentPrincipal: OtcParty | null | undefined): string {
-  if (
-    currentPrincipal &&
-    currentPrincipal.owner_type === r.action_by_principal_type &&
-    currentPrincipal.owner_id === r.action_by_principal_id
-  ) {
-    return 'You'
-  }
-  return `${r.action_by_principal_type}-${r.action_by_principal_id}`
+  return formatActor(r.action_by_principal_type, r.action_by_principal_id, currentPrincipal)
 }
 
 export function OfferHistoryTable({ revisions, currentPrincipal }: Props) {

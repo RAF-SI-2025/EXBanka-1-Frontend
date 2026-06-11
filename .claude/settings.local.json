@@ -27,7 +27,30 @@
       "Bash(npx cypress:*)",
       "Bash(find /c/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/cypress -type f -name *.cy.ts)",
       "Bash(find C:/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/src/__tests__ -name *.ts -o -name *.tsx)",
-      "Bash(find C:/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/src -name *.test.ts -o -name *.test.tsx)"
+      "Bash(find C:/Users/Admin/Desktop/FrontSI/EXBanka-1-Frontend-Mish/src -name *.test.ts -o -name *.test.tsx)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Nevena\\\\Desktop\\\\si\\\\EXBanka-1-Frontend\\\\src\\\\views\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(npx vitest *)",
+      "Bash(findstr -i \"jest\\\\|vitest\\\\|globals\")",
+      "Bash(Select-String -Pattern \"PASS|FAIL|Tests:|done|error\")",
+      "Bash(Select-Object -Last 20)",
+      "Bash(Get-Content *)",
+      "Bash(cat jest.config.*)",
+      "Bash(cat jest.config.ts)",
+      "Bash(cat jest.config.js)",
+      "PowerShell(New-Item *)",
+      "PowerShell(npm test *)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -Last 20; \"tsc exit: $LASTEXITCODE\")",
+      "PowerShell(npx prettier --check \"src/views/otcOptions/types.ts\" \"src/types/otcOption.ts\" \"src/views/otcOptions/__tests__/otcOptionsApi.test.ts\" \"src/lib/api/otcOption.test.ts\" 2>&1 | Select-Object -Last 15; \"prettier exit: $LASTEXITCODE\")",
+      "PowerShell(Out-Null *)",
+      "PowerShell(npx prettier --check \"src/views/otcOptions/types.ts\" \"src/types/otcOption.ts\" \"src/views/otcOptions/__tests__/otcOptionsApi.test.ts\" \"src/lib/api/otcOption.test.ts\" 2>&1 | Select-Object -Last 3; \"prettier exit: $LASTEXITCODE\")",
+      "PowerShell(npx prettier --check \"src/views/otcOptions/types.ts\" \"src/views/otcOptions/api/otcOptionsApi.ts\" \"src/views/otcOptions/hooks/useOtcOptionsLists.ts\" \"src/views/otcOptions/components/OfferActivityPanel.tsx\" \"src/views/otcOptions/__tests__/useOtcOfferTimeline.test.ts\" \"src/views/otcOptions/__tests__/otcOptionsApi.test.ts\" \"src/views/otcOptions/__tests__/OtcOptionsView.test.tsx\" 2>&1 | Select-Object -Last 2; \"prettier exit: $LASTEXITCODE\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\Nevena\\\\Desktop\\\\si\\\\EXBanka-1-Frontend\" -Recurse -Directory -Filter \"*otc*\")",
+      "Bash(Select-Object -ExpandProperty FullName)",
+      "Bash(xargs basename -a)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Nevena\\\\Desktop\\\\si\\\\EXBanka-1-Frontend\\\\src\\\\views\" -Recurse | Select-Object -ExpandProperty FullName | Where-Object { $_ -match 'otc|OTC' })",
+      "PowerShell($ok=$false; for\\($i=0;$i -lt 30;$i++\\){ try { $r=Invoke-WebRequest -Uri http://localhost:5173 -UseBasicParsing -TimeoutSec 2; if\\($r.StatusCode -eq 200\\){$ok=$true; break} } catch {}; Start-Sleep -Seconds 1 }; if\\($ok\\){\"DEV UP\"}else{\"DEV NOT UP\"})",
+      "PowerShell(npx cypress run --spec \"cypress/e2e/employees.cy.ts\")"
     ]
   }
 }

@@ -12,6 +12,7 @@ import {
 import { useLoanApplicationForm } from '@/hooks/useLoanApplicationForm'
 import { LOAN_TYPES, INTEREST_TYPES, EMPLOYMENT_STATUSES } from '@/lib/constants/banking'
 import type { Account } from '@/types/account'
+import { formatAccountOption } from '@/lib/utils/format'
 import type { CreateLoanRequest } from '@/types/loan'
 
 interface LoanApplicationFormProps {
@@ -103,7 +104,7 @@ export function LoanApplicationForm({
               <SelectContent>
                 {accounts.map((acc) => (
                   <SelectItem key={acc.account_number} value={acc.account_number}>
-                    {acc.account_name} ({acc.currency_code})
+                    {formatAccountOption(acc)}
                   </SelectItem>
                 ))}
               </SelectContent>

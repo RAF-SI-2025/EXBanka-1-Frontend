@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { useCreateVirtualCard } from '@/hooks/useCards'
 import { notifySuccess, notifyError } from '@/lib/errors'
 import type { Account } from '@/types/account'
+import { formatAccountOption } from '@/lib/utils/format'
 import type { CreateVirtualCardPayload, VirtualCardUsageType } from '@/types/card'
 
 interface Props {
@@ -58,7 +59,7 @@ export function CreateVirtualCardDialog({ open, onOpenChange, accounts, ownerId 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create virtual card</DialogTitle>
         </DialogHeader>
@@ -73,7 +74,7 @@ export function CreateVirtualCardDialog({ open, onOpenChange, accounts, ownerId 
             >
               {accounts.map((a) => (
                 <option key={a.id} value={a.account_number}>
-                  {a.account_name} ({a.currency_code})
+                  {formatAccountOption(a)}
                 </option>
               ))}
             </select>

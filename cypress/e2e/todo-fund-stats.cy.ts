@@ -112,7 +112,10 @@ describe('todo test — Statistika fondova', () => {
     cy.contains('Annualized return').should('be.visible')
     cy.contains('12.40%').should('be.visible')
     cy.contains('Max drawdown').should('be.visible')
-    cy.contains('Holdings').should('be.visible')
+    // Exact match targets the "Holdings" section heading (a bare cy.contains
+    // matches the earlier "Holdings value" detail label). The section sits below
+    // the fold in the scrollable main, so scroll it into view before asserting.
+    cy.contains(/^Holdings$/).scrollIntoView().should('be.visible')
   })
 
   // ── Scenario 76: Sortiranje fondova po godišnjem prinosu ───────────────────

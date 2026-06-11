@@ -6,6 +6,7 @@ export interface Stock {
   outstanding_shares: number
   dividend_yield: number
   exchange_acronym: string
+  currency: string
   price: string
   ask: string
   bid: string

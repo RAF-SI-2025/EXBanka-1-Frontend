@@ -68,6 +68,7 @@ describe('MyPriceAlertsTable', () => {
           outstanding_shares: 1,
           dividend_yield: 0,
           exchange_acronym: 'NYSE',
+          currency: 'USD',
           price: '180',
           ask: '180.10',
           bid: '179.90',

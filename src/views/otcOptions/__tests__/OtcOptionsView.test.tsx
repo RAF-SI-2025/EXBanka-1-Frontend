@@ -11,6 +11,7 @@ jest.mock('@/views/otcOptions/api/otcOptionsApi', () => ({
     listAll: jest.fn(),
     listMine: jest.fn(),
     createListing: jest.fn(),
+    updateListing: jest.fn(),
     cancelListing: jest.fn(),
     placeBid: jest.fn(),
     counter: jest.fn(),
@@ -123,6 +124,105 @@ describe('OtcOptionsView', () => {
 
     expect(await screen.findByText('AAPL')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^bid$/i })).toBeInTheDocument()
+  })
+
+  it('bids against the listing local_id (not NaN) when offer_id is absent on a local row', async () => {
+    // A real LOCAL discovery row addresses the listing by `local_id`; `offer_id`
+    // (the hosting bank's native id) is absent. Reading `offer_id` as the path
+    // id sent /otc/options/NaN/bid — this guards that regression.
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          local_id: 42,
+          seller_id: 'client-99',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          active_chains_count: 0,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.placeBid).mockResolvedValue({
+      negotiation: {
+        id: 1,
+        status: 'open',
+        bidder: { owner_type: 'client', owner_id: 5 },
+        quantity: '10',
+        strike_price: '175.50',
+        premium: '700.00',
+        settlement_date: '2026-12-31T00:00:00Z',
+        created_at: '2026-05-10T14:00:00Z',
+        updated_at: '2026-05-10T14:00:00Z',
+      },
+    })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    await userEvent.click(await screen.findByRole('button', { name: /^bid$/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /submit bid/i }))
+
+    await waitFor(() => expect(otcOptionsApi.placeBid).toHaveBeenCalled())
+    expect(otcOptionsApi.placeBid).toHaveBeenCalledWith(42, expect.any(Object))
+  })
+
+  it('bids against the listing id when the live row carries only a bare `id`', async () => {
+    // Mirrors the live /otc/options payload: the addressable surrogate arrives
+    // as a bare `id`, with no `local_id` and no `offer_id`. Reading either of
+    // those sent /otc/options/NaN/bid, which the gateway rejected with
+    // {"error":{"code":"validation_error","message":"invalid id"}}.
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          id: 42,
+          seller_id: 'client-99',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          active_chains_count: 0,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.placeBid).mockResolvedValue({
+      negotiation: {
+        id: 1,
+        status: 'open',
+        bidder: { owner_type: 'client', owner_id: 5 },
+        quantity: '10',
+        strike_price: '175.50',
+        premium: '700.00',
+        settlement_date: '2026-12-31T00:00:00Z',
+        created_at: '2026-05-10T14:00:00Z',
+        updated_at: '2026-05-10T14:00:00Z',
+      },
+    })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    await userEvent.click(await screen.findByRole('button', { name: /^bid$/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /submit bid/i }))
+
+    await waitFor(() => expect(otcOptionsApi.placeBid).toHaveBeenCalled())
+    expect(otcOptionsApi.placeBid).toHaveBeenCalledWith(42, expect.any(Object))
   })
 
   it('shows Counter on a non-owner row where the caller already has a chain', async () => {
@@ -321,5 +421,89 @@ describe('OtcOptionsView', () => {
 
     await waitFor(() => expect(accountsApi.getBankAccounts).toHaveBeenCalled())
     expect(accountsApi.getClientAccounts).not.toHaveBeenCalled()
+  })
+
+  it('lets the owner change the listing amount via PUT from the activity panel', async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          id: 42,
+          seller_id: 'client-5',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          me_owner: true,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+    jest.mocked(otcOptionsApi.updateListing).mockResolvedValue(undefined)
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    await userEvent.click(await screen.findByRole('button', { name: /activity/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /^edit$/i }))
+    const input = screen.getByLabelText(/^amount$/i)
+    await userEvent.clear(input)
+    await userEvent.type(input, '25')
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+
+    await waitFor(() =>
+      expect(otcOptionsApi.updateListing).toHaveBeenCalledWith(42, { quantity: '25' })
+    )
+  })
+
+  it('disables Save in the amount editor for a non-positive or non-numeric amount', async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          id: 42,
+          seller_id: 'client-5',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          me_owner: true,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+    jest.mocked(otcOptionsApi.updateListing).mockResolvedValue(undefined)
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    await userEvent.click(await screen.findByRole('button', { name: /activity/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /^edit$/i }))
+    const input = screen.getByLabelText(/^amount$/i)
+
+    await userEvent.clear(input)
+    await userEvent.type(input, 'abc')
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+
+    await userEvent.clear(input)
+    await userEvent.type(input, '0')
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(otcOptionsApi.updateListing).not.toHaveBeenCalled()
   })
 })

@@ -18,7 +18,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { Account } from '@/types/account'
+import { formatAccountOption } from '@/lib/utils/format'
 import type { OtcOptionRow } from '@/views/otcOptions/types'
+import { resolveListingId } from '@/views/otcOptions/lib/listingId'
 
 interface BidInput {
   account_id: number
@@ -49,7 +51,7 @@ export function PlaceBidDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Bid on {offer.ticker}</DialogTitle>
           <DialogDescription>
@@ -58,7 +60,7 @@ export function PlaceBidDialog({
           </DialogDescription>
         </DialogHeader>
         <PlaceBidForm
-          key={`${offer.bank_code}-${offer.offer_id}`}
+          key={`${offer.bank_code}-${resolveListingId(offer)}`}
           offer={offer}
           accounts={accounts}
           submitting={submitting}
@@ -104,6 +106,7 @@ function PlaceBidForm({
   onSubmit: (input: BidInput) => void
 }) {
   const [accountId, setAccountId] = useState<number | undefined>(accounts[0]?.id)
+  const selectedAccount = accounts.find((a) => a.id === accountId)
   const [quantity, setQuantity] = useState(String(offer.amount ?? ''))
   const [strike, setStrike] = useState(offer.strike_price ?? '')
   const [premium, setPremium] = useState(offer.premium ?? '')
@@ -139,12 +142,14 @@ function PlaceBidForm({
             onValueChange={(v) => setAccountId(Number(v))}
           >
             <SelectTrigger id="bid-account">
-              <SelectValue placeholder="Select account" />
+              <SelectValue placeholder="Select account">
+                {selectedAccount ? formatAccountOption(selectedAccount) : null}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {accounts.map((a) => (
                 <SelectItem key={a.id} value={a.id.toString()}>
-                  {a.account_name} ({a.currency_code})
+                  {formatAccountOption(a)}
                 </SelectItem>
               ))}
             </SelectContent>

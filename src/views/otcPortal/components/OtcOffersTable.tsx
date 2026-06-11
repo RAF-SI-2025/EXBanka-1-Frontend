@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { OtcOffer } from '@/types/otc'
+import { offerRowKey } from '@/views/otcPortal/lib/offerKey'
 import { hoverLift, rowEnter } from '@/views/shared'
 
 interface Props {
@@ -21,14 +22,6 @@ interface Props {
    * because every employee acts on behalf of the bank.
    */
   isCurrentUserEmployee?: boolean
-}
-
-function offerKey(offer: OtcOffer): string {
-  if (offer.kind === 'local') return `local-${offer.id}`
-  // Append the option surrogate id when present so a stock and an option on the
-  // same ticker from the same bank get distinct keys.
-  const suffix = offer.id != null ? `-${offer.id}` : ''
-  return `remote-${offer.bank_code}-${offer.owner_id}-${offer.ticker}${suffix}`
 }
 
 function formatPrice(offer: OtcOffer): string {
@@ -78,8 +71,8 @@ export function OtcOffersTable({ offers, onBuy, currentUserId, isCurrentUserEmpl
         </TableRow>
       </TableHeader>
       <TableBody>
-        {offers.map((offer) => (
-          <TableRow key={offerKey(offer)} className={`${hoverLift} ${rowEnter}`}>
+        {offers.map((offer, index) => (
+          <TableRow key={offerRowKey(offer, index)} className={`${hoverLift} ${rowEnter}`}>
             <TableCell className="font-medium">{offer.ticker}</TableCell>
             <TableCell>{offer.kind === 'local' ? offer.name : '—'}</TableCell>
             <TableCell>{offer.security_type}</TableCell>

@@ -51,10 +51,16 @@ export function renderWithProviders(
   return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) }
 }
 
-export function createQueryWrapper() {
+export function createQueryWrapper(preloadedState: Partial<RootState> = {}) {
   const queryClient = createQueryClient()
   queryClient.setDefaultOptions({ queries: { retry: false } })
+  const store = configureStore({
+    reducer: rootReducer,
+    preloadedState: preloadedState as RootState,
+  })
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </Provider>
   )
 }

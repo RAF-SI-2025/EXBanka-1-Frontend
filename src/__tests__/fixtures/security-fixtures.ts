@@ -8,6 +8,7 @@ export function createMockStock(overrides: Partial<Stock> = {}): Stock {
     outstanding_shares: 15000000000,
     dividend_yield: 0.006,
     exchange_acronym: 'NYSE',
+    currency: 'USD',
     price: '178.50',
     ask: '178.60',
     bid: '178.40',

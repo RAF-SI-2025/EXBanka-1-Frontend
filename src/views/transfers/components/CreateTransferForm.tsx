@@ -53,7 +53,7 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
                   }}
                   value={field.value}
                 >
-                  <SelectTrigger aria-label="Source Account">
+                  <SelectTrigger aria-label="Source Account" className="min-w-[16rem]">
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
@@ -78,7 +78,7 @@ export function CreateTransferForm({ accounts, onSubmit }: CreateTransferFormPro
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} value={field.value}>
-                  <SelectTrigger aria-label="Destination Account">
+                  <SelectTrigger aria-label="Destination Account" className="min-w-[16rem]">
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent>
