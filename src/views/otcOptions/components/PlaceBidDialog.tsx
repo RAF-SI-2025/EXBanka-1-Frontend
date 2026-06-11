@@ -21,6 +21,7 @@ import type { Account } from '@/types/account'
 import { formatAccountOption } from '@/lib/utils/format'
 import type { OtcOptionRow } from '@/views/otcOptions/types'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
+import { hasOwnNegotiationChain } from '@/views/otcOptions/lib/myNegotiation'
 
 interface BidInput {
   account_id: number
@@ -115,7 +116,13 @@ function PlaceBidForm({
     offer.settlement_date ? offer.settlement_date.slice(0, 10) : ''
   )
 
-  const { floor, floorLabel, floorSource } = computePremiumFloor(offer)
+  // The premium floor (best-bid / seller-strike) only guards a FIRST bid. Once
+  // the caller has an open chain on this listing, this submit is a *counter* —
+  // the bidder may propose any premium, so the floor does not apply.
+  const isCounter = hasOwnNegotiationChain(offer.my_negotiation_id)
+  const { floor, floorLabel, floorSource } = isCounter
+    ? { floor: null, floorLabel: '', floorSource: null as 'best_bid' | 'strike' | null }
+    : computePremiumFloor(offer)
   const premiumNum = Number(premium)
   const premiumIsNumber = premium !== '' && Number.isFinite(premiumNum)
   const premiumMeetsFloor = floor == null || !premiumIsNumber || premiumNum >= floor

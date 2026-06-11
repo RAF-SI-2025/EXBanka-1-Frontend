@@ -106,6 +106,88 @@ describe('getOtcOptionContract', () => {
     const { contract } = await getOtcOptionContract(5001)
     expect(contract.premium).toBe('500.00')
   })
+
+  it('defaults kind to "local" when the wire omits it', async () => {
+    mockGet.mockResolvedValue({ data: { contract: createMockOptionContract() } })
+    const { contract } = await getOtcOptionContract(5001)
+    expect(contract.kind).toBe('local')
+  })
+
+  it('maps wire kind="remote" and strike_currency for cross-bank contracts', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        contract: {
+          id: 1,
+          status: 'active',
+          kind: 'remote',
+          ticker: 'ACME',
+          quantity: '10',
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium_paid: '700.00',
+          settlement_date: '2027-08-01T00:00:00Z',
+          buyer_owner_type: 'client',
+          buyer_owner_id: 7,
+          seller_owner_type: 'client',
+          seller_owner_id: 42,
+        },
+      },
+    })
+    const { contract } = await getOtcOptionContract(1)
+    expect(contract.kind).toBe('remote')
+    expect(contract.strike_currency).toBe('USD')
+  })
+
+  it('maps wire stock_ticker into ticker when ticker is absent (remote projection)', async () => {
+    // Remote (cross-bank) contract rows project the symbol as `stock_ticker`,
+    // not `ticker` (REST_API_v3 §30).
+    mockGet.mockResolvedValue({
+      data: {
+        contract: {
+          id: 1,
+          status: 'active',
+          kind: 'remote',
+          stock_ticker: 'ACME',
+          quantity: '10',
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium_paid: '700.00',
+          settlement_date: '2027-08-01T00:00:00Z',
+          buyer_owner_type: 'client',
+          buyer_owner_id: 7,
+          seller_owner_type: 'client',
+          seller_owner_id: 42,
+        },
+      },
+    })
+    const { contract } = await getOtcOptionContract(1)
+    expect(contract.ticker).toBe('ACME')
+  })
+
+  it('upper-cases a lowercase remote (peer-vocabulary) status', async () => {
+    // Cross-bank peer contracts project `status` in the peer's lowercase
+    // vocabulary (REST_API_v3 §30); normalise so downstream uppercase checks
+    // (active/concluded grouping, exercise gating, badge colour) work.
+    mockGet.mockResolvedValue({
+      data: {
+        contract: {
+          id: 17,
+          status: 'active',
+          ticker: 'ACME',
+          quantity: '10',
+          strike_price: '175.50',
+          premium_paid: '700.00',
+          settlement_date: '2027-08-01T00:00:00Z',
+          buyer_owner_type: 'client',
+          buyer_owner_id: 7,
+          seller_owner_type: 'client',
+          seller_owner_id: 42,
+        },
+      },
+    })
+    const { contract } = await getOtcOptionContract(17)
+    expect(contract.status).toBe('ACTIVE')
+  })
 })
 
 describe('getMyOtcOptionContracts', () => {

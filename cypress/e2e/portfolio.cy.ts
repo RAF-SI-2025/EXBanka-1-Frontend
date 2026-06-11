@@ -63,13 +63,15 @@ describe('Portfolio Page', () => {
     cy.contains('th', 'Symbol').scrollIntoView().should('be.visible')
     cy.contains('th', 'Type').should('be.visible')
     cy.contains('th', 'Quantity').should('be.visible')
+    cy.contains('th', 'Reserved').should('be.visible')
+    cy.contains('th', 'Available').should('be.visible')
     cy.contains('th', 'Avg Cost').should('be.visible')
     cy.contains('th', 'Current Price').should('be.visible')
     cy.contains('th', 'Current Value').should('be.visible')
     cy.contains('th', 'Last Updated').should('be.visible')
     cy.contains('th', 'Actions').should('be.visible')
 
-    // Position data
+    // Position data — AAPL carries reserved/available; ESM26 omits them (→ "-").
     cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
 

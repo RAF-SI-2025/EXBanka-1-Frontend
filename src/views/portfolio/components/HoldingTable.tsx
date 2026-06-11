@@ -24,6 +24,8 @@ export function HoldingTable({ positions, onRowClick, onSell, onExercise }: Hold
           <TableHead>Symbol</TableHead>
           <TableHead>Type</TableHead>
           <TableHead className="text-right">Quantity</TableHead>
+          <TableHead className="text-right">Reserved</TableHead>
+          <TableHead className="text-right">Available</TableHead>
           <TableHead className="text-right">Avg Cost</TableHead>
           <TableHead className="text-right">Current Price</TableHead>
           <TableHead className="text-right">Current Value</TableHead>
@@ -42,6 +44,8 @@ export function HoldingTable({ positions, onRowClick, onSell, onExercise }: Hold
             <TableCell className="font-mono font-semibold">{p.symbol}</TableCell>
             <TableCell>{p.asset_type}</TableCell>
             <TableCell className="text-right">{p.quantity}</TableCell>
+            <TableCell className="text-right">{p.reserved ?? '-'}</TableCell>
+            <TableCell className="text-right">{p.available ?? '-'}</TableCell>
             <TableCell className="text-right">{p.avg_cost_rsd}</TableCell>
             <TableCell className="text-right">{p.current_price_rsd}</TableCell>
             <TableCell className="text-right">{p.current_value_rsd}</TableCell>

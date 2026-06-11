@@ -16,6 +16,8 @@
         "symbol": "AAPL",
         "holding_id": 30,
         "quantity": 50,
+        "reserved": 10,
+        "available": 40,
         "avg_cost_rsd": "200.0000",
         "current_price_rsd": "220.0000",
         "current_value_rsd": "11000.0000",

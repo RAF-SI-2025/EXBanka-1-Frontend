@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useBankAccounts } from '@/hooks/useAccounts'
 import { useExerciseOtcOptionContract, useMyOtcOptionContracts } from '@/hooks/useOtcOptions'
 import { notifySuccess } from '@/lib/errors'
 import type { MyContractsFilters, OptionContract } from '@/types/otcOption'
@@ -19,6 +20,11 @@ export function OtcContractsView() {
 
   const [exerciseTarget, setExerciseTarget] = useState<OptionContract | null>(null)
   const exerciseMutation = useExerciseOtcOptionContract(exerciseTarget?.id ?? 0)
+  // A cross-bank (remote) contract must name the buyer's strike account on
+  // exercise. The bank operator pays the strike from a BANK account
+  // (REST_API_v3 §30 — an employee acting as the bank binds a bank account),
+  // so source the picker from /bank-accounts, only when one is being exercised.
+  const { data: accountsData } = useBankAccounts(exerciseTarget?.kind === 'remote')
 
   return (
     <ViewShell
@@ -65,6 +71,7 @@ export function OtcContractsView() {
           open
           onOpenChange={(open) => !open && setExerciseTarget(null)}
           contract={exerciseTarget}
+          accounts={accountsData?.accounts ?? []}
           loading={exerciseMutation.isPending}
           onSubmit={(payload) =>
             exerciseMutation.mutate(payload, {

@@ -8,6 +8,10 @@ export interface SecurityPosition {
   symbol: string
   holding_id: number
   quantity: number
+  // Reserved / available quantity. Optional — absent on some payloads, in which
+  // case the holdings table renders "-".
+  reserved?: string | number
+  available?: string | number
   avg_cost_rsd: string
   current_price_rsd: string
   current_value_rsd: string

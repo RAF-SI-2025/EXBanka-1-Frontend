@@ -436,4 +436,88 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
     cy.contains('a', '#28').should('be.visible')
     cy.contains('EXPIRED').should('be.visible')
   })
+
+  // ── Scenario 29: Cross-bank (remote) contract exercise requires a buyer account ──
+  // A remote contract's status arrives in the peer's lowercase vocabulary
+  // ("active") and is normalised to ACTIVE, so it lands under "Active". Its
+  // exercise must name the buyer's strike account (buyer_account_number),
+  // filtered to the strike currency (USD) from the caller's own accounts.
+  it('Scenario 29 — exercising a remote contract sends buyer_account_number', () => {
+    cy.intercept('GET', '**/api/v3/me/otc/contracts*', {
+      body: {
+        contracts: [
+          {
+            id: 29,
+            kind: 'remote',
+            status: 'active',
+            // Remote rows ship the symbol as `stock_ticker`, not `ticker`.
+            stock_ticker: 'AAPL',
+            quantity: 10,
+            strike_price: '150.00',
+            strike_currency: 'USD',
+            premium: '5.00',
+            settlement_date: '2026-12-31',
+            buyer_owner_type: 'client',
+            buyer_owner_id: 42,
+            seller_owner_type: 'client',
+            seller_owner_id: 99,
+          },
+        ],
+      },
+    }).as('getContracts')
+    // The bank operator pays the cross-bank strike from a BANK account.
+    cy.intercept('GET', '**/api/v3/bank-accounts', {
+      body: {
+        accounts: [
+          { ...RSD_ACCOUNT, id: 1, currency_code: 'RSD', account_number: 'RSD-ACC' },
+          { ...RSD_ACCOUNT, id: 2, currency_code: 'USD', account_number: 'USD-ACC' },
+        ],
+      },
+    }).as('getBankAccounts')
+    cy.intercept('POST', '**/api/v3/otc/contracts/29/exercise', {
+      statusCode: 200,
+      body: {
+        contract: {
+          id: 29,
+          kind: 'remote',
+          status: 'EXERCISED',
+          ticker: 'AAPL',
+          quantity: 10,
+          strike_price: '150.00',
+          strike_currency: 'USD',
+          premium_paid: '5.00',
+          settlement_date: '2026-12-31',
+          buyer_owner_type: 'client',
+          buyer_owner_id: 42,
+          seller_owner_type: 'client',
+          seller_owner_id: 99,
+        },
+        holding: {
+          id: 1,
+          stock_id: 1,
+          quantity: '10',
+          owner: { owner_type: 'client', owner_id: 42 },
+        },
+      },
+    }).as('exercise')
+
+    cy.loginAsEmployee('/otc/contracts')
+    cy.wait('@getContracts')
+
+    cy.contains('h2', 'Active').should('be.visible')
+    // The remote row's `stock_ticker` maps into the Stock column, and
+    // `strike_currency` into the Currency column.
+    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('td', 'USD').should('be.visible')
+    cy.contains('button', 'Exercise').click()
+    cy.get('[role="dialog"]').within(() => {
+      // Only the USD account is offered (RSD filtered out by strike currency).
+      cy.get('#buyer-account option').should('not.contain.text', 'RSD-ACC')
+      cy.get('#buyer-account').select('USD-ACC')
+      cy.contains('button', 'Exercise').click()
+    })
+    cy.wait('@exercise')
+      .its('request.body')
+      .should('deep.equal', { buyer_account_number: 'USD-ACC' })
+  })
 })
