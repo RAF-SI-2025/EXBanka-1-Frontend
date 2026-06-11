@@ -462,4 +462,48 @@ describe('OtcOptionsView', () => {
       expect(otcOptionsApi.updateListing).toHaveBeenCalledWith(42, { quantity: '25' })
     )
   })
+
+  it('disables Save in the amount editor for a non-positive or non-numeric amount', async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          id: 42,
+          seller_id: 'client-5',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          me_owner: true,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+    jest.mocked(otcOptionsApi.updateListing).mockResolvedValue(undefined)
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    await userEvent.click(await screen.findByRole('button', { name: /activity/i }))
+    await userEvent.click(await screen.findByRole('button', { name: /^edit$/i }))
+    const input = screen.getByLabelText(/^amount$/i)
+
+    await userEvent.clear(input)
+    await userEvent.type(input, 'abc')
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+
+    await userEvent.clear(input)
+    await userEvent.type(input, '0')
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+
+    await userEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(otcOptionsApi.updateListing).not.toHaveBeenCalled()
+  })
 })

@@ -452,6 +452,9 @@ function AmountEditor({ offerId, amount }: { offerId: number; amount: number | s
     )
   }
 
+  const numeric = Number(value)
+  const valid = value.trim() !== '' && !Number.isNaN(numeric) && numeric > 0
+
   return (
     <div className="flex items-center gap-2 mt-1">
       <Label htmlFor="edit-amount" className="text-xs">
@@ -467,7 +470,7 @@ function AmountEditor({ offerId, amount }: { offerId: number; amount: number | s
       <Button
         size="sm"
         className="h-7"
-        disabled={value === '' || update.isPending}
+        disabled={!valid || update.isPending}
         onClick={() =>
           update.mutate(
             { offerId, payload: { quantity: value } },
