@@ -3,7 +3,6 @@ import { createQueryWrapper } from '@/__tests__/utils/test-utils'
 import {
   usePortfolio,
   usePortfolioSummary,
-  useMakePublic,
   useExerciseOption,
   useHoldingTransactions,
 } from '@/hooks/usePortfolio'
@@ -45,24 +44,6 @@ describe('usePortfolioSummary', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(summary)
-  })
-})
-
-describe('useMakePublic', () => {
-  it('calls makeHoldingPublic with the holding_id', async () => {
-    jest
-      .mocked(portfolioApi.makeHoldingPublic)
-      .mockResolvedValue({ offer: { id: 1, public_quantity: 5 } })
-
-    const { result } = renderHook(() => useMakePublic(), {
-      wrapper: createQueryWrapper(),
-    })
-
-    await act(async () => {
-      await result.current.mutateAsync({ id: 153, payload: { quantity: 5 } })
-    })
-
-    expect(portfolioApi.makeHoldingPublic).toHaveBeenCalledWith(153, { quantity: 5 })
   })
 })
 

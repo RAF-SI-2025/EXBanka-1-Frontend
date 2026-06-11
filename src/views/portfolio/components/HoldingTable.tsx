@@ -13,17 +13,10 @@ interface HoldingTableProps {
   positions: SecurityPosition[]
   onRowClick: (holdingId: number) => void
   onSell: (holdingId: number) => void
-  onMakePublic: (holdingId: number) => void
   onExercise: (holdingId: number) => void
 }
 
-export function HoldingTable({
-  positions,
-  onRowClick,
-  onSell,
-  onMakePublic,
-  onExercise,
-}: HoldingTableProps) {
+export function HoldingTable({ positions, onRowClick, onSell, onExercise }: HoldingTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -61,11 +54,6 @@ export function HoldingTable({
                 <Button size="sm" variant="outline" onClick={() => onSell(p.holding_id)}>
                   Sell
                 </Button>
-                {p.asset_type !== 'option' && (
-                  <Button size="sm" variant="outline" onClick={() => onMakePublic(p.holding_id)}>
-                    Make Public
-                  </Button>
-                )}
                 {p.asset_type === 'option' && (
                   <Button size="sm" variant="outline" onClick={() => onExercise(p.holding_id)}>
                     Exercise

@@ -258,6 +258,148 @@ describe('OtcOptionsView', () => {
     expect(screen.queryByRole('button', { name: /^bid$/i })).not.toBeInTheDocument()
   })
 
+  it("shows the caller's latest bid strike/premium (not the listing terms) on an offer they've bid on", async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          offer_id: '42',
+          seller_id: 'client-99',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          // Listing terms posted by the owner.
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          // The caller already has a bid chain on this offer.
+          my_negotiation_id: 88,
+          my_negotiation_status: 'open',
+        },
+      ],
+      total_count: 1,
+    })
+    // The caller's chain #88 has been countered up to a newer strike/premium.
+    // The marketplace row should reflect THIS (their latest bid), not the
+    // listing's original 175.50 / 700.00 terms.
+    jest.mocked(otcOptionsApi.listMyNegotiations).mockResolvedValue({
+      negotiations: [
+        {
+          id: 88,
+          parent_offer_id: 42,
+          offer_id: 42,
+          status: 'countered',
+          bidder: { owner_type: 'client', owner_id: 5 },
+          quantity: '10',
+          strike_price: '180.25',
+          premium: '725.00',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-11T14:00:00Z',
+          updated_at: '2026-05-12T14:00:00Z',
+        },
+      ],
+      total: 1,
+    })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    expect(await screen.findByText('AAPL')).toBeInTheDocument()
+    // Latest bid (chain snapshot) is shown.
+    expect(screen.getByText(/180\.25/)).toBeInTheDocument()
+    expect(screen.getByText(/725\.00/)).toBeInTheDocument()
+    // The listing's original terms are NOT shown for this row.
+    expect(screen.queryByText(/175\.50/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/700\.00/)).not.toBeInTheDocument()
+  })
+
+  it('places the bid against the listing surrogate id (local_id), not offer_id', async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          // The surrogate `id` differs from the native `offer_id` — the bid must
+          // route on `id`.
+          id: 17,
+          offer_id: '42',
+          seller_id: 'client-99',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+        },
+      ],
+      total_count: 1,
+    })
+    jest
+      .mocked(otcOptionsApi.placeBid)
+      .mockResolvedValue({ negotiation: { id: 1 } } as unknown as Awaited<
+        ReturnType<typeof otcOptionsApi.placeBid>
+      >)
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    await screen.findByText('AAPL')
+    await userEvent.click(screen.getByRole('button', { name: /^bid$/i }))
+    // The dialog prefills every field from the offer, so it is valid on open.
+    await userEvent.click(await screen.findByRole('button', { name: /submit bid/i }))
+
+    await waitFor(() =>
+      expect(otcOptionsApi.placeBid).toHaveBeenCalledWith(
+        17,
+        expect.objectContaining({ quantity: '10', strike_price: '175.50', premium: '700.00' })
+      )
+    )
+  })
+
+  it('opens the owner activity panel addressing the listing by local_id (not offer_id)', async () => {
+    jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
+      offers: [
+        {
+          kind: 'local',
+          bank_code: '111',
+          routing_number: 111,
+          id: 17,
+          offer_id: '42',
+          seller_id: 'client-5',
+          direction: 'sell_initiated',
+          ticker: 'AAPL',
+          amount: 10,
+          strike_price: '175.50',
+          strike_currency: 'USD',
+          premium: '700.00',
+          premium_currency: 'USD',
+          settlement_date: '2026-12-31T00:00:00Z',
+          created_at: '2026-05-10T14:00:00Z',
+          me_owner: true,
+        },
+      ],
+      total_count: 1,
+    })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+
+    renderWithProviders(<OtcOptionsView />, { preloadedState: preloadedAuth })
+
+    const cell = await screen.findByText('AAPL')
+    await userEvent.click(cell.closest('tr')!)
+
+    await screen.findByRole('button', { name: /cancel listing/i })
+    // Both the per-listing detail routes are keyed on local_id (17), not offer_id (42).
+    await waitFor(() => expect(otcOptionsApi.getOfferTimeline).toHaveBeenCalledWith(17))
+    expect(otcOptionsApi.listNegotiations).toHaveBeenCalledWith(17)
+  })
+
   it("shows Activity (not Place bid) on the user's own listing", async () => {
     jest.mocked(otcOptionsApi.listAll).mockResolvedValue({
       offers: [
@@ -354,6 +496,7 @@ describe('OtcOptionsView', () => {
           kind: 'local',
           bank_code: '111',
           routing_number: 111,
+          id: 42,
           offer_id: '42',
           seller_id: { owner_type: 'bank', id: 7 },
           direction: 'sell_initiated',

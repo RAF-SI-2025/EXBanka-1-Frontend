@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { PortfolioView } from '@/views/portfolio/PortfolioView'
@@ -40,7 +40,6 @@ beforeEach(() => {
     })
   )
   jest.mocked(portfolioApi.getPortfolioSummary).mockResolvedValue(createMockPortfolioSummary())
-  jest.mocked(portfolioApi.makeHoldingPublic).mockResolvedValue({ offer: { id: 1 } })
   jest.mocked(portfolioApi.exerciseOption).mockResolvedValue(createMockSecurityPosition())
   jest.mocked(useFundsHook.useMyFundPositions).mockReturnValue({
     data: { positions: [] },
@@ -140,25 +139,10 @@ describe('PortfolioView', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/portfolio/holdings/1/transactions')
   })
 
-  it('opens MakePublicDialog with quantity input when Make Public clicked', async () => {
+  it('does not render a Make Public action on holdings (feature removed)', async () => {
     renderWithProviders(<PortfolioView />)
-    const makePublicBtn = await screen.findByRole('button', { name: /make public/i })
-    fireEvent.click(makePublicBtn)
-    expect(await screen.findByText(/make shares public.*aapl/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/quantity to make public/i)).toBeInTheDocument()
-    expect(portfolioApi.makeHoldingPublic).not.toHaveBeenCalled()
-  })
-
-  it('submits make-public mutation with the position holding_id and entered quantity', async () => {
-    renderWithProviders(<PortfolioView />)
-    fireEvent.click(await screen.findByRole('button', { name: /make public/i }))
-    fireEvent.change(await screen.findByLabelText(/quantity to make public/i), {
-      target: { value: '7' },
-    })
-    fireEvent.click(screen.getAllByRole('button', { name: /make public/i }).at(-1)!)
-    await waitFor(() => {
-      expect(portfolioApi.makeHoldingPublic).toHaveBeenCalledWith(1, { quantity: 7 })
-    })
+    await screen.findByText('AAPL')
+    expect(screen.queryByRole('button', { name: /make public/i })).not.toBeInTheDocument()
   })
 
   it('opens the Redeem dialog when the Redeem button is clicked on a fund position', async () => {

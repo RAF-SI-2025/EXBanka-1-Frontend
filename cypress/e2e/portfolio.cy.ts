@@ -1,7 +1,7 @@
 // GET /api/v3/me/portfolio was rewritten in Plan B (spec § 48.1, 2026-05-28):
 // no query parameters, response is the unified grouped portfolio with
 // `securities.positions` and `funds.positions`. Each securities position
-// carries `holding_id`, used by Make Public and Exercise.
+// carries `holding_id`, used by the Exercise action.
 
 // Helper: build a portfolio response with the given security positions.
 function portfolioWith(positions: Record<string, unknown>[]) {
@@ -86,41 +86,11 @@ describe('Portfolio Page', () => {
     cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
   })
 
-  it('should show Make Public button for non-option holdings', () => {
+  it('should not show a Make Public button (feature removed)', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getPortfolio')
 
-    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
-  })
-
-  it('should make a holding public', () => {
-    // Phase 8 (spec § 47.1): the FE no longer hits POST /me/portfolio/:id/make-public.
-    // It now hits POST /me/otc/stocks with a direction-keyed body:
-    //   { direction: 'sell', holding_id, quantity }
-    // The holding_id comes from the new portfolio position shape (§48.1).
-    cy.intercept('POST', '**/api/v3/me/otc/stocks', {
-      statusCode: 201,
-      body: { offer: { id: 30, holding_id: 30, public_quantity: 3 } },
-    }).as('makePublic')
-
-    cy.loginAsClient('/portfolio')
-    cy.wait('@getPortfolio')
-
-    cy.contains('button', 'Make Public').first().click()
-
-    // Dialog opens — set quantity and submit. Use {selectall} so the controlled
-    // number input replaces its current value rather than appending to it.
-    cy.get('[role="dialog"]').within(() => {
-      cy.contains(/make shares public.*aapl/i).should('be.visible')
-      cy.get('#public-quantity').type('{selectall}3').should('have.value', '3')
-      cy.contains('button', 'Make Public').click()
-    })
-
-    cy.wait('@makePublic').its('request.body').should('deep.equal', {
-      direction: 'sell',
-      holding_id: 30,
-      quantity: 3,
-    })
+    cy.contains('button', 'Make Public').should('not.exist')
   })
 
   it('should navigate to holding transactions on row click', () => {
@@ -216,11 +186,12 @@ describe('Portfolio Page', () => {
     cy.contains('75.00 RSD').should('be.visible')
   })
 
-  // ── Scenario 70: Za akcije postoji opcija javnog režima ──────────────────
-  // Note: the unified portfolio shape (§48.1) no longer surfaces public_quantity
-  // on the position; visibility of the Make Public action is the surviving signal.
+  // ── Scenario 70: Akcije i opcije imaju različite akcije u tabeli ──────────
+  // The "Make Public" action was removed from holdings. The surviving
+  // per-asset-type signal is the action column: option rows expose Exercise,
+  // non-option rows expose only Sell (and never Exercise / Make Public).
 
-  it('Scenario 70 — Make Public button is shown for stock and future holdings but not for options', () => {
+  it('Scenario 70 — option holdings expose Exercise; stock holdings do not, and Make Public is gone', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio', {
       body: portfolioWith([
         {
@@ -255,8 +226,11 @@ describe('Portfolio Page', () => {
     cy.loginAsClient('/portfolio')
     cy.wait('@getMixedHoldings')
 
-    // Stock row has Make Public; option row has Exercise instead
-    cy.get('tbody tr').eq(0).contains('button', 'Make Public').scrollIntoView().should('be.visible')
+    // Make Public is gone everywhere. Stock row has Sell only; option row has
+    // Exercise instead.
+    cy.get('tbody tr').eq(0).contains('button', 'Sell').scrollIntoView().should('be.visible')
+    cy.get('tbody tr').eq(0).contains('button', 'Make Public').should('not.exist')
+    cy.get('tbody tr').eq(0).contains('button', 'Exercise').should('not.exist')
     cy.get('tbody tr').eq(1).contains('button', 'Make Public').should('not.exist')
     cy.get('tbody tr').eq(1).contains('button', 'Exercise').scrollIntoView().should('be.visible')
   })
@@ -358,12 +332,12 @@ describe('Portfolio Page', () => {
 
     cy.contains('button', 'Exercise').should('not.exist')
     cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
-    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
+    cy.contains('button', 'Make Public').should('not.exist')
   })
 
   // ── Scenario 73: Hartija prelazi u portfolio nakon izvršenog BUY ordera ───
 
-  it('Scenario 73 — Newly acquired holding appears in portfolio and can be made public', () => {
+  it('Scenario 73 — Newly acquired holding appears in portfolio with a Sell action', () => {
     cy.intercept('GET', '**/api/v3/me/portfolio', {
       body: portfolioWith([
         {
@@ -387,7 +361,9 @@ describe('Portfolio Page', () => {
 
     cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
     cy.contains('td', 'stock').should('be.visible')
-    // Newly acquired stocks default to private (no OTC offer), so Make Public is offered.
-    cy.contains('button', 'Make Public').scrollIntoView().should('be.visible')
+    // The Make Public action was removed; a newly acquired stock holding still
+    // exposes the Sell action.
+    cy.contains('button', 'Sell').scrollIntoView().should('be.visible')
+    cy.contains('button', 'Make Public').should('not.exist')
   })
 })

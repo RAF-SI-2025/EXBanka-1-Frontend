@@ -12,6 +12,7 @@ const mockExchanges = [
     polity: 'United States',
     currency: 'Dollar',
     time_zone: '-5',
+    is_open: true,
   }),
   createMockStockExchange({
     id: 2,
@@ -21,6 +22,7 @@ const mockExchanges = [
     polity: 'United Kingdom',
     currency: 'Pound',
     time_zone: '0',
+    is_open: false,
   }),
 ]
 
@@ -33,6 +35,14 @@ describe('StockExchangeTable', () => {
     expect(screen.getByText('Country')).toBeInTheDocument()
     expect(screen.getByText('Currency')).toBeInTheDocument()
     expect(screen.getByText('Time Zone')).toBeInTheDocument()
+    expect(screen.getByText('Working')).toBeInTheDocument()
+  })
+
+  it('shows Yes/No in the Working column based on is_open', () => {
+    renderWithProviders(<StockExchangeTable exchanges={mockExchanges} />)
+    // NYSE is open → Yes; LSE is closed → No.
+    expect(screen.getByText('Yes')).toBeInTheDocument()
+    expect(screen.getByText('No')).toBeInTheDocument()
   })
 
   it('renders exchange rows', () => {

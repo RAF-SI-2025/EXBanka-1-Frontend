@@ -10,7 +10,11 @@ import { PlaceBidDialog } from '@/views/otcOptions/components/PlaceBidDialog'
 import { CreateOtcOptionDialog } from '@/views/otcOptions/components/CreateOtcOptionDialog'
 import { OfferActivityPanel } from '@/views/otcOptions/components/OfferActivityPanel'
 import { BidderActivityPanel } from '@/views/otcOptions/components/BidderActivityPanel'
-import { useAllOtcOptions, useMyOtcOptions } from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import {
+  useAllMyOtcNegotiations,
+  useAllOtcOptions,
+  useMyOtcOptions,
+} from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { useBidOrCounter } from '@/views/otcOptions/hooks/useBidOrCounter'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
 import { useCreateOtcOption } from '@/views/otcOptions/hooks/useOtcOptionMutations'
@@ -33,6 +37,19 @@ export function OtcOptionsView() {
 
   const allQ = useAllOtcOptions({})
   const mineQ = useMyOtcOptions({})
+  // Every chain the caller is a party to. Used to surface the caller's own
+  // latest bid (the chain's current — i.e. newest-revision — strike/premium)
+  // in the marketplace row instead of the owner's listing terms, for offers
+  // the caller has bid on.
+  const myNegotiationsQ = useAllMyOtcNegotiations()
+
+  const myBidsByNegotiationId = useMemo(() => {
+    const map = new Map<number, { strike_price: string; premium: string | null }>()
+    for (const n of myNegotiationsQ.data?.negotiations ?? []) {
+      map.set(n.id, { strike_price: n.strike_price, premium: n.premium })
+    }
+    return map
+  }, [myNegotiationsQ.data])
 
   const bidOrCounter = useBidOrCounter()
   const createListing = useCreateOtcOption()
@@ -119,6 +136,7 @@ export function OtcOptionsView() {
             <OtcOptionsTable
               rows={rows}
               forceOwn={mode === 'my'}
+              myBids={myBidsByNegotiationId}
               onBid={(row) => setBidOffer(row)}
               onActivity={(row) => setActivityOffer(row)}
               onRowOpen={handleRowOpen}
@@ -137,6 +155,8 @@ export function OtcOptionsView() {
           if (!bidOffer || !currentBidder) return
           bidOrCounter.mutate(
             {
+              // Route `:id` is the listing's stable surrogate id, not the
+              // native offer_id — see resolveListingId / spec §47.2.
               offer_id: resolveListingId(bidOffer),
               account_id: input.account_id,
               quantity: input.quantity,

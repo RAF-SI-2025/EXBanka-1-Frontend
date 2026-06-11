@@ -12,11 +12,20 @@ import { otcRowKey } from '@/views/otcOptions/lib/listingId'
 import type { OtcOptionRow } from '@/views/otcOptions/types'
 import { hoverLift, rowEnter } from '@/views/shared'
 
+// The caller's own latest bid per negotiation chain, keyed by negotiation id.
+// When a row carries `my_negotiation_id` matching an entry here, the row's
+// Strike/Premium columns show the caller's latest bid (the chain's current,
+// newest-revision terms) instead of the owner's listing terms.
+export type MyBidsByNegotiationId = Map<number, { strike_price: string; premium: string | null }>
+
 interface Props {
   rows: OtcOptionRow[]
   // When true, every row is treated as owned by the caller — used by the
   // "My" tab, which is fed by /me/otc/options (already filtered server-side).
   forceOwn?: boolean
+  // Caller's own negotiation chains, used to display their latest bid in the
+  // Strike/Premium columns on offers they've bid on.
+  myBids?: MyBidsByNegotiationId
   onBid: (row: OtcOptionRow) => void
   onActivity: (row: OtcOptionRow) => void
   // Called when the row body (anything outside the inline action button) is
@@ -35,7 +44,7 @@ function fmt(value: string | number | undefined | null, fallback = '—'): strin
   return String(value)
 }
 
-export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }: Props) {
+export function OtcOptionsTable({ rows, forceOwn, myBids, onBid, onActivity, onRowOpen }: Props) {
   if (rows.length === 0) {
     return <p className="text-sm text-muted-foreground py-8 text-center">No offers found.</p>
   }
@@ -64,6 +73,12 @@ export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }
           const own = forceOwn || row.me_owner === true
           const hasBid = !own && hasOwnNegotiationChain(row.my_negotiation_id)
           const bestPrice = row.direction === 'sell_initiated' ? row.best_bid : row.best_ask
+          // For offers the caller has bid on, show their latest bid (chain's
+          // current strike/premium) instead of the owner's listing terms.
+          const myBid =
+            row.my_negotiation_id != null ? myBids?.get(Number(row.my_negotiation_id)) : undefined
+          const strikePrice = myBid ? myBid.strike_price : row.strike_price
+          const premiumPrice = myBid ? myBid.premium : row.premium
           return (
             <TableRow
               key={otcRowKey(row, index)}
@@ -75,17 +90,19 @@ export function OtcOptionsTable({ rows, forceOwn, onBid, onActivity, onRowOpen }
                 {row.direction === 'sell_initiated' ? 'SELL' : 'BUY'}
               </TableCell>
               <TableCell className="text-right">{fmt(row.amount)}</TableCell>
-              {row.has_preset_terms === false ? (
+              {row.has_preset_terms === false && !myBid ? (
                 <TableCell colSpan={2} className="text-center text-xs italic text-muted-foreground">
                   {NO_PRESET_TERMS_LABEL}
                 </TableCell>
               ) : (
                 <>
-                  <TableCell className="text-right">
-                    {row.strike_price} {row.strike_currency}
+                  <TableCell className="text-right" title={myBid ? 'Your latest bid' : undefined}>
+                    {strikePrice} {row.strike_currency}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {row.premium} {row.premium_currency}
+                  <TableCell className="text-right" title={myBid ? 'Your latest bid' : undefined}>
+                    {premiumPrice != null && premiumPrice !== ''
+                      ? `${premiumPrice} ${row.premium_currency}`
+                      : '—'}
                   </TableCell>
                 </>
               )}

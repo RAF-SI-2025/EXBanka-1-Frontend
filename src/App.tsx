@@ -51,7 +51,6 @@ import { InterestRatesView } from '@/views/interestRates'
 import { AdminFeesView } from '@/views/adminFees'
 import { PeerBanksView } from '@/views/peerBanks'
 import { OtcView } from '@/views/otc'
-import { OtcPortalView } from '@/views/otcPortal'
 import {
   BankFundPositionsView,
   CreateFundView,
@@ -349,11 +348,14 @@ export default function App() {
         <Route path="/securities/options/:id" element={<OptionDetailView />} />
         <Route path="/securities/order/new" element={<CreateOrderView />} />
         <Route path="/orders" element={<MyOrdersView />} />
-        {/* OTC hub — single sidebar entry, three internal tabs. Legacy
-            top-level URLs redirect to /otc/<tab>. */}
+        {/* OTC hub — single sidebar entry, two internal tabs (options
+            marketplace + contracts). The options marketplace is the default
+            surface and its tab is labelled "Market". The legacy stock-offers
+            portal that used to live at /otc/market has been removed; that URL
+            now redirects to the options marketplace. */}
         <Route path="/otc" element={<OtcView />}>
-          <Route index element={<Navigate to="market" replace />} />
-          <Route path="market" element={<OtcPortalView />} />
+          <Route index element={<Navigate to="options" replace />} />
+          <Route path="market" element={<Navigate to="/otc/options" replace />} />
           <Route path="options" element={<OtcOptionsView />} />
           <Route path="contracts" element={<OtcContractsView />} />
           <Route path="contracts/:id" element={<OtcContractDetailView />} />
