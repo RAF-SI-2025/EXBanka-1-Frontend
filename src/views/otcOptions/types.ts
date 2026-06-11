@@ -31,7 +31,20 @@ export interface OtcOptionRow {
   kind: 'local' | 'remote'
   bank_code: string
   routing_number: number
-  offer_id: string | number
+  // Stable local surrogate id (spec §47.2 GET /otc/options). This — NOT
+  // `offer_id` — is the id used to address the listing on this bank's
+  // `/otc/options/:id/...` routes (bid, negotiations, timeline). The discovery
+  // feed documents it as `local_id`; the live backend also surfaces it as a
+  // bare `id` (the single-offer response, §47.2). `resolveListingId` accepts
+  // either. For local rows it is the numeric offer id; for remote rows it is
+  // the folded-in mirror's id.
+  local_id?: number
+  id?: number
+  // The hosting bank's native offer id. For remote rows this is the peer's id
+  // (a string like "42"); for local rows it may be absent. Carried for the
+  // cross-bank cascade key (`parent_offer_id`), NOT for addressing — see
+  // `resolveListingId`.
+  offer_id?: string | number
   seller_id: string | { owner_type: OtcOwnerType; id: string | number }
   seller_name?: string
   direction: OtcOptionDirection
@@ -55,6 +68,12 @@ export interface OtcOptionRow {
   me_owner?: boolean
   my_negotiation_id?: number | string | null
   my_negotiation_status?: string
+  // When explicitly `false`, the seller posted the listing without a starting
+  // strike/premium (no preset terms) — the first bidder names the opening
+  // position. The marketplace table then shows a placeholder across the
+  // strike + premium columns instead of (absent) numbers. Omitted/`true` ⇒ the
+  // listing carries its own starting terms.
+  has_preset_terms?: boolean
 }
 
 export interface OtcOptionsDiscoveryResponse {
@@ -108,8 +127,14 @@ export interface OtcNegotiationRevision {
   strike_price: string
   premium: string | null
   settlement_date: string
-  action_by_principal_type: OtcOwnerType
-  action_by_principal_id: number
+  // The actor that authored this revision. The backend identifies it either by
+  // a concrete principal (`owner_type` + numeric `owner_id`) or — for some
+  // chains — by trade role only (`"buyer"`/`"seller"`) with no numeric id. So
+  // `type` is a free string (owner type OR role) and `id` may be null. Use
+  // `formatActor` to render. Normalized at the API boundary by
+  // `normalizeRevision`.
+  action_by_principal_type: string
+  action_by_principal_id: number | null
   created_at: string
 }
 
@@ -134,8 +159,13 @@ export interface OtcTimelineEntry {
   strike_price: string
   premium: string | null
   settlement_date: string
-  action_by_principal_type: OtcOwnerType
-  action_by_principal_id: number
+  // Actor type/id — same dual identity as OtcNegotiationRevision (concrete
+  // principal OR trade role with no id). Alternate id keys the backend may use.
+  action_by_principal_type: string
+  action_by_principal_id?: number | null
+  action_by_owner_id?: number | string | null
+  action_by_id?: number | string | null
+  actor_id?: number | string | null
   created_at: string
 }
 
@@ -194,6 +224,11 @@ export interface CreateOtcOptionPayload {
   premium: string
   settlement_date: string
   account_id: number
+}
+
+// PUT /me/otc/options/:id — owner-only. Changes the listing's amount of stock.
+export interface UpdateOtcOptionPayload {
+  quantity: string
 }
 
 export interface PlaceBidPayload {

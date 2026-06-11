@@ -5,12 +5,14 @@ jest.mock('@/lib/api/axios', () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),
+    put: jest.fn(),
     delete: jest.fn(),
   },
 }))
 
 const mockGet = jest.mocked(apiClient.get)
 const mockPost = jest.mocked(apiClient.post)
+const mockPut = jest.mocked(apiClient.put)
 const mockDelete = jest.mocked(apiClient.delete)
 
 beforeEach(() => jest.clearAllMocks())
@@ -299,5 +301,68 @@ describe('otcOptionsApi.listNegotiationRevisions', () => {
     const result = await otcOptionsApi.listNegotiationRevisions(5)
 
     expect(result.revisions).toEqual([])
+  })
+
+  it('recovers the actor id when the backend sends it under an alternate key', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        revisions: [
+          {
+            id: 1,
+            negotiation_id: 5,
+            revision_number: 1,
+            action: 'COUNTER',
+            quantity: '8',
+            strike_price: '150.00',
+            premium: '7.00',
+            settlement_date: '2026-07-01T00:00:00Z',
+            action_by_principal_type: 'buyer',
+            action_by_id: 42,
+            created_at: '2026-06-01T12:00:00Z',
+          },
+        ],
+      },
+    })
+
+    const result = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(result.revisions[0].action_by_principal_id).toBe(42)
+    expect(result.revisions[0].action_by_principal_type).toBe('buyer')
+  })
+
+  it('leaves the actor id null when the backend identifies the actor only by role', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        revisions: [
+          {
+            id: 1,
+            negotiation_id: 5,
+            revision_number: 1,
+            action: 'BID',
+            quantity: '10',
+            strike_price: '150.00',
+            premium: '7.50',
+            settlement_date: '2026-07-01T00:00:00Z',
+            action_by_principal_type: 'seller',
+            created_at: '2026-06-01T12:00:00Z',
+          },
+        ],
+      },
+    })
+
+    const result = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(result.revisions[0].action_by_principal_id).toBeNull()
+    expect(result.revisions[0].action_by_principal_type).toBe('seller')
+  })
+})
+
+describe('otcOptionsApi.updateListing', () => {
+  it('PUTs /me/otc/options/:id with the new quantity', async () => {
+    mockPut.mockResolvedValue({ data: undefined })
+
+    await otcOptionsApi.updateListing(42, { quantity: '25' })
+
+    expect(mockPut).toHaveBeenCalledWith('/me/otc/options/42', { quantity: '25' })
   })
 })

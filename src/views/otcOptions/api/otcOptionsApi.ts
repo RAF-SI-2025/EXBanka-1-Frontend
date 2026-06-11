@@ -2,6 +2,7 @@
 // Only external dependency is the shared axios instance.
 
 import { apiClient } from '@/lib/api/axios'
+import { toPrincipalId } from '@/views/otcOptions/lib/actor'
 import { getPortfolio } from '@/lib/api/portfolio'
 import type { PortfolioResponse } from '@/types/portfolio'
 import type {
@@ -11,6 +12,7 @@ import type {
   CreateOtcOptionPayload,
   MyOtcOptionsResponse,
   OtcNegotiation,
+  OtcNegotiationRevision,
   OtcNegotiationRevisionsResponse,
   OtcNegotiationsResponse,
   OtcOfferTimelineResponse,
@@ -19,6 +21,7 @@ import type {
   OtcParty,
   PlaceBidPayload,
   StockCatalogResponse,
+  UpdateOtcOptionPayload,
 } from '@/views/otcOptions/types'
 
 // The backend ships negotiation rows with flat `bidder_owner_type`/
@@ -90,6 +93,13 @@ async function listMine(filters: OtcOptionsListFilters = {}): Promise<MyOtcOptio
 async function createListing(payload: CreateOtcOptionPayload): Promise<{ offer: { id: number } }> {
   const { data } = await apiClient.post<{ offer: { id: number } }>('/me/otc/options', payload)
   return data
+}
+
+// PUT /me/otc/options/:id — owner-only. Re-sizes the listing's amount of stock.
+// The backend returns the updated listing; the FE re-fetches the lists on
+// success instead of consuming the body, so the call resolves to void.
+async function updateListing(offerId: number, payload: UpdateOtcOptionPayload): Promise<void> {
+  await apiClient.put(`/me/otc/options/${offerId}`, payload)
 }
 
 async function cancelListing(offerId: number): Promise<void> {
@@ -182,13 +192,52 @@ async function listMyNegotiations(
 
 // Revisions are read-only audit rows ordered by revision_number ASC.
 // Either the bidder or the listing's poster can call this; anyone else gets 403.
+// The backend's revision rows carry the actor either as a concrete principal
+// (`action_by_principal_type` + a numeric id) or by trade role
+// (`action_by_principal_type: "buyer"|"seller"`) with the numeric id — when it
+// exists at all — under one of several keys. Reading only `action_by_principal_id`
+// rendered "buyer-undefined" in the "By" column. Normalize to a stable
+// `{ type, id|null }` so the UI (`formatActor`) can show "<type>-<id>", "You",
+// or the bare role.
+type RawRevision = Partial<OtcNegotiationRevision> & {
+  action_by_owner_type?: string
+  actor_type?: string
+  action_by_owner_id?: number | string | null
+  action_by_id?: number | string | null
+  actor_id?: number | string | null
+  by_id?: number | string | null
+}
+
+function normalizeRevision(raw: RawRevision): OtcNegotiationRevision {
+  return {
+    id: raw.id ?? 0,
+    negotiation_id: raw.negotiation_id ?? 0,
+    revision_number: raw.revision_number ?? 0,
+    action: raw.action ?? 'BID',
+    quantity: raw.quantity ?? '',
+    strike_price: raw.strike_price ?? '',
+    premium: raw.premium ?? null,
+    settlement_date: raw.settlement_date ?? '',
+    action_by_principal_type:
+      raw.action_by_principal_type ?? raw.action_by_owner_type ?? raw.actor_type ?? '',
+    action_by_principal_id: toPrincipalId(
+      raw.action_by_principal_id ??
+        raw.action_by_owner_id ??
+        raw.action_by_id ??
+        raw.actor_id ??
+        raw.by_id
+    ),
+    created_at: raw.created_at ?? '',
+  }
+}
+
 async function listNegotiationRevisions(
   negotiationId: number
 ): Promise<OtcNegotiationRevisionsResponse> {
-  const { data } = await apiClient.get<OtcNegotiationRevisionsResponse>(
+  const { data } = await apiClient.get<{ revisions?: RawRevision[] }>(
     `/me/otc/options/negotiations/${negotiationId}/revisions`
   )
-  return { revisions: data.revisions ?? [] }
+  return { revisions: (data.revisions ?? []).map(normalizeRevision) }
 }
 
 // Cross-chain activity timeline for a listing the caller OWNS — every bidder's
@@ -221,6 +270,7 @@ export const otcOptionsApi = {
   listAll,
   listMine,
   createListing,
+  updateListing,
   cancelListing,
   placeBid,
   counter,
