@@ -18,6 +18,7 @@ import { BuyOnBehalfOtcDialog } from '@/views/otcPortal/components/BuyOnBehalfOt
 import { BuyOtcDialog } from '@/views/otcPortal/components/BuyOtcDialog'
 import { BuyRemoteOtcDialog } from '@/views/otcPortal/components/BuyRemoteOtcDialog'
 import { OtcOffersTable } from '@/views/otcPortal/components/OtcOffersTable'
+import { dedupeOffers } from '@/views/otcPortal/lib/offerKey'
 import { OtcPeersStatusBanner } from '@/views/otcPortal/components/OtcPeersStatusBanner'
 import { LoadingState, ViewShell } from '@/views/shared'
 
@@ -48,10 +49,12 @@ export function OtcPortalView() {
 
   // All /otc/stocks entries (local + remote stocks, the latter without id) plus remote option rows
   // from /otc/options?kind=remote which carry a local surrogate offer_id for POST /otc/options/:id/bid.
-  const offers: OtcOffer[] = [
+  // Deduped because the backend can surface the same listing more than once (e.g. repeated in a
+  // single response), which otherwise renders as doubled rows.
+  const offers: OtcOffer[] = dedupeOffers([
     ...(data?.offers ?? []),
     ...(remoteOptionData?.offers ?? []).filter((o) => o.kind === 'remote').map(remoteOptionToOffer),
-  ]
+  ])
 
   const [selectedOffer, setSelectedOffer] = useState<OtcOffer | null>(null)
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null)

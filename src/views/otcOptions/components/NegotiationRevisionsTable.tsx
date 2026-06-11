@@ -7,22 +7,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import type { OtcNegotiationRevision, OtcParty } from '@/views/otcOptions/types'
+import { formatActor } from '@/views/otcOptions/lib/actor'
 
 interface Props {
   revisions: OtcNegotiationRevision[]
   /** When provided, revisions authored by this principal render as "You". */
   currentPrincipal?: OtcParty
-}
-
-function formatActor(rev: OtcNegotiationRevision, currentPrincipal: OtcParty | undefined): string {
-  if (
-    currentPrincipal &&
-    currentPrincipal.owner_type === rev.action_by_principal_type &&
-    currentPrincipal.owner_id === rev.action_by_principal_id
-  ) {
-    return 'You'
-  }
-  return `${rev.action_by_principal_type}-${rev.action_by_principal_id}`
 }
 
 export function NegotiationRevisionsTable({ revisions, currentPrincipal }: Props) {
@@ -49,7 +39,9 @@ export function NegotiationRevisionsTable({ revisions, currentPrincipal }: Props
           <TableRow key={r.id}>
             <TableCell className="text-xs text-muted-foreground">{r.revision_number}</TableCell>
             <TableCell className="text-xs uppercase font-medium">{r.action}</TableCell>
-            <TableCell className="text-xs">{formatActor(r, currentPrincipal)}</TableCell>
+            <TableCell className="text-xs">
+              {formatActor(r.action_by_principal_type, r.action_by_principal_id, currentPrincipal)}
+            </TableCell>
             <TableCell className="text-right">{r.quantity}</TableCell>
             <TableCell className="text-right">{r.strike_price}</TableCell>
             <TableCell className="text-right">{r.premium ?? '—'}</TableCell>

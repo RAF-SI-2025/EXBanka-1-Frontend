@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { OtcOffersTable } from '@/views/otcPortal/components/OtcOffersTable'
+import { offerRowKey } from '@/views/otcPortal/lib/offerKey'
 import { createMockOtcOffer, createMockRemoteOtcOffer } from '@/__tests__/fixtures/otc-fixtures'
 
 describe('OtcOffersTable', () => {
@@ -68,6 +69,39 @@ describe('OtcOffersTable', () => {
     const remote = createMockRemoteOtcOffer({ price_per_unit: '420.50', currency: 'EUR' })
     render(<OtcOffersTable offers={[remote]} onBuy={onBuy} />)
     expect(screen.getByText('420.50 EUR')).toBeInTheDocument()
+  })
+
+  describe('offerRowKey', () => {
+    // Duplicate React keys made the table keep stale rows across refetches —
+    // options appeared to duplicate on refresh. The positional index guarantees
+    // a unique key even when two offers would otherwise collide.
+    it('is unique for local offers that share a (missing) id', () => {
+      const a = createMockOtcOffer({ id: undefined as unknown as number })
+      const b = createMockOtcOffer({ id: undefined as unknown as number })
+      expect(offerRowKey(a, 0)).not.toBe(offerRowKey(b, 1))
+    })
+
+    it('is unique for remote offers sharing bank, owner and ticker with no id', () => {
+      const a = createMockRemoteOtcOffer({
+        id: undefined,
+        bank_code: '333',
+        owner_id: '0',
+        ticker: 'MSFT',
+      })
+      const b = createMockRemoteOtcOffer({
+        id: undefined,
+        bank_code: '333',
+        owner_id: '0',
+        ticker: 'MSFT',
+      })
+      expect(offerRowKey(a, 0)).not.toBe(offerRowKey(b, 1))
+    })
+
+    it('keeps a local offer key stable for a given (offer, index)', () => {
+      const offer = createMockOtcOffer({ id: 7 })
+      expect(offerRowKey(offer, 0)).toBe(offerRowKey(offer, 0))
+      expect(offerRowKey(offer, 0)).toContain('7')
+    })
   })
 
   describe('owner cannot buy their own offer', () => {

@@ -16,6 +16,19 @@ export function formatAccountNumber(accountNumber: string): string {
   return accountNumber
 }
 
+// Human label for an account in a picker/dropdown. Anchors on the full account
+// number so an option is always identifiable even when `account_name` is blank
+// — prevents a Select trigger from falling back to the raw account id.
+export function formatAccountOption(account: {
+  account_name?: string | null
+  account_number: string
+  currency_code?: string | null
+}): string {
+  const number = formatAccountNumber(account.account_number)
+  const base = account.account_name ? `${account.account_name} · ${number}` : number
+  return account.currency_code ? `${base} (${account.currency_code})` : base
+}
+
 export function formatCurrency(amount: number, currency: string): string {
   return (
     new Intl.NumberFormat('sr-Latn-RS', {
