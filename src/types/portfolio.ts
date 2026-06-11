@@ -66,27 +66,6 @@ export interface PortfolioSummary {
   closed_trades_this_year: number
 }
 
-export interface MakePublicPayload {
-  quantity: number
-  /** Decimal price per unit; required by /me/otc/stocks for the sell direction. */
-  price_per_unit?: string
-}
-
-/**
- * Response from POST /api/v3/me/otc/stocks (direction=sell), which
- * publishes a holding onto the OTC stock marketplace.
- */
-export interface OtcStockOfferResponse {
-  id: number
-  holding_id?: number
-  quantity?: number
-  public_quantity?: number
-}
-
-export interface MakePublicResponse {
-  offer: OtcStockOfferResponse
-}
-
 export interface HoldingTransaction {
   id: number
   order_id: number

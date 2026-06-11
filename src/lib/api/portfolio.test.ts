@@ -2,7 +2,6 @@ import { apiClient } from '@/lib/api/axios'
 import {
   getPortfolio,
   getPortfolioSummary,
-  makeHoldingPublic,
   exerciseOption,
   getHoldingTransactions,
 } from '@/lib/api/portfolio'
@@ -57,34 +56,6 @@ describe('getPortfolioSummary', () => {
     const result = await getPortfolioSummary()
     expect(mockGet).toHaveBeenCalledWith('/me/portfolio/summary')
     expect(result).toEqual(summary)
-  })
-})
-
-describe('makeHoldingPublic', () => {
-  it('posts to /me/otc/stocks with direction=sell, holding_id, and quantity', async () => {
-    // Phase 8: POST /api/v3/me/portfolio/:id/make-public was removed and
-    // replaced by POST /api/v3/me/otc/stocks with a direction-keyed body
-    // (spec § 47.1). The first argument is the holding_id of the position.
-    const offer = { offer: { id: 99, public_quantity: 5 } }
-    mockPost.mockResolvedValue({ data: offer })
-    const result = await makeHoldingPublic(153, { quantity: 5 })
-    expect(mockPost).toHaveBeenCalledWith('/me/otc/stocks', {
-      direction: 'sell',
-      holding_id: 153,
-      quantity: 5,
-    })
-    expect(result).toEqual(offer)
-  })
-
-  it('forwards price_per_unit when provided', async () => {
-    mockPost.mockResolvedValue({ data: { offer: { id: 99 } } })
-    await makeHoldingPublic(153, { quantity: 5, price_per_unit: '175.50' })
-    expect(mockPost).toHaveBeenCalledWith('/me/otc/stocks', {
-      direction: 'sell',
-      holding_id: 153,
-      quantity: 5,
-      price_per_unit: '175.50',
-    })
   })
 })
 

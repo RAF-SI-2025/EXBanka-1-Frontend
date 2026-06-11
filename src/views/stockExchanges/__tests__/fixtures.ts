@@ -9,6 +9,7 @@ export function createMockStockExchange(overrides: Partial<StockExchange> = {}):
     polity: 'United States',
     currency: 'Dollar',
     time_zone: '-5',
+    is_open: true,
     ...overrides,
   }
 }
