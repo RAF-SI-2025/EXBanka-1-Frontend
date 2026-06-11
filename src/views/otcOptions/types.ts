@@ -220,9 +220,6 @@ export interface CreateOtcOptionPayload {
   direction: OtcOptionDirection
   ticker: string
   quantity: string
-  strike_price: string
-  premium: string
-  settlement_date: string
   account_id: number
 }
 

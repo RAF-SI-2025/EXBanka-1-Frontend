@@ -110,9 +110,6 @@ describe('otcOptionsApi.createListing', () => {
       direction: 'sell_initiated' as const,
       ticker: 'AAPL',
       quantity: '10',
-      strike_price: '175.50',
-      premium: '700.00',
-      settlement_date: '2026-12-31',
       account_id: 42,
     }
     const result = await otcOptionsApi.createListing(payload)
