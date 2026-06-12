@@ -109,7 +109,6 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
           {!isLoading && !error && myChain && (
             <YourChainBody
               chain={myChain}
-              offerId={offerId}
               currentBidder={currentBidder}
               accounts={accounts}
               counterPending={counter.isPending}
@@ -152,7 +151,6 @@ function YourChainBody({
   onAccept,
 }: {
   chain: OtcNegotiation
-  offerId: number
   currentBidder: OtcParty
   accounts: Account[]
   counterPending: boolean

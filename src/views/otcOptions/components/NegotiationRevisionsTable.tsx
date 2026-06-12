@@ -27,9 +27,9 @@ interface Props {
   /** When provided, revisions authored by this principal render as "You". */
   currentPrincipal?: OtcParty
   /**
-   * When provided, a seller-authored revision (`action_by_principal_type ===
-   * 'seller'`) shows an "Accept" action — the bidder accepting the seller's
-   * terms via POST /me/otc/options/:id/negotiations/:nid/accept.
+   * When provided, the latest revision not authored by the viewer
+   * (`is_latest && !mine`) shows an "Accept" action — the viewer accepting the
+   * counterparty's current terms.
    */
   accept?: AcceptConfig
 }
