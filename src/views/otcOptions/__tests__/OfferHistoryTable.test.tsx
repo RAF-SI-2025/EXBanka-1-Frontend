@@ -96,4 +96,15 @@ describe('OfferHistoryTable', () => {
     expect(screen.getByText('You')).toBeInTheDocument()
     expect(screen.getByText('client-42')).toBeInTheDocument()
   })
+
+  it('labels the actor "You" when mine is true', () => {
+    render(<OfferHistoryTable revisions={[rev({ mine: true })]} />)
+    expect(screen.getByText('You')).toBeInTheDocument()
+  })
+
+  it('renders the principal when mine is false', () => {
+    render(<OfferHistoryTable revisions={[rev({ mine: false })]} />)
+    expect(screen.getAllByText('client-42').length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText('You')).not.toBeInTheDocument()
+  })
 })
