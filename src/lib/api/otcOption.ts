@@ -24,6 +24,9 @@ type RawOptionContract = Omit<Partial<OptionContract>, 'buyer' | 'seller'> & {
   seller_owner_type?: string | null
   seller_owner_id?: number | string | null
   ticker?: string
+  // Remote (cross-bank) contract rows project the symbol as `stock_ticker`
+  // (REST_API_v3 §30); local rows use `ticker`.
+  stock_ticker?: string
   premium_paid?: string
 }
 
@@ -48,10 +51,20 @@ function normalizeContract(raw: RawOptionContract): OptionContract {
   const seller: OtcParty = raw.seller ?? buildParty(raw.seller_owner_type, raw.seller_owner_id)
   return {
     id: raw.id ?? 0,
-    status: raw.status ?? 'ACTIVE',
-    ticker: raw.ticker ?? '',
+    // Local contracts ship uppercase statuses (ACTIVE/EXERCISED/EXPIRED), but
+    // cross-bank (remote) peer contracts project `status` in the peer's
+    // lowercase vocabulary (REST_API_v3 §30). Upper-case here so the single
+    // OptionContractStatus contract holds, and downstream uppercase checks
+    // (active/concluded grouping, exercise gating, badge colour) work uniformly.
+    status: (raw.status?.toUpperCase() as OptionContract['status']) ?? 'ACTIVE',
+    // `remote` ⇒ cross-bank peer contract (needs buyer_account_number on
+    // exercise); anything else (incl. a missing field) is a local contract.
+    kind: raw.kind === 'remote' ? 'remote' : 'local',
+    // Local rows ship `ticker`; remote rows ship `stock_ticker`.
+    ticker: raw.ticker ?? raw.stock_ticker ?? '',
     quantity: raw.quantity ?? '',
     strike_price: raw.strike_price ?? '',
+    strike_currency: raw.strike_currency,
     // Prefer the wire field `premium_paid`; fall back to the already-nested
     // `premium` to stay compatible with fixtures using the post-normalised
     // shape (e.g. createMockOptionContract).

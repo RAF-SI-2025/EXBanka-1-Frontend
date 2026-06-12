@@ -38,6 +38,43 @@ describe('HoldingTable', () => {
     expect(screen.getByText('Current Value')).toBeInTheDocument()
   })
 
+  it('renders Reserved and Available columns with their values', () => {
+    renderWithProviders(
+      <HoldingTable
+        {...defaultProps}
+        positions={[
+          createMockSecurityPosition({
+            holding_id: 1,
+            symbol: 'AAPL',
+            reserved: '3',
+            available: '7',
+          }),
+        ]}
+      />
+    )
+    expect(screen.getByText('Reserved')).toBeInTheDocument()
+    expect(screen.getByText('Available')).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '3' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '7' })).toBeInTheDocument()
+  })
+
+  it('shows "-" for reserved/available when absent from the body', () => {
+    renderWithProviders(
+      <HoldingTable
+        {...defaultProps}
+        positions={[
+          createMockSecurityPosition({
+            holding_id: 1,
+            symbol: 'AAPL',
+            reserved: undefined,
+            available: undefined,
+          }),
+        ]}
+      />
+    )
+    expect(screen.getAllByRole('cell', { name: '-' }).length).toBeGreaterThanOrEqual(2)
+  })
+
   it('renders position rows', () => {
     renderWithProviders(<HoldingTable {...defaultProps} />)
     expect(screen.getByText('AAPL')).toBeInTheDocument()

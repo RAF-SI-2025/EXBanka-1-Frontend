@@ -12,6 +12,7 @@ import type {
   OtcParty,
 } from '@/views/otcOptions/types'
 import {
+  useAcceptNegotiation,
   useCounterNegotiation,
   useWithdrawNegotiation,
 } from '@/views/otcOptions/hooks/useOtcOptionMutations'
@@ -45,6 +46,7 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
   const { data, isLoading, error } = useAllMyOtcNegotiations()
   const counter = useCounterNegotiation(offerId)
   const withdraw = useWithdrawNegotiation(offerId)
+  const accept = useAcceptNegotiation(offerId)
 
   const myChain: OtcNegotiation | undefined = useMemo(() => {
     if (!data?.negotiations) return undefined
@@ -125,8 +127,15 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
               accounts={accounts}
               counterPending={counter.isPending}
               withdrawPending={withdraw.isPending}
+              acceptPending={accept.isPending}
               onCounter={(payload) => counter.mutate({ negotiationId: myChain.id, payload })}
               onWithdraw={() => withdraw.mutate(myChain.id, { onSuccess: onBack })}
+              onAccept={(acceptorAccountId) =>
+                accept.mutate({
+                  negotiationId: myChain.id,
+                  payload: { acceptor_account_id: acceptorAccountId },
+                })
+              }
             />
           )}
         </CardContent>
@@ -151,8 +160,10 @@ function YourChainBody({
   accounts,
   counterPending,
   withdrawPending,
+  acceptPending,
   onCounter,
   onWithdraw,
+  onAccept,
 }: {
   chain: OtcNegotiation
   offerId: number
@@ -161,8 +172,10 @@ function YourChainBody({
   accounts: Account[]
   counterPending: boolean
   withdrawPending: boolean
+  acceptPending: boolean
   onCounter: (payload: CounterNegotiationPayload) => void
   onWithdraw: () => void
+  onAccept: (acceptorAccountId: number) => void
 }) {
   const [showCounterForm, setShowCounterForm] = useState(false)
   const isTerminal = !isNegotiationActive(chain.status)
@@ -188,6 +201,9 @@ function YourChainBody({
           <NegotiationRevisionsTable
             revisions={revisionsQ.data?.revisions ?? []}
             currentPrincipal={currentBidder}
+            // The bidder can accept the seller's terms while the chain is live;
+            // a seller-authored revision row exposes the Accept action.
+            accept={isTerminal ? undefined : { accounts, pending: acceptPending, onAccept }}
           />
         )}
       </div>

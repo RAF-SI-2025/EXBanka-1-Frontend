@@ -28,12 +28,21 @@ export interface OtcParty {
 export interface OptionContract {
   id: number
   status: OptionContractStatus
+  // Provenance from the unified /me/otc/contracts response (REST_API_v3 §30):
+  // `local` = intra-bank contract, `remote` = cross-bank peer contract this
+  // bank holds the buyer side of. A `remote` contract requires
+  // `buyer_account_number` on exercise; a `local` one ignores it.
+  kind: 'local' | 'remote'
   // Wire ships `ticker` (human-readable stock symbol, e.g. "AAPL"). The
   // earlier `stock_id` field was a phantom that never appeared on the wire —
   // see normalizeContract() in src/lib/api/otcOption.ts.
   ticker: string
   quantity: string
   strike_price: string
+  // Currency the strike is denominated in. Projected from the mirrored
+  // cross-bank option for `remote` contracts; used to filter the buyer's
+  // eligible strike accounts when exercising.
+  strike_currency?: string
   // Backend wire field is `premium_paid`; the normalizer maps it to `premium`
   // to keep downstream consumers stable.
   premium: string

@@ -10,6 +10,7 @@ export function createMockOptionContract(overrides: Partial<OptionContract> = {}
   return {
     id: 5001,
     status: 'ACTIVE',
+    kind: 'local',
     ticker: 'AAPL',
     quantity: '100',
     strike_price: '5000.00',

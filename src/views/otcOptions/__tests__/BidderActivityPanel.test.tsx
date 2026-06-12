@@ -1,18 +1,39 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, fireEvent } from '@testing-library/react'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { BidderActivityPanel } from '@/views/otcOptions/components/BidderActivityPanel'
 import { otcOptionsApi } from '@/views/otcOptions/api/otcOptionsApi'
 import type { OtcOptionRow, OtcNegotiation, OtcParty } from '@/views/otcOptions/types'
+import type { Account } from '@/types/account'
 
 jest.mock('@/views/otcOptions/api/otcOptionsApi', () => ({
   otcOptionsApi: {
     listMyNegotiations: jest.fn(),
     listNegotiations: jest.fn(),
     getOfferTimeline: jest.fn(),
+    listNegotiationRevisions: jest.fn(),
     counter: jest.fn(),
     withdrawNegotiation: jest.fn(),
+    acceptNegotiation: jest.fn(),
   },
 }))
+
+function account(overrides: Partial<Account> = {}): Account {
+  return {
+    id: 7,
+    account_number: 'ACC-7',
+    account_name: 'Main',
+    currency_code: 'USD',
+    account_kind: 'current',
+    account_type: 'standard',
+    account_category: 'personal',
+    balance: 0,
+    available_balance: 0,
+    reserved_balance: 0,
+    status: 'ACTIVE',
+    owner_id: 1,
+    ...overrides,
+  }
+}
 
 function makeOffer(overrides: Partial<OtcOptionRow> = {}): OtcOptionRow {
   return {
@@ -67,6 +88,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
   jest.mocked(otcOptionsApi.getOfferTimeline).mockResolvedValue({ offer: {}, timeline: [] })
+  jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({ revisions: [] })
 })
 
 describe('BidderActivityPanel — chain lookup', () => {
@@ -111,6 +133,49 @@ describe('BidderActivityPanel — isTerminal for remote chains', () => {
     renderWithProviders(<BidderActivityPanel {...defaultProps} offer={offer} />)
     expect(await screen.findByRole('button', { name: /counter/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /withdraw/i })).toBeInTheDocument()
+  })
+
+  it("accepts the seller's terms with the chosen acceptor account", async () => {
+    const offer = makeOffer({ my_negotiation_id: 99 }) // resolveListingId → 42
+    const negotiation = makeNegotiation({
+      id: 99,
+      status: 'ongoing',
+      last_action_by: { owner_type: 'client', owner_id: 2 },
+    })
+    jest
+      .mocked(otcOptionsApi.listMyNegotiations)
+      .mockResolvedValue({ negotiations: [negotiation], total: 1 })
+    jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({
+      revisions: [
+        {
+          id: 11,
+          negotiation_id: 99,
+          revision_number: 2,
+          action: 'COUNTER',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'seller',
+          action_by_principal_id: null,
+          created_at: '2026-06-01T12:00:00Z',
+        },
+      ],
+    })
+    jest.mocked(otcOptionsApi.acceptNegotiation).mockResolvedValue({ contract: { id: 1 } } as never)
+
+    renderWithProviders(
+      <BidderActivityPanel {...defaultProps} offer={offer} accounts={[account({ id: 7 })]} />
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: /^accept$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /confirm accept/i }))
+
+    await waitFor(() =>
+      expect(otcOptionsApi.acceptNegotiation).toHaveBeenCalledWith(42, 99, {
+        acceptor_account_id: 7,
+      })
+    )
   })
 
   it('hides Counter and Withdraw buttons when chain status is "accepted" (terminal)', async () => {
