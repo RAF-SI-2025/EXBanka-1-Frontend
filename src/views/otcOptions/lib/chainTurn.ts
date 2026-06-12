@@ -1,4 +1,4 @@
-import type { OtcOptionDirection, OtcParty } from '@/views/otcOptions/types'
+import type { OtcNegotiationRevision, OtcOptionDirection, OtcParty } from '@/views/otcOptions/types'
 import type { RevisionWithChain } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 
 // The most recent revision of one chain within the merged offer timeline,
@@ -14,6 +14,21 @@ export function latestRevisionForChain(
     if (!latest || r.revision_number > latest.revision_number) latest = r
   }
   return latest
+}
+
+// Whether a revision's author is the chain's BIDDER.
+//   - Concrete principal (local chains): match owner_type + id against the bidder.
+//   - Trade role only (remote chains): 'buyer' is the bidder on a sell listing,
+//     'seller' is the bidder on a buy listing.
+function authoredByBidder(
+  type: string,
+  id: number | null,
+  bidder: OtcParty,
+  direction: OtcOptionDirection
+): boolean {
+  if (type === 'buyer') return direction === 'sell_initiated'
+  if (type === 'seller') return direction === 'buy_initiated'
+  return type === bidder.owner_type && id === bidder.owner_id
 }
 
 // Whether the chain's latest revision was authored by the BIDDER. When true it
@@ -34,8 +49,31 @@ export function bidderAuthoredLatest(
 ): boolean | null {
   const latest = latestRevisionForChain(timeline, negotiationId)
   if (!latest) return null
-  const type = latest.action_by_principal_type
-  if (type === 'buyer') return direction === 'sell_initiated'
-  if (type === 'seller') return direction === 'buy_initiated'
-  return type === bidder.owner_type && latest.action_by_principal_id === bidder.owner_id
+  return authoredByBidder(
+    latest.action_by_principal_type,
+    latest.action_by_principal_id,
+    bidder,
+    direction
+  )
+}
+
+// Whether the BIDDER authored the most recent revision of a single chain
+// (the bidder panel's own revisions list). true ⇒ owner's turn (bidder waits);
+// false ⇒ bidder's turn (Counter/Accept); null ⇒ no revisions yet.
+export function bidderAuthoredLatestRevision(
+  revisions: OtcNegotiationRevision[],
+  bidder: OtcParty,
+  direction: OtcOptionDirection
+): boolean | null {
+  let latest: OtcNegotiationRevision | null = null
+  for (const r of revisions) {
+    if (!latest || r.revision_number > latest.revision_number) latest = r
+  }
+  if (!latest) return null
+  return authoredByBidder(
+    latest.action_by_principal_type,
+    latest.action_by_principal_id,
+    bidder,
+    direction
+  )
 }

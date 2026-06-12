@@ -1,5 +1,10 @@
-import { latestRevisionForChain, bidderAuthoredLatest } from '@/views/otcOptions/lib/chainTurn'
+import {
+  latestRevisionForChain,
+  bidderAuthoredLatest,
+  bidderAuthoredLatestRevision,
+} from '@/views/otcOptions/lib/chainTurn'
 import type { RevisionWithChain } from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import type { OtcNegotiationRevision } from '@/views/otcOptions/types'
 
 // Minimal factory — fills every required RevisionWithChain field
 function makeRevision(
@@ -206,6 +211,154 @@ describe('bidderAuthoredLatest', () => {
         }),
       ]
       expect(bidderAuthoredLatest(timeline, 7, bidder, 'buy_initiated')).toBe(false)
+    })
+  })
+})
+
+// ---- bidderAuthoredLatestRevision -------------------------------------------
+
+function makeOtcRevision(
+  overrides: Partial<OtcNegotiationRevision> & {
+    revision_number: number
+    action_by_principal_type: string
+    action_by_principal_id?: number | null
+  }
+): OtcNegotiationRevision {
+  return {
+    id: overrides.revision_number,
+    negotiation_id: 1,
+    action: 'BID',
+    quantity: '10',
+    strike_price: '150.00',
+    premium: '5.00',
+    settlement_date: '2027-01-01',
+    created_at: '2026-06-01T00:00:00Z',
+    mine: false,
+    is_latest: false,
+    action_by_principal_id: null,
+    ...overrides,
+  }
+}
+
+describe('bidderAuthoredLatestRevision', () => {
+  const bidder = { owner_type: 'client' as const, owner_id: 1 }
+
+  it('returns null when revisions list is empty', () => {
+    expect(bidderAuthoredLatestRevision([], bidder, 'sell_initiated')).toBeNull()
+  })
+
+  it('picks the revision with the highest revision_number (order-independent)', () => {
+    // rev2 is the latest even though it appears first in the array
+    const rev1 = makeOtcRevision({
+      revision_number: 1,
+      action_by_principal_type: 'client',
+      action_by_principal_id: 1,
+    })
+    const rev2 = makeOtcRevision({
+      revision_number: 2,
+      action_by_principal_type: 'seller',
+      action_by_principal_id: null,
+    })
+    // Owner countered last (seller on a sell listing) → bidder's turn → false
+    expect(bidderAuthoredLatestRevision([rev2, rev1], bidder, 'sell_initiated')).toBe(false)
+  })
+
+  describe('local chains (concrete principal)', () => {
+    it('returns true when the local bidder (client id 1) authored the latest revision', () => {
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(true)
+    })
+
+    it('returns false when the owner authored the latest revision (type mismatch)', () => {
+      // Owner bank countered
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+        }),
+        makeOtcRevision({
+          revision_number: 2,
+          action_by_principal_type: 'bank',
+          action_by_principal_id: null,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(false)
+    })
+
+    it('returns false when type matches but id does not (different client)', () => {
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'client',
+          action_by_principal_id: 99,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(false)
+    })
+  })
+
+  describe('remote chains — sell listing (bidder is buyer)', () => {
+    it('returns true when the latest revision author is "buyer" on a sell listing', () => {
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'buyer',
+          action_by_principal_id: null,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(true)
+    })
+
+    it('returns false when the latest revision author is "seller" on a sell listing (owner moved)', () => {
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'buyer',
+          action_by_principal_id: null,
+        }),
+        makeOtcRevision({
+          revision_number: 2,
+          action_by_principal_type: 'seller',
+          action_by_principal_id: null,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(false)
+    })
+  })
+
+  describe('remote chains — buy listing (bidder is seller)', () => {
+    it('returns true when the latest revision author is "seller" on a buy listing', () => {
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'seller',
+          action_by_principal_id: null,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'buy_initiated')).toBe(true)
+    })
+
+    it('returns false when the latest revision author is "buyer" on a buy listing (owner moved)', () => {
+      const revs = [
+        makeOtcRevision({
+          revision_number: 1,
+          action_by_principal_type: 'seller',
+          action_by_principal_id: null,
+        }),
+        makeOtcRevision({
+          revision_number: 2,
+          action_by_principal_type: 'buyer',
+          action_by_principal_id: null,
+        }),
+      ]
+      expect(bidderAuthoredLatestRevision(revs, bidder, 'buy_initiated')).toBe(false)
     })
   })
 })
