@@ -1,8 +1,16 @@
-import { screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { Provider } from 'react-redux'
+import { configureStore } from '@reduxjs/toolkit'
+import { MemoryRouter } from 'react-router-dom'
 import { renderWithProviders } from '@/__tests__/utils/test-utils'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
+import { rootReducer } from '@/store'
+import type { RootState } from '@/store'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { createQueryClient } from '@/lib/queryClient'
 
 describe('Sidebar', () => {
   it('shows Employees link when role is EmployeeAdmin', () => {
@@ -172,5 +180,35 @@ describe('Sidebar', () => {
     })
     expect(sessionStorage.getItem('access_token')).toBeNull()
     expect(sessionStorage.getItem('refresh_token')).toBeNull()
+  })
+
+  it('clears the React Query cache when the logout button is clicked', async () => {
+    const user = userEvent.setup()
+
+    // Create a QueryClient we can spy on directly.
+    const queryClient = createQueryClient()
+    queryClient.setDefaultOptions({ queries: { retry: false } })
+    const clearSpy = jest.spyOn(queryClient, 'clear')
+
+    const store = configureStore({
+      reducer: rootReducer,
+      preloadedState: { auth: createMockAuthState() } as Partial<RootState>,
+    })
+
+    render(
+      <ThemeProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>
+            <MemoryRouter>
+              <Sidebar />
+            </MemoryRouter>
+          </QueryClientProvider>
+        </Provider>
+      </ThemeProvider>
+    )
+
+    await user.click(screen.getByRole('button', { name: /log out/i }))
+
+    expect(clearSpy).toHaveBeenCalledTimes(1)
   })
 })

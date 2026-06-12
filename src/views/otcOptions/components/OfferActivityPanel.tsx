@@ -41,6 +41,7 @@ import {
 } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
 import { OfferHistoryTable } from '@/views/otcOptions/components/OfferHistoryTable'
+import { parseApiError } from '@/lib/errors'
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
 import { bidderAuthoredLatest } from '@/views/otcOptions/lib/chainTurn'
@@ -137,7 +138,13 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          {error && <p className="text-sm text-destructive">Could not load chains.</p>}
+          {error && (
+            <p className="text-sm text-destructive">
+              {parseApiError(error).status === 403
+                ? "You're not the poster of this listing — it may belong to another account. Try going back and refreshing."
+                : 'Could not load chains.'}
+            </p>
+          )}
           {!isLoading && !error && negotiations.length === 0 && (
             <p className="text-sm text-muted-foreground">No bids yet.</p>
           )}

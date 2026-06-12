@@ -75,6 +75,33 @@ beforeEach(() => {
   jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({ revisions: [] })
 })
 
+describe('OfferActivityPanel — 403 non-poster error', () => {
+  it('shows the "not the poster" message when listNegotiations rejects with 403', async () => {
+    const forbidden = Object.assign(new Error('Forbidden'), {
+      isAxiosError: true,
+      response: {
+        status: 403,
+        data: {
+          error: {
+            code: 'forbidden',
+            message: "only the listing's poster may view all chains on this offer",
+          },
+        },
+      },
+    })
+    jest.mocked(otcOptionsApi.listNegotiations).mockRejectedValue(forbidden)
+
+    renderWithProviders(<OfferActivityPanel {...defaultProps} />)
+
+    expect(
+      await screen.findByText(
+        /you're not the poster of this listing — it may belong to another account/i
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/could not load chains/i)).not.toBeInTheDocument()
+  })
+})
+
 describe('OfferActivityPanel — turn from revisions', () => {
   it('shows Accept/Counter/Reject when the bidder authored the latest revision', async () => {
     // Bidder (client/5) made the latest BID — it is the owner's turn.
