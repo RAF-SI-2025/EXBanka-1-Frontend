@@ -8,7 +8,6 @@ import type { Account } from '@/types/account'
 import type {
   CounterNegotiationPayload,
   OtcNegotiation,
-  OtcOptionDirection,
   OtcOptionRow,
   OtcParty,
 } from '@/views/otcOptions/types'
@@ -25,7 +24,7 @@ import { NegotiationRevisionsTable } from '@/views/otcOptions/components/Negotia
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 import { hasOwnNegotiationChain } from '@/views/otcOptions/lib/myNegotiation'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
-import { bidderAuthoredLatestRevision } from '@/views/otcOptions/lib/chainTurn'
+import { counterpartyAuthoredLatestRevision } from '@/views/otcOptions/lib/chainTurn'
 
 interface Props {
   offer: OtcOptionRow
@@ -113,7 +112,6 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
               chain={myChain}
               currentBidder={currentBidder}
               accounts={accounts}
-              direction={offer.direction}
               counterPending={counter.isPending}
               withdrawPending={withdraw.isPending}
               acceptPending={accept.isPending}
@@ -146,7 +144,6 @@ function YourChainBody({
   chain,
   currentBidder,
   accounts,
-  direction,
   counterPending,
   withdrawPending,
   acceptPending,
@@ -157,7 +154,6 @@ function YourChainBody({
   chain: OtcNegotiation
   currentBidder: OtcParty
   accounts: Account[]
-  direction: OtcOptionDirection
   counterPending: boolean
   withdrawPending: boolean
   acceptPending: boolean
@@ -168,17 +164,12 @@ function YourChainBody({
   const [showCounterForm, setShowCounterForm] = useState(false)
   const isTerminal = !isNegotiationActive(chain.status)
   const revisionsQ = useOtcNegotiationRevisions(chain.id)
-  // Turn is derived from the chain's revision history, not the negotiation-level
-  // can_*/awaiting_viewer flags: the bidder may Counter/Accept only when the
-  // OWNER authored the latest revision; if the bidder moved last they wait.
-  const actedByBidder = bidderAuthoredLatestRevision(
-    revisionsQ.data?.revisions ?? [],
-    chain.bidder,
-    direction
-  )
-  const myTurn = !isTerminal && actedByBidder === false
+  // Turn from the chain's latest revision via the per-caller `mine` flag
+  // (identity-robust): the bidder may act when the OWNER moved last.
+  const ownerMovedLast = counterpartyAuthoredLatestRevision(revisionsQ.data?.revisions ?? [])
+  const myTurn = !isTerminal && ownerMovedLast === true
   const whoseTurn: 'you' | 'owner' | null =
-    actedByBidder === false ? 'you' : actedByBidder === true ? 'owner' : null
+    ownerMovedLast === true ? 'you' : ownerMovedLast === false ? 'owner' : null
 
   return (
     <div className="space-y-3">
@@ -203,7 +194,7 @@ function YourChainBody({
 
       {!isTerminal && !showCounterForm && (
         <div className="space-y-2 pt-1">
-          {actedByBidder === true && (
+          {ownerMovedLast === false && (
             <p className="text-xs text-muted-foreground">
               Waiting on the other side — you can counter or accept once they respond.
             </p>

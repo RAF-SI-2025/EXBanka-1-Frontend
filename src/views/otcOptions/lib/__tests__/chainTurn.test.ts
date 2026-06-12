@@ -1,7 +1,8 @@
 import {
   latestRevisionForChain,
-  bidderAuthoredLatest,
-  bidderAuthoredLatestRevision,
+  latestChainRevision,
+  counterpartyAuthoredLatest,
+  counterpartyAuthoredLatestRevision,
 } from '@/views/otcOptions/lib/chainTurn'
 import type { RevisionWithChain } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import type { OtcNegotiationRevision } from '@/views/otcOptions/types'
@@ -11,8 +12,7 @@ function makeRevision(
   overrides: Partial<RevisionWithChain> & {
     negotiation_id: number
     revision_number: number
-    action_by_principal_type: string
-    action_by_principal_id?: number | null
+    mine?: boolean
   }
 ): RevisionWithChain {
   return {
@@ -23,11 +23,12 @@ function makeRevision(
     premium: '5.00',
     settlement_date: '2027-01-01',
     created_at: '2026-06-01T00:00:00Z',
+    action_by_principal_type: 'client',
+    action_by_principal_id: null,
     mine: false,
     is_latest: false,
     chain_id: overrides.negotiation_id,
     chain_bidder: { owner_type: 'client', owner_id: 5 },
-    action_by_principal_id: null,
     ...overrides,
   } as RevisionWithChain
 }
@@ -40,189 +41,34 @@ describe('latestRevisionForChain', () => {
   })
 
   it('returns null when no revision belongs to the given negotiation', () => {
-    const timeline = [
-      makeRevision({ negotiation_id: 99, revision_number: 1, action_by_principal_type: 'client' }),
-    ]
+    const timeline = [makeRevision({ negotiation_id: 99, revision_number: 1 })]
     expect(latestRevisionForChain(timeline, 7)).toBeNull()
   })
 
   it('returns the single matching revision when only one exists', () => {
-    const rev = makeRevision({
-      negotiation_id: 7,
-      revision_number: 1,
-      action_by_principal_type: 'client',
-    })
+    const rev = makeRevision({ negotiation_id: 7, revision_number: 1 })
     expect(latestRevisionForChain([rev], 7)).toBe(rev)
   })
 
   it('picks the entry with the highest revision_number for the matching negotiation', () => {
-    const rev1 = makeRevision({
-      negotiation_id: 7,
-      revision_number: 1,
-      action_by_principal_type: 'client',
-    })
-    const rev2 = makeRevision({
-      negotiation_id: 7,
-      revision_number: 2,
-      action_by_principal_type: 'seller',
-    })
-    const rev3 = makeRevision({
-      negotiation_id: 7,
-      revision_number: 3,
-      action_by_principal_type: 'bank',
-    })
+    const rev1 = makeRevision({ negotiation_id: 7, revision_number: 1 })
+    const rev2 = makeRevision({ negotiation_id: 7, revision_number: 2 })
+    const rev3 = makeRevision({ negotiation_id: 7, revision_number: 3 })
     // Shuffle order to prove it is order-independent
     expect(latestRevisionForChain([rev3, rev1, rev2], 7)).toBe(rev3)
   })
 
   it('ignores revisions from other negotiation chains', () => {
-    const mine = makeRevision({
-      negotiation_id: 7,
-      revision_number: 1,
-      action_by_principal_type: 'client',
-    })
-    const other = makeRevision({
-      negotiation_id: 99,
-      revision_number: 99,
-      action_by_principal_type: 'client',
-    })
+    const mine = makeRevision({ negotiation_id: 7, revision_number: 1 })
+    const other = makeRevision({ negotiation_id: 99, revision_number: 99 })
     expect(latestRevisionForChain([other, mine], 7)).toBe(mine)
   })
 })
 
-// ---- bidderAuthoredLatest ---------------------------------------------------
-
-describe('bidderAuthoredLatest', () => {
-  const bidder = { owner_type: 'client' as const, owner_id: 5 }
-
-  it('returns null when the chain has no revisions yet', () => {
-    expect(bidderAuthoredLatest([], 7, bidder, 'sell_initiated')).toBeNull()
-  })
-
-  describe('local chains (concrete principal type)', () => {
-    it('returns true when the latest revision was authored by the bidder principal', () => {
-      // Latest by the bidder (client, id 5) → owner's turn
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'client',
-          action_by_principal_id: 5,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'sell_initiated')).toBe(true)
-    })
-
-    it('returns false when the latest revision was authored by someone other than the bidder (owner moved last)', () => {
-      // Owner bank countered last → bidder's turn
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'client',
-          action_by_principal_id: 5,
-        }),
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 2,
-          action_by_principal_type: 'bank',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'sell_initiated')).toBe(false)
-    })
-
-    it('returns false when principal type matches but id does not', () => {
-      // Another client, not the bidder
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'client',
-          action_by_principal_id: 99,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'sell_initiated')).toBe(false)
-    })
-  })
-
-  describe('remote chains — sell listing (bidder is buyer)', () => {
-    it('returns true when the latest revision author is "buyer" on a sell listing', () => {
-      // sell listing → bidder = buyer; buyer acted last → owner's turn
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'buyer',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'sell_initiated')).toBe(true)
-    })
-
-    it('returns false when the latest revision author is "seller" on a sell listing', () => {
-      // sell listing → bidder = buyer; seller (owner) acted last → bidder's turn
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'buyer',
-          action_by_principal_id: null,
-        }),
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 2,
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'sell_initiated')).toBe(false)
-    })
-  })
-
-  describe('remote chains — buy listing (bidder is seller)', () => {
-    it('returns true when the latest revision author is "seller" on a buy listing', () => {
-      // buy listing → bidder = seller; seller acted last → owner's turn
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'buy_initiated')).toBe(true)
-    })
-
-    it('returns false when the latest revision author is "buyer" on a buy listing', () => {
-      // buy listing → bidder = seller; buyer (owner) acted last → bidder's turn
-      const timeline = [
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 1,
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
-        }),
-        makeRevision({
-          negotiation_id: 7,
-          revision_number: 2,
-          action_by_principal_type: 'buyer',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatest(timeline, 7, bidder, 'buy_initiated')).toBe(false)
-    })
-  })
-})
-
-// ---- bidderAuthoredLatestRevision -------------------------------------------
+// ---- latestChainRevision ----------------------------------------------------
 
 function makeOtcRevision(
-  overrides: Partial<OtcNegotiationRevision> & {
-    revision_number: number
-    action_by_principal_type: string
-    action_by_principal_id?: number | null
-  }
+  overrides: Partial<OtcNegotiationRevision> & { revision_number: number; mine?: boolean }
 ): OtcNegotiationRevision {
   return {
     id: overrides.revision_number,
@@ -233,132 +79,94 @@ function makeOtcRevision(
     premium: '5.00',
     settlement_date: '2027-01-01',
     created_at: '2026-06-01T00:00:00Z',
+    action_by_principal_type: 'client',
+    action_by_principal_id: null,
     mine: false,
     is_latest: false,
-    action_by_principal_id: null,
     ...overrides,
   }
 }
 
-describe('bidderAuthoredLatestRevision', () => {
-  const bidder = { owner_type: 'client' as const, owner_id: 1 }
-
+describe('latestChainRevision', () => {
   it('returns null when revisions list is empty', () => {
-    expect(bidderAuthoredLatestRevision([], bidder, 'sell_initiated')).toBeNull()
+    expect(latestChainRevision([])).toBeNull()
+  })
+
+  it('returns the single revision when only one exists', () => {
+    const rev = makeOtcRevision({ revision_number: 1 })
+    expect(latestChainRevision([rev])).toBe(rev)
   })
 
   it('picks the revision with the highest revision_number (order-independent)', () => {
-    // rev2 is the latest even though it appears first in the array
-    const rev1 = makeOtcRevision({
-      revision_number: 1,
-      action_by_principal_type: 'client',
-      action_by_principal_id: 1,
-    })
-    const rev2 = makeOtcRevision({
-      revision_number: 2,
-      action_by_principal_type: 'seller',
-      action_by_principal_id: null,
-    })
-    // Owner countered last (seller on a sell listing) → bidder's turn → false
-    expect(bidderAuthoredLatestRevision([rev2, rev1], bidder, 'sell_initiated')).toBe(false)
+    const rev1 = makeOtcRevision({ revision_number: 1 })
+    const rev2 = makeOtcRevision({ revision_number: 2 })
+    const rev3 = makeOtcRevision({ revision_number: 3 })
+    expect(latestChainRevision([rev3, rev1, rev2])).toBe(rev3)
+  })
+})
+
+// ---- counterpartyAuthoredLatest ---------------------------------------------
+
+describe('counterpartyAuthoredLatest', () => {
+  it('returns null when the chain has no revisions yet', () => {
+    expect(counterpartyAuthoredLatest([], 7)).toBeNull()
   })
 
-  describe('local chains (concrete principal)', () => {
-    it('returns true when the local bidder (client id 1) authored the latest revision', () => {
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'client',
-          action_by_principal_id: 1,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(true)
-    })
-
-    it('returns false when the owner authored the latest revision (type mismatch)', () => {
-      // Owner bank countered
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'client',
-          action_by_principal_id: 1,
-        }),
-        makeOtcRevision({
-          revision_number: 2,
-          action_by_principal_type: 'bank',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(false)
-    })
-
-    it('returns false when type matches but id does not (different client)', () => {
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'client',
-          action_by_principal_id: 99,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(false)
-    })
+  it('returns null when no revision belongs to the given negotiation', () => {
+    const timeline = [makeRevision({ negotiation_id: 99, revision_number: 1, mine: false })]
+    expect(counterpartyAuthoredLatest(timeline, 7)).toBeNull()
   })
 
-  describe('remote chains — sell listing (bidder is buyer)', () => {
-    it('returns true when the latest revision author is "buyer" on a sell listing', () => {
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'buyer',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(true)
-    })
-
-    it('returns false when the latest revision author is "seller" on a sell listing (owner moved)', () => {
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'buyer',
-          action_by_principal_id: null,
-        }),
-        makeOtcRevision({
-          revision_number: 2,
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'sell_initiated')).toBe(false)
-    })
+  it('returns true (caller may act) when latest revision has mine: false', () => {
+    // mine: false → the counterparty authored it → caller's turn
+    const timeline = [makeRevision({ negotiation_id: 7, revision_number: 1, mine: false })]
+    expect(counterpartyAuthoredLatest(timeline, 7)).toBe(true)
   })
 
-  describe('remote chains — buy listing (bidder is seller)', () => {
-    it('returns true when the latest revision author is "seller" on a buy listing', () => {
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'buy_initiated')).toBe(true)
-    })
+  it('returns false (waiting) when latest revision has mine: true', () => {
+    // mine: true → caller authored the latest → waiting for counterparty
+    const timeline = [
+      makeRevision({ negotiation_id: 7, revision_number: 1, mine: false }),
+      makeRevision({ negotiation_id: 7, revision_number: 2, mine: true }),
+    ]
+    expect(counterpartyAuthoredLatest(timeline, 7)).toBe(false)
+  })
 
-    it('returns false when the latest revision author is "buyer" on a buy listing (owner moved)', () => {
-      const revs = [
-        makeOtcRevision({
-          revision_number: 1,
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
-        }),
-        makeOtcRevision({
-          revision_number: 2,
-          action_by_principal_type: 'buyer',
-          action_by_principal_id: null,
-        }),
-      ]
-      expect(bidderAuthoredLatestRevision(revs, bidder, 'buy_initiated')).toBe(false)
-    })
+  it('uses the highest revision_number regardless of order', () => {
+    const rev1 = makeRevision({ negotiation_id: 7, revision_number: 1, mine: true })
+    const rev2 = makeRevision({ negotiation_id: 7, revision_number: 2, mine: false })
+    // rev2 is latest; mine: false → counterparty authored → caller's turn
+    expect(counterpartyAuthoredLatest([rev2, rev1], 7)).toBe(true)
+  })
+})
+
+// ---- counterpartyAuthoredLatestRevision -------------------------------------
+
+describe('counterpartyAuthoredLatestRevision', () => {
+  it('returns null when revisions list is empty', () => {
+    expect(counterpartyAuthoredLatestRevision([])).toBeNull()
+  })
+
+  it('returns true (caller may act) when latest revision has mine: false', () => {
+    const revs = [
+      makeOtcRevision({ revision_number: 1, mine: true }),
+      makeOtcRevision({ revision_number: 2, mine: false }),
+    ]
+    expect(counterpartyAuthoredLatestRevision(revs)).toBe(true)
+  })
+
+  it('returns false (waiting) when latest revision has mine: true', () => {
+    const revs = [
+      makeOtcRevision({ revision_number: 1, mine: false }),
+      makeOtcRevision({ revision_number: 2, mine: true }),
+    ]
+    expect(counterpartyAuthoredLatestRevision(revs)).toBe(false)
+  })
+
+  it('picks the revision with the highest revision_number (order-independent)', () => {
+    const rev1 = makeOtcRevision({ revision_number: 1, mine: false })
+    const rev2 = makeOtcRevision({ revision_number: 2, mine: true })
+    // rev2 is latest; mine: true → caller authored → waiting
+    expect(counterpartyAuthoredLatestRevision([rev2, rev1])).toBe(false)
   })
 })

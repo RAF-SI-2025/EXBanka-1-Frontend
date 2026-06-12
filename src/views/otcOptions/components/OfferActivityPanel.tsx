@@ -44,7 +44,7 @@ import { OfferHistoryTable } from '@/views/otcOptions/components/OfferHistoryTab
 import { parseApiError } from '@/lib/errors'
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
-import { bidderAuthoredLatest } from '@/views/otcOptions/lib/chainTurn'
+import { counterpartyAuthoredLatest } from '@/views/otcOptions/lib/chainTurn'
 
 interface Props {
   offer: OtcOptionRow
@@ -164,18 +164,11 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
               <TableBody>
                 {negotiations.map((neg) => {
                   const isActive = isNegotiationActive(neg.status)
-                  // Turn is derived from the chain's revision history (the offer
-                  // timeline), not the negotiation-level can_* flags: the owner may
-                  // Accept/Counter/Reject only when the BIDDER authored the latest
-                  // revision. When the owner moved last it's the bidder's turn.
-                  const actedByBidder = bidderAuthoredLatest(
-                    revisionsQ.revisions,
-                    neg.id,
-                    neg.bidder,
-                    offer.direction
-                  )
-                  const ownerTurn = isActive && actedByBidder === true
-                  const showWaiting = isActive && actedByBidder === false
+                  // Turn from the chain's latest revision via the per-caller `mine` flag
+                  // (identity-robust): the owner may act when the BIDDER moved last.
+                  const bidderMovedLast = counterpartyAuthoredLatest(revisionsQ.revisions, neg.id)
+                  const ownerTurn = isActive && bidderMovedLast === true
+                  const showWaiting = isActive && bidderMovedLast === false
                   return (
                     <Fragment key={neg.id}>
                       <TableRow>
