@@ -28,6 +28,7 @@ type RawOptionContract = Omit<Partial<OptionContract>, 'buyer' | 'seller'> & {
   // (REST_API_v3 §30); local rows use `ticker`.
   stock_ticker?: string
   premium_paid?: string
+  me_owner?: boolean
 }
 
 function buildParty(
@@ -72,23 +73,41 @@ function normalizeContract(raw: RawOptionContract): OptionContract {
     settlement_date: raw.settlement_date ?? '',
     buyer,
     seller,
+    // Only the buyer/holder may exercise (REST_API_v3 §30). Treat a missing
+    // flag as `false` so the UI never offers Exercise to a non-holder — the
+    // backend would 404 the attempt (existence must not leak to the writer).
+    me_owner: raw.me_owner === true,
   }
 }
 
-export async function getOtcOptionContract(id: number): Promise<{ contract: OptionContract }> {
-  const { data } = await apiClient.get<{ contract: RawOptionContract }>(`/otc/contracts/${id}`)
-  return { contract: normalizeContract(data.contract) }
+export async function getOtcOptionContract(
+  id: number
+): Promise<{ contract: OptionContract | null }> {
+  const { data } = await apiClient.get<{ contract?: RawOptionContract | null }>(
+    `/otc/contracts/${id}`
+  )
+  // A cross-bank contract is minted asynchronously on the counterparty bank, so
+  // this endpoint can return a null contract while it is still settling. Guard
+  // before normalising — `normalizeContract(null)` would throw on `raw.buyer`.
+  return { contract: data?.contract ? normalizeContract(data.contract) : null }
 }
 
 export async function getMyOtcOptionContracts(
   filters: MyContractsFilters = {}
 ): Promise<MyOtcContractsResponse> {
   const { data } = await apiClient.get<
-    Omit<MyOtcContractsResponse, 'contracts'> & { contracts?: RawOptionContract[] }
+    Omit<MyOtcContractsResponse, 'contracts'> & { contracts?: (RawOptionContract | null)[] }
   >('/me/otc/contracts', {
     params: filters,
   })
-  return { ...data, contracts: (data.contracts ?? []).map(normalizeContract) }
+  // Drop any null/undefined rows the wire might include (e.g. a cross-bank
+  // contract still settling) so a single bad row can't crash normalizeContract.
+  return {
+    ...data,
+    contracts: (data.contracts ?? [])
+      .filter((c): c is RawOptionContract => c != null)
+      .map(normalizeContract),
+  }
 }
 
 export async function exerciseOtcOptionContract(
@@ -96,7 +115,10 @@ export async function exerciseOtcOptionContract(
   payload: ExerciseContractPayload
 ): Promise<ExerciseOtcContractResponse> {
   const { data } = await apiClient.post<
-    Omit<ExerciseOtcContractResponse, 'contract'> & { contract: RawOptionContract }
+    Omit<ExerciseOtcContractResponse, 'contract'> & { contract?: RawOptionContract | null }
   >(`/otc/contracts/${id}/exercise`, payload)
-  return { ...data, contract: normalizeContract(data.contract) }
+  // A cross-bank exercise dispatches asynchronously, so the 201 has no contract
+  // (just saga_id/status). Guard before normalising — normalizeContract(null)
+  // would throw on `raw.buyer`.
+  return { ...data, contract: data?.contract ? normalizeContract(data.contract) : null }
 }

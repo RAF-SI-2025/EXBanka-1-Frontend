@@ -73,6 +73,13 @@ function normalizeNegotiation(raw: RawNegotiation): OtcNegotiation {
     settlement_date: raw.settlement_date ?? '',
     created_at: raw.created_at ?? '',
     updated_at: raw.updated_at ?? '',
+    viewer_role: raw.viewer_role ?? '',
+    last_action_mine: raw.last_action_mine ?? false,
+    awaiting_viewer: raw.awaiting_viewer ?? false,
+    can_accept: raw.can_accept ?? false,
+    can_counter: raw.can_counter ?? false,
+    can_reject: raw.can_reject ?? false,
+    can_withdraw: raw.can_withdraw ?? false,
   }
 }
 
@@ -228,6 +235,8 @@ function normalizeRevision(raw: RawRevision): OtcNegotiationRevision {
         raw.by_id
     ),
     created_at: raw.created_at ?? '',
+    mine: raw.mine ?? false,
+    is_latest: raw.is_latest ?? false,
   }
 }
 

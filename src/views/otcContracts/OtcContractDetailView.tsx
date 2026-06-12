@@ -27,16 +27,21 @@ export function OtcContractDetailView() {
       </ViewShell>
     )
   }
-  if (isError || !data) {
+  // `data.contract` can be null while a cross-bank contract is still settling
+  // on the counterparty bank — treat it like a not-yet-available contract
+  // rather than rendering (which would crash on `contract.*`).
+  if (isError || !data?.contract) {
     return (
       <ViewShell title="Contract">
-        <ErrorFallback message="Could not load contract." />
+        <ErrorFallback message="Could not load contract. If you just accepted a cross-bank deal, it may still be settling — check back shortly." />
       </ViewShell>
     )
   }
 
   const { contract } = data
-  const isActive = contract.status === 'ACTIVE'
+  // Only the buyer/holder (me_owner) may exercise; the seller/writer gets no
+  // action — the backend 404s their attempt (REST_API_v3 §30).
+  const canExercise = contract.status === 'ACTIVE' && contract.me_owner
 
   return (
     <ViewShell
@@ -50,7 +55,9 @@ export function OtcContractDetailView() {
         </span>
       }
       actions={
-        isActive ? <Button onClick={() => setExerciseOpen(true)}>Exercise contract</Button> : null
+        canExercise ? (
+          <Button onClick={() => setExerciseOpen(true)}>Exercise contract</Button>
+        ) : null
       }
     >
       <Card>

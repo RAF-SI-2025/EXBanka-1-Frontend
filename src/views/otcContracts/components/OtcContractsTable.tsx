@@ -53,7 +53,9 @@ export function OtcContractsTable({ contracts, onExercise }: Props) {
               <OtcOptionStatusBadge status={c.status} />
             </TableCell>
             <TableCell className="text-right">
-              {c.status === 'ACTIVE' ? (
+              {/* Only the buyer/holder may exercise (me_owner). The seller/writer
+                  gets no button — the backend 404s their attempt. */}
+              {c.status === 'ACTIVE' && c.me_owner ? (
                 <Button size="sm" onClick={() => onExercise(c)}>
                   Exercise
                 </Button>

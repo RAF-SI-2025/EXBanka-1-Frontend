@@ -4328,6 +4328,8 @@ Cancel a pending order. See [Section 26: Orders](#26-orders) for full request/re
 
 List authenticated user's holdings. See [Section 27: Portfolio](#27-portfolio) for full request/response details.
 
+Each securities position (`asset_type` `stock`/`option`/`future`) additionally carries `reserved_quantity` (shares locked by formed OTC option contracts) and `available_quantity` (`quantity - reserved_quantity`, free to trade/list). Both are `0`/omitted for fund positions. The `Holding` shape on `GET /api/v3/me/holdings`-style reads exposes the same two fields. (VERSION 4.3.0; additive — existing clients unaffected.)
+
 ---
 
 ### GET /api/v3/me/portfolio/summary
@@ -7158,7 +7160,7 @@ Register a new peer bank.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `bank_code` | string | Yes | 3-digit prefix (e.g. "222") |
-| `routing_number` | int64 | Yes | Numeric form of bank_code |
+| `routing_number` | int64 | Yes | The peer's routing number. MUST equal the numeric value of `bank_code` (e.g. `bank_code` `"222"` ⇒ `routing_number` `222`); a non-numeric `bank_code` or a mismatch is rejected (see the invariant note below). |
 | `base_url` | string | Yes | Peer's `/api/v3` base URL |
 | `api_token` | string | Yes | Plaintext API token issued by peer; bcrypt-hashed before persist |
 | `hmac_inbound_key` | string | No | HMAC key to verify inbound HMAC-mode requests from this peer |
@@ -7177,9 +7179,11 @@ Register a new peer bank.
 ```
 
 **Response 201:** Peer bank object (`api_token_preview` returned, never the full token).
-**Response 400:** Validation error (missing required field, OR `bank_code`/`routing_number` equals this bank's own — peer-collision rejected; SP-2a).
+**Response 400:** Validation error — a missing required field; OR `bank_code`/`routing_number` equals this bank's own (peer-collision rejected, SP-2a); OR `bank_code` is not the numeric `routing_number` (non-numeric, or numerically different — routing-invariant, 4.4.7).
 
-> **Peer-collision guard (SP-2a):** `POST /api/v3/peer-banks` returns `400 validation_error` when `bank_code` or `routing_number` matches this bank's own configuration. This is enforced at the gRPC service layer (transaction-service `CreatePeerBank` returns `InvalidArgument` → gateway maps to 400). The invariant ensures `routing_number == OwnRouting()` reliably distinguishes local rows from remote (folded-in) rows in the unified OTC tables.
+> **Peer-collision guard (SP-2a):** `POST /api/v3/peer-banks` returns `400 validation_error` when `bank_code` or `routing_number` matches this bank's own configuration. This is enforced at the gRPC service layer (interbank-service `CreatePeerBank` returns `InvalidArgument` → gateway maps to 400). The invariant ensures `routing_number == OwnRouting()` reliably distinguishes local rows from remote (folded-in) rows in the unified OTC tables.
+
+> **bank_code = routing_number invariant (4.4.7):** `CreatePeerBank` also returns `400 validation_error` when `bank_code` is not numeric or does not numerically equal `routing_number`. Inbound peer authentication resolves a caller to its `bank_code`, and the cross-bank OTC paths derive the caller's routing from it (`peerRoutingForCode`); the two MUST agree, or the peer could authenticate yet its derived routing would never match the routing stored on a negotiation/contract mirror — every inbound `GET`/`PUT`/`accept` for it would `404`. Enforcing the invariant at registration makes the derivation provably exact for every registered peer.
 
 ---
 
@@ -8521,6 +8525,20 @@ rows that successfully minted a contract), every item now carries:
 | `bank_code` | string | Owning/peer bank's code, matching `routing_number`. |
 | `me_owner` | bool | `true` ONLY when the caller is the parent listing's poster/seller (someone is bidding on MY listing). A chain the caller opened **as the bidder** is `false`. For `remote`: `true` iff WE host the seller/poster side (`seller_routing == own_routing`). |
 
+**Viewer-relative action hints** (computed per caller, like `me_owner`) — the FE renders buttons directly from these without re-deriving turn rules. Omitted-when-false (treat an absent flag as `false`):
+
+| Field | Type | Description |
+|---|---|---|
+| `viewer_role` | string | The caller's side on this chain: `"bidder"` or `"poster"` (omitted/`""` when the caller is neither — e.g. an employee browsing a client's listing read-only). |
+| `last_action_mine` | bool | The caller authored the chain's latest revision (it is currently the counterparty's turn). |
+| `awaiting_viewer` | bool | It is the caller's turn — the chain is live (`open`/`countered`) AND the OTHER side made the last move. |
+| `can_accept` | bool | The caller may accept the current terms (`== awaiting_viewer`). |
+| `can_counter` | bool | The caller may post a counter (`== awaiting_viewer`; turn-based). |
+| `can_reject` | bool | The caller (the **poster**) may reject the bid while the chain is live. |
+| `can_withdraw` | bool | The caller (the **bidder**) may withdraw their own chain while it is live. |
+
+The same `viewer_role` / `last_action_mine` / `awaiting_viewer` / `can_*` block is added to `GET /api/v3/otc/options/:id/negotiations` (poster's view of bids on a listing).
+
 For `remote` items, `id` is the **local surrogate primary key** of this
 bank's peer-negotiation mirror row (so callers correlate within this
 bank's id namespace), and the terms (`quantity`, `strike_price`, `premium`,
@@ -8566,13 +8584,17 @@ Retrieve the full revision chain (bid, counter, counter, accept/reject) for a si
       "action_by_principal_type": "client",
       "action_by_principal_id":   42,
       "action_by_wire_id":        "",
-      "created_at":               "2026-06-01T12:00:00Z"
+      "created_at":               "2026-06-01T12:00:00Z",
+      "mine":                     true,
+      "is_latest":                false
     }
   ]
 }
 ```
 
 Revisions are ordered by `revision_number ASC`. For **remote** chains, `action_by_principal_type` is the mover's role (`buyer`/`seller`), `action_by_principal_id` is `0`, and `action_by_wire_id` carries the mover's opaque SI-TX id (`client-N`/`employee-N`/`bank`). For **local** chains `action_by_wire_id` is an empty string.
+
+Each revision also carries two **viewer-relative** flags (computed per caller): `mine` (`bool` — the caller authored this revision) and `is_latest` (`bool` — this is the chain's most recent revision). The FE shows Accept/Counter when the latest revision is NOT `mine` and the chain is live. The same `mine`/`is_latest` flags are added to each entry of `GET /api/v3/otc/options/:id/timeline` (for the timeline, `is_latest` is per-chain — the most recent revision of each `negotiation_id` in the merged stream).
 
 **Response 403:** (LOCAL chain) caller is neither the bidder nor the listing's poster.
 

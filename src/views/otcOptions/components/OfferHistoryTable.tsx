@@ -23,7 +23,7 @@ function chainBidderLabel(r: RevisionWithChain): string {
 }
 
 function actorLabel(r: RevisionWithChain, currentPrincipal: OtcParty | null | undefined): string {
-  return formatActor(r.action_by_principal_type, r.action_by_principal_id, currentPrincipal)
+  return formatActor(r.action_by_principal_type, r.action_by_principal_id, currentPrincipal, r.mine)
 }
 
 export function OfferHistoryTable({ revisions, currentPrincipal }: Props) {

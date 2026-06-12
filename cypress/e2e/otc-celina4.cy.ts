@@ -143,6 +143,7 @@ describe('Celina 4 — OTC Pregovaranje', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -220,6 +221,7 @@ describe('Celina 4 — OTC Pregovaranje', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -284,6 +286,7 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
           {
             id: 26,
@@ -297,6 +300,7 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -308,6 +312,40 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
     cy.contains('h2', 'Active').should('be.visible')
     cy.contains('a', '#25').should('be.visible')
     cy.contains('button', 'Exercise').should('be.visible')
+  })
+
+  // ── Scenario 25b: the seller/writer side never gets an Exercise button ─────
+  // A formed option is the BUYER's asset — only the holder may exercise. The
+  // backend marks the writer's row `me_owner: false` (and 404s any exercise
+  // attempt). The FE must not offer the button to the seller.
+  it('Scenario 25b — a contract the caller wrote (me_owner false) has no Exercise button', () => {
+    cy.intercept('GET', '**/api/v3/me/otc/contracts*', {
+      body: {
+        contracts: [
+          {
+            id: 250,
+            status: 'ACTIVE',
+            ticker: 'AAPL',
+            quantity: 10,
+            strike_price: '150.00',
+            premium: '5.00',
+            settlement_date: '2026-12-31',
+            buyer_owner_type: 'client',
+            buyer_owner_id: 99,
+            seller_owner_type: 'client',
+            seller_owner_id: 42,
+            me_owner: false,
+          },
+        ],
+      },
+    }).as('getContracts')
+
+    cy.loginAsClient('/otc/contracts')
+    cy.wait('@getContracts')
+
+    cy.contains('h2', 'Active').should('be.visible')
+    cy.contains('a', '#250').should('be.visible')
+    cy.contains('button', 'Exercise').should('not.exist')
   })
 
   // ── Scenario 26: Iskorišćavanje važećeg opcionog ugovora po SAGA patternu ──
@@ -327,6 +365,7 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -389,6 +428,7 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -425,6 +465,7 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -461,6 +502,7 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },
@@ -474,30 +516,15 @@ describe('Celina 4 — Portal OTC Ponude i Ugovori', () => {
         ],
       },
     }).as('getBankAccounts')
+    // A cross-bank exercise dispatches the SI-TX flow asynchronously, so the
+    // 201 carries `saga_id` + `status` (e.g. "pending") and NO contract/holding
+    // yet (REST_API_v3 §30). The FE must handle the absent contract without
+    // crashing in normalizeContract.
     cy.intercept('POST', '**/api/v3/otc/contracts/29/exercise', {
-      statusCode: 200,
+      statusCode: 201,
       body: {
-        contract: {
-          id: 29,
-          kind: 'remote',
-          status: 'EXERCISED',
-          ticker: 'AAPL',
-          quantity: 10,
-          strike_price: '150.00',
-          strike_currency: 'USD',
-          premium_paid: '5.00',
-          settlement_date: '2026-12-31',
-          buyer_owner_type: 'client',
-          buyer_owner_id: 42,
-          seller_owner_type: 'client',
-          seller_owner_id: 99,
-        },
-        holding: {
-          id: 1,
-          stock_id: 1,
-          quantity: '10',
-          owner: { owner_type: 'client', owner_id: 42 },
-        },
+        saga_id: '8b1c2ef8-0000-4000-8000-000000000000',
+        status: 'pending',
       },
     }).as('exercise')
 

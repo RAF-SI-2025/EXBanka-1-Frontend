@@ -25,4 +25,14 @@ describe('formatActor', () => {
     expect(formatActor(undefined, null)).toBe('—')
     expect(formatActor('', null)).toBe('—')
   })
+
+  it('returns "You" when the mine flag is true, regardless of principal', () => {
+    expect(formatActor('seller', null, undefined, true)).toBe('You')
+    expect(formatActor('client', 99, { owner_type: 'client', owner_id: 1 }, true)).toBe('You')
+  })
+
+  it('falls back to principal/role rendering when mine is false or absent', () => {
+    expect(formatActor('seller', null, undefined, false)).toBe('Seller')
+    expect(formatActor('client', 99, undefined)).toBe('client-99')
+  })
 })

@@ -12,8 +12,10 @@ import type { OtcParty } from '@/views/otcOptions/types'
 export function formatActor(
   type: string | null | undefined,
   id: number | null | undefined,
-  currentPrincipal?: OtcParty | null
+  currentPrincipal?: OtcParty | null,
+  mine?: boolean
 ): string {
+  if (mine) return 'You'
   if (id != null) {
     if (
       currentPrincipal &&
