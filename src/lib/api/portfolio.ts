@@ -9,6 +9,18 @@ import type {
 
 const EMPTY_GROUP = { total_value_rsd: '0', total_profit_rsd: '0', total_profit_pct: '0' }
 
+// The backend ships `available_quantity` (the tradeable, un-reserved amount).
+// The holdings table shows Available = that value and Reserved = quantity −
+// available_quantity, so derive both here. When `available_quantity` is absent
+// (or non-numeric) we can't compute the split, so leave `reserved`/`available`
+// untouched and the table renders "-".
+function normalizeSecurityPosition(p: SecurityPosition): SecurityPosition {
+  if (p.available_quantity == null) return p
+  const available = Number(p.available_quantity)
+  if (Number.isNaN(available)) return p
+  return { ...p, available: p.available_quantity, reserved: Number(p.quantity) - available }
+}
+
 export async function getPortfolio(): Promise<PortfolioResponse> {
   const { data } = await apiClient.get<PortfolioResponse>('/me/portfolio')
   return {
@@ -16,7 +28,7 @@ export async function getPortfolio(): Promise<PortfolioResponse> {
     securities: {
       ...EMPTY_GROUP,
       ...(data.securities ?? {}),
-      positions: data.securities?.positions ?? [],
+      positions: (data.securities?.positions ?? []).map(normalizeSecurityPosition),
     },
     funds: {
       ...EMPTY_GROUP,
@@ -33,7 +45,7 @@ export async function getPortfolioSummary(): Promise<PortfolioSummary> {
 
 export async function exerciseOption(holdingId: number): Promise<SecurityPosition> {
   const { data } = await apiClient.post<SecurityPosition>(`/me/portfolio/${holdingId}/exercise`)
-  return data
+  return normalizeSecurityPosition(data)
 }
 
 export async function getHoldingTransactions(

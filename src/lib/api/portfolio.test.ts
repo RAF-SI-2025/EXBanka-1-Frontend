@@ -29,6 +29,36 @@ describe('getPortfolio', () => {
     expect(result).toEqual(response)
   })
 
+  it('derives available (= available_quantity) and reserved (= quantity − available_quantity)', async () => {
+    const response = createMockPortfolioResponse({
+      securities: {
+        total_value_rsd: '0',
+        total_profit_rsd: '0',
+        total_profit_pct: '0',
+        positions: [createMockSecurityPosition({ quantity: 50, available_quantity: 40 })],
+      },
+    })
+    mockGet.mockResolvedValue({ data: response })
+    const { positions } = (await getPortfolio()).securities
+    expect(positions[0].available).toBe(40)
+    expect(positions[0].reserved).toBe(10)
+  })
+
+  it('leaves reserved/available undefined when available_quantity is absent', async () => {
+    const response = createMockPortfolioResponse({
+      securities: {
+        total_value_rsd: '0',
+        total_profit_rsd: '0',
+        total_profit_pct: '0',
+        positions: [createMockSecurityPosition({ quantity: 5 })],
+      },
+    })
+    mockGet.mockResolvedValue({ data: response })
+    const { positions } = (await getPortfolio()).securities
+    expect(positions[0].available).toBeUndefined()
+    expect(positions[0].reserved).toBeUndefined()
+  })
+
   it('defaults missing position arrays to empty arrays', async () => {
     mockGet.mockResolvedValue({
       data: {

@@ -156,6 +156,12 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
               <TableBody>
                 {negotiations.map((neg) => {
                   const isActive = isNegotiationActive(neg.status)
+                  // Buttons key off the backend's per-caller flags directly:
+                  // accept/counter when it's the poster's turn (awaiting_viewer),
+                  // reject whenever the chain is live (can_reject is not
+                  // turn-gated). No client-side turn derivation.
+                  const showWaiting =
+                    isActive && !neg.can_accept && !neg.can_counter && !neg.can_reject
                   return (
                     <Fragment key={neg.id}>
                       <TableRow>
@@ -177,32 +183,39 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
                             <Button size="sm" variant="ghost" onClick={() => setHistoryChain(neg)}>
                               See history
                             </Button>
-                            {isActive && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  onClick={() => setAcceptingId(neg.id)}
-                                  disabled={accept.isPending}
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setCounteringId(neg.id)}
-                                  disabled={counter.isPending}
-                                >
-                                  Counter
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => reject.mutate(neg.id)}
-                                  disabled={reject.isPending}
-                                >
-                                  Reject
-                                </Button>
-                              </>
+                            {neg.can_accept && (
+                              <Button
+                                size="sm"
+                                onClick={() => setAcceptingId(neg.id)}
+                                disabled={accept.isPending}
+                              >
+                                Accept
+                              </Button>
+                            )}
+                            {neg.can_counter && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setCounteringId(neg.id)}
+                                disabled={counter.isPending}
+                              >
+                                Counter
+                              </Button>
+                            )}
+                            {neg.can_reject && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => reject.mutate(neg.id)}
+                                disabled={reject.isPending}
+                              >
+                                Reject
+                              </Button>
+                            )}
+                            {showWaiting && (
+                              <span className="text-xs text-muted-foreground self-center">
+                                Waiting on bidder
+                              </span>
                             )}
                           </div>
                         </TableCell>

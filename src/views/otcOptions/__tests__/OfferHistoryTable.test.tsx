@@ -15,6 +15,8 @@ function rev(overrides: Partial<RevisionWithChain> = {}): RevisionWithChain {
     action_by_principal_type: 'client',
     action_by_principal_id: 42,
     created_at: '2026-06-01T12:00:00Z',
+    mine: false,
+    is_latest: false,
     chain_id: 5,
     chain_bidder: { owner_type: 'client', owner_id: 42 },
     chain_bidder_name: undefined,
@@ -93,5 +95,16 @@ describe('OfferHistoryTable', () => {
     )
     expect(screen.getByText('You')).toBeInTheDocument()
     expect(screen.getByText('client-42')).toBeInTheDocument()
+  })
+
+  it('labels the actor "You" when mine is true', () => {
+    render(<OfferHistoryTable revisions={[rev({ mine: true })]} />)
+    expect(screen.getByText('You')).toBeInTheDocument()
+  })
+
+  it('renders the principal when mine is false', () => {
+    render(<OfferHistoryTable revisions={[rev({ mine: false })]} />)
+    expect(screen.getAllByText('client-42').length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText('You')).not.toBeInTheDocument()
   })
 })

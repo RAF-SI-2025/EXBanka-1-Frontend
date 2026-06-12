@@ -43,10 +43,16 @@ describe('OtcContractsTable', () => {
     expect(screen.getByRole('cell', { name: '-' })).toBeInTheDocument()
   })
 
-  it('renders an Exercise button for ACTIVE contracts', () => {
-    const active = createMockOptionContract({ id: 1, status: 'ACTIVE' })
+  it('renders an Exercise button for an ACTIVE contract the caller holds (me_owner)', () => {
+    const active = createMockOptionContract({ id: 1, status: 'ACTIVE', me_owner: true })
     renderTable(<OtcContractsTable contracts={[active]} onExercise={onExercise} />)
     expect(screen.getByRole('button', { name: /exercise/i })).toBeInTheDocument()
+  })
+
+  it('does NOT render an Exercise button when the caller is the seller (me_owner false)', () => {
+    const asSeller = createMockOptionContract({ id: 9, status: 'ACTIVE', me_owner: false })
+    renderTable(<OtcContractsTable contracts={[asSeller]} onExercise={onExercise} />)
+    expect(screen.queryByRole('button', { name: /exercise/i })).not.toBeInTheDocument()
   })
 
   it('does not render an Exercise button for EXERCISED contracts', () => {
@@ -62,25 +68,18 @@ describe('OtcContractsTable', () => {
   })
 
   it('calls onExercise with the contract when the button is clicked', () => {
-    const active = createMockOptionContract({ id: 42, status: 'ACTIVE' })
+    const active = createMockOptionContract({ id: 42, status: 'ACTIVE', me_owner: true })
     renderTable(<OtcContractsTable contracts={[active]} onExercise={onExercise} />)
     fireEvent.click(screen.getByRole('button', { name: /exercise/i }))
     expect(onExercise).toHaveBeenCalledWith(active)
   })
 
-  it('renders an Exercise button for every ACTIVE contract regardless of buyer identity', () => {
-    const a = createMockOptionContract({
-      id: 100,
-      status: 'ACTIVE',
-      buyer: { owner_type: 'client', owner_id: 7 },
-    })
-    const b = createMockOptionContract({
-      id: 200,
-      status: 'ACTIVE',
-      buyer: { owner_type: 'client', owner_id: 999 },
-    })
-    renderTable(<OtcContractsTable contracts={[a, b]} onExercise={onExercise} />)
+  it('renders Exercise only for the ACTIVE contracts the caller holds', () => {
+    // Caller is the buyer/holder on #100 (me_owner) but the seller on #200.
+    const held = createMockOptionContract({ id: 100, status: 'ACTIVE', me_owner: true })
+    const written = createMockOptionContract({ id: 200, status: 'ACTIVE', me_owner: false })
+    renderTable(<OtcContractsTable contracts={[held, written]} onExercise={onExercise} />)
     const buttons = screen.getAllByRole('button', { name: /exercise/i })
-    expect(buttons).toHaveLength(2)
+    expect(buttons).toHaveLength(1)
   })
 })

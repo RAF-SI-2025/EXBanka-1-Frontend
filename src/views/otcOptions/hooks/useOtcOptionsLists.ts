@@ -93,6 +93,8 @@ export function useOtcOfferTimeline(offerId: number | null): {
       e.action_by_principal_id ?? e.action_by_owner_id ?? e.action_by_id ?? e.actor_id
     ),
     created_at: e.created_at,
+    mine: e.mine ?? false,
+    is_latest: e.is_latest ?? false,
     chain_id: e.negotiation_id,
     chain_bidder: { owner_type: e.bidder_owner_type, owner_id: e.bidder_owner_id },
   }))

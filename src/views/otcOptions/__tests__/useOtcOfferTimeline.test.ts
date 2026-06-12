@@ -65,4 +65,28 @@ describe('useOtcOfferTimeline', () => {
     expect(revs[0].chain_id).toBe(100)
     expect(revs[0].chain_bidder).toEqual({ owner_type: 'client', owner_id: 7 })
   })
+
+  it('carries mine / is_latest onto the mapped rows, defaulting absent to false', async () => {
+    getOfferTimeline.mockResolvedValue({
+      offer: {},
+      timeline: [
+        entry({
+          revision_number: 2,
+          created_at: '2026-06-01T12:05:00Z',
+          mine: true,
+          is_latest: true,
+        }),
+        entry({ revision_number: 1, created_at: '2026-06-01T12:00:00Z' }),
+      ],
+    })
+
+    const { result } = renderHook(() => useOtcOfferTimeline(42), {
+      wrapper: createQueryWrapper(),
+    })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    const revs = result.current.revisions
+    expect(revs[0]).toMatchObject({ mine: true, is_latest: true })
+    expect(revs[1]).toMatchObject({ mine: false, is_latest: false })
+  })
 })

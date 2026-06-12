@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { otcOptionsApi } from '@/views/otcOptions/api/otcOptionsApi'
 import { OTC_OPTIONS_QUERY_KEY } from '@/views/otcOptions/hooks/useOtcOptionsLists'
-import { notifySuccess } from '@/lib/errors'
+import { notifySuccess, parseApiError } from '@/lib/errors'
 import type {
   AcceptNegotiationPayload,
   CounterNegotiationPayload,
@@ -67,20 +67,29 @@ export function useAcceptNegotiation(offerId: number) {
       payload: AcceptNegotiationPayload
     }) => otcOptionsApi.acceptNegotiation(offerId, negotiationId, payload),
     onSuccess: (data) => {
-      // Spec §47.2 stage 2: the accept may flip the negotiation to `accepted`
-      // but the contract-formation saga can still abort (seller short on
-      // shares / buyer short on cash). In that case the parent is consumed,
-      // siblings are cancelled, but no contract is minted — surface a warning,
-      // not a celebratory success.
       if (data.contract) {
+        // Local (intra-bank) accept: the formation saga ran inline and minted
+        // the contract synchronously (spec §47.2 stage 2).
         notifySuccess(`Contract #${data.contract.id} minted`)
       } else {
-        toast.warning('Negotiation accepted, but contract was not formed', {
-          description:
-            'The formation saga aborted (insufficient shares or premium). The listing is consumed — consider re-listing.',
-        })
+        // Cross-bank accept: the contract is minted asynchronously on the
+        // counterparty bank via SI-TX settlement, so it isn't in this
+        // synchronous response (it carries `cross_bank_transaction_id`
+        // instead). This is NOT an abort — a real saga abort is a 412 and lands
+        // in `onError`, never here as a 200 with `contract: null`.
+        notifySuccess(
+          'Negotiation accepted — the cross-bank contract is settling and will appear in your contracts shortly.'
+        )
       }
       invalidate(offerId)
+    },
+    onError: (err) => {
+      // Genuine local-abort path (HTTP 412): the saga rolled back because the
+      // seller was short on shares or the buyer short on premium. Surface the
+      // backend's real reason so the "insufficient shares/premium" wording only
+      // appears when it is actually true.
+      const { message } = parseApiError(err)
+      toast.error("Couldn't form the contract", { description: message })
     },
   })
 }

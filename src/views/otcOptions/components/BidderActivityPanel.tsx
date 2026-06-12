@@ -33,10 +33,6 @@ interface Props {
   onPlaceBid: (offer: OtcOptionRow) => void
 }
 
-function partiesMatch(a: OtcParty, b: OtcParty): boolean {
-  return a.owner_type === b.owner_type && a.owner_id === b.owner_id
-}
-
 export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, onPlaceBid }: Props) {
   const offerId = resolveListingId(offer)
   // Source the bidder's own chain from the caller-scoped endpoint so the
@@ -60,14 +56,6 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
     }
     return data.negotiations.find((n) => Number(n.parent_offer_id ?? n.offer_id ?? 0) === offerId)
   }, [data, offer.my_negotiation_id, offerId])
-
-  // Whose move is it? If the chain's last_action_by matches the bidder, the
-  // owner is expected to respond; otherwise it's the bidder's turn.
-  const whoseTurn: 'you' | 'owner' | null = myChain?.last_action_by
-    ? partiesMatch(myChain.last_action_by, currentBidder)
-      ? 'owner'
-      : 'you'
-    : null
 
   return (
     <div className="space-y-4">
@@ -121,8 +109,6 @@ export function BidderActivityPanel({ offer, accounts, currentBidder, onBack, on
           {!isLoading && !error && myChain && (
             <YourChainBody
               chain={myChain}
-              offerId={offerId}
-              whoseTurn={whoseTurn}
               currentBidder={currentBidder}
               accounts={accounts}
               counterPending={counter.isPending}
@@ -155,7 +141,6 @@ function Row({ label, value }: { label: string; value: string | undefined }) {
 
 function YourChainBody({
   chain,
-  whoseTurn,
   currentBidder,
   accounts,
   counterPending,
@@ -166,8 +151,6 @@ function YourChainBody({
   onAccept,
 }: {
   chain: OtcNegotiation
-  offerId: number
-  whoseTurn: 'you' | 'owner' | null
   currentBidder: OtcParty
   accounts: Account[]
   counterPending: boolean
@@ -179,6 +162,12 @@ function YourChainBody({
 }) {
   const [showCounterForm, setShowCounterForm] = useState(false)
   const isTerminal = !isNegotiationActive(chain.status)
+  // Whose move is it? Driven entirely by the backend's per-caller flags.
+  const whoseTurn: 'you' | 'owner' | null = chain.awaiting_viewer
+    ? 'you'
+    : chain.last_action_mine
+      ? 'owner'
+      : null
 
   // The "Your chain" panel now leads with the full revision history so the
   // bidder sees every back-and-forth with the owner — the snapshot of the
@@ -201,26 +190,40 @@ function YourChainBody({
           <NegotiationRevisionsTable
             revisions={revisionsQ.data?.revisions ?? []}
             currentPrincipal={currentBidder}
-            // The bidder can accept the seller's terms while the chain is live;
-            // a seller-authored revision row exposes the Accept action.
-            accept={isTerminal ? undefined : { accounts, pending: acceptPending, onAccept }}
+            accept={chain.can_accept ? { accounts, pending: acceptPending, onAccept } : undefined}
           />
         )}
       </div>
 
       {!isTerminal && !showCounterForm && (
-        <div className="flex gap-2 pt-1">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => setShowCounterForm(true)}
-            disabled={counterPending}
-          >
-            Counter
-          </Button>
-          <Button size="sm" variant="destructive" onClick={onWithdraw} disabled={withdrawPending}>
-            {withdrawPending ? 'Withdrawing…' : 'Withdraw'}
-          </Button>
+        <div className="space-y-2 pt-1">
+          {!chain.awaiting_viewer && (
+            <p className="text-xs text-muted-foreground">
+              Waiting on the other side — you can counter or accept once they respond.
+            </p>
+          )}
+          <div className="flex gap-2">
+            {chain.can_counter && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowCounterForm(true)}
+                disabled={counterPending}
+              >
+                Counter
+              </Button>
+            )}
+            {chain.can_withdraw && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={onWithdraw}
+                disabled={withdrawPending}
+              >
+                {withdrawPending ? 'Withdrawing…' : 'Withdraw'}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
