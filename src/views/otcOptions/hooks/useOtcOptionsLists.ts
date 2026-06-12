@@ -28,6 +28,7 @@ export function useOtcOptionNegotiations(offerId: number | null) {
     queryKey: [OTC_OPTIONS_QUERY_KEY, 'negotiations', offerId],
     queryFn: () => otcOptionsApi.listNegotiations(offerId as number),
     enabled: offerId != null && offerId > 0,
+    meta: { suppressGlobalError: true },
   })
 }
 
@@ -77,6 +78,7 @@ export function useOtcOfferTimeline(offerId: number | null): {
     queryKey: [OTC_OPTIONS_QUERY_KEY, 'timeline', offerId],
     queryFn: () => otcOptionsApi.getOfferTimeline(offerId as number),
     enabled: offerId != null && offerId > 0,
+    meta: { suppressGlobalError: true },
   })
 
   const revisions: RevisionWithChain[] = (data?.timeline ?? []).map((e) => ({

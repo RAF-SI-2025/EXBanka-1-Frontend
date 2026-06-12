@@ -41,8 +41,10 @@ import {
 } from '@/views/otcOptions/hooks/useOtcOptionsLists'
 import { NegotiationRevisionsTable } from '@/views/otcOptions/components/NegotiationRevisionsTable'
 import { OfferHistoryTable } from '@/views/otcOptions/components/OfferHistoryTable'
+import { parseApiError } from '@/lib/errors'
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
+import { counterpartyAuthoredLatest } from '@/views/otcOptions/lib/chainTurn'
 
 interface Props {
   offer: OtcOptionRow
@@ -136,7 +138,13 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
         </CardHeader>
         <CardContent>
           {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          {error && <p className="text-sm text-destructive">Could not load chains.</p>}
+          {error && (
+            <p className="text-sm text-destructive">
+              {parseApiError(error).status === 403
+                ? "You're not the poster of this listing — it may belong to another account. Try going back and refreshing."
+                : 'Could not load chains.'}
+            </p>
+          )}
           {!isLoading && !error && negotiations.length === 0 && (
             <p className="text-sm text-muted-foreground">No bids yet.</p>
           )}
@@ -156,12 +164,11 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
               <TableBody>
                 {negotiations.map((neg) => {
                   const isActive = isNegotiationActive(neg.status)
-                  // Buttons key off the backend's per-caller flags directly:
-                  // accept/counter when it's the poster's turn (awaiting_viewer),
-                  // reject whenever the chain is live (can_reject is not
-                  // turn-gated). No client-side turn derivation.
-                  const showWaiting =
-                    isActive && !neg.can_accept && !neg.can_counter && !neg.can_reject
+                  // Turn from the chain's latest revision via the per-caller `mine` flag
+                  // (identity-robust): the owner may act when the BIDDER moved last.
+                  const bidderMovedLast = counterpartyAuthoredLatest(revisionsQ.revisions, neg.id)
+                  const ownerTurn = isActive && bidderMovedLast === true
+                  const showWaiting = isActive && bidderMovedLast === false
                   return (
                     <Fragment key={neg.id}>
                       <TableRow>
@@ -183,34 +190,32 @@ export function OfferActivityPanel({ offer, accounts, currentPrincipal, onBack }
                             <Button size="sm" variant="ghost" onClick={() => setHistoryChain(neg)}>
                               See history
                             </Button>
-                            {neg.can_accept && (
-                              <Button
-                                size="sm"
-                                onClick={() => setAcceptingId(neg.id)}
-                                disabled={accept.isPending}
-                              >
-                                Accept
-                              </Button>
-                            )}
-                            {neg.can_counter && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setCounteringId(neg.id)}
-                                disabled={counter.isPending}
-                              >
-                                Counter
-                              </Button>
-                            )}
-                            {neg.can_reject && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => reject.mutate(neg.id)}
-                                disabled={reject.isPending}
-                              >
-                                Reject
-                              </Button>
+                            {ownerTurn && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => setAcceptingId(neg.id)}
+                                  disabled={accept.isPending}
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setCounteringId(neg.id)}
+                                  disabled={counter.isPending}
+                                >
+                                  Counter
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => reject.mutate(neg.id)}
+                                  disabled={reject.isPending}
+                                >
+                                  Reject
+                                </Button>
+                              </>
                             )}
                             {showWaiting && (
                               <span className="text-xs text-muted-foreground self-center">

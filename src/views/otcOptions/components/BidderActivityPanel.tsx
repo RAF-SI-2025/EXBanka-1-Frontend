@@ -24,6 +24,7 @@ import { NegotiationRevisionsTable } from '@/views/otcOptions/components/Negotia
 import { isNegotiationActive } from '@/views/otcOptions/lib/negotiationStatus'
 import { hasOwnNegotiationChain } from '@/views/otcOptions/lib/myNegotiation'
 import { resolveListingId } from '@/views/otcOptions/lib/listingId'
+import { counterpartyAuthoredLatestRevision } from '@/views/otcOptions/lib/chainTurn'
 
 interface Props {
   offer: OtcOptionRow
@@ -162,17 +163,13 @@ function YourChainBody({
 }) {
   const [showCounterForm, setShowCounterForm] = useState(false)
   const isTerminal = !isNegotiationActive(chain.status)
-  // Whose move is it? Driven entirely by the backend's per-caller flags.
-  const whoseTurn: 'you' | 'owner' | null = chain.awaiting_viewer
-    ? 'you'
-    : chain.last_action_mine
-      ? 'owner'
-      : null
-
-  // The "Your chain" panel now leads with the full revision history so the
-  // bidder sees every back-and-forth with the owner — the snapshot of the
-  // latest revision is already the last row of that table.
   const revisionsQ = useOtcNegotiationRevisions(chain.id)
+  // Turn from the chain's latest revision via the per-caller `mine` flag
+  // (identity-robust): the bidder may act when the OWNER moved last.
+  const ownerMovedLast = counterpartyAuthoredLatestRevision(revisionsQ.data?.revisions ?? [])
+  const myTurn = !isTerminal && ownerMovedLast === true
+  const whoseTurn: 'you' | 'owner' | null =
+    ownerMovedLast === true ? 'you' : ownerMovedLast === false ? 'owner' : null
 
   return (
     <div className="space-y-3">
@@ -190,20 +187,20 @@ function YourChainBody({
           <NegotiationRevisionsTable
             revisions={revisionsQ.data?.revisions ?? []}
             currentPrincipal={currentBidder}
-            accept={chain.can_accept ? { accounts, pending: acceptPending, onAccept } : undefined}
+            accept={myTurn ? { accounts, pending: acceptPending, onAccept } : undefined}
           />
         )}
       </div>
 
       {!isTerminal && !showCounterForm && (
         <div className="space-y-2 pt-1">
-          {!chain.awaiting_viewer && (
+          {ownerMovedLast === false && (
             <p className="text-xs text-muted-foreground">
               Waiting on the other side — you can counter or accept once they respond.
             </p>
           )}
           <div className="flex gap-2">
-            {chain.can_counter && (
+            {myTurn && (
               <Button
                 size="sm"
                 variant="secondary"
@@ -213,16 +210,9 @@ function YourChainBody({
                 Counter
               </Button>
             )}
-            {chain.can_withdraw && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={onWithdraw}
-                disabled={withdrawPending}
-              >
-                {withdrawPending ? 'Withdrawing…' : 'Withdraw'}
-              </Button>
-            )}
+            <Button size="sm" variant="destructive" onClick={onWithdraw} disabled={withdrawPending}>
+              {withdrawPending ? 'Withdrawing…' : 'Withdraw'}
+            </Button>
           </div>
         </div>
       )}
