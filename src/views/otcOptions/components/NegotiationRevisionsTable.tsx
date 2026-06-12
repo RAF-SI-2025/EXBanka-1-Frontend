@@ -60,7 +60,7 @@ export function NegotiationRevisionsTable({ revisions, currentPrincipal, accept 
       </TableHeader>
       <TableBody>
         {revisions.map((r) => {
-          const acceptable = accept && r.action_by_principal_type === 'seller'
+          const acceptable = accept && r.is_latest && !r.mine
           return (
             <Fragment key={r.id}>
               <TableRow>
@@ -70,7 +70,8 @@ export function NegotiationRevisionsTable({ revisions, currentPrincipal, accept 
                   {formatActor(
                     r.action_by_principal_type,
                     r.action_by_principal_id,
-                    currentPrincipal
+                    currentPrincipal,
+                    r.mine
                   )}
                 </TableCell>
                 <TableCell className="text-right">{r.quantity}</TableCell>

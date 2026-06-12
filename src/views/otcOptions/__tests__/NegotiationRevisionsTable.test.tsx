@@ -100,11 +100,17 @@ describe('NegotiationRevisionsTable', () => {
 
     beforeEach(() => jest.clearAllMocks())
 
-    it('shows an Accept button on seller-authored revisions when accept is enabled', () => {
+    it('shows an Accept button on the latest revision not authored by the caller', () => {
       render(
         <NegotiationRevisionsTable
           revisions={[
-            rev({ id: 1, action_by_principal_type: 'seller', action_by_principal_id: null }),
+            rev({
+              id: 1,
+              action_by_principal_type: 'seller',
+              action_by_principal_id: null,
+              is_latest: true,
+              mine: false,
+            }),
           ]}
           accept={acceptCfg}
         />
@@ -112,11 +118,17 @@ describe('NegotiationRevisionsTable', () => {
       expect(screen.getByRole('button', { name: /^accept$/i })).toBeInTheDocument()
     })
 
-    it('does not show Accept on non-seller revisions', () => {
+    it('does not show Accept when is_latest is false', () => {
       render(
         <NegotiationRevisionsTable
           revisions={[
-            rev({ id: 1, action_by_principal_type: 'client', action_by_principal_id: 42 }),
+            rev({
+              id: 1,
+              action_by_principal_type: 'client',
+              action_by_principal_id: 42,
+              is_latest: false,
+              mine: false,
+            }),
           ]}
           accept={acceptCfg}
         />
@@ -127,7 +139,14 @@ describe('NegotiationRevisionsTable', () => {
     it('does not show Accept when no accept config is given (owner view)', () => {
       render(
         <NegotiationRevisionsTable
-          revisions={[rev({ action_by_principal_type: 'seller', action_by_principal_id: null })]}
+          revisions={[
+            rev({
+              action_by_principal_type: 'seller',
+              action_by_principal_id: null,
+              is_latest: true,
+              mine: false,
+            }),
+          ]}
         />
       )
       expect(screen.queryByRole('button', { name: /^accept$/i })).not.toBeInTheDocument()
@@ -138,7 +157,13 @@ describe('NegotiationRevisionsTable', () => {
       render(
         <NegotiationRevisionsTable
           revisions={[
-            rev({ id: 1, action_by_principal_type: 'seller', action_by_principal_id: null }),
+            rev({
+              id: 1,
+              action_by_principal_type: 'seller',
+              action_by_principal_id: null,
+              is_latest: true,
+              mine: false,
+            }),
           ]}
           accept={{ ...acceptCfg, onAccept }}
         />
@@ -157,5 +182,37 @@ describe('NegotiationRevisionsTable', () => {
     )
     expect(screen.getByText('Buyer')).toBeInTheDocument()
     expect(screen.queryByText(/buyer-/i)).not.toBeInTheDocument()
+  })
+
+  it('labels a revision authored by the caller as "You" via the mine flag', () => {
+    render(<NegotiationRevisionsTable revisions={[rev({ mine: true })]} />)
+    expect(screen.getByText('You')).toBeInTheDocument()
+  })
+
+  it('offers Accept only on the latest revision that is not mine', () => {
+    const accept = { accounts: [], pending: false, onAccept: jest.fn() }
+    render(
+      <NegotiationRevisionsTable
+        revisions={[
+          rev({ id: 1, revision_number: 1, action: 'BID', mine: true, is_latest: false }),
+          rev({ id: 2, revision_number: 2, action: 'COUNTER', mine: false, is_latest: true }),
+        ]}
+        accept={accept}
+      />
+    )
+    expect(screen.getAllByRole('button', { name: /^accept$/i })).toHaveLength(1)
+  })
+
+  it('shows no Accept when the latest revision is mine', () => {
+    const accept = { accounts: [], pending: false, onAccept: jest.fn() }
+    render(
+      <NegotiationRevisionsTable
+        revisions={[
+          rev({ id: 2, revision_number: 2, action: 'COUNTER', mine: true, is_latest: true }),
+        ]}
+        accept={accept}
+      />
+    )
+    expect(screen.queryByRole('button', { name: /^accept$/i })).not.toBeInTheDocument()
   })
 })
