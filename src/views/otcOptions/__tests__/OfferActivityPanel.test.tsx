@@ -51,7 +51,7 @@ function makeNeg(overrides: Partial<OtcNegotiation> = {}): OtcNegotiation {
     settlement_date: '2027-01-01',
     created_at: '2026-06-01T00:00:00Z',
     updated_at: '2026-06-01T00:00:00Z',
-    viewer_role: '',
+    viewer_role: 'poster',
     last_action_mine: false,
     awaiting_viewer: false,
     can_accept: false,
@@ -75,10 +75,17 @@ beforeEach(() => {
   jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({ revisions: [] })
 })
 
-describe('OfferActivityPanel — turn gating', () => {
-  it('shows Accept/Counter/Reject when the bidder moved last (owner’s turn)', async () => {
+describe('OfferActivityPanel — flag-driven buttons', () => {
+  it('shows Accept/Counter/Reject when awaiting the viewer (can_* all true)', async () => {
     jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({
-      negotiations: [makeNeg({ last_action_by: bidder })],
+      negotiations: [
+        makeNeg({
+          awaiting_viewer: true,
+          can_accept: true,
+          can_counter: true,
+          can_reject: true,
+        }),
+      ],
       total: 1,
     })
 
@@ -90,15 +97,38 @@ describe('OfferActivityPanel — turn gating', () => {
     expect(screen.queryByText(/waiting on bidder/i)).not.toBeInTheDocument()
   })
 
-  it('hides Accept/Counter/Reject when the owner moved last (bidder’s turn)', async () => {
+  it('keeps Reject but hides Accept/Counter when it is NOT the poster’s turn (can_reject only)', async () => {
+    // Poster moved last → not their turn for accept/counter, but they may still
+    // reject a live bid (can_reject == live && poster, not turn-gated).
     jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({
-      negotiations: [makeNeg({ last_action_by: owner })],
+      negotiations: [
+        makeNeg({
+          last_action_mine: true,
+          awaiting_viewer: false,
+          can_accept: false,
+          can_counter: false,
+          can_reject: true,
+        }),
+      ],
       total: 1,
     })
 
     renderWithProviders(<OfferActivityPanel {...defaultProps} />)
 
-    // Owner just countered → it's the bidder's turn; the owner can't act.
+    expect(await screen.findByRole('button', { name: /^reject$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^accept$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^counter$/i })).not.toBeInTheDocument()
+    expect(screen.queryByText(/waiting on bidder/i)).not.toBeInTheDocument()
+  })
+
+  it('shows the waiting hint and no action buttons when all flags are false', async () => {
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({
+      negotiations: [makeNeg({ status: 'countered' })],
+      total: 1,
+    })
+
+    renderWithProviders(<OfferActivityPanel {...defaultProps} />)
+
     expect(await screen.findByText(/waiting on bidder/i)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^accept$/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^counter$/i })).not.toBeInTheDocument()
