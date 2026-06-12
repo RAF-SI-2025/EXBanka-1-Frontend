@@ -15,6 +15,8 @@ function rev(overrides: Partial<RevisionWithChain> = {}): RevisionWithChain {
     action_by_principal_type: 'client',
     action_by_principal_id: 42,
     created_at: '2026-06-01T12:00:00Z',
+    mine: false,
+    is_latest: false,
     chain_id: 5,
     chain_bidder: { owner_type: 'client', owner_id: 42 },
     chain_bidder_name: undefined,

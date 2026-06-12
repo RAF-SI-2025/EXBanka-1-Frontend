@@ -289,7 +289,7 @@ describe('otcOptionsApi.listNegotiationRevisions', () => {
     const result = await otcOptionsApi.listNegotiationRevisions(5)
 
     expect(mockGet).toHaveBeenCalledWith('/me/otc/options/negotiations/5/revisions')
-    expect(result.revisions).toEqual(revisions)
+    expect(result.revisions).toEqual([{ ...revisions[0], mine: false, is_latest: false }])
   })
 
   it('defaults missing revisions to an empty array', async () => {
@@ -361,5 +361,91 @@ describe('otcOptionsApi.updateListing', () => {
     await otcOptionsApi.updateListing(42, { quantity: '25' })
 
     expect(mockPut).toHaveBeenCalledWith('/me/otc/options/42', { quantity: '25' })
+  })
+})
+
+describe('otcOptionsApi — negotiation action-hint flags', () => {
+  it('passes viewer-relative flags through listNegotiations', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        negotiations: [
+          {
+            id: 7,
+            status: 'countered',
+            bidder_owner_type: 'client',
+            bidder_owner_id: 5,
+            viewer_role: 'poster',
+            last_action_mine: false,
+            awaiting_viewer: true,
+            can_accept: true,
+            can_counter: true,
+            can_reject: true,
+            can_withdraw: false,
+          },
+        ],
+        total: 1,
+      },
+    })
+
+    const { negotiations } = await otcOptionsApi.listNegotiations(42)
+
+    expect(negotiations[0]).toMatchObject({
+      viewer_role: 'poster',
+      last_action_mine: false,
+      awaiting_viewer: true,
+      can_accept: true,
+      can_counter: true,
+      can_reject: true,
+      can_withdraw: false,
+    })
+  })
+
+  it('defaults absent flags to false / empty string', async () => {
+    mockGet.mockResolvedValue({
+      data: { negotiations: [{ id: 7, status: 'open' }], total: 1 },
+    })
+
+    const { negotiations } = await otcOptionsApi.listMyNegotiations()
+
+    expect(negotiations[0]).toMatchObject({
+      viewer_role: '',
+      last_action_mine: false,
+      awaiting_viewer: false,
+      can_accept: false,
+      can_counter: false,
+      can_reject: false,
+      can_withdraw: false,
+    })
+  })
+
+  it('passes mine / is_latest through listNegotiationRevisions and defaults them to false', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        revisions: [
+          {
+            id: 1,
+            negotiation_id: 5,
+            revision_number: 2,
+            action: 'COUNTER',
+            action_by_principal_type: 'seller',
+            mine: false,
+            is_latest: true,
+          },
+          {
+            id: 2,
+            negotiation_id: 5,
+            revision_number: 1,
+            action: 'BID',
+            action_by_principal_type: 'client',
+            action_by_principal_id: 5,
+          },
+        ],
+      },
+    })
+
+    const { revisions } = await otcOptionsApi.listNegotiationRevisions(5)
+
+    expect(revisions[0]).toMatchObject({ mine: false, is_latest: true })
+    expect(revisions[1]).toMatchObject({ mine: false, is_latest: false })
   })
 })

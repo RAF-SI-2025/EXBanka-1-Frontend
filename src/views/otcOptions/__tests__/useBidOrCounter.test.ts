@@ -35,6 +35,13 @@ function makeNeg(overrides: Partial<OtcNegotiation> = {}): OtcNegotiation {
     settlement_date: '2026-12-31',
     created_at: '2026-05-16T00:00:00Z',
     updated_at: '2026-05-16T00:00:00Z',
+    viewer_role: '',
+    last_action_mine: false,
+    awaiting_viewer: false,
+    can_accept: false,
+    can_counter: false,
+    can_reject: false,
+    can_withdraw: false,
     ...overrides,
   }
 }

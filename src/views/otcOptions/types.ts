@@ -101,6 +101,16 @@ export interface OtcNegotiation {
   bidder: OtcParty
   bidder_name?: string
   last_action_by?: OtcParty
+  // Viewer-relative action hints computed per caller by the backend
+  // (REST_API_v3 §47.2). The FE renders buttons directly from these instead of
+  // re-deriving turn rules. Normalized at the API boundary: absent ⇒ false / ''.
+  viewer_role: '' | 'bidder' | 'poster'
+  last_action_mine: boolean
+  awaiting_viewer: boolean
+  can_accept: boolean
+  can_counter: boolean
+  can_reject: boolean
+  can_withdraw: boolean
   quantity: string
   strike_price: string
   premium: string | null
@@ -136,6 +146,9 @@ export interface OtcNegotiationRevision {
   action_by_principal_type: string
   action_by_principal_id: number | null
   created_at: string
+  // Viewer-relative flags (REST_API_v3 §47.2). Normalized: absent ⇒ false.
+  mine: boolean
+  is_latest: boolean
 }
 
 export interface OtcNegotiationRevisionsResponse {
@@ -167,6 +180,9 @@ export interface OtcTimelineEntry {
   action_by_id?: number | string | null
   actor_id?: number | string | null
   created_at: string
+  // Per-caller / per-chain flags on the merged timeline. Hook defaults to false.
+  mine?: boolean
+  is_latest?: boolean
 }
 
 export interface OtcOfferTimelineResponse {
@@ -192,7 +208,14 @@ export interface AcceptNegotiationResponse {
   parent_offer_id?: number
   parent_status?: OtcOptionListingStatus
   cancelled_siblings?: OtcNegotiation[]
+  // Local (intra-bank) accept: the formation saga runs inline, so a 200 carries
+  // a non-null `contract` (a genuine abort is a 412, never a 200). Cross-bank
+  // accept: the contract is minted asynchronously on the counterparty bank via
+  // SI-TX settlement, so the synchronous 200 has `contract: null` plus this
+  // `cross_bank_transaction_id`. A 200 with `contract: null` therefore always
+  // means "cross-bank, settling async" — NOT an abort.
   contract: OptionContractLite | null
+  cross_bank_transaction_id?: string
 }
 
 // ---- Picker lookups ---------------------------------------------------------

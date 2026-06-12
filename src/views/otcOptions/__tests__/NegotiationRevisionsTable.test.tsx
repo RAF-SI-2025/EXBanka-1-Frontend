@@ -34,6 +34,8 @@ function rev(overrides: Partial<OtcNegotiationRevision> = {}): OtcNegotiationRev
     action_by_principal_type: 'client',
     action_by_principal_id: 42,
     created_at: '2026-06-01T12:00:00Z',
+    mine: false,
+    is_latest: false,
     ...overrides,
   }
 }
