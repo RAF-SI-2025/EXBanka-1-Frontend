@@ -273,6 +273,7 @@ export function Sidebar() {
   const { stolen } = useCapybara()
 
   const handleLogout = () => {
+    queryClient.clear()
     dispatch(logoutThunk())
   }
 

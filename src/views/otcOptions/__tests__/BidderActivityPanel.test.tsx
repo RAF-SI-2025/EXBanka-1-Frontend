@@ -62,6 +62,8 @@ function makeNegotiation(overrides: Partial<OtcNegotiation> = {}): OtcNegotiatio
     parent_offer_id: 999,
     offer_id: undefined,
     status: 'open',
+    // bidder is client id 1 — matches currentBidder in tests so authorship checks work
+    bidder: { owner_type: 'client', owner_id: 1 },
     quantity: '5',
     strike_price: '175.00',
     premium: '10.00',
@@ -122,20 +124,51 @@ describe('BidderActivityPanel — chain lookup', () => {
 })
 
 describe('BidderActivityPanel — flag-driven buttons', () => {
-  it("shows Counter and Withdraw when it is the bidder's turn (can_counter + can_withdraw)", async () => {
+  it("shows Counter and Withdraw when the OWNER authored the latest revision (bidder's turn)", async () => {
     const offer = makeOffer({ my_negotiation_id: 99 })
-    const negotiation = makeNegotiation({
-      id: 99,
-      status: 'ongoing',
-      awaiting_viewer: true,
-      can_counter: true,
-      can_withdraw: true,
-    })
+    // chain.bidder = { owner_type:'client', owner_id:1 } (set by makeNegotiation default)
+    const negotiation = makeNegotiation({ id: 99, status: 'ongoing' })
 
     jest
       .mocked(otcOptionsApi.listMyNegotiations)
       .mockResolvedValue({ negotiations: [negotiation], total: 1 })
     jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+
+    // rev1: BID by bidder (client id 1); rev2: COUNTER by owner (seller on sell listing)
+    jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({
+      revisions: [
+        {
+          id: 10,
+          negotiation_id: 99,
+          revision_number: 1,
+          action: 'BID',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+          created_at: '2026-06-01T10:00:00Z',
+          mine: true,
+          is_latest: false,
+        },
+        {
+          id: 11,
+          negotiation_id: 99,
+          revision_number: 2,
+          action: 'COUNTER',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'seller',
+          action_by_principal_id: null,
+          created_at: '2026-06-01T12:00:00Z',
+          mine: false,
+          is_latest: true,
+        },
+      ],
+    })
 
     renderWithProviders(<BidderActivityPanel {...defaultProps} offer={offer} />)
     expect(await screen.findByRole('button', { name: /counter/i })).toBeInTheDocument()
@@ -144,19 +177,31 @@ describe('BidderActivityPanel — flag-driven buttons', () => {
 
   it("accepts the seller's terms with the chosen acceptor account", async () => {
     const offer = makeOffer({ my_negotiation_id: 99 }) // resolveListingId → 42
-    const negotiation = makeNegotiation({
-      id: 99,
-      status: 'ongoing',
-      awaiting_viewer: true,
-      can_accept: true,
-      can_counter: true,
-      can_withdraw: true,
-    })
+    const negotiation = makeNegotiation({ id: 99, status: 'ongoing' })
+
     jest
       .mocked(otcOptionsApi.listMyNegotiations)
       .mockResolvedValue({ negotiations: [negotiation], total: 1 })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+
+    // Owner (seller on sell listing) authored the latest revision → bidder's turn → Accept shows
     jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({
       revisions: [
+        {
+          id: 10,
+          negotiation_id: 99,
+          revision_number: 1,
+          action: 'BID',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+          created_at: '2026-06-01T10:00:00Z',
+          mine: true,
+          is_latest: false,
+        },
         {
           id: 11,
           negotiation_id: 99,
@@ -190,42 +235,87 @@ describe('BidderActivityPanel — flag-driven buttons', () => {
     )
   })
 
-  it("hides Counter but keeps Withdraw when it is NOT the bidder's turn", async () => {
+  it('hides Counter but keeps Withdraw and shows waiting hint when the BIDDER authored the latest revision', async () => {
     const offer = makeOffer({ my_negotiation_id: 99 })
-    // Bidder moved last → owner's turn. can_counter false, can_withdraw true.
-    const negotiation = makeNegotiation({
-      id: 99,
-      status: 'ongoing',
-      last_action_mine: true,
-      awaiting_viewer: false,
-      can_counter: false,
-      can_withdraw: true,
-    })
+    // Bidder moved last → owner's turn
+    const negotiation = makeNegotiation({ id: 99, status: 'ongoing' })
+
     jest
       .mocked(otcOptionsApi.listMyNegotiations)
       .mockResolvedValue({ negotiations: [negotiation], total: 1 })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
 
-    renderWithProviders(<BidderActivityPanel {...defaultProps} offer={offer} />)
-    expect(await screen.findByRole('button', { name: /withdraw/i })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /counter/i })).not.toBeInTheDocument()
-    expect(screen.getByText(/waiting on the other side/i)).toBeInTheDocument()
-  })
-
-  it("does not offer Accept when it is NOT the bidder's turn (can_accept false)", async () => {
-    const offer = makeOffer({ my_negotiation_id: 99 })
-    const negotiation = makeNegotiation({
-      id: 99,
-      status: 'ongoing',
-      last_action_mine: true,
-      awaiting_viewer: false,
-      can_accept: false,
-      can_withdraw: true,
-    })
-    jest
-      .mocked(otcOptionsApi.listMyNegotiations)
-      .mockResolvedValue({ negotiations: [negotiation], total: 1 })
+    // rev1: BID by bidder; rev2: COUNTER by bidder (client id 1) — bidder moved last
     jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({
       revisions: [
+        {
+          id: 10,
+          negotiation_id: 99,
+          revision_number: 1,
+          action: 'BID',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+          created_at: '2026-06-01T10:00:00Z',
+          mine: true,
+          is_latest: false,
+        },
+        {
+          id: 11,
+          negotiation_id: 99,
+          revision_number: 2,
+          action: 'COUNTER',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+          created_at: '2026-06-01T12:00:00Z',
+          mine: true,
+          is_latest: true,
+        },
+      ],
+    })
+
+    renderWithProviders(<BidderActivityPanel {...defaultProps} offer={offer} />)
+    // Withdraw is always present while chain is live; wait for revisions to
+    // resolve so the waiting-hint and Counter-absence assertions are stable.
+    expect(await screen.findByText(/waiting on the other side/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /withdraw/i })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /counter/i })).not.toBeInTheDocument()
+  })
+
+  it('does not offer Accept when the BIDDER authored the latest revision', async () => {
+    const offer = makeOffer({ my_negotiation_id: 99 })
+    const negotiation = makeNegotiation({ id: 99, status: 'ongoing' })
+
+    jest
+      .mocked(otcOptionsApi.listMyNegotiations)
+      .mockResolvedValue({ negotiations: [negotiation], total: 1 })
+    jest.mocked(otcOptionsApi.listNegotiations).mockResolvedValue({ negotiations: [], total: 0 })
+
+    // Bidder authored latest revision → owner's turn → no Accept
+    jest.mocked(otcOptionsApi.listNegotiationRevisions).mockResolvedValue({
+      revisions: [
+        {
+          id: 10,
+          negotiation_id: 99,
+          revision_number: 1,
+          action: 'BID',
+          quantity: '5',
+          strike_price: '175.00',
+          premium: '10.00',
+          settlement_date: '2027-01-01T00:00:00Z',
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
+          created_at: '2026-06-01T10:00:00Z',
+          mine: true,
+          is_latest: false,
+        },
         {
           id: 11,
           negotiation_id: 99,
