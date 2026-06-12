@@ -29,6 +29,7 @@ export function OtcContractsTable({ contracts, onExercise }: Props) {
           <TableHead className="text-right">Qty</TableHead>
           <TableHead className="text-right">Strike</TableHead>
           <TableHead className="text-right">Premium</TableHead>
+          <TableHead>Currency</TableHead>
           <TableHead>Settlement</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -45,7 +46,8 @@ export function OtcContractsTable({ contracts, onExercise }: Props) {
             <TableCell>{c.ticker}</TableCell>
             <TableCell className="text-right">{c.quantity}</TableCell>
             <TableCell className="text-right">{c.strike_price}</TableCell>
-            <TableCell className="text-right">{c.premium}</TableCell>
+            <TableCell className="text-right">{c.premium || '-'}</TableCell>
+            <TableCell>{c.strike_currency || '-'}</TableCell>
             <TableCell>{c.settlement_date}</TableCell>
             <TableCell>
               <OtcOptionStatusBadge status={c.status} />

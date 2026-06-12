@@ -203,7 +203,14 @@ describe('Celina 4 — Investicioni fondovi: Ulaganje i povlačenje', () => {
         expect(body.amount).to.equal('5000')
         expect(body.currency).to.equal('RSD')
       })
-    cy.contains('Investment placed in Alpha Growth.').should('be.visible')
+    // Success closes the dialog (onSuccess → setSelectedFund(null)) and fires a
+    // confirmation toast. Assert the deterministic dialog-close as the success
+    // signal and the toast's *existence* (not `be.visible`): sonner's enter
+    // animation is opacity-driven via requestAnimationFrame and does not
+    // reliably reach opacity:1 within the timeout under headless CI, so
+    // `be.visible` flakes there (cf. Scenario 35, which omits the toast check).
+    cy.get('[role="dialog"]').should('not.exist')
+    cy.contains('Investment placed in Alpha Growth.').should('exist')
   })
 
   // ── Scenario 34: Klijent pokušava da uloži manje od minimalnog uloga ──────

@@ -17,6 +17,32 @@ describe('OtcContractsTable', () => {
     expect(screen.getByText(/no contracts in this view/i)).toBeInTheDocument()
   })
 
+  it('renders the strike ticker, currency and premium', () => {
+    const c = createMockOptionContract({
+      id: 1,
+      ticker: 'ACME',
+      strike_currency: 'USD',
+      premium: '700.00',
+    })
+    renderTable(<OtcContractsTable contracts={[c]} onExercise={onExercise} />)
+    expect(screen.getByRole('columnheader', { name: /currency/i })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'ACME' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: 'USD' })).toBeInTheDocument()
+    expect(screen.getByRole('cell', { name: '700.00' })).toBeInTheDocument()
+  })
+
+  it('shows "-" for premium when it is missing from the body', () => {
+    const c = createMockOptionContract({ id: 1, premium: '', strike_currency: 'USD' })
+    renderTable(<OtcContractsTable contracts={[c]} onExercise={onExercise} />)
+    expect(screen.getByRole('cell', { name: '-' })).toBeInTheDocument()
+  })
+
+  it('shows "-" for currency when strike_currency is missing', () => {
+    const c = createMockOptionContract({ id: 1, premium: '700.00', strike_currency: undefined })
+    renderTable(<OtcContractsTable contracts={[c]} onExercise={onExercise} />)
+    expect(screen.getByRole('cell', { name: '-' })).toBeInTheDocument()
+  })
+
   it('renders an Exercise button for ACTIVE contracts', () => {
     const active = createMockOptionContract({ id: 1, status: 'ACTIVE' })
     renderTable(<OtcContractsTable contracts={[active]} onExercise={onExercise} />)

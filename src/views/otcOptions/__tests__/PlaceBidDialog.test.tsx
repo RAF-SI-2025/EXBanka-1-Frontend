@@ -122,3 +122,16 @@ describe('PlaceBidDialog premium floor', () => {
     expect(txt.includes('best bid') || txt.includes('seller strike')).toBe(true)
   })
 })
+
+describe('PlaceBidDialog — countering (existing chain) has no premium floor', () => {
+  it('allows a below-floor premium and shows no floor helper when the user already has a chain', async () => {
+    // my_negotiation_id present ⇒ this submit is a Counter, not a first bid.
+    renderDialog(makeOffer({ best_bid: '850', my_negotiation_id: 77 }))
+
+    await typePremium('100') // far below the 850 best-bid "floor"
+
+    expect(screen.getByRole('button', { name: /submit bid/i })).not.toBeDisabled()
+    expect(screen.queryByText(/minimum/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/must be at least/i)).not.toBeInTheDocument()
+  })
+})
