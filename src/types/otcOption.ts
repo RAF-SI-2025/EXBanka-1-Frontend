@@ -49,6 +49,16 @@ export interface OptionContract {
   settlement_date: string
   buyer: OtcParty
   seller: OtcParty
+  // Server-authoritative "can the caller exercise this contract?" flag
+  // (REST_API_v3 §30, the unified /me/otc/contracts + /otc/contracts/:id
+  // response). `true` ONLY when the caller is the contract's buyer/holder — a
+  // formed option is the buyer's owned asset, so the seller/writer is `false`.
+  // For `remote` rows it is `true` iff this bank holds the buyer side. The
+  // Exercise action is gated on this: the backend rejects a seller's exercise
+  // with 404 (existence must not leak), so the UI must not offer the button to
+  // anyone but the holder. NOTE: this differs from offers/negotiations, where
+  // `me_owner` marks the listing's poster/seller.
+  me_owner: boolean
 }
 
 export interface ExerciseContractPayload {
@@ -73,6 +83,15 @@ export interface MyOtcContractsResponse {
 }
 
 export interface ExerciseOtcContractResponse {
-  contract: OptionContract
-  holding: { id: number; stock_id: number; quantity: string; owner: OtcParty }
+  // A LOCAL exercise settles inline and returns the exercised contract + the
+  // buyer's new holding. A cross-bank (remote) exercise dispatches the SI-TX
+  // flow asynchronously (REST_API_v3 §30): the 201 carries `saga_id` + a
+  // `status` like "pending" and NO contract/holding yet — both are null/absent
+  // until settlement completes. Hence both are nullable here.
+  contract: OptionContract | null
+  holding?: { id: number; stock_id: number; quantity: string; owner: OtcParty } | null
+  // Cross-bank dispatch correlation handle + SI-TX state (poll via
+  // GET /me/otc/transactions/:txid/status). Absent for a local exercise.
+  saga_id?: string
+  status?: string
 }

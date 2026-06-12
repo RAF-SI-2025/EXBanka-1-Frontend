@@ -71,11 +71,27 @@ describe('Portfolio Page', () => {
     cy.contains('th', 'Last Updated').should('be.visible')
     cy.contains('th', 'Actions').should('be.visible')
 
-    // Position data — AAPL carries reserved/available; ESM26 omits them (→ "-").
-    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
+    // Position data — AAPL carries `available_quantity` (40) and quantity 50, so
+    // the FE shows Available 40 and derives Reserved = 50 − 40 = 10. ESM26 omits
+    // available_quantity, so both columns render "-".
+    cy.contains('td', 'AAPL')
+      .scrollIntoView()
+      .should('be.visible')
+      .parent('tr')
+      .within(() => {
+        cy.get('td').eq(2).should('have.text', '50') // Quantity
+        cy.get('td').eq(3).should('have.text', '10') // Reserved (derived)
+        cy.get('td').eq(4).should('have.text', '40') // Available
+      })
     cy.contains('td', 'stock').should('be.visible')
 
-    cy.contains('td', 'ESM26').should('be.visible')
+    cy.contains('td', 'ESM26')
+      .should('be.visible')
+      .parent('tr')
+      .within(() => {
+        cy.get('td').eq(3).should('have.text', '-') // Reserved → "-"
+        cy.get('td').eq(4).should('have.text', '-') // Available → "-"
+      })
     cy.contains('td', 'future').should('be.visible')
 
     cy.contains('2 holdings').scrollIntoView().should('be.visible')

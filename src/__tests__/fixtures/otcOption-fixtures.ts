@@ -18,6 +18,9 @@ export function createMockOptionContract(overrides: Partial<OptionContract> = {}
     settlement_date: '2026-06-05',
     buyer: { owner_type: 'client', owner_id: 7 },
     seller: { owner_type: 'client', owner_id: 8 },
+    // Default to the buyer/holder perspective so the exercisable path is the
+    // baseline; override with `me_owner: false` to model the seller/writer.
+    me_owner: true,
     ...overrides,
   }
 }

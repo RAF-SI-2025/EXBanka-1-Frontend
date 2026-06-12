@@ -8,8 +8,14 @@ export interface SecurityPosition {
   symbol: string
   holding_id: number
   quantity: number
-  // Reserved / available quantity. Optional — absent on some payloads, in which
-  // case the holdings table renders "-".
+  // Wire field: the un-reserved (tradeable) quantity. The holdings table's
+  // Available column shows this verbatim, and Reserved is derived as
+  // `quantity − available_quantity` (see normalizeSecurityPosition in
+  // src/lib/api/portfolio.ts). Absent on some payloads.
+  available_quantity?: string | number
+  // Derived from `available_quantity` at the API boundary; the table reads
+  // these. Both stay undefined when `available_quantity` is absent, so the
+  // Reserved/Available columns render "-".
   reserved?: string | number
   available?: string | number
   avg_cost_rsd: string
