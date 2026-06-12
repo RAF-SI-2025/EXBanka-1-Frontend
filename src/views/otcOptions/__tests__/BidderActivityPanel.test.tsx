@@ -67,8 +67,7 @@ function makeNegotiation(overrides: Partial<OtcNegotiation> = {}): OtcNegotiatio
     premium: '10.00',
     settlement_date: '2027-01-01',
     kind: 'remote',
-    last_action_by: { owner_type: 'client', owner_id: 1 },
-    viewer_role: '',
+    viewer_role: 'bidder',
     last_action_mine: false,
     awaiting_viewer: false,
     can_accept: false,
@@ -122,14 +121,15 @@ describe('BidderActivityPanel — chain lookup', () => {
   })
 })
 
-describe('BidderActivityPanel — isTerminal for remote chains', () => {
-  it('shows Counter and Withdraw buttons when chain status is "ongoing" (remote counter received)', async () => {
+describe('BidderActivityPanel — flag-driven buttons', () => {
+  it("shows Counter and Withdraw when it is the bidder's turn (can_counter + can_withdraw)", async () => {
     const offer = makeOffer({ my_negotiation_id: 99 })
-    // ongoing = remote-bank peer vocabulary for "owner countered, bidder's turn"
     const negotiation = makeNegotiation({
       id: 99,
       status: 'ongoing',
-      last_action_by: { owner_type: 'client', owner_id: 2 },
+      awaiting_viewer: true,
+      can_counter: true,
+      can_withdraw: true,
     })
 
     jest
@@ -147,7 +147,10 @@ describe('BidderActivityPanel — isTerminal for remote chains', () => {
     const negotiation = makeNegotiation({
       id: 99,
       status: 'ongoing',
-      last_action_by: { owner_type: 'client', owner_id: 2 },
+      awaiting_viewer: true,
+      can_accept: true,
+      can_counter: true,
+      can_withdraw: true,
     })
     jest
       .mocked(otcOptionsApi.listMyNegotiations)
@@ -187,31 +190,36 @@ describe('BidderActivityPanel — isTerminal for remote chains', () => {
     )
   })
 
-  it('hides Counter when the bidder moved last (not their turn) but keeps Withdraw', async () => {
+  it("hides Counter but keeps Withdraw when it is NOT the bidder's turn", async () => {
     const offer = makeOffer({ my_negotiation_id: 99 })
-    // Bidder (currentBidder id 1) made the last move → owner's turn now.
+    // Bidder moved last → owner's turn. can_counter false, can_withdraw true.
     const negotiation = makeNegotiation({
       id: 99,
       status: 'ongoing',
-      last_action_by: { owner_type: 'client', owner_id: 1 },
+      last_action_mine: true,
+      awaiting_viewer: false,
+      can_counter: false,
+      can_withdraw: true,
     })
     jest
       .mocked(otcOptionsApi.listMyNegotiations)
       .mockResolvedValue({ negotiations: [negotiation], total: 1 })
 
     renderWithProviders(<BidderActivityPanel {...defaultProps} offer={offer} />)
-    // Withdraw appears only once the chain has loaded — use it as the anchor.
     expect(await screen.findByRole('button', { name: /withdraw/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /counter/i })).not.toBeInTheDocument()
     expect(screen.getByText(/waiting on the other side/i)).toBeInTheDocument()
   })
 
-  it('does not offer Accept when the bidder moved last (not their turn)', async () => {
+  it("does not offer Accept when it is NOT the bidder's turn (can_accept false)", async () => {
     const offer = makeOffer({ my_negotiation_id: 99 })
     const negotiation = makeNegotiation({
       id: 99,
       status: 'ongoing',
-      last_action_by: { owner_type: 'client', owner_id: 1 },
+      last_action_mine: true,
+      awaiting_viewer: false,
+      can_accept: false,
+      can_withdraw: true,
     })
     jest
       .mocked(otcOptionsApi.listMyNegotiations)
@@ -227,10 +235,10 @@ describe('BidderActivityPanel — isTerminal for remote chains', () => {
           strike_price: '175.00',
           premium: '10.00',
           settlement_date: '2027-01-01T00:00:00Z',
-          action_by_principal_type: 'seller',
-          action_by_principal_id: null,
+          action_by_principal_type: 'client',
+          action_by_principal_id: 1,
           created_at: '2026-06-01T12:00:00Z',
-          mine: false,
+          mine: true,
           is_latest: true,
         },
       ],
@@ -239,12 +247,11 @@ describe('BidderActivityPanel — isTerminal for remote chains', () => {
     renderWithProviders(
       <BidderActivityPanel {...defaultProps} offer={offer} accounts={[account({ id: 7 })]} />
     )
-    // Wait for the chain to load (Withdraw renders), then assert no Accept.
     await screen.findByRole('button', { name: /withdraw/i })
     expect(screen.queryByRole('button', { name: /^accept$/i })).not.toBeInTheDocument()
   })
 
-  it('hides Counter and Withdraw buttons when chain status is "accepted" (terminal)', async () => {
+  it('hides Counter and Withdraw when the chain is terminal (accepted)', async () => {
     const offer = makeOffer({ my_negotiation_id: 99 })
     const negotiation = makeNegotiation({ id: 99, status: 'accepted' })
 
