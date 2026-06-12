@@ -116,6 +116,15 @@ function PlaceBidForm({
     offer.settlement_date ? offer.settlement_date.slice(0, 10) : ''
   )
 
+  const minSettlement = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  })()
+
   // The premium floor (best-bid / seller-strike) only guards a FIRST bid. Once
   // the caller has an open chain on this listing, this submit is a *counter* —
   // the bidder may propose any premium, so the floor does not apply.
@@ -137,6 +146,7 @@ function PlaceBidForm({
     strike !== '' &&
     premium !== '' &&
     settlement !== '' &&
+    settlement >= minSettlement &&
     premiumMeetsFloor
 
   return (
@@ -205,6 +215,7 @@ function PlaceBidForm({
             <Input
               id="bid-settlement"
               type="date"
+              min={minSettlement}
               value={settlement}
               onChange={(e) => setSettlement(e.target.value)}
             />
