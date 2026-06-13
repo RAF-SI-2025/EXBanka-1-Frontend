@@ -49,7 +49,7 @@ export function LoanApplicationView() {
       title="Submit Loan Request"
       subtitle="Apply for a personal, cash, mortgage, or business loan."
     >
-      <Card className="max-w-lg">
+      <Card className="max-w-2xl">
         <CardContent className="pt-6">
           <LoanApplicationForm
             accounts={accounts}

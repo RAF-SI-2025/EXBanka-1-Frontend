@@ -135,3 +135,65 @@ describe('PlaceBidDialog — countering (existing chain) has no premium floor', 
     expect(screen.queryByText(/must be at least/i)).not.toBeInTheDocument()
   })
 })
+
+describe('PlaceBidDialog — settlement date validation', () => {
+  function getTomorrow(): string {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  function getToday(): string {
+    const d = new Date()
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  function getDayAfterTomorrow(): string {
+    const d = new Date()
+    d.setDate(d.getDate() + 2)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  it('Test A: settlement input has a min attribute equal to tomorrow', () => {
+    renderDialog(makeOffer({ best_bid: undefined }))
+
+    const settlementInput = screen.getByLabelText(/settlement date/i)
+    const minAttr = settlementInput.getAttribute('min')
+    expect(minAttr).toBeTruthy()
+    expect(minAttr! > getToday()).toBe(true)
+    expect(minAttr).toBe(getTomorrow())
+  })
+
+  it('Test B: submit is disabled when settlement date is today', async () => {
+    renderDialog(makeOffer({ best_bid: undefined, settlement_date: undefined }))
+
+    const settlementInput = screen.getByLabelText(/settlement date/i)
+    await userEvent.clear(settlementInput)
+    await userEvent.type(settlementInput, getToday())
+
+    expect(screen.getByRole('button', { name: /submit bid/i })).toBeDisabled()
+  })
+
+  it('Test C: submit is enabled for a future date and calls onSubmit when clicked', async () => {
+    const onSubmit = jest.fn()
+    renderDialog(makeOffer({ best_bid: undefined, settlement_date: undefined }), onSubmit)
+
+    const settlementInput = screen.getByLabelText(/settlement date/i)
+    await userEvent.clear(settlementInput)
+    await userEvent.type(settlementInput, getDayAfterTomorrow())
+
+    const submitButton = screen.getByRole('button', { name: /submit bid/i })
+    expect(submitButton).not.toBeDisabled()
+    await userEvent.click(submitButton)
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+})

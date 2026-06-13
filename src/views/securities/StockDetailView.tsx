@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import { useAppSelector } from '@/hooks/useAppSelector'
 import { useOptions, useStock, useStockHistory } from '@/hooks/useSecurities'
+import { selectUserType } from '@/store/selectors/authSelectors'
 import type { PriceHistoryPeriod } from '@/types/security'
 import { OptionsChain } from '@/views/securities/components/OptionsChain'
 import { PriceChart } from '@/views/securities/components/PriceChart'
@@ -15,12 +17,16 @@ export function StockDetailView() {
   const [period, setPeriod] = useState<PriceHistoryPeriod>('month')
   const [optionDate, setOptionDate] = useState('')
 
+  // GET /securities/options is an employee-only route; a client opening this
+  // page must not trigger it (403). Clients simply don't see the options chain.
+  const isClient = useAppSelector(selectUserType) === 'client'
+
   const { data: stock, isLoading } = useStock(stockId)
   const { data: history, isLoading: historyLoading } = useStockHistory(stockId, { period })
-  const { data: optionsData } = useOptions({
-    stock_id: stockId,
-    settlement_date: optionDate || undefined,
-  })
+  const { data: optionsData } = useOptions(
+    { stock_id: stockId, settlement_date: optionDate || undefined },
+    !isClient
+  )
 
   if (isLoading) {
     return (
