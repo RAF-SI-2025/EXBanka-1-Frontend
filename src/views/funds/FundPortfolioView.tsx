@@ -1,11 +1,16 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ErrorFallback } from '@/components/shared/ErrorFallback'
 import { useFund } from '@/hooks/useFunds'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectUserType } from '@/store/selectors/authSelectors'
 import { FundPortfolioHoldingsTable } from '@/views/funds/components/FundPortfolioHoldingsTable'
+import { SellFundHoldingDialog } from '@/views/funds/components/SellFundHoldingDialog'
 import { ViewShell } from '@/views/shared'
+import type { FundHolding } from '@/types/fund'
 
 function formatRsd(value: string | null | undefined): string {
   if (value === null || value === undefined || value === '') return '— RSD'
@@ -23,6 +28,8 @@ export function FundPortfolioView() {
   const navigate = useNavigate()
   const fundId = Number(id)
   const { data, isLoading, isError } = useFund(fundId)
+  const isEmployee = useAppSelector(selectUserType) === 'employee'
+  const [sellTarget, setSellTarget] = useState<FundHolding | null>(null)
 
   if (isLoading) {
     return (
@@ -77,9 +84,22 @@ export function FundPortfolioView() {
           <CardTitle>Holdings</CardTitle>
         </CardHeader>
         <CardContent>
-          <FundPortfolioHoldingsTable holdings={holdings} />
+          <FundPortfolioHoldingsTable
+            holdings={holdings}
+            onSell={isEmployee ? setSellTarget : undefined}
+          />
         </CardContent>
       </Card>
+
+      {sellTarget && (
+        <SellFundHoldingDialog
+          open
+          onOpenChange={(o) => !o && setSellTarget(null)}
+          holding={sellTarget}
+          fundId={fundId}
+          fundName={fund.name}
+        />
+      )}
     </ViewShell>
   )
 }

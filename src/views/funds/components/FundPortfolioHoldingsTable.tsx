@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -10,9 +11,10 @@ import type { FundHolding } from '@/types/fund'
 
 interface FundPortfolioHoldingsTableProps {
   holdings: FundHolding[] | null
+  onSell?: (holding: FundHolding) => void
 }
 
-export function FundPortfolioHoldingsTable({ holdings }: FundPortfolioHoldingsTableProps) {
+export function FundPortfolioHoldingsTable({ holdings, onSell }: FundPortfolioHoldingsTableProps) {
   if (!holdings || holdings.length === 0) {
     return <p className="text-sm text-muted-foreground">This fund holds no securities yet.</p>
   }
@@ -27,6 +29,7 @@ export function FundPortfolioHoldingsTable({ holdings }: FundPortfolioHoldingsTa
           <TableHead className="text-right">Current price</TableHead>
           <TableHead className="text-right">Market value</TableHead>
           <TableHead>Acquired</TableHead>
+          {onSell && <TableHead className="text-right">Actions</TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -39,6 +42,13 @@ export function FundPortfolioHoldingsTable({ holdings }: FundPortfolioHoldingsTa
             <TableCell className="text-right">{formatRsd(h.current_price_rsd)}</TableCell>
             <TableCell className="text-right">{formatRsd(h.current_value_rsd)}</TableCell>
             <TableCell>{new Date(h.acquired_at).toLocaleDateString()}</TableCell>
+            {onSell && (
+              <TableCell className="text-right">
+                <Button size="sm" variant="outline" onClick={() => onSell(h)}>
+                  Sell
+                </Button>
+              </TableCell>
+            )}
           </TableRow>
         ))}
       </TableBody>

@@ -6,6 +6,7 @@ import {
   createMockFundDetailResponse,
   createMockFundHolding,
 } from '@/__tests__/fixtures/fund-fixtures'
+import { createMockAuthState, createMockAuthUser } from '@/__tests__/fixtures/auth-fixtures'
 import * as fundsApi from '@/lib/api/funds'
 
 jest.mock('@/lib/api/funds')
@@ -102,6 +103,51 @@ describe('FundPortfolioView', () => {
     })
     expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument()
     expect(screen.getAllByText(/—\s*RSD/).length).toBeGreaterThanOrEqual(3)
+  })
+
+  it('renders a per-holding Sell button for employees', async () => {
+    mockedGetFund.mockResolvedValue(
+      createMockFundDetailResponse({
+        fund: createMockFund({ id: 7 }),
+        holdings: [createMockFundHolding({ security_id: 42, ticker: 'AAPL', quantity: '10' })],
+      })
+    )
+
+    renderWithProviders(<FundPortfolioView />, {
+      route: '/funds/7/portfolio',
+      routePath: '/funds/:id/portfolio',
+      preloadedState: { auth: createMockAuthState({ userType: 'employee' }) },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('AAPL')).toBeInTheDocument()
+    })
+    expect(screen.getByRole('button', { name: /^sell$/i })).toBeInTheDocument()
+  })
+
+  it('renders no Sell buttons for clients', async () => {
+    mockedGetFund.mockResolvedValue(
+      createMockFundDetailResponse({
+        fund: createMockFund({ id: 7 }),
+        holdings: [createMockFundHolding({ security_id: 42, ticker: 'AAPL', quantity: '10' })],
+      })
+    )
+
+    renderWithProviders(<FundPortfolioView />, {
+      route: '/funds/7/portfolio',
+      routePath: '/funds/:id/portfolio',
+      preloadedState: {
+        auth: createMockAuthState({
+          userType: 'client',
+          user: createMockAuthUser({ role: 'Client', system_type: 'client', permissions: [] }),
+        }),
+      },
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('AAPL')).toBeInTheDocument()
+    })
+    expect(screen.queryByRole('button', { name: /^sell$/i })).not.toBeInTheDocument()
   })
 
   it('renders 0 in the Holdings count when the backend returns null holdings', async () => {
