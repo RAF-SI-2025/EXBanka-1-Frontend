@@ -85,11 +85,11 @@ export function useForexHistory(id: number, filters: PriceHistoryFilters = {}) {
   })
 }
 
-export function useOptions(filters: OptionsFilters) {
+export function useOptions(filters: OptionsFilters, enabled = true) {
   return useQuery({
     queryKey: ['options', filters],
     queryFn: () => getOptions(filters),
-    enabled: filters.stock_id > 0,
+    enabled: enabled && filters.stock_id > 0,
   })
 }
 

@@ -197,6 +197,15 @@ describe('useOptions', () => {
     expect(result.current.fetchStatus).toBe('idle')
     expect(securitiesApi.getOptions).not.toHaveBeenCalled()
   })
+
+  it('does not fetch when enabled=false even if stock_id > 0', () => {
+    const { result } = renderHook(() => useOptions({ stock_id: 1 }, false), {
+      wrapper: createQueryWrapper(),
+    })
+
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(securitiesApi.getOptions).not.toHaveBeenCalled()
+  })
 })
 
 describe('useListingMap', () => {

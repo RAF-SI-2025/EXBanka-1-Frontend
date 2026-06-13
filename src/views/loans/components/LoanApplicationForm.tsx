@@ -98,7 +98,7 @@ export function LoanApplicationForm({
               }}
               value={field.value}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select account" />
               </SelectTrigger>
               <SelectContent>
