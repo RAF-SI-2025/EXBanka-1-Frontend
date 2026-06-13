@@ -1,5 +1,7 @@
 # EXBanka Frontend — Project Specification
 
+_Last updated: 2026-06-13b (Watchlist Favorites tab — per-row **Buy** button (navigates to /securities/order/new with listingId/direction/securityType/ticker prefilled) and a **Type** filter select that passes `listing_type` to GET /me/watchlists/:id/items.)_
+
 _Last updated: 2026-06-13 (Fund Portfolio holdings Sell — per-holding Sell button (employee-only) on /funds/:id/portfolio opens SellFundHoldingDialog, resolving the venue via useListingsForSell and placing a market sell via POST /me/orders with on_behalf_of_fund_id; account auto-resolves to the fund's RSD account.)_
 
 _Last updated: 2026-06-12j (OTC negotiation buttons are now driven by backend viewer-relative flags, replacing the client-side turn derivation of 2026-06-12h — the backend computes per-caller hints on each negotiation (`GET /me/otc/options/negotiations` and `GET /otc/options/:id/negotiations`) and per-revision/timeline flags (REST_API_v3 §47.2). `OtcNegotiation` gains `viewer_role` (`'' | 'bidder' | 'poster'`), `last_action_mine`, `awaiting_viewer`, `can_accept`, `can_counter`, `can_reject`, `can_withdraw`; `OtcNegotiationRevision` and `OtcTimelineEntry` gain `mine` / `is_latest`. `normalizeNegotiation` / `normalizeRevision` and the `useOtcOfferTimeline` mapping default every absent flag to `false` (and `viewer_role` to `''`) per the backend's omitted-when-false contract. `OfferActivityPanel` (poster) now renders **Accept** off `can_accept`, **Counter** off `can_counter`, and **Reject** off `can_reject` independently — so Reject stays available whenever the chain is live even when it is NOT the poster's turn (`can_reject` is not turn-gated), unlike the old single combined gate; "Waiting on bidder" shows only when none apply. `BidderActivityPanel` (bidder) renders **Counter** off `can_counter`, the in-table **Accept** off `can_accept`, and **Withdraw** off `can_withdraw`, with `whoseTurn` derived from `awaiting_viewer` / `last_action_mine`. `NegotiationRevisionsTable` gates its in-table Accept on `is_latest && !mine` (replacing the `action_by_principal_type === 'seller'` heuristic) and labels "You" via `mine`; `OfferHistoryTable` labels "You" via `mine`; `formatActor` gains an optional `mine` arg that short-circuits to "You". The now-dead `src/views/otcOptions/lib/turn.ts` (`partiesMatch`/`bidderMovedLast`/`isOwnerTurn`/`isCallerTurn`) and `lib/__tests__/turn.test.ts` are deleted — both panels no longer import them and `useBidOrCounter` keeps its own private `partiesMatch`. New/updated tests: `otcOptionsApi.test.ts` (flag pass-through + absent⇒false), `useOtcOfferTimeline.test.ts` (mine/is_latest carry-through), `actor.test.ts` (mine short-circuit), `NegotiationRevisionsTable.test.tsx` (is_latest/mine Accept gating + "You"), `OfferHistoryTable.test.tsx` ("You" via mine), and the rewritten flag-driven `OfferActivityPanel.test.tsx` / `BidderActivityPanel.test.tsx`. No Cypress fixture change needed — the new fields are additive/optional and no spec asserts panel action buttons off a live chain.)_
@@ -216,9 +218,9 @@ src/
 │   │   ├── HoldingsTable.tsx + .test.tsx      # Alternative holdings table variant
 │   │   ├── SellOrderDialog.tsx + .test.tsx    # Dialog to create sell order from portfolio
 │   │   ├── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
-│   │   ├── WatchlistPanel.tsx + .test.tsx     # Favorites tab: list dropdown, New list, delete, items
+│   │   ├── WatchlistPanel.tsx + .test.tsx     # Favorites tab: list dropdown, New list, delete, Type filter, items
 │   │   ├── CreateWatchlistDialog.tsx + .test.tsx # New named-list form (1–64 chars)
-│   │   └── FavoritesTable.tsx + .test.tsx     # Tracked listings of the selected list
+│   │   └── FavoritesTable.tsx + .test.tsx     # Tracked listings of the selected list (Buy + Remove per row)
 │   ├── tax/
 │   │   ├── TaxTable.tsx + .test.tsx           # Tax records table (used in TaxPage)
 │   │   └── TaxTrackingTable.tsx + .test.tsx   # Tax tracking table (used in TaxTrackingPage)
@@ -905,16 +907,16 @@ src/
 - Props: `open`, `onOpenChange`, `onConfirm`, `loading?`.
 
 **WatchlistPanel** (`views/portfolio/components/WatchlistPanel.tsx`)
-- Container rendered in the Portfolio → Favorites tab. A `Select` of the caller's watchlists (default labelled "Favorites", each option suffixed with its item count), a **New list** button opening `CreateWatchlistDialog`, and — for non-default lists — a **Delete list** button. Initially selects the default list and fetches its items via `useWatchlistItems`; selecting another list switches the fetch. Renders `FavoritesTable` wired to `useRemoveFromWatchlistItems` for the selected list.
-- No props (self-contained; uses `useWatchlists` / `useWatchlistItems` / `useCreateWatchlist` / `useDeleteWatchlist` / `useRemoveFromWatchlistItems`).
+- Container rendered in the Portfolio → Favorites tab. A `Select` of the caller's watchlists (default labelled "Favorites", each option suffixed with its item count), a **New list** button opening `CreateWatchlistDialog`, a **Type** filter `Select` (aria-label "Filter by type"; All types / Stocks / Futures / Forex / Options) that re-queries items with `{ listing_type }` when not "all", and — for non-default lists — a **Delete list** button. Initially selects the default list and fetches its items via `useWatchlistItems(currentId, filters)`; selecting another list switches the fetch. Renders `FavoritesTable` wired to `useRemoveFromWatchlistItems` for the selected list and to an `onOrder` handler that navigates to `/securities/order/new?listingId=…&direction=buy&securityType=…&ticker=…` (quick order from the watchlist).
+- No props (self-contained; uses `useWatchlists` / `useWatchlistItems` / `useCreateWatchlist` / `useDeleteWatchlist` / `useRemoveFromWatchlistItems` / `useNavigate`).
 
 **CreateWatchlistDialog** (`views/portfolio/components/CreateWatchlistDialog.tsx`)
 - Small form to create a named list. Name input validated to 1–64 characters; submits the trimmed name (POST `/me/watchlists`).
 - Props: `open`, `onOpenChange`, `onSubmit(name)`, `loading`.
 
 **FavoritesTable** (`views/portfolio/components/FavoritesTable.tsx`)
-- Table of a list's tracked listings. Columns: Ticker, Type, Price, Change, Change %, Added, Actions (Remove). Empty-state prompt when the list has no items.
-- Props: `items: WatchlistItem[]`, `onRemove(listingId)`, `busyListingId?: number`.
+- Table of a list's tracked listings. Columns: Ticker, Type, Price, Change, Change %, Added, Actions (optional **Buy** — aria-label `Create order for <ticker>`, rendered before Remove when `onOrder` is provided — then Remove). Empty-state prompt when the list has no items.
+- Props: `items: WatchlistItem[]`, `onRemove(listingId)`, `busyListingId?: number`, `onOrder?(item: WatchlistItem)`.
 
 ---
 

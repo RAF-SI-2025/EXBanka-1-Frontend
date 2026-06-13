@@ -37,4 +37,32 @@ describe('FavoritesTable', () => {
     renderWithProviders(<FavoritesTable items={[sample]} onRemove={() => {}} busyListingId={42} />)
     expect(screen.getByRole('button', { name: /Remove AAPL/i })).toBeDisabled()
   })
+
+  it('renders a Buy button per row when onOrder is provided and passes the full item on click', () => {
+    const onOrder = jest.fn()
+    renderWithProviders(<FavoritesTable items={[sample]} onRemove={() => {}} onOrder={onOrder} />)
+    const buy = screen.getByRole('button', { name: /Create order for AAPL/i })
+    expect(buy).toHaveTextContent('Buy')
+    fireEvent.click(buy)
+    expect(onOrder).toHaveBeenCalledWith(sample)
+  })
+
+  it('renders the Buy button before the Remove button in the Actions cell', () => {
+    renderWithProviders(<FavoritesTable items={[sample]} onRemove={() => {}} onOrder={() => {}} />)
+    const buttons = screen.getAllByRole('button')
+    expect(buttons[0]).toHaveAccessibleName('Create order for AAPL')
+    expect(buttons[1]).toHaveAccessibleName('Remove AAPL from watchlist')
+  })
+
+  it('does not render a Buy button when onOrder is not provided', () => {
+    renderWithProviders(<FavoritesTable items={[sample]} onRemove={() => {}} />)
+    expect(screen.queryByRole('button', { name: /Create order/i })).not.toBeInTheDocument()
+  })
+
+  it('keeps Remove working when onOrder is provided', () => {
+    const onRemove = jest.fn()
+    renderWithProviders(<FavoritesTable items={[sample]} onRemove={onRemove} onOrder={() => {}} />)
+    fireEvent.click(screen.getByRole('button', { name: /Remove AAPL/i }))
+    expect(onRemove).toHaveBeenCalledWith(42)
+  })
 })

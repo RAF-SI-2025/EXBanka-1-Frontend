@@ -38,6 +38,9 @@ describe('Celina 4 — SAGA pattern (kupoprodaja akcija)', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            // Exercise renders only for the holder (status ACTIVE && me_owner);
+            // an absent flag defaults to false and hides the button.
+            me_owner: true,
           },
         ],
       },
@@ -78,6 +81,7 @@ describe('Celina 4 — SAGA pattern (kupoprodaja akcija)', () => {
             buyer_owner_id: 42,
             seller_owner_type: 'client',
             seller_owner_id: 99,
+            me_owner: true,
           },
         ],
       },

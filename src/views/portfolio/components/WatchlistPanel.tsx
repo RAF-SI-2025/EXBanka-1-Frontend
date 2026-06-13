@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -20,8 +21,18 @@ import { displayWatchlistName, isDefaultWatchlist } from '@/lib/utils/watchlist'
 import { notifySuccess } from '@/lib/errors'
 import { CreateWatchlistDialog } from '@/views/portfolio/components/CreateWatchlistDialog'
 import { FavoritesTable } from '@/views/portfolio/components/FavoritesTable'
+import type { WatchlistSecurityType } from '@/types/watchlist'
+
+const TYPE_FILTER_OPTIONS: { value: WatchlistSecurityType | 'all'; label: string }[] = [
+  { value: 'all', label: 'All types' },
+  { value: 'stock', label: 'Stocks' },
+  { value: 'futures', label: 'Futures' },
+  { value: 'forex', label: 'Forex' },
+  { value: 'option', label: 'Options' },
+]
 
 export function WatchlistPanel() {
+  const navigate = useNavigate()
   const { data } = useWatchlists()
   const lists = data ?? []
   const defaultId = (lists.find(isDefaultWatchlist) ?? lists[0])?.id
@@ -29,7 +40,11 @@ export function WatchlistPanel() {
   const currentId = picked ?? defaultId
   const current = lists.find((l) => l.id === currentId)
 
-  const { data: itemsData } = useWatchlistItems(currentId)
+  const [typeFilter, setTypeFilter] = useState<WatchlistSecurityType | 'all'>('all')
+  const { data: itemsData } = useWatchlistItems(
+    currentId,
+    typeFilter === 'all' ? {} : { listing_type: typeFilter }
+  )
   const items = itemsData?.items ?? []
 
   const [createOpen, setCreateOpen] = useState(false)
@@ -85,6 +100,26 @@ export function WatchlistPanel() {
         <Button variant="outline" onClick={() => setCreateOpen(true)}>
           New list
         </Button>
+        <div className="min-w-40">
+          <Label htmlFor="watchlist-type-filter">Type</Label>
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => v && setTypeFilter(v as WatchlistSecurityType | 'all')}
+          >
+            <SelectTrigger id="watchlist-type-filter" className="w-40" aria-label="Filter by type">
+              <SelectValue>
+                {TYPE_FILTER_OPTIONS.find((o) => o.value === typeFilter)?.label}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {TYPE_FILTER_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {current && !isDefaultWatchlist(current) && (
           <Button
             variant="ghost"
@@ -101,6 +136,11 @@ export function WatchlistPanel() {
         items={items}
         onRemove={handleRemove}
         busyListingId={removeMutation.isPending ? removeMutation.variables?.listingId : undefined}
+        onOrder={(item) =>
+          navigate(
+            `/securities/order/new?listingId=${item.listing_id}&direction=buy&securityType=${item.security_type}&ticker=${encodeURIComponent(item.ticker)}`
+          )
+        }
       />
 
       {createOpen && (

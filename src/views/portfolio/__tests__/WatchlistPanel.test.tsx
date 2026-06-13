@@ -7,6 +7,12 @@ import type { WatchlistItem } from '@/types/watchlist'
 jest.mock('@/hooks/useWatchlist')
 jest.mock('@/components/ui/select', () => jest.requireActual('@/__tests__/mocks/select-mock'))
 
+const mockNavigate = jest.fn()
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockNavigate,
+}))
+
 const lists = [
   { id: 1, name: 'My Watchlist', item_count: 1, created_at: 1 },
   { id: 2, name: 'tech', item_count: 0, created_at: 2 },
@@ -60,15 +66,46 @@ describe('WatchlistPanel', () => {
     expect(screen.getByText('AAPL')).toBeInTheDocument()
   })
 
-  it('fetches the default list initially', () => {
+  it('fetches the default list initially without a type filter', () => {
     renderWithProviders(<WatchlistPanel />)
-    expect(watchlistHooks.useWatchlistItems).toHaveBeenCalledWith(1)
+    expect(watchlistHooks.useWatchlistItems).toHaveBeenCalledWith(1, {})
   })
 
   it('switches the fetched list when another is selected', () => {
     renderWithProviders(<WatchlistPanel />)
     fireEvent.click(screen.getByRole('option', { name: /tech/i }))
-    expect(watchlistHooks.useWatchlistItems).toHaveBeenLastCalledWith(2)
+    expect(watchlistHooks.useWatchlistItems).toHaveBeenLastCalledWith(2, {})
+  })
+
+  it('re-queries items with listing_type when "Stocks" is picked in the type filter', () => {
+    renderWithProviders(<WatchlistPanel />)
+    fireEvent.click(screen.getByRole('option', { name: /^stocks$/i }))
+    expect(watchlistHooks.useWatchlistItems).toHaveBeenLastCalledWith(1, { listing_type: 'stock' })
+  })
+
+  it('offers all security-type filter options plus "All types"', () => {
+    renderWithProviders(<WatchlistPanel />)
+    for (const name of [/all types/i, /^stocks$/i, /^futures$/i, /^forex$/i, /^options$/i]) {
+      expect(screen.getByRole('option', { name })).toBeInTheDocument()
+    }
+  })
+
+  it('clears the filter when "All types" is picked again', () => {
+    renderWithProviders(<WatchlistPanel />)
+    fireEvent.click(screen.getByRole('option', { name: /^futures$/i }))
+    expect(watchlistHooks.useWatchlistItems).toHaveBeenLastCalledWith(1, {
+      listing_type: 'futures',
+    })
+    fireEvent.click(screen.getByRole('option', { name: /all types/i }))
+    expect(watchlistHooks.useWatchlistItems).toHaveBeenLastCalledWith(1, {})
+  })
+
+  it('navigates to the prefilled create-order form when Buy is clicked on a row', () => {
+    renderWithProviders(<WatchlistPanel />)
+    fireEvent.click(screen.getByRole('button', { name: /create order for AAPL/i }))
+    expect(mockNavigate).toHaveBeenCalledWith(
+      '/securities/order/new?listingId=42&direction=buy&securityType=stock&ticker=AAPL'
+    )
   })
 
   it('opens the create dialog from the New List button', () => {
