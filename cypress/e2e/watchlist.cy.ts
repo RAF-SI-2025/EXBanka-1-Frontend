@@ -134,10 +134,12 @@ describe('Celina 3 — Watchlist', () => {
     cy.loginAsClient('/portfolio?tab=favorites')
     cy.wait('@getItemsWithMsft')
 
-    cy.contains('td', 'MSFT').should('be.visible')
-    cy.contains('td', '415.20').should('be.visible') // cena
-    cy.contains('td', '+2.30').should('be.visible') // dnevna promena
-    cy.contains('td', '+0.56%').should('be.visible') // dnevna promena u %
+    // shadcn <Table> sedi u overflow-x-auto wrapperu — scrollIntoView pre
+    // visibility provere, kao u portfolio.cy.ts
+    cy.contains('td', 'MSFT').scrollIntoView().should('be.visible')
+    cy.contains('td', '415.20').scrollIntoView().should('be.visible') // cena
+    cy.contains('td', '+2.30').scrollIntoView().should('be.visible') // dnevna promena
+    cy.contains('td', '+0.56%').scrollIntoView().should('be.visible') // dnevna promena u %
   })
 
   // ── Scenario 36: Kreiranje više watchlisti ────────────────────────────────
@@ -200,7 +202,7 @@ describe('Celina 3 — Watchlist', () => {
 
     cy.loginAsClient('/portfolio?tab=favorites')
     cy.wait('@getItems')
-    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
 
     // posle uklanjanja, refetch stavki vraća praznu listu
     cy.intercept('GET', '**/api/v3/me/watchlists/*/items*', { body: { items: [] } }).as(
@@ -263,8 +265,8 @@ describe('Celina 3 — Watchlist', () => {
 
     cy.loginAsClient('/portfolio?tab=favorites')
     cy.wait('@getItems')
-    cy.contains('td', 'AAPL').should('be.visible')
-    cy.contains('td', 'ESM26').should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
+    cy.contains('td', 'ESM26').scrollIntoView().should('be.visible')
 
     // Radix select opcije se renderuju u portalu — realClick kao i u ostalim
     // specovima (cypress-real-events)
@@ -274,6 +276,6 @@ describe('Celina 3 — Watchlist', () => {
     cy.wait('@getItems').its('request.url').should('include', 'listing_type=stock')
 
     cy.contains('td', 'ESM26').should('not.exist')
-    cy.contains('td', 'AAPL').should('be.visible')
+    cy.contains('td', 'AAPL').scrollIntoView().should('be.visible')
   })
 })
