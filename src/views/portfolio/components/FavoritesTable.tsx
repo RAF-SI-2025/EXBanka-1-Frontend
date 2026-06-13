@@ -14,9 +14,10 @@ interface FavoritesTableProps {
   items: WatchlistItem[]
   onRemove: (listingId: number) => void
   busyListingId?: number
+  onOrder?: (item: WatchlistItem) => void
 }
 
-export function FavoritesTable({ items, onRemove, busyListingId }: FavoritesTableProps) {
+export function FavoritesTable({ items, onRemove, busyListingId, onOrder }: FavoritesTableProps) {
   if (items.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -60,6 +61,16 @@ export function FavoritesTable({ items, onRemove, busyListingId }: FavoritesTabl
               </TableCell>
               <TableCell>{new Date(item.added_at_unix * 1000).toLocaleDateString()}</TableCell>
               <TableCell className="text-right">
+                {onOrder && (
+                  <Button
+                    size="sm"
+                    className="mr-2"
+                    onClick={() => onOrder(item)}
+                    aria-label={`Create order for ${item.ticker}`}
+                  >
+                    Buy
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
