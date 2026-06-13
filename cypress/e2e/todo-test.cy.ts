@@ -512,9 +512,13 @@ describe('todo test — Price Alert', () => {
     cy.wait('@getStocks')
 
     cy.get('[aria-label="Create price alert for MSFT"]').click()
-    // Switch the condition to "Price ≤ threshold" (lte) → BELOW
+    // Switch the condition to "Price ≤ threshold" (lte) → BELOW.
+    // The option gets a synthetic .click() (employees.cy.ts precedent) — a
+    // realClick fires at screen coordinates and can land on the dialog
+    // overlay, dismissing the conditionally-mounted dialog entirely.
     cy.get('#alert-condition').realClick()
-    cy.contains('[role="option"]', 'Price ≤ threshold').realClick()
+    cy.contains('[role="option"]', 'Price ≤ threshold').should('be.visible').click()
+    cy.get('#alert-condition').should('contain.text', 'Price ≤ threshold')
     cy.get('#alert-threshold').type('300')
     cy.contains('button', 'Create alert').click()
 
