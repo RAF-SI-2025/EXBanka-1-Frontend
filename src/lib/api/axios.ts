@@ -1,15 +1,24 @@
 import axios from 'axios'
+import { getCurrentHost } from '@/lib/api/backendHost'
 
-const API_BASE_URL = 'http://bytenity.com'
-// const API_BASE_URL = 'http://localhost:8080'
+// Build-time constant injected by Vite's `define` from VITE_API_VERSION
+// (see vite.config.ts and .env.development / .env.production). The host is
+// no longer build-time fixed — it is selected at runtime via backendHost.ts
+// so users can switch between localhost / vlupsic instances / a custom URL.
+declare const __API_VERSION__: string | undefined
+
+export const API_VERSION = typeof __API_VERSION__ !== 'undefined' ? __API_VERSION__ : 'v3'
+
+export function getApiBaseUrl(): string {
+  return `${getCurrentHost()}/api/${API_VERSION}`
+}
 
 export const apiClient = axios.create({
-  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Request interceptor: attach access token
 apiClient.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl()
   const token = sessionStorage.getItem('access_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
@@ -17,7 +26,6 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor: handle 401 with token refresh
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -27,7 +35,7 @@ apiClient.interceptors.response.use(
       const refreshToken = sessionStorage.getItem('refresh_token')
       if (refreshToken) {
         try {
-          const { data } = await axios.post(`${API_BASE_URL}/api/v1/auth/refresh`, {
+          const { data } = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
             refresh_token: refreshToken,
           })
           sessionStorage.setItem('access_token', data.access_token)

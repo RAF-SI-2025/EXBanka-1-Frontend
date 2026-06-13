@@ -2,64 +2,81 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { ProtectedRoute } from '@/components/shared/ProtectedRoute'
-import { LoginPage } from '@/pages/LoginPage'
-import { PasswordResetRequestPage } from '@/pages/PasswordResetRequestPage'
-import { PasswordResetPage } from '@/pages/PasswordResetPage'
-import { ActivationPage } from '@/pages/ActivationPage'
-import { EmployeeListPage } from '@/pages/EmployeeListPage'
-import { CreateEmployeePage } from '@/pages/CreateEmployeePage'
-import { EditEmployeePage } from '@/pages/EditEmployeePage'
-import { HomePage } from '@/pages/HomePage'
-import { AccountListPage } from '@/pages/AccountListPage'
-import { AccountDetailsPage } from '@/pages/AccountDetailsPage'
-import { CreateAccountPage } from '@/pages/CreateAccountPage'
-import { CardListPage } from '@/pages/CardListPage'
-import { CardRequestPage } from '@/pages/CardRequestPage'
-import { ExchangeRatesPage } from '@/pages/ExchangeRatesPage'
-import { ExchangeCalculatorPage } from '@/pages/ExchangeCalculatorPage'
-import { CreateTransferPage } from '@/pages/CreateTransferPage'
-import { TransferHistoryPage } from '@/pages/TransferHistoryPage'
-import { NewPaymentPage } from '@/pages/NewPaymentPage'
-import { InternalTransferPage } from '@/pages/InternalTransferPage'
-import { PaymentHistoryPage } from '@/pages/PaymentHistoryPage'
-import { PaymentRecipientsPage } from '@/pages/PaymentRecipientsPage'
-import { LoanListPage } from '@/pages/LoanListPage'
-import { LoanDetailsPage } from '@/pages/LoanDetailsPage'
-import { LoanApplicationPage } from '@/pages/LoanApplicationPage'
-import { AdminAccountsPage } from '@/pages/AdminAccountsPage'
-import { AdminAccountCardsPage } from '@/pages/AdminAccountCardsPage'
-import { AdminClientsPage } from '@/pages/AdminClientsPage'
-import { EditClientPage } from '@/pages/EditClientPage'
-import { AdminLoanRequestsPage } from '@/pages/AdminLoanRequestsPage'
-import { AdminCardRequestsPage } from '@/pages/AdminCardRequestsPage'
-import { AdminLoansPage } from '@/pages/AdminLoansPage'
-import { CreateClientPage } from '@/pages/CreateClientPage'
-import { ActuaryListPage } from '@/pages/ActuaryListPage'
-import { StockExchangesPage } from '@/pages/StockExchangesPage'
-import { SecuritiesPage } from '@/pages/SecuritiesPage'
-import { StockDetailPage } from '@/pages/StockDetailPage'
-import { FuturesDetailPage } from '@/pages/FuturesDetailPage'
-import { ForexDetailPage } from '@/pages/ForexDetailPage'
-import { CreateOrderPage } from '@/pages/CreateOrderPage'
-import { MyOrdersPage } from '@/pages/MyOrdersPage'
-import { PortfolioPage } from '@/pages/PortfolioPage'
-import { AdminOrdersPage } from '@/pages/AdminOrdersPage'
-import { TaxPage } from '@/pages/TaxPage'
-import { AdminRolesPage } from '@/pages/AdminRolesPage'
-import { AdminEmployeeLimitsPage } from '@/pages/AdminEmployeeLimitsPage'
-import { AdminClientLimitsPage } from '@/pages/AdminClientLimitsPage'
-import { AdminInterestRatesPage } from '@/pages/AdminInterestRatesPage'
-import { AdminFeesPage } from '@/pages/AdminFeesPage'
+import {
+  ActivationView,
+  LoginView,
+  PasswordResetRequestView,
+  PasswordResetView,
+} from '@/views/auth'
+import { CreateEmployeeView, EditEmployeeView, EmployeeListView } from '@/views/employees'
+import { HomeView } from '@/views/home'
+import {
+  AccountActivityView,
+  AccountDetailsView,
+  AccountListView,
+  AdminAccountCardsView,
+  AdminAccountsView,
+  BankAccountActivityView,
+  CreateAccountView,
+} from '@/views/accounts'
+import { AdminCardRequestsView, CardListView, CardRequestView } from '@/views/cards'
+import { ExchangeCalculatorView, ExchangeRatesView } from '@/views/exchangeRates'
+import { CreateTransferView, TransferHistoryView } from '@/views/transfers'
+import { InternalTransferView, NewPaymentView, PaymentHistoryView } from '@/views/payments'
+import { PaymentRecipientsView } from '@/views/paymentRecipients'
+import { AdminClientsView, CreateClientView, EditClientView } from '@/views/clients'
+import {
+  AdminLoanRequestsView,
+  AdminLoansView,
+  LoanApplicationView,
+  LoanDetailsView,
+  LoanListView,
+} from '@/views/loans'
+import { ActuaryListView, ActuaryPerformanceView } from '@/views/actuaries'
+import { StockExchangesView } from '@/views/stockExchanges'
+import {
+  ForexDetailView,
+  FuturesDetailView,
+  OptionDetailView,
+  SecuritiesView,
+  StockDetailView,
+} from '@/views/securities'
+import { AdminOrdersView, CreateOrderView, MyOrdersView } from '@/views/orders'
+import { HoldingTransactionsView, PortfolioView } from '@/views/portfolio'
+import { TaxView } from '@/views/tax'
+import { RolesView } from '@/views/roles'
+import { EmployeeLimitsView } from '@/views/employeeLimits'
+import { ClientLimitsView } from '@/views/clientLimits'
+import { InterestRatesView } from '@/views/interestRates'
+import { AdminFeesView } from '@/views/adminFees'
+import { PeerBanksView } from '@/views/peerBanks'
+import { OtcView } from '@/views/otc'
+import {
+  BankFundPositionsView,
+  CreateFundView,
+  FundDetailsView,
+  FundPortfolioView,
+  FundsView,
+} from '@/views/funds'
+import { OtcContractDetailView, OtcContractsView } from '@/views/otcContracts'
+import { OtcOptionsView } from '@/views/otcOptions'
+import { NotificationTemplatesView } from '@/views/notificationTemplates'
+import { SettingsView } from '@/views/settings'
+import { AuditLogsView } from '@/views/audit'
 
 export default function App() {
   return (
     <Routes>
       {/* Public routes */}
       <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/password-reset-request" element={<PasswordResetRequestPage />} />
-        <Route path="/password-reset" element={<PasswordResetPage />} />
-        <Route path="/activate" element={<ActivationPage />} />
+        <Route path="/login" element={<LoginView />} />
+        <Route path="/password-reset-request" element={<PasswordResetRequestView />} />
+        <Route path="/password-reset" element={<PasswordResetView />} />
+        <Route path="/password-reset/:token" element={<PasswordResetView />} />
+        {/* Aliases — backend email template uses /reset-password?token=... */}
+        <Route path="/reset-password" element={<PasswordResetView />} />
+        <Route path="/reset-password/:token" element={<PasswordResetView />} />
+        <Route path="/activate" element={<ActivationView />} />
       </Route>
 
       {/* Protected routes */}
@@ -74,32 +91,32 @@ export default function App() {
         <Route
           path="/employees"
           element={
-            <ProtectedRoute requiredPermission="employees.read">
-              <EmployeeListPage />
+            <ProtectedRoute requireAdmin>
+              <EmployeeListView />
             </ProtectedRoute>
           }
         />
         <Route
           path="/employees/new"
           element={
-            <ProtectedRoute requiredPermission="employees.create">
-              <CreateEmployeePage />
+            <ProtectedRoute requireAdmin>
+              <CreateEmployeeView />
             </ProtectedRoute>
           }
         />
         <Route
           path="/employees/:id"
           element={
-            <ProtectedRoute requiredPermission="employees.update">
-              <EditEmployeePage />
+            <ProtectedRoute requireAdmin>
+              <EditEmployeeView />
             </ProtectedRoute>
           }
         />
         <Route
           path="/accounts/new"
           element={
-            <ProtectedRoute requiredPermission="accounts.create">
-              <CreateAccountPage />
+            <ProtectedRoute requiredRole="Employee">
+              <CreateAccountView />
             </ProtectedRoute>
           }
         />
@@ -107,7 +124,7 @@ export default function App() {
           path="/admin/accounts"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <AdminAccountsPage />
+              <AdminAccountsView />
             </ProtectedRoute>
           }
         />
@@ -115,7 +132,15 @@ export default function App() {
           path="/admin/accounts/:id/cards"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <AdminAccountCardsPage />
+              <AdminAccountCardsView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/bank-accounts/:id/activity"
+          element={
+            <ProtectedRoute requiredRole="Employee">
+              <BankAccountActivityView />
             </ProtectedRoute>
           }
         />
@@ -123,7 +148,7 @@ export default function App() {
           path="/admin/clients"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <AdminClientsPage />
+              <AdminClientsView />
             </ProtectedRoute>
           }
         />
@@ -131,7 +156,7 @@ export default function App() {
           path="/admin/clients/:id"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <EditClientPage />
+              <EditClientView />
             </ProtectedRoute>
           }
         />
@@ -139,7 +164,7 @@ export default function App() {
           path="/admin/clients/new"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <CreateClientPage />
+              <CreateClientView />
             </ProtectedRoute>
           }
         />
@@ -147,7 +172,7 @@ export default function App() {
           path="/admin/loans/requests"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <AdminLoanRequestsPage />
+              <AdminLoanRequestsView />
             </ProtectedRoute>
           }
         />
@@ -155,7 +180,7 @@ export default function App() {
           path="/admin/cards/requests"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <AdminCardRequestsPage />
+              <AdminCardRequestsView />
             </ProtectedRoute>
           }
         />
@@ -163,15 +188,15 @@ export default function App() {
           path="/admin/loans"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <AdminLoansPage />
+              <AdminLoansView />
             </ProtectedRoute>
           }
         />
         <Route
           path="/admin/actuaries"
           element={
-            <ProtectedRoute requiredPermission="agents.manage">
-              <ActuaryListPage />
+            <ProtectedRoute requireSupervisorOrAdmin>
+              <ActuaryListView />
             </ProtectedRoute>
           }
         />
@@ -179,7 +204,7 @@ export default function App() {
           path="/admin/stock-exchanges"
           element={
             <ProtectedRoute requiredRole="Employee">
-              <StockExchangesPage />
+              <StockExchangesView />
             </ProtectedRoute>
           }
         />
@@ -189,7 +214,7 @@ export default function App() {
           path="/home"
           element={
             <ProtectedRoute requiredRole="Client">
-              <HomePage />
+              <HomeView />
             </ProtectedRoute>
           }
         />
@@ -197,7 +222,7 @@ export default function App() {
           path="/accounts"
           element={
             <ProtectedRoute requiredRole="Client">
-              <AccountListPage />
+              <AccountListView />
             </ProtectedRoute>
           }
         />
@@ -205,15 +230,16 @@ export default function App() {
           path="/accounts/:id"
           element={
             <ProtectedRoute requiredRole="Client">
-              <AccountDetailsPage />
+              <AccountDetailsView />
             </ProtectedRoute>
           }
         />
+        <Route path="/accounts/:id/activity" element={<AccountActivityView />} />
         <Route
           path="/cards"
           element={
             <ProtectedRoute requiredRole="Client">
-              <CardListPage />
+              <CardListView />
             </ProtectedRoute>
           }
         />
@@ -221,7 +247,7 @@ export default function App() {
           path="/cards/request"
           element={
             <ProtectedRoute requiredRole="Client">
-              <CardRequestPage />
+              <CardRequestView />
             </ProtectedRoute>
           }
         />
@@ -229,7 +255,7 @@ export default function App() {
           path="/exchange/rates"
           element={
             <ProtectedRoute requiredRole="Client">
-              <ExchangeRatesPage />
+              <ExchangeRatesView />
             </ProtectedRoute>
           }
         />
@@ -237,7 +263,7 @@ export default function App() {
           path="/exchange/calculator"
           element={
             <ProtectedRoute requiredRole="Client">
-              <ExchangeCalculatorPage />
+              <ExchangeCalculatorView />
             </ProtectedRoute>
           }
         />
@@ -245,7 +271,7 @@ export default function App() {
           path="/transfers/new"
           element={
             <ProtectedRoute requiredRole="Client">
-              <CreateTransferPage />
+              <CreateTransferView />
             </ProtectedRoute>
           }
         />
@@ -253,7 +279,7 @@ export default function App() {
           path="/transfers/history"
           element={
             <ProtectedRoute requiredRole="Client">
-              <TransferHistoryPage />
+              <TransferHistoryView />
             </ProtectedRoute>
           }
         />
@@ -261,7 +287,7 @@ export default function App() {
           path="/payments/new"
           element={
             <ProtectedRoute requiredRole="Client">
-              <NewPaymentPage />
+              <NewPaymentView />
             </ProtectedRoute>
           }
         />
@@ -269,7 +295,7 @@ export default function App() {
           path="/payments/transfer"
           element={
             <ProtectedRoute requiredRole="Client">
-              <InternalTransferPage />
+              <InternalTransferView />
             </ProtectedRoute>
           }
         />
@@ -277,7 +303,7 @@ export default function App() {
           path="/payments/history"
           element={
             <ProtectedRoute requiredRole="Client">
-              <PaymentHistoryPage />
+              <PaymentHistoryView />
             </ProtectedRoute>
           }
         />
@@ -285,7 +311,7 @@ export default function App() {
           path="/payments/recipients"
           element={
             <ProtectedRoute requiredRole="Client">
-              <PaymentRecipientsPage />
+              <PaymentRecipientsView />
             </ProtectedRoute>
           }
         />
@@ -293,7 +319,7 @@ export default function App() {
           path="/loans"
           element={
             <ProtectedRoute requiredRole="Client">
-              <LoanListPage />
+              <LoanListView />
             </ProtectedRoute>
           }
         />
@@ -301,7 +327,7 @@ export default function App() {
           path="/loans/apply"
           element={
             <ProtectedRoute requiredRole="Client">
-              <LoanApplicationPage />
+              <LoanApplicationView />
             </ProtectedRoute>
           }
         />
@@ -309,78 +335,136 @@ export default function App() {
           path="/loans/:id"
           element={
             <ProtectedRoute requiredRole="Client">
-              <LoanDetailsPage />
+              <LoanDetailsView />
             </ProtectedRoute>
           }
         />
 
         {/* Shared trading routes (any authenticated user) */}
-        <Route path="/securities" element={<SecuritiesPage />} />
-        <Route path="/securities/stocks/:id" element={<StockDetailPage />} />
-        <Route path="/securities/futures/:id" element={<FuturesDetailPage />} />
-        <Route path="/securities/forex/:id" element={<ForexDetailPage />} />
-        <Route path="/securities/order/new" element={<CreateOrderPage />} />
-        <Route path="/orders" element={<MyOrdersPage />} />
-        <Route path="/portfolio" element={<PortfolioPage />} />
+        <Route path="/securities" element={<SecuritiesView />} />
+        <Route path="/securities/stocks/:id" element={<StockDetailView />} />
+        <Route path="/securities/futures/:id" element={<FuturesDetailView />} />
+        <Route path="/securities/forex/:id" element={<ForexDetailView />} />
+        <Route path="/securities/options/:id" element={<OptionDetailView />} />
+        <Route path="/securities/order/new" element={<CreateOrderView />} />
+        <Route path="/orders" element={<MyOrdersView />} />
+        {/* OTC hub — single sidebar entry, two internal tabs (options
+            marketplace + contracts). The options marketplace is the default
+            surface and its tab is labelled "Market". The legacy stock-offers
+            portal that used to live at /otc/market has been removed; that URL
+            now redirects to the options marketplace. */}
+        <Route path="/otc" element={<OtcView />}>
+          <Route index element={<Navigate to="options" replace />} />
+          <Route path="market" element={<Navigate to="/otc/options" replace />} />
+          <Route path="options" element={<OtcOptionsView />} />
+          <Route path="contracts" element={<OtcContractsView />} />
+          <Route path="contracts/:id" element={<OtcContractDetailView />} />
+        </Route>
+        <Route path="/funds" element={<FundsView />} />
+        <Route
+          path="/funds/new"
+          element={
+            <ProtectedRoute requiredPermission="funds.manage">
+              <CreateFundView />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/funds/:id" element={<FundDetailsView />} />
+        <Route path="/funds/:id/portfolio" element={<FundPortfolioView />} />
+        <Route path="/portfolio" element={<PortfolioView />} />
+        <Route path="/portfolio/holdings/:id/transactions" element={<HoldingTransactionsView />} />
 
         {/* Admin trading routes */}
         <Route
           path="/admin/orders"
           element={
-            <ProtectedRoute requiredPermission="orders.approve">
-              <AdminOrdersPage />
+            <ProtectedRoute requireSupervisorOrAdmin>
+              <AdminOrdersView />
             </ProtectedRoute>
           }
         />
         <Route
           path="/admin/tax"
           element={
-            <ProtectedRoute requiredPermission="tax.manage">
-              <TaxPage />
+            <ProtectedRoute requireAdmin>
+              <TaxView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AuditLogsView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profit/actuaries"
+          element={
+            <ProtectedRoute requiredPermission="actuaries.read.all">
+              <ActuaryPerformanceView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/profit/funds"
+          element={
+            <ProtectedRoute requiredPermission="funds.bank-position-read">
+              <BankFundPositionsView />
             </ProtectedRoute>
           }
         />
 
-        {/* Admin settings routes */}
+        {/* Admin settings — consolidated under one /admin/settings hub */}
         <Route
-          path="/admin/roles"
+          path="/admin/settings"
           element={
-            <ProtectedRoute requiredPermission="employees.permissions">
-              <AdminRolesPage />
+            <ProtectedRoute requireAdmin>
+              <SettingsView />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to="notifications" replace />} />
+          <Route
+            path="notifications"
+            element={
+              <ProtectedRoute requiredPermission="notifications.templates.manage">
+                <NotificationTemplatesView />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="fees" element={<AdminFeesView />} />
+          <Route path="peer-banks" element={<PeerBanksView />} />
+          <Route path="roles" element={<RolesView />} />
+          <Route path="interest-rates" element={<InterestRatesView />} />
+          <Route path="employee-limits" element={<EmployeeLimitsView />} />
+          <Route path="client-limits" element={<ClientLimitsView />} />
+        </Route>
+
+        {/* Legacy settings routes — redirect to the consolidated hub so
+            existing links and bookmarks keep working. */}
+        <Route path="/admin/roles" element={<Navigate to="/admin/settings/roles" replace />} />
         <Route
           path="/admin/limits/employees"
-          element={
-            <ProtectedRoute requiredPermission="limits.manage">
-              <AdminEmployeeLimitsPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/admin/settings/employee-limits" replace />}
         />
         <Route
           path="/admin/limits/clients"
-          element={
-            <ProtectedRoute requiredPermission="limits.manage">
-              <AdminClientLimitsPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/admin/settings/client-limits" replace />}
         />
         <Route
           path="/admin/interest-rates"
-          element={
-            <ProtectedRoute requiredPermission="interest-rates.manage">
-              <AdminInterestRatesPage />
-            </ProtectedRoute>
-          }
+          element={<Navigate to="/admin/settings/interest-rates" replace />}
+        />
+        <Route path="/admin/fees" element={<Navigate to="/admin/settings/fees" replace />} />
+        <Route
+          path="/admin/peer-banks"
+          element={<Navigate to="/admin/settings/peer-banks" replace />}
         />
         <Route
-          path="/admin/fees"
-          element={
-            <ProtectedRoute requiredPermission="fees.manage">
-              <AdminFeesPage />
-            </ProtectedRoute>
-          }
+          path="/admin/notification-templates"
+          element={<Navigate to="/admin/settings/notifications" replace />}
         />
       </Route>
 

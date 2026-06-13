@@ -2,12 +2,12 @@ import { apiClient } from '@/lib/api/axios'
 import type { ExchangeRate, ConversionResult, ConvertCurrencyRequest } from '@/types/exchange'
 
 export async function getExchangeRates(): Promise<ExchangeRate[]> {
-  const response = await apiClient.get<{ rates: ExchangeRate[] }>('/api/v1/exchange/rates')
+  const response = await apiClient.get<{ rates: ExchangeRate[] }>('/exchange/rates')
   return response.data.rates
 }
 
 export async function getExchangeRate(from: string, to: string): Promise<ExchangeRate> {
-  const response = await apiClient.get<ExchangeRate>(`/api/v1/exchange/rates/${from}/${to}`)
+  const response = await apiClient.get<ExchangeRate>(`/exchange/rates/${from}/${to}`)
   return response.data
 }
 

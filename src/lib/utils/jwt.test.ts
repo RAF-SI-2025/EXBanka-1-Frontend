@@ -10,9 +10,9 @@ function createFakeJwt(payload: Record<string, unknown>): string {
 describe('decodeAuthToken', () => {
   it('extracts user info from JWT payload', () => {
     const token = createFakeJwt({
-      user_id: 42,
+      principal_id: 42,
       email: 'admin@bank.com',
-      role: 'EmployeeAdmin',
+      roles: ['EmployeeAdmin'],
       permissions: ['employees.read', 'employees.create'],
     })
 
@@ -29,9 +29,9 @@ describe('decodeAuthToken', () => {
 
   it('normalizes lowercase role to title case', () => {
     const token = createFakeJwt({
-      user_id: 5,
+      principal_id: 5,
       email: 'client@example.com',
-      role: 'client',
+      roles: ['client'],
       permissions: [],
     })
 
@@ -40,9 +40,9 @@ describe('decodeAuthToken', () => {
     expect(user?.role).toBe('Client')
   })
 
-  it('does not throw and returns user when role is missing from JWT', () => {
+  it('does not throw and returns user when roles are missing from JWT', () => {
     const token = createFakeJwt({
-      user_id: 5,
+      principal_id: 5,
       email: 'client@example.com',
       permissions: [],
     })
@@ -57,35 +57,35 @@ describe('decodeAuthToken', () => {
     expect(decodeAuthToken('not-a-jwt')).toBeNull()
   })
 
-  it('decodes system_type "employee" from JWT payload', () => {
+  it('decodes principal_type "employee" as system_type', () => {
     const token = createFakeJwt({
-      user_id: 1,
+      principal_id: 1,
       email: 'admin@test.com',
-      role: 'EmployeeAdmin',
-      system_type: 'employee',
+      roles: ['EmployeeAdmin'],
+      principal_type: 'employee',
       permissions: ['employees.read'],
     })
     const result = decodeAuthToken(token)
     expect(result?.system_type).toBe('employee')
   })
 
-  it('decodes system_type "client" from JWT payload', () => {
+  it('decodes principal_type "client" as system_type', () => {
     const token = createFakeJwt({
-      user_id: 2,
+      principal_id: 2,
       email: 'client@test.com',
-      role: 'client',
-      system_type: 'client',
+      roles: ['client'],
+      principal_type: 'client',
       permissions: [],
     })
     const result = decodeAuthToken(token)
     expect(result?.system_type).toBe('client')
   })
 
-  it('defaults system_type to null when missing from JWT', () => {
+  it('defaults system_type to null when principal_type is missing', () => {
     const token = createFakeJwt({
-      user_id: 1,
+      principal_id: 1,
       email: 'admin@test.com',
-      role: 'EmployeeAdmin',
+      roles: ['EmployeeAdmin'],
       permissions: [],
     })
     const result = decodeAuthToken(token)

@@ -11,6 +11,7 @@ export function createMockAccount(overrides: Partial<Account> = {}): Account {
     account_category: 'personal',
     balance: 50000,
     available_balance: 49000,
+    reserved_balance: 1000,
     status: 'ACTIVE',
     owner_id: 1,
     owner_name: 'Petar Petrović',

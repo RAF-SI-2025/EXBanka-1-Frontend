@@ -1,33 +1,49 @@
 {
-  "holdings": [
-    {
-      "id": 30,
-      "security_type": "stock",
-      "ticker": "AAPL",
-      "security_name": "Apple Inc.",
-      "quantity": 50,
-      "average_price": "165.00",
-      "current_price": "178.50",
-      "total_value": "8925.00",
-      "profit_loss": "675.00",
-      "profit_loss_percent": "8.18",
-      "is_public": false,
-      "public_quantity": 0
-    },
-    {
-      "id": 31,
-      "security_type": "futures",
-      "ticker": "ESM26",
-      "security_name": "E-mini S&P 500 Jun 2026",
-      "quantity": 5,
-      "average_price": "5200.00",
-      "current_price": "5250.00",
-      "total_value": "26250.00",
-      "profit_loss": "250.00",
-      "profit_loss_percent": "0.96",
-      "is_public": true,
-      "public_quantity": 2
-    }
-  ],
-  "total_count": 2
+  "portfolio_id": "client-42",
+  "owner_type": "client",
+  "owner_id": 42,
+  "owner_name": "",
+  "total_value_rsd": "12500.0000",
+  "total_profit_rsd": "1000.0000",
+  "total_profit_pct": "8.6957",
+  "securities": {
+    "total_value_rsd": "12500.0000",
+    "total_profit_rsd": "1000.0000",
+    "total_profit_pct": "8.6957",
+    "positions": [
+      {
+        "asset_type": "stock",
+        "symbol": "AAPL",
+        "holding_id": 30,
+        "quantity": 50,
+        "available_quantity": 40,
+        "avg_cost_rsd": "200.0000",
+        "current_price_rsd": "220.0000",
+        "current_value_rsd": "11000.0000",
+        "p_l_rsd": "1000.0000",
+        "p_l_pct": "10.0000",
+        "last_updated": "2026-04-20T10:00:00Z",
+        "dividends_received_rsd": "0.00"
+      },
+      {
+        "asset_type": "future",
+        "symbol": "ESM26",
+        "holding_id": 31,
+        "quantity": 5,
+        "avg_cost_rsd": "300.0000",
+        "current_price_rsd": "300.0000",
+        "current_value_rsd": "1500.0000",
+        "p_l_rsd": "0.0000",
+        "p_l_pct": "0.0000",
+        "last_updated": "2026-04-21T12:00:00Z",
+        "dividends_received_rsd": "0.00"
+      }
+    ]
+  },
+  "funds": {
+    "total_value_rsd": "0",
+    "total_profit_rsd": "0",
+    "total_profit_pct": "0",
+    "positions": []
+  }
 }

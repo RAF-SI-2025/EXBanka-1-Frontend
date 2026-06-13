@@ -1,0 +1,126 @@
+import { useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorFallback } from '@/components/shared/ErrorFallback'
+import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectUserType } from '@/store/selectors/authSelectors'
+import { useFund, useInvestFund } from '@/hooks/useFunds'
+import { notifySuccess } from '@/lib/errors'
+import { FundDetailsPanel } from '@/views/funds/components/FundDetailsPanel'
+import { FundSummaryCards } from '@/views/funds/components/FundSummaryCards'
+import { FundNavChart } from '@/views/funds/components/FundNavChart'
+import { FundAllocationPieChart } from '@/views/funds/components/FundAllocationPieChart'
+import { FundRiskMetrics } from '@/views/funds/components/FundRiskMetrics'
+import { FundHoldingsTable } from '@/views/funds/components/FundHoldingsTable'
+import { InvestInFundDialog } from '@/views/funds/components/InvestInFundDialog'
+import { ViewShell } from '@/views/shared'
+
+export function FundDetailsView() {
+  const { id } = useParams<{ id: string }>()
+  const fundId = Number(id)
+  const { data, isLoading, isError } = useFund(fundId)
+
+  const userType = useAppSelector(selectUserType)
+  const isEmployee = userType === 'employee'
+
+  const { data: clientAccountsData } = useClientAccounts(!isEmployee)
+  const { data: bankAccountsData } = useBankAccounts(isEmployee)
+  const accounts = isEmployee
+    ? (bankAccountsData?.accounts ?? [])
+    : (clientAccountsData?.accounts ?? [])
+
+  const [investOpen, setInvestOpen] = useState(false)
+  const investMutation = useInvestFund(fundId)
+
+  if (isLoading) {
+    return (
+      <ViewShell>
+        <Skeleton className="h-32 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </ViewShell>
+    )
+  }
+  if (isError || !data) {
+    return (
+      <ViewShell title="Fund">
+        <ErrorFallback message="Could not load fund." />
+      </ViewShell>
+    )
+  }
+
+  const { fund, holdings } = data
+
+  return (
+    <ViewShell
+      title={fund.name}
+      subtitle={fund.description}
+      actions={
+        <Button onClick={() => setInvestOpen(true)} disabled={!fund.active}>
+          Invest
+        </Button>
+      }
+    >
+      <FundSummaryCards detail={data} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance vs. system average</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FundNavChart history={data.history} averageHistory={data.average_history} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Allocation</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FundAllocationPieChart holdings={holdings} />
+          </CardContent>
+        </Card>
+      </div>
+
+      <FundRiskMetrics fund={fund} />
+
+      <div className="mb-6">
+        <FundDetailsPanel detail={data} />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Holdings</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FundHoldingsTable holdings={holdings} />
+        </CardContent>
+      </Card>
+
+      {investOpen && (
+        <InvestInFundDialog
+          open
+          onOpenChange={setInvestOpen}
+          fund={fund}
+          accounts={accounts}
+          asBank={isEmployee}
+          onSubmit={(payload) =>
+            investMutation.mutate(payload, {
+              onSuccess: () => {
+                notifySuccess(
+                  isEmployee
+                    ? `Bank invested in ${fund.name}.`
+                    : `Investment placed in ${fund.name}.`
+                )
+                setInvestOpen(false)
+              },
+            })
+          }
+          loading={investMutation.isPending}
+        />
+      )}
+    </ViewShell>
+  )
+}

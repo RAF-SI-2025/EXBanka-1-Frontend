@@ -16,9 +16,15 @@ export function Select({
   return <SelectContext.Provider value={onValueChange}>{children}</SelectContext.Provider>
 }
 
-export function SelectTrigger({ children }: { children?: React.ReactNode }) {
+export function SelectTrigger({
+  children,
+  className,
+}: {
+  children?: React.ReactNode
+  className?: string
+}) {
   return (
-    <button role="combobox" data-testid="select-trigger">
+    <button role="combobox" data-testid="select-trigger" className={className}>
       {children}
     </button>
   )
@@ -37,6 +43,12 @@ export function SelectItem({ value, children }: { value: string; children?: Reac
   )
 }
 
-export function SelectValue() {
-  return null
+export function SelectValue({
+  children,
+  placeholder,
+}: {
+  children?: React.ReactNode
+  placeholder?: string
+}) {
+  return <span data-testid="select-value">{children != null ? children : placeholder}</span>
 }

@@ -2,6 +2,7 @@
   "actuaries": [
     {
       "id": 1,
+      "employee_id": 1,
       "first_name": "Petar",
       "last_name": "Nikolić",
       "email": "petar@banka.rs",
@@ -15,6 +16,7 @@
     },
     {
       "id": 2,
+      "employee_id": 2,
       "first_name": "Jovana",
       "last_name": "Đorđević",
       "email": "jovana@banka.rs",

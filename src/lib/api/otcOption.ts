@@ -1,0 +1,124 @@
+import { apiClient } from '@/lib/api/axios'
+import type {
+  ExerciseContractPayload,
+  ExerciseOtcContractResponse,
+  MyContractsFilters,
+  MyOtcContractsResponse,
+  OptionContract,
+  OtcParty,
+} from '@/types/otcOption'
+
+// The backend ships contract rows with flat `buyer_owner_type` /
+// `buyer_owner_id` (+ seller equivalents) fields, a `ticker` (the
+// human-readable stock symbol), and `premium_paid` (instead of `premium`)
+// per REST_API_v3.md §7874. Downstream consumers (OtcContractsTable, the
+// Exercise dialog, the contract detail page, etc.) expect nested
+// `buyer` / `seller` OtcParty objects and a `premium` field, so we normalise
+// on the way out. Mirrors `normalizeNegotiation` in
+// src/views/otcOptions/api/otcOptionsApi.ts.
+type RawOptionContract = Omit<Partial<OptionContract>, 'buyer' | 'seller'> & {
+  buyer?: OtcParty
+  seller?: OtcParty
+  buyer_owner_type?: string | null
+  buyer_owner_id?: number | string | null
+  seller_owner_type?: string | null
+  seller_owner_id?: number | string | null
+  ticker?: string
+  // Remote (cross-bank) contract rows project the symbol as `stock_ticker`
+  // (REST_API_v3 §30); local rows use `ticker`.
+  stock_ticker?: string
+  premium_paid?: string
+  me_owner?: boolean
+}
+
+function buildParty(
+  ownerType: string | null | undefined,
+  ownerId: number | string | null | undefined
+): OtcParty {
+  const t = (ownerType as OtcParty['owner_type']) || 'client'
+  const id =
+    ownerId == null || ownerId === ''
+      ? null
+      : typeof ownerId === 'number'
+        ? ownerId
+        : Number.isNaN(Number(ownerId))
+          ? null
+          : Number(ownerId)
+  return { owner_type: t, owner_id: id }
+}
+
+function normalizeContract(raw: RawOptionContract): OptionContract {
+  const buyer: OtcParty = raw.buyer ?? buildParty(raw.buyer_owner_type, raw.buyer_owner_id)
+  const seller: OtcParty = raw.seller ?? buildParty(raw.seller_owner_type, raw.seller_owner_id)
+  return {
+    id: raw.id ?? 0,
+    // Local contracts ship uppercase statuses (ACTIVE/EXERCISED/EXPIRED), but
+    // cross-bank (remote) peer contracts project `status` in the peer's
+    // lowercase vocabulary (REST_API_v3 §30). Upper-case here so the single
+    // OptionContractStatus contract holds, and downstream uppercase checks
+    // (active/concluded grouping, exercise gating, badge colour) work uniformly.
+    status: (raw.status?.toUpperCase() as OptionContract['status']) ?? 'ACTIVE',
+    // `remote` ⇒ cross-bank peer contract (needs buyer_account_number on
+    // exercise); anything else (incl. a missing field) is a local contract.
+    kind: raw.kind === 'remote' ? 'remote' : 'local',
+    // Local rows ship `ticker`; remote rows ship `stock_ticker`.
+    ticker: raw.ticker ?? raw.stock_ticker ?? '',
+    quantity: raw.quantity ?? '',
+    strike_price: raw.strike_price ?? '',
+    strike_currency: raw.strike_currency,
+    // Prefer the wire field `premium_paid`; fall back to the already-nested
+    // `premium` to stay compatible with fixtures using the post-normalised
+    // shape (e.g. createMockOptionContract).
+    premium: raw.premium_paid ?? raw.premium ?? '',
+    settlement_date: raw.settlement_date ?? '',
+    buyer,
+    seller,
+    // Only the buyer/holder may exercise (REST_API_v3 §30). Treat a missing
+    // flag as `false` so the UI never offers Exercise to a non-holder — the
+    // backend would 404 the attempt (existence must not leak to the writer).
+    me_owner: raw.me_owner === true,
+  }
+}
+
+export async function getOtcOptionContract(
+  id: number
+): Promise<{ contract: OptionContract | null }> {
+  const { data } = await apiClient.get<{ contract?: RawOptionContract | null }>(
+    `/otc/contracts/${id}`
+  )
+  // A cross-bank contract is minted asynchronously on the counterparty bank, so
+  // this endpoint can return a null contract while it is still settling. Guard
+  // before normalising — `normalizeContract(null)` would throw on `raw.buyer`.
+  return { contract: data?.contract ? normalizeContract(data.contract) : null }
+}
+
+export async function getMyOtcOptionContracts(
+  filters: MyContractsFilters = {}
+): Promise<MyOtcContractsResponse> {
+  const { data } = await apiClient.get<
+    Omit<MyOtcContractsResponse, 'contracts'> & { contracts?: (RawOptionContract | null)[] }
+  >('/me/otc/contracts', {
+    params: filters,
+  })
+  // Drop any null/undefined rows the wire might include (e.g. a cross-bank
+  // contract still settling) so a single bad row can't crash normalizeContract.
+  return {
+    ...data,
+    contracts: (data.contracts ?? [])
+      .filter((c): c is RawOptionContract => c != null)
+      .map(normalizeContract),
+  }
+}
+
+export async function exerciseOtcOptionContract(
+  id: number,
+  payload: ExerciseContractPayload
+): Promise<ExerciseOtcContractResponse> {
+  const { data } = await apiClient.post<
+    Omit<ExerciseOtcContractResponse, 'contract'> & { contract?: RawOptionContract | null }
+  >(`/otc/contracts/${id}/exercise`, payload)
+  // A cross-bank exercise dispatches asynchronously, so the 201 has no contract
+  // (just saga_id/status). Guard before normalising — normalizeContract(null)
+  // would throw on `raw.buyer`.
+  return { ...data, contract: data?.contract ? normalizeContract(data.contract) : null }
+}

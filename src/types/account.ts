@@ -1,6 +1,6 @@
 export type AccountKind = 'current' | 'foreign'
 export type AccountType = string
-export type AccountCategory = 'personal' | 'business'
+export type AccountCategory = 'personal' | 'business' | 'investment_fund'
 export type AccountStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'CLOSED'
 
 export interface Company {
@@ -21,9 +21,11 @@ export interface Account {
   account_category: AccountCategory
   balance: number
   available_balance: number
+  reserved_balance: number
   status: AccountStatus
   owner_id: number
   owner_name?: string
+  is_bank_account?: boolean
   daily_limit?: number
   monthly_limit?: number
   daily_spending?: number
@@ -41,7 +43,6 @@ export interface AccountFilters {
   name_filter?: string
   account_number_filter?: string
   type_filter?: string
-  client_id?: number
   page?: number
   page_size?: number
 }
@@ -65,4 +66,27 @@ export interface UpdateAccountNameRequest {
 export interface UpdateAccountLimitsRequest {
   daily_limit?: number
   monthly_limit?: number
+}
+
+export interface AccountActivityEntry {
+  id: number
+  entry_type: 'debit' | 'credit'
+  amount: string
+  currency: string
+  balance_before: string
+  balance_after: string
+  description: string
+  reference_type: string
+  reference_id: string
+  occurred_at: number
+}
+
+export interface AccountActivityResponse {
+  entries: AccountActivityEntry[]
+  total_count: number
+}
+
+export interface AccountActivityFilters {
+  page?: number
+  page_size?: number
 }

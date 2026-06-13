@@ -1,0 +1,184 @@
+import { useMemo, useState } from 'react'
+import { useAppSelector } from '@/hooks/useAppSelector'
+import { selectCurrentUser } from '@/store/selectors/authSelectors'
+import { useBankAccounts, useClientAccounts } from '@/hooks/useAccounts'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { OtcOptionsTable } from '@/views/otcOptions/components/OtcOptionsTable'
+import { PlaceBidDialog } from '@/views/otcOptions/components/PlaceBidDialog'
+import { CreateOtcOptionDialog } from '@/views/otcOptions/components/CreateOtcOptionDialog'
+import { OfferActivityPanel } from '@/views/otcOptions/components/OfferActivityPanel'
+import { BidderActivityPanel } from '@/views/otcOptions/components/BidderActivityPanel'
+import {
+  useAllMyOtcNegotiations,
+  useAllOtcOptions,
+  useMyOtcOptions,
+} from '@/views/otcOptions/hooks/useOtcOptionsLists'
+import { useBidOrCounter } from '@/views/otcOptions/hooks/useBidOrCounter'
+import { resolveListingId } from '@/views/otcOptions/lib/listingId'
+import { useCreateOtcOption } from '@/views/otcOptions/hooks/useOtcOptionMutations'
+import type { OtcOptionRow, OtcOptionsMode, OtcOwnerType } from '@/views/otcOptions/types'
+import { ViewShell, LoadingState, ErrorState, panelEnter } from '@/views/shared'
+
+export function OtcOptionsView() {
+  const user = useAppSelector(selectCurrentUser)
+  const isEmployee = user?.system_type === 'employee'
+  const clientAccountsQ = useClientAccounts(!isEmployee)
+  const bankAccountsQ = useBankAccounts(isEmployee)
+  const accounts =
+    (isEmployee ? bankAccountsQ.data?.accounts : clientAccountsQ.data?.accounts) ?? []
+
+  const [mode, setMode] = useState<OtcOptionsMode>('all')
+  const [bidOffer, setBidOffer] = useState<OtcOptionRow | null>(null)
+  const [activityOffer, setActivityOffer] = useState<OtcOptionRow | null>(null)
+  const [bidderOffer, setBidderOffer] = useState<OtcOptionRow | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+
+  const allQ = useAllOtcOptions({})
+  const mineQ = useMyOtcOptions({})
+  // Every chain the caller is a party to. Used to surface the caller's own
+  // latest bid (the chain's current — i.e. newest-revision — strike/premium)
+  // in the marketplace row instead of the owner's listing terms, for offers
+  // the caller has bid on.
+  const myNegotiationsQ = useAllMyOtcNegotiations()
+
+  const myBidsByNegotiationId = useMemo(() => {
+    const map = new Map<number, { strike_price: string; premium: string | null }>()
+    for (const n of myNegotiationsQ.data?.negotiations ?? []) {
+      map.set(n.id, { strike_price: n.strike_price, premium: n.premium })
+    }
+    return map
+  }, [myNegotiationsQ.data])
+
+  const bidOrCounter = useBidOrCounter()
+  const createListing = useCreateOtcOption()
+
+  const currentBidder = useMemo(() => {
+    if (!user) return null
+    const owner_type: OtcOwnerType = user.system_type === 'employee' ? 'employee' : 'client'
+    return { owner_type, owner_id: user.id }
+  }, [user])
+
+  const rows: OtcOptionRow[] =
+    mode === 'all' ? (allQ.data?.offers ?? []) : (mineQ.data?.offers ?? [])
+
+  const peersInfo = allQ.data
+  const banner =
+    mode === 'all' && peersInfo
+      ? `Local + ${peersInfo.peers_reached ?? 0}/${peersInfo.peers_total ?? 0} peer banks${
+          peersInfo.partial ? ' (partial)' : ''
+        }${peersInfo.last_refresh ? ` · refreshed ${peersInfo.last_refresh.slice(11, 19)}` : ''}`
+      : null
+
+  const loading = mode === 'all' ? allQ.isLoading : mineQ.isLoading
+  const error = mode === 'all' ? allQ.error : mineQ.error
+
+  if (activityOffer) {
+    return (
+      <ViewShell className={panelEnter}>
+        <OfferActivityPanel
+          offer={activityOffer}
+          accounts={accounts}
+          currentPrincipal={currentBidder}
+          onBack={() => setActivityOffer(null)}
+        />
+      </ViewShell>
+    )
+  }
+
+  if (bidderOffer && currentBidder) {
+    return (
+      <ViewShell className={panelEnter}>
+        <BidderActivityPanel
+          offer={bidderOffer}
+          accounts={accounts}
+          currentBidder={currentBidder}
+          onBack={() => setBidderOffer(null)}
+          onPlaceBid={(row) => {
+            setBidderOffer(null)
+            setBidOffer(row)
+          }}
+        />
+      </ViewShell>
+    )
+  }
+
+  const handleRowOpen = (row: OtcOptionRow) => {
+    // `me_owner` (spec §47.2) authoritatively marks the caller as the listing's
+    // poster — owners open the offer-activity panel, everyone else opens the
+    // bidder panel for their own chain.
+    const own = mode === 'my' || row.me_owner === true
+    if (own) setActivityOffer(row)
+    else setBidderOffer(row)
+  }
+
+  return (
+    <ViewShell
+      title="OTC Options"
+      actions={<Button onClick={() => setCreateOpen(true)}>New listing</Button>}
+    >
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
+          <CardTitle className="text-base">Marketplace</CardTitle>
+          <Tabs value={mode} onValueChange={(v) => setMode(v as OtcOptionsMode)}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="my">My</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardHeader>
+        <CardContent>
+          {banner && <p className="text-xs text-muted-foreground mb-3">{banner}</p>}
+          {loading && <LoadingState />}
+          {error && <ErrorState message="Could not load offers." />}
+          {!loading && !error && (
+            <OtcOptionsTable
+              rows={rows}
+              forceOwn={mode === 'my'}
+              myBids={myBidsByNegotiationId}
+              onBid={(row) => setBidOffer(row)}
+              onActivity={(row) => setActivityOffer(row)}
+              onRowOpen={handleRowOpen}
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      <PlaceBidDialog
+        open={bidOffer != null}
+        onOpenChange={(v) => !v && setBidOffer(null)}
+        offer={bidOffer}
+        accounts={accounts}
+        submitting={bidOrCounter.isPending}
+        onSubmit={(input) => {
+          if (!bidOffer || !currentBidder) return
+          bidOrCounter.mutate(
+            {
+              // Route `:id` is the listing's stable surrogate id, not the
+              // native offer_id — see resolveListingId / spec §47.2.
+              offer_id: resolveListingId(bidOffer),
+              account_id: input.account_id,
+              quantity: input.quantity,
+              strike_price: input.strike_price,
+              premium: input.premium,
+              settlement_date: input.settlement_date,
+              bidder: currentBidder,
+            },
+            { onSuccess: () => setBidOffer(null) }
+          )
+        }}
+      />
+
+      <CreateOtcOptionDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        accounts={accounts}
+        submitting={createListing.isPending}
+        onSubmit={(payload) => {
+          createListing.mutate(payload, { onSuccess: () => setCreateOpen(false) })
+        }}
+      />
+    </ViewShell>
+  )
+}

@@ -17,6 +17,40 @@ export const passwordSchema = z
 
 export const emailSchema = z.string().email('Invalid email address')
 
+export const phoneSchema = z
+  .string()
+  .regex(/^\+?[0-9]+$/, 'Phone must contain only digits, optionally starting with "+"')
+  .max(15, 'Phone number must be at most 15 characters')
+
+const isAtLeast16YearsAgo = (date: Date): boolean => {
+  const cutoff = new Date()
+  cutoff.setFullYear(cutoff.getFullYear() - 16)
+  cutoff.setHours(23, 59, 59, 999)
+  return date.getTime() <= cutoff.getTime()
+}
+
+export const dateOfBirthStringSchema = z
+  .string()
+  .min(1, 'Date of birth is required')
+  .refine((val) => !Number.isNaN(new Date(val).getTime()), {
+    message: 'Date of birth is invalid',
+  })
+  .refine((val) => new Date(val).getTime() <= Date.now(), {
+    message: 'Date of birth cannot be in the future',
+  })
+  .refine((val) => isAtLeast16YearsAgo(new Date(val)), {
+    message: 'Must be at least 16 years old',
+  })
+
+export const dateOfBirthTimestampSchema = z
+  .number()
+  .refine((ts) => ts * 1000 <= Date.now(), {
+    message: 'Date of birth cannot be in the future',
+  })
+  .refine((ts) => isAtLeast16YearsAgo(new Date(ts * 1000)), {
+    message: 'Must be at least 16 years old',
+  })
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, 'Password is required'),
@@ -53,10 +87,10 @@ export const createEmployeeSchema = z.object({
     .string()
     .min(1, 'Last name is required')
     .max(20, 'Last name must be at most 20 characters'),
-  date_of_birth: z.number(),
+  date_of_birth: dateOfBirthTimestampSchema,
   gender: z.string().optional(),
   email: emailSchema,
-  phone: z.string().max(15, 'Phone number must be at most 15 digits').optional(),
+  phone: phoneSchema.optional().or(z.literal('')),
   address: z.string().optional(),
   username: z.string().min(1, 'Username is required'),
   position: z.string().optional(),
@@ -135,14 +169,17 @@ export const createLoanRequestSchema = z.object({
     message: 'Please select an interest rate type',
   }),
   account_number: z.string().min(1, 'Please select an account'),
-  amount: z.number({ error: 'Please enter an amount' }).positive('Amount must be positive'),
+  amount: z
+    .number({ error: 'Please enter an amount' })
+    .positive('Amount must be positive')
+    .max(10_000_000, 'Amount cannot exceed 10,000,000'),
   currency_code: z.string().min(1, 'Please select a currency'),
   purpose: z.string().optional(),
   monthly_salary: z.number().positive('Salary must be positive').optional(),
   employment_status: z.string().optional(),
   employment_period: z.number().int().min(0).optional(),
   repayment_period: z.number({ error: 'Please select a repayment period' }).int().positive(),
-  phone: z.string().max(15).optional().or(z.literal('')),
+  phone: phoneSchema.optional().or(z.literal('')),
 })
 
 export const paymentRecipientSchema = z.object({
@@ -163,7 +200,7 @@ export const updateClientSchema = z.object({
   first_name: z.string().min(1).optional(),
   last_name: z.string().min(1).optional(),
   email: emailSchema.optional(),
-  phone: z.string().optional(),
+  phone: phoneSchema.optional().or(z.literal('')),
   address: z.string().optional(),
   gender: z.string().optional(),
 })
@@ -171,10 +208,10 @@ export const updateClientSchema = z.object({
 export const authorizedPersonSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  date_of_birth: dateOfBirthStringSchema,
   gender: z.string().optional(),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().max(15).optional().or(z.literal('')),
+  email: emailSchema,
+  phone: phoneSchema.optional().or(z.literal('')),
   address: z.string().optional(),
 })
 
@@ -187,7 +224,7 @@ export const updateEmployeeSchema = z.object({
     .max(20, 'Last name must be at most 20 characters')
     .optional(),
   gender: z.string().optional(),
-  phone: z.string().max(15, 'Phone number must be at most 15 digits').optional(),
+  phone: phoneSchema.optional().or(z.literal('')),
   address: z.string().optional(),
   position: z.string().optional(),
   department: z.string().optional(),
@@ -209,10 +246,10 @@ export const createClientSchema = z.object({
     .string()
     .min(1, 'Last name is required')
     .max(20, 'Last name must be at most 20 characters'),
-  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  date_of_birth: dateOfBirthStringSchema,
   email: emailSchema,
   gender: z.string().optional(),
-  phone: z.string().max(15, 'Phone number must be at most 15 digits').optional(),
+  phone: phoneSchema.optional().or(z.literal('')),
   address: z.string().optional(),
   jmbg: z.string().regex(/^\d{13}$/, 'JMBG must have exactly 13 digits'),
 })

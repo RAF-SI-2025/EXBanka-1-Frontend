@@ -1,13 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   createOrder,
+  createOrderOnBehalf,
+  createOrderOnBehalfFund,
   getMyOrders,
   cancelOrder,
   getAllOrders,
   approveOrder,
   declineOrder,
 } from '@/lib/api/orders'
-import type { MyOrderFilters, AdminOrderFilters, CreateOrderPayload } from '@/types/order'
+import type {
+  MyOrderFilters,
+  AdminOrderFilters,
+  CreateOrderPayload,
+  CreateOrderOnBehalfPayload,
+  CreateOrderOnBehalfFundPayload,
+} from '@/types/order'
 
 export function useMyOrders(filters: MyOrderFilters = {}) {
   return useQuery({ queryKey: ['my-orders', filters], queryFn: () => getMyOrders(filters) })
@@ -20,6 +28,29 @@ export function useCreateOrder() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['my-orders'] })
       qc.invalidateQueries({ queryKey: ['portfolio'] })
+    },
+  })
+}
+
+export function useCreateOrderOnBehalf() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateOrderOnBehalfPayload) => createOrderOnBehalf(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      qc.invalidateQueries({ queryKey: ['portfolio'] })
+    },
+  })
+}
+
+export function useCreateOrderOnBehalfFund() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateOrderOnBehalfFundPayload) => createOrderOnBehalfFund(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['my-orders'] })
+      qc.invalidateQueries({ queryKey: ['portfolio'] })
+      qc.invalidateQueries({ queryKey: ['funds'] })
     },
   })
 }

@@ -1,4 +1,37 @@
 describe('Password Reset Page', () => {
+  it('should display the password reset form via path param URL', () => {
+    cy.visit('/password-reset/test-token-123')
+
+    cy.contains('Set New Password').should('be.visible')
+    cy.get('#new_password').should('be.visible')
+    cy.get('#confirm_password').should('be.visible')
+    cy.contains('button', 'Reset Password').should('be.visible')
+  })
+
+  it('should submit new password via path param token', () => {
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 200, body: {} }).as(
+      'resetPassword'
+    )
+
+    cy.visit('/password-reset/test-token-123')
+
+    cy.get('#new_password').type('NewPassword12!')
+    cy.get('#confirm_password').type('NewPassword12!')
+    cy.contains('button', 'Reset Password').click()
+
+    cy.wait('@resetPassword')
+    cy.get('@resetPassword')
+      .its('request.body')
+      .should((body) => {
+        expect(body.token).to.equal('test-token-123')
+        expect(body.new_password).to.equal('NewPassword12!')
+        expect(body.confirm_password).to.equal('NewPassword12!')
+      })
+
+    cy.contains('Password reset successfully.').should('be.visible')
+    cy.contains('Log in').should('be.visible')
+  })
+
   it('should display the password reset form', () => {
     cy.visit('/password-reset?token=test-token-123')
 
@@ -9,7 +42,7 @@ describe('Password Reset Page', () => {
   })
 
   it('should submit new password successfully', () => {
-    cy.intercept('POST', '/api/auth/password/reset', { statusCode: 200, body: {} }).as(
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 200, body: {} }).as(
       'resetPassword'
     )
 
@@ -44,7 +77,7 @@ describe('Password Reset Page', () => {
   })
 
   it('should show error message on API failure', () => {
-    cy.intercept('POST', '/api/auth/password/reset', { statusCode: 400, body: {} }).as(
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 400, body: {} }).as(
       'resetPasswordFail'
     )
 
@@ -56,5 +89,39 @@ describe('Password Reset Page', () => {
 
     cy.wait('@resetPasswordFail')
     cy.contains('Failed to reset password. The link may have expired.').should('be.visible')
+  })
+
+  // Backend email template links use /reset-password?token=... (note the
+  // dash spelling). The /password-reset routes alone caused a catch-all
+  // redirect to /login. The aliases below cover the email's actual URL.
+  it('should display the password reset form via /reset-password?token= alias', () => {
+    cy.visit('/reset-password?token=test-token-123')
+    cy.contains('Set New Password').should('be.visible')
+    cy.url().should('not.include', '/login')
+  })
+
+  it('should submit new password via /reset-password?token= alias', () => {
+    cy.intercept('POST', '**/api/v3/auth/password/reset', { statusCode: 200, body: {} }).as(
+      'resetPasswordAlias'
+    )
+
+    cy.visit('/reset-password?token=alias-token-abc')
+
+    cy.get('#new_password').type('NewPassword12!')
+    cy.get('#confirm_password').type('NewPassword12!')
+    cy.contains('button', 'Reset Password').click()
+
+    cy.wait('@resetPasswordAlias')
+    cy.get('@resetPasswordAlias')
+      .its('request.body')
+      .should((body) => {
+        expect(body.token).to.equal('alias-token-abc')
+      })
+  })
+
+  it('should display the password reset form via /reset-password/:token alias', () => {
+    cy.visit('/reset-password/test-token-123')
+    cy.contains('Set New Password').should('be.visible')
+    cy.url().should('not.include', '/login')
   })
 })

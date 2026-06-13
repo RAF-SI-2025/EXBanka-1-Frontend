@@ -2,12 +2,14 @@ import { apiClient } from '@/lib/api/axios'
 import {
   getPortfolio,
   getPortfolioSummary,
-  makeHoldingPublic,
   exerciseOption,
+  getHoldingTransactions,
 } from '@/lib/api/portfolio'
 import {
-  createMockHolding,
+  createMockPortfolioResponse,
+  createMockSecurityPosition,
   createMockPortfolioSummary,
+  createMockHoldingTransaction,
 } from '@/__tests__/fixtures/portfolio-fixtures'
 
 jest.mock('@/lib/api/axios', () => ({
@@ -19,22 +21,61 @@ const mockPost = jest.mocked(apiClient.post)
 beforeEach(() => jest.clearAllMocks())
 
 describe('getPortfolio', () => {
-  it('fetches with filters', async () => {
-    const response = { holdings: [createMockHolding()], total_count: 1 }
+  it('fetches the unified portfolio with no query parameters (spec §48.1)', async () => {
+    const response = createMockPortfolioResponse()
     mockGet.mockResolvedValue({ data: response })
-    const result = await getPortfolio({ security_type: 'stock', page: 1, page_size: 10 })
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/me/portfolio', {
-      params: { security_type: 'stock', page: 1, page_size: 10 },
-    })
+    const result = await getPortfolio()
+    expect(mockGet).toHaveBeenCalledWith('/me/portfolio')
     expect(result).toEqual(response)
   })
 
-  it('fetches with no filters', async () => {
-    const response = { holdings: [], total_count: 0 }
+  it('derives available (= available_quantity) and reserved (= quantity − available_quantity)', async () => {
+    const response = createMockPortfolioResponse({
+      securities: {
+        total_value_rsd: '0',
+        total_profit_rsd: '0',
+        total_profit_pct: '0',
+        positions: [createMockSecurityPosition({ quantity: 50, available_quantity: 40 })],
+      },
+    })
     mockGet.mockResolvedValue({ data: response })
+    const { positions } = (await getPortfolio()).securities
+    expect(positions[0].available).toBe(40)
+    expect(positions[0].reserved).toBe(10)
+  })
+
+  it('leaves reserved/available undefined when available_quantity is absent', async () => {
+    const response = createMockPortfolioResponse({
+      securities: {
+        total_value_rsd: '0',
+        total_profit_rsd: '0',
+        total_profit_pct: '0',
+        positions: [createMockSecurityPosition({ quantity: 5 })],
+      },
+    })
+    mockGet.mockResolvedValue({ data: response })
+    const { positions } = (await getPortfolio()).securities
+    expect(positions[0].available).toBeUndefined()
+    expect(positions[0].reserved).toBeUndefined()
+  })
+
+  it('defaults missing position arrays to empty arrays', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        portfolio_id: 'client-1',
+        owner_type: 'client',
+        owner_id: 1,
+        owner_name: '',
+        total_value_rsd: '0',
+        total_profit_rsd: '0',
+        total_profit_pct: '0',
+        securities: { total_value_rsd: '0', total_profit_rsd: '0', total_profit_pct: '0' },
+        funds: { total_value_rsd: '0', total_profit_rsd: '0', total_profit_pct: '0' },
+      },
+    })
     const result = await getPortfolio()
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/me/portfolio', { params: {} })
-    expect(result).toEqual(response)
+    expect(result.securities.positions).toEqual([])
+    expect(result.funds.positions).toEqual([])
   })
 })
 
@@ -43,27 +84,36 @@ describe('getPortfolioSummary', () => {
     const summary = createMockPortfolioSummary()
     mockGet.mockResolvedValue({ data: summary })
     const result = await getPortfolioSummary()
-    expect(mockGet).toHaveBeenCalledWith('/api/v1/me/portfolio/summary')
+    expect(mockGet).toHaveBeenCalledWith('/me/portfolio/summary')
     expect(result).toEqual(summary)
   })
 })
 
-describe('makeHoldingPublic', () => {
-  it('posts make-public with quantity', async () => {
-    const holding = createMockHolding({ is_public: true, public_quantity: 5 })
-    mockPost.mockResolvedValue({ data: holding })
-    const result = await makeHoldingPublic(1, { quantity: 5 })
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/me/portfolio/1/make-public', { quantity: 5 })
-    expect(result).toEqual(holding)
+describe('exerciseOption', () => {
+  it('posts exercise against the holding_id', async () => {
+    const position = createMockSecurityPosition({ asset_type: 'option', holding_id: 32 })
+    mockPost.mockResolvedValue({ data: position })
+    const result = await exerciseOption(32)
+    expect(mockPost).toHaveBeenCalledWith('/me/portfolio/32/exercise')
+    expect(result).toEqual(position)
   })
 })
 
-describe('exerciseOption', () => {
-  it('posts exercise', async () => {
-    const holding = createMockHolding({ security_type: 'option' })
-    mockPost.mockResolvedValue({ data: holding })
-    const result = await exerciseOption(1)
-    expect(mockPost).toHaveBeenCalledWith('/api/v1/me/portfolio/1/exercise')
-    expect(result).toEqual(holding)
+describe('getHoldingTransactions', () => {
+  it('fetches transactions for a holding', async () => {
+    const txn = createMockHoldingTransaction()
+    const response = { transactions: [txn], total_count: 1 }
+    mockGet.mockResolvedValue({ data: response })
+    const result = await getHoldingTransactions(5, { page: 1, page_size: 10 })
+    expect(mockGet).toHaveBeenCalledWith('/me/holdings/5/transactions', {
+      params: { page: 1, page_size: 10 },
+    })
+    expect(result).toEqual(response)
+  })
+
+  it('returns empty array when response has no transactions', async () => {
+    mockGet.mockResolvedValue({ data: { total_count: 0 } })
+    const result = await getHoldingTransactions(5)
+    expect(result.transactions).toEqual([])
   })
 })

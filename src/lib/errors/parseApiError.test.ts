@@ -1,0 +1,127 @@
+import { AxiosError } from 'axios'
+import { parseApiError } from './parseApiError'
+
+function makeAxiosError(status: number, data: unknown): AxiosError {
+  const err = new AxiosError('req failed')
+  err.response = {
+    status,
+    data,
+    statusText: '',
+    headers: {},
+    config: {} as AxiosError['config'],
+  } as AxiosError['response']
+  return err
+}
+
+describe('parseApiError', () => {
+  it('uses backend error string + code for 4xx with JSON body', () => {
+    const result = parseApiError(
+      makeAxiosError(400, { error: 'Insufficient funds', code: 'FUNDS_INSUFFICIENT' })
+    )
+    expect(result).toEqual({
+      title: 'Invalid request',
+      message: 'Insufficient funds',
+      code: 'FUNDS_INSUFFICIENT',
+      status: 400,
+    })
+  })
+
+  it('falls back to status-based default when body has no error field', () => {
+    const result = parseApiError(makeAxiosError(500, {}))
+    expect(result.title).toBe('Server error')
+    expect(result.message).toMatch(/server/i)
+    expect(result.status).toBe(500)
+  })
+
+  it('classifies a network error (no response) as network', () => {
+    const err = new AxiosError('Network Error')
+    expect(parseApiError(err)).toEqual({
+      title: 'Network error',
+      message: expect.stringMatching(/connection|reach the server/i),
+    })
+  })
+
+  it('classifies ECONNABORTED as timeout', () => {
+    const err = new AxiosError('timeout')
+    err.code = 'ECONNABORTED'
+    expect(parseApiError(err).title).toBe('Request timed out')
+  })
+
+  it('handles a plain Error', () => {
+    expect(parseApiError(new Error('boom'))).toEqual({
+      title: 'Something went wrong',
+      message: 'boom',
+    })
+  })
+
+  it('handles a string', () => {
+    expect(parseApiError('manual error')).toEqual({
+      title: 'Something went wrong',
+      message: 'manual error',
+    })
+  })
+
+  it('handles unknown garbage', () => {
+    expect(parseApiError({ wat: true })).toEqual({
+      title: 'Something went wrong',
+      message: 'Unexpected error occurred.',
+    })
+  })
+
+  it('maps 401 to "Not authenticated"', () => {
+    expect(parseApiError(makeAxiosError(401, {})).title).toBe('Not authenticated')
+  })
+
+  it('maps 403 to "Not allowed"', () => {
+    expect(parseApiError(makeAxiosError(403, {})).title).toBe('Not allowed')
+  })
+
+  it('maps 404 to "Not found"', () => {
+    expect(parseApiError(makeAxiosError(404, {})).title).toBe('Not found')
+  })
+
+  it('uses nested error.message + error.code for a 400 business-rule body', () => {
+    const result = parseApiError(
+      makeAxiosError(400, {
+        error: { code: 'INSUFFICIENT_FUNDS', message: 'Nedovoljno sredstava na računu' },
+      })
+    )
+    expect(result).toEqual({
+      title: 'Invalid request',
+      message: 'Nedovoljno sredstava na računu',
+      code: 'INSUFFICIENT_FUNDS',
+      status: 400,
+    })
+  })
+
+  it('uses nested error.message + error.code for a 404 body', () => {
+    const result = parseApiError(
+      makeAxiosError(404, {
+        error: { code: 'ACCOUNT_NOT_FOUND', message: 'Uneti račun ne postoji' },
+      })
+    )
+    expect(result.message).toBe('Uneti račun ne postoji')
+    expect(result.code).toBe('ACCOUNT_NOT_FOUND')
+    expect(result.status).toBe(404)
+  })
+
+  it('falls back to default 500 message when error is an object (e.g. raw SQL overflow)', () => {
+    const err = {
+      isAxiosError: true,
+      response: {
+        status: 500,
+        data: {
+          error: {
+            code: 'internal_error',
+            message: 'ERROR: numeric field overflow (SQLSTATE 22003)',
+          },
+        },
+      },
+    } as unknown
+    const result = parseApiError(err)
+    expect(result.title).toBe('Server error')
+    expect(result.message).toBe('The server reported an error. Please try again in a moment.')
+    // The raw backend message must NOT leak through:
+    expect(result.message).not.toMatch(/numeric field overflow|SQLSTATE/)
+  })
+})

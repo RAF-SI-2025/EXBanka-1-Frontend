@@ -1,0 +1,38 @@
+import { EmployeeCreateForm } from '@/views/employees/components/EmployeeCreateForm'
+import { EmployeeEditForm } from '@/views/employees/components/EmployeeEditForm'
+import type { Employee, CreateEmployeeRequest, UpdateEmployeeRequest } from '@/types/employee'
+
+interface EmployeeFormProps {
+  onSubmit: (data: CreateEmployeeRequest | UpdateEmployeeRequest) => void
+  isLoading: boolean
+  employee?: Employee
+  readOnly?: boolean
+  externalEmailError?: string
+}
+
+export function EmployeeForm({
+  onSubmit,
+  isLoading,
+  employee,
+  readOnly,
+  externalEmailError,
+}: EmployeeFormProps) {
+  if (employee) {
+    return (
+      <EmployeeEditForm
+        employee={employee}
+        onSubmit={(data) => onSubmit(data)}
+        isLoading={isLoading}
+        readOnly={readOnly}
+      />
+    )
+  }
+
+  return (
+    <EmployeeCreateForm
+      onSubmit={(data) => onSubmit(data)}
+      isLoading={isLoading}
+      externalEmailError={externalEmailError}
+    />
+  )
+}

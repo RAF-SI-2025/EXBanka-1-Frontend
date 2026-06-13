@@ -2,11 +2,12 @@ import { render } from '@testing-library/react'
 import type { RenderOptions } from '@testing-library/react'
 import { configureStore } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { rootReducer } from '@/store'
 import type { RootState } from '@/store'
 import { ThemeProvider } from '@/contexts/ThemeContext'
+import { createQueryClient } from '@/lib/queryClient'
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
   preloadedState?: Partial<RootState>
@@ -23,9 +24,9 @@ export function renderWithProviders(
     preloadedState: preloadedState as RootState,
   })
 
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  })
+  const queryClient = createQueryClient()
+  // Tests should never retry; otherwise rejections take longer to surface.
+  queryClient.setDefaultOptions({ queries: { retry: false } })
 
   function Wrapper({ children }: { children: React.ReactNode }) {
     return (
@@ -50,11 +51,16 @@ export function renderWithProviders(
   return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) }
 }
 
-export function createQueryWrapper() {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+export function createQueryWrapper(preloadedState: Partial<RootState> = {}) {
+  const queryClient = createQueryClient()
+  queryClient.setDefaultOptions({ queries: { retry: false } })
+  const store = configureStore({
+    reducer: rootReducer,
+    preloadedState: preloadedState as RootState,
   })
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </Provider>
   )
 }

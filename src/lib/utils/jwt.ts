@@ -2,23 +2,23 @@ import { jwtDecode } from 'jwt-decode'
 import type { AuthUser } from '@/types/auth'
 
 interface JwtPayload {
-  user_id: number
+  principal_id: number
   email: string
-  role: string
+  roles?: string[]
   permissions: string[]
-  system_type?: 'employee' | 'client'
+  principal_type?: 'employee' | 'client'
 }
 
 export function decodeAuthToken(token: string): AuthUser | null {
   try {
     const decoded = jwtDecode<JwtPayload>(token)
-    const rawRole = typeof decoded.role === 'string' ? decoded.role : ''
+    const firstRole = Array.isArray(decoded.roles) ? (decoded.roles[0] ?? '') : ''
     return {
-      id: decoded.user_id,
+      id: decoded.principal_id,
       email: decoded.email,
-      role: rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1) : rawRole,
+      role: firstRole ? firstRole.charAt(0).toUpperCase() + firstRole.slice(1) : firstRole,
       permissions: decoded.permissions ?? [],
-      system_type: decoded.system_type ?? null,
+      system_type: decoded.principal_type ?? null,
     }
   } catch {
     return null

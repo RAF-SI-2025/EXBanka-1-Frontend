@@ -1,0 +1,63 @@
+import { screen } from '@testing-library/react'
+import { renderWithProviders } from '@/__tests__/utils/test-utils'
+import { StockExchangeTable } from '@/views/stockExchanges/components/StockExchangeTable'
+import { createMockStockExchange } from '@/views/stockExchanges/__tests__/fixtures'
+
+const mockExchanges = [
+  createMockStockExchange({
+    id: 1,
+    name: 'New York Stock Exchange',
+    acronym: 'NYSE',
+    mic_code: 'XNYS',
+    polity: 'United States',
+    currency: 'Dollar',
+    time_zone: '-5',
+    is_open: true,
+  }),
+  createMockStockExchange({
+    id: 2,
+    name: 'London Stock Exchange',
+    acronym: 'LSE',
+    mic_code: 'XLON',
+    polity: 'United Kingdom',
+    currency: 'Pound',
+    time_zone: '0',
+    is_open: false,
+  }),
+]
+
+describe('StockExchangeTable', () => {
+  it('renders table headers', () => {
+    renderWithProviders(<StockExchangeTable exchanges={mockExchanges} />)
+    expect(screen.getByText('Name')).toBeInTheDocument()
+    expect(screen.getByText('Acronym')).toBeInTheDocument()
+    expect(screen.getByText('MIC Code')).toBeInTheDocument()
+    expect(screen.getByText('Country')).toBeInTheDocument()
+    expect(screen.getByText('Currency')).toBeInTheDocument()
+    expect(screen.getByText('Time Zone')).toBeInTheDocument()
+    expect(screen.getByText('Working')).toBeInTheDocument()
+  })
+
+  it('shows Yes/No in the Working column based on is_open', () => {
+    renderWithProviders(<StockExchangeTable exchanges={mockExchanges} />)
+    // NYSE is open → Yes; LSE is closed → No.
+    expect(screen.getByText('Yes')).toBeInTheDocument()
+    expect(screen.getByText('No')).toBeInTheDocument()
+  })
+
+  it('renders exchange rows', () => {
+    renderWithProviders(<StockExchangeTable exchanges={mockExchanges} />)
+    expect(screen.getByText('New York Stock Exchange')).toBeInTheDocument()
+    expect(screen.getByText('NYSE')).toBeInTheDocument()
+    expect(screen.getByText('XNYS')).toBeInTheDocument()
+    expect(screen.getByText('United States')).toBeInTheDocument()
+    expect(screen.getByText('London Stock Exchange')).toBeInTheDocument()
+    expect(screen.getByText('LSE')).toBeInTheDocument()
+  })
+
+  it('formats time zone with UTC prefix', () => {
+    renderWithProviders(<StockExchangeTable exchanges={mockExchanges} />)
+    expect(screen.getByText('UTC-5')).toBeInTheDocument()
+    expect(screen.getByText('UTC+0')).toBeInTheDocument()
+  })
+})

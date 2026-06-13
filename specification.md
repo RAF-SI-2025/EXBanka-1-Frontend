@@ -1,6 +1,45 @@
 # EXBanka Frontend — Project Specification
 
-_Last updated: 2026-04-06 (admin management views, OTC portal, limits dashboard, Cypress e2e tests, employee card creation)_
+_Last updated: 2026-06-13b (Watchlist Favorites tab — per-row **Buy** button (navigates to /securities/order/new with listingId/direction/securityType/ticker prefilled) and a **Type** filter select that passes `listing_type` to GET /me/watchlists/:id/items.)_
+
+_Last updated: 2026-06-13 (Fund Portfolio holdings Sell — per-holding Sell button (employee-only) on /funds/:id/portfolio opens SellFundHoldingDialog, resolving the venue via useListingsForSell and placing a market sell via POST /me/orders with on_behalf_of_fund_id; account auto-resolves to the fund's RSD account.)_
+
+_Last updated: 2026-06-12j (OTC negotiation buttons are now driven by backend viewer-relative flags, replacing the client-side turn derivation of 2026-06-12h — the backend computes per-caller hints on each negotiation (`GET /me/otc/options/negotiations` and `GET /otc/options/:id/negotiations`) and per-revision/timeline flags (REST_API_v3 §47.2). `OtcNegotiation` gains `viewer_role` (`'' | 'bidder' | 'poster'`), `last_action_mine`, `awaiting_viewer`, `can_accept`, `can_counter`, `can_reject`, `can_withdraw`; `OtcNegotiationRevision` and `OtcTimelineEntry` gain `mine` / `is_latest`. `normalizeNegotiation` / `normalizeRevision` and the `useOtcOfferTimeline` mapping default every absent flag to `false` (and `viewer_role` to `''`) per the backend's omitted-when-false contract. `OfferActivityPanel` (poster) now renders **Accept** off `can_accept`, **Counter** off `can_counter`, and **Reject** off `can_reject` independently — so Reject stays available whenever the chain is live even when it is NOT the poster's turn (`can_reject` is not turn-gated), unlike the old single combined gate; "Waiting on bidder" shows only when none apply. `BidderActivityPanel` (bidder) renders **Counter** off `can_counter`, the in-table **Accept** off `can_accept`, and **Withdraw** off `can_withdraw`, with `whoseTurn` derived from `awaiting_viewer` / `last_action_mine`. `NegotiationRevisionsTable` gates its in-table Accept on `is_latest && !mine` (replacing the `action_by_principal_type === 'seller'` heuristic) and labels "You" via `mine`; `OfferHistoryTable` labels "You" via `mine`; `formatActor` gains an optional `mine` arg that short-circuits to "You". The now-dead `src/views/otcOptions/lib/turn.ts` (`partiesMatch`/`bidderMovedLast`/`isOwnerTurn`/`isCallerTurn`) and `lib/__tests__/turn.test.ts` are deleted — both panels no longer import them and `useBidOrCounter` keeps its own private `partiesMatch`. New/updated tests: `otcOptionsApi.test.ts` (flag pass-through + absent⇒false), `useOtcOfferTimeline.test.ts` (mine/is_latest carry-through), `actor.test.ts` (mine short-circuit), `NegotiationRevisionsTable.test.tsx` (is_latest/mine Accept gating + "You"), `OfferHistoryTable.test.tsx` ("You" via mine), and the rewritten flag-driven `OfferActivityPanel.test.tsx` / `BidderActivityPanel.test.tsx`. No Cypress fixture change needed — the new fields are additive/optional and no spec asserts panel action buttons off a live chain.)_
+
+_Last updated: 2026-06-12i (Portfolio holdings Reserved/Available now derived from `available_quantity` — the backend ships `available_quantity` (the tradeable amount), not separate `reserved`/`available` fields, so both columns rendered "-". `SecurityPosition` gains the wire field `available_quantity?: string | number`; a new `normalizeSecurityPosition` in `src/lib/api/portfolio.ts` derives **Available = `available_quantity`** and **Reserved = `quantity − available_quantity`**, applied in `getPortfolio` (per securities position) and `exerciseOption`. When `available_quantity` is absent or non-numeric, `reserved`/`available` stay undefined and `HoldingTable` still renders "-". New `portfolio.test.ts` cases cover the derivation and the absent-field fallback. Cypress `portfolio-holdings.json` now carries `available_quantity: 40` (quantity 50) on AAPL instead of literal `reserved`/`available`, and `portfolio.cy.ts` asserts the AAPL row shows Quantity 50 / Reserved 10 / Available 40 while ESM26 (no `available_quantity`) shows "-" for both.)_
+
+_Last updated: 2026-06-12h (OTC negotiation actions are now turn-gated in the UI — the protocol is strictly turn-based: a party may counter/accept/reject only when the OTHER side moved last (backend rejects an out-of-turn counter with 409 "not your turn", and the accept path verifies the caller is the opposite party to `last_action_by` — REST_API_v3 §47.2). New `src/views/otcOptions/lib/turn.ts` centralises this: `partiesMatch`, `bidderMovedLast`, `isOwnerTurn` (bidder-relative — identity-robust for bank-acting employees whose principal may not equal how the backend recorded the owner's action), and `isCallerTurn` (caller-relative, used by the bidder side); a missing `last_action_by` ⇒ allowed (backend stays the arbiter). `BidderActivityPanel` hides Counter and the Accept action when it isn't the bidder's turn (and shows a "Waiting on the other side…" hint); **Withdraw stays available** as a unilateral exit. `OfferActivityPanel` hides Accept/Counter/Reject per chain when the owner moved last (shows "Waiting on bidder"); **Cancel listing** and **See history** stay available. New tests: `lib/__tests__/turn.test.ts`, owner-side `OfferActivityPanel.test.tsx`, and two added `BidderActivityPanel` cases (bidder-moved-last hides Counter/Accept, keeps Withdraw). `BidderActivityPanel`'s local `partiesMatch` was removed in favour of the shared lib.)_
+
+_Last updated: 2026-06-12g (OTC contract exercise hardened against an async (cross-bank) response — a cross-bank exercise dispatches the SI-TX flow asynchronously (REST_API_v3 §30), so the 201 carries `saga_id` + `status` (e.g. "pending") and NO `contract`/`holding`. `exerciseOtcOptionContract` was unconditionally running `normalizeContract(data.contract)`, which crashed on `raw.buyer` ("undefined is not an object (evaluating 'e.buyer')") and surfaced as a "something went wrong" error toast on exercise. Fix: `ExerciseOtcContractResponse.contract` is now `OptionContract | null`, `holding` is optional/nullable, and `saga_id?`/`status?` are added; `exerciseOtcOptionContract` guards `data?.contract` before normalising (returns `contract: null` for the async path). New `otcOption.test.ts` case covers a cross-bank exercise (saga_id/status, no contract → `contract: null`, no throw). Cypress Scenario 29's exercise intercept now returns the realistic SI-TX dispatch body (`201` + `saga_id`/`status: "pending"`, no contract/holding) instead of a full contract, e2e-covering the null-contract path. Completes the `e.buyer` hardening across all three OTC contract read paths: list, detail, and exercise.)_
+
+_Last updated: 2026-06-12f (OTC contract read path hardened against a null contract — a cross-bank contract is minted asynchronously on the counterparty bank, so the contract endpoints can return a null/absent contract while it settles. `normalizeContract(null)` crashed on `raw.buyer` ("undefined is not an object (evaluating 'e.buyer')"). Fixes: `getOtcOptionContract` now returns `{ contract: OptionContract | null }` (guards `data?.contract` before normalising); `getMyOtcOptionContracts` filters out null/undefined rows before mapping `normalizeContract`; `OtcContractDetailView` bails to a friendly `ErrorFallback` ("…may still be settling — check back shortly.") when `data.contract` is null instead of rendering and crashing on `contract.*`. New `otcOption.test.ts` cases cover the null-detail and null-row paths; new `OtcContractDetailView.test.tsx` case asserts the graceful state (no crash, no Exercise button). The `.buyer`/`.seller` access in the codebase is confined to the contracts feature — the OTC options accept flow never touches it — so this fully removes the `e.buyer` crash.)_
+
+_Last updated: 2026-06-12e (OTC cross-bank accept no longer shows a false "saga aborted" warning — `useAcceptNegotiation`'s `onSuccess` previously treated any `contract: null` in the accept 200 as a formation-saga abort and warned "insufficient shares or premium". That branch only ever fired for **cross-bank** accepts, where the contract is minted asynchronously on the counterparty bank via SI-TX settlement (the 200 carries `contract: null` + `cross_bank_transaction_id`) — so the warning was always a false alarm; a genuine local abort is an HTTP 412, which lands in `onError`. Fix: `contract: null` now shows a positive "Negotiation accepted — the cross-bank contract is settling …" success toast; a new `onError` surfaces the backend's real reason via `parseApiError` as "Couldn't form the contract: …", so the insufficient-shares/premium wording only appears when actually true. `AcceptNegotiationResponse` gains optional `cross_bank_transaction_id?: string` (passes through the API layer's existing `...data` spread). New `useOtcOptionMutations.test.ts` covers all three paths: local 200 → "Contract #N minted"; cross-bank 200 `contract:null` → settling toast and **no** abort warning; 412 → tailored error, no success toast.)_
+
+_Last updated: 2026-06-12d (OTC contract Exercise gated on holder — `OptionContract` gains a required `me_owner: boolean`, mapped in `normalizeContract` as `raw.me_owner === true` (a missing flag defaults to `false`, the safe non-holder value). The flag is server-authoritative (REST_API_v3 §30): `true` only when the caller is the contract's **buyer/holder** (for `remote` rows, iff this bank holds the buyer side), `false` for the seller/writer. The Exercise action is now gated on it — `OtcContractsTable` renders the row's **Exercise** button only when `status === 'ACTIVE' && me_owner`, and `OtcContractDetailView` shows the **Exercise contract** header action only when `status === 'ACTIVE' && me_owner` (`canExercise`). This stops the seller seeing an Exercise button the backend rejects with `404`. New `OtcContractDetailView.test.tsx` covers the gate (held → button, seller `me_owner:false` → none, non-ACTIVE → none); `OtcContractsTable.test.tsx` swapped its "regardless of buyer identity" case for `me_owner` true/false cases; `otcOption.test.ts` asserts the flag passes through and defaults to `false`. The mock factory `createMockOptionContract` defaults `me_owner: true`. Cypress `otc-celina4.cy.ts` adds `me_owner` to every `/me/otc/contracts` row and a new Scenario 25b (seller-side `me_owner:false` row → no Exercise button).)_
+
+_Last updated: 2026-06-12c (OTC counter premium floor — `PlaceBidDialog` (Market tab Bid/Counter) only enforces the premium floor (best-bid / seller-strike minimum) on a **first bid**. When the caller already has an open chain (`hasOwnNegotiationChain(offer.my_negotiation_id)`), the submit is a **counter**, so the floor no longer applies: any premium is allowed and the "Minimum …" helper/validation is hidden. First-bid behaviour is unchanged.)_
+
+_Last updated: 2026-06-12b (OTC option bidding-history accept — in the option detail's `BidderActivityPanel` "Your bidding history" table (`NegotiationRevisionsTable`), a seller-authored revision (`action_by_principal_type === 'seller'`) now exposes an **Accept** action while the chain is live. `NegotiationRevisionsTable` gained an optional `accept` prop (`{ accounts, pending, onAccept }`); when present it renders an Actions column and an inline acceptor-account `<select>` → "Confirm accept". `BidderActivityPanel` wires it through `useAcceptNegotiation(offerId)`, calling `POST /me/otc/options/:id/negotiations/:nid/accept` with `{ acceptor_account_id }` for the bidder's chain. The shared owner-side `OfferActivityPanel` usage is unaffected (no `accept` prop).)_
+
+_Last updated: 2026-06-12 (Portfolio holdings table — `SecurityPosition` gains optional `reserved` / `available` (string | number); `HoldingTable` (`/portfolio`) renders **Reserved** and **Available** columns after Quantity, showing `-` (via `?? '-'`, so a real `0` still shows) when the field is absent from the body. Cypress `portfolio.cy.ts` asserts the new headers; `portfolio-holdings.json` carries the fields on AAPL and omits them on ESM26 to exercise the `-` fallback.)_
+
+_Last updated: 2026-06-11d (OTC contract cross-bank exercise + status grouping fix — `OptionContract` gains `kind: 'local' | 'remote'` and optional `strike_currency`, both mapped in `normalizeContract`, which now also upper-cases `status` so remote contracts (projected in the peer's lowercase vocabulary) group correctly: status `ACTIVE` → "Active" section, anything else → "Concluded / Expired". `ExerciseContractDialog` now takes an `accounts` prop and, for a `remote` contract, renders a required Buyer-account `<select>` (the caller's own accounts filtered to the strike currency) and submits `buyer_account_number`; a `local` contract still submits an empty body. `OtcContractsView` fetches **bank** accounts via `useBankAccounts(exerciseTarget?.kind === 'remote')` (`GET /bank-accounts`) and passes them to the dialog — the bank operator pays a cross-bank strike from a bank account (REST_API_v3 §30), so the prior `/me/accounts` source returned nothing for an employee. Cypress Scenario 29 covers the remote-exercise payload (bank-account picker, currency filter, `buyer_account_number`). `normalizeContract` also maps the remote `stock_ticker` into `ticker` (local rows still ship `ticker`), and `OtcContractsTable` adds a **Currency** column (`strike_currency`) and renders `-` when premium/currency are absent from the body.)_
+
+_Last updated: 2026-05-28 (added stricter form validations — phone format `/^\+?[0-9]+$/`, date of birth not in future and ≥ 16 years old, inline display of server-side duplicate-email errors via `isDuplicateEmailError` helper; added FundPortfolioView at `/funds/:id/portfolio` — fund portfolio-style page with summary cards, performance chart and an enriched holdings table that calls `useStock(stock_id)` per row to fill in ticker/name/price/market value; added Price Alerts — bell-icon button on every Stocks/Futures/Forex table row opens `CreatePriceAlertDialog` (POST `/me/price-alerts`), and a new "My Price Alerts" tab on `/portfolio` lists alerts with Pause/Resume/Delete actions via PUT/DELETE `/me/price-alerts/:id`; added recurring buy scheduling — on the create-order form (`/securities/order/new`) a client or employee placing a market **buy** can tick "Schedule order", pick Weekly/Monthly, and either "Place order and schedule" (immediate buy + recurring template) or "Schedule" (template only) via POST `/me/recurring-orders` (caller-scoped: an employee's template is created under the employee principal); added a **Recurring Orders** tab on `/portfolio` (`?tab=recurring-orders`) that lists the caller's recurring-order templates via GET `/me/recurring-orders` and supports Pause/Resume/Cancel via POST `/me/recurring-orders/:id/{pause,resume,cancel}` — Cancel is gated behind a confirmation dialog)_
+
+_Updated: 2026-05-30_
+_Last updated: 2026-06-11 (OTC Options view module — slim create payload, updateListing API, useUpdateOtcOption hook, AmountEditor in OfferActivityPanel)_
+
+_Last updated: 2026-06-07b (fund detail stats redesign — `FundDetailsView` (`/funds/:id`) now mirrors the Portfolio page: `FundSummaryCards` hero stats (total value / profit ± % / total contributed / investors), a `FundNavChart` (this fund's daily NAV indexed to 100 vs. the system-average benchmark from `history`/`average_history`), a `FundAllocationPieChart` (value-weighted holdings), and `FundRiskMetrics` cards (annualized return, volatility, Sharpe = reward_to_variability, max drawdown — hidden behind a notice when `metrics_available === false`). `FundDetailsPanel` slimmed to a secondary "Fund details" card. New optional fund types: SP3 metrics on `Fund`, `FundNavPoint`, `history`/`average_history` on `FundDetailResponse`.)_
+
+_Last updated: 2026-06-07 (named watchlists — replaced the single default `/me/watchlist` calls with multi-list `/me/watchlists` + `/me/watchlists/:id/items`; the Portfolio → Favorites tab now renders `WatchlistPanel` with a list dropdown (default list shown as "Favorites"), a "New list" button → `CreateWatchlistDialog`, and a per-list delete; the securities heart now opens `AddToWatchlistDialog` to pick which list to add to, and shows filled when a listing is in any of the caller's lists. Owner (client vs. bank) is resolved server-side from the JWT.)_
+
+_Last updated: 2026-06-11c (OTC offer activity panels — the header now shows the listing's surrogate `id` (not the native `offer_id`) next to the ticker. `BidderActivityPanel`'s "Your bidding history" is now fetched directly from `GET /me/otc/options/negotiations/:id/revisions` keyed on the offer row's `my_negotiation_id` stamp, instead of first locating the chain in the caller's negotiations list. The old approach matched the list on `Number(offer.offer_id)` (→ `NaN` for the non-numeric native key) and silently rendered nothing; the history now populates even when the chain is absent from the list (the chain object is synthesized from the latest revision for the status/counter/withdraw controls).)_
+
+_Last updated: 2026-06-11b (OTC options route id fix — every `/otc/options/:id/...` route (the `POST .../bid`, per-listing negotiations/timeline, per-chain counter/accept/reject/withdraw, listing cancel) and the single-offer detail now address a listing by its **stable surrogate id** — the live discovery feed's `id` field (`local_id` under the older spec name) — never the native `offer_id`, which for folded-in remote listings is a non-numeric key like `"ps:333:client-1:AAPL"` (so `Number(offer_id)` would be `NaN`). Added `id`/`local_id` to `OtcOptionRow` and a `getListingRouteId(row)` helper (`views/otcOptions/lib/listingId.ts`, returns `Number(row.id ?? row.local_id)`) used by `OtcOptionsView` (bid), `OfferActivityPanel`, and `BidderActivityPanel`; `offer_id` is retained only for display and native-id chain matching against a negotiation's `parent_offer_id`.)_
+
+_Last updated: 2026-06-11 (OTC hub trimmed to two tabs — removed the legacy stock-offers "Market" portal (`OtcPortalView` / `otcPortal` module, its `useOtc`/`lib/api/otc`/`types/otc`/`otc-fixtures` data layer, and the buy-driven SAGA Cypress scenarios). The options marketplace is now the default surface and its tab is relabelled "Market" (route stays `/otc/options`; `/otc` and `/otc/market` redirect there). Removed the **Make Public** holding action and its full chain (`MakePublicDialog`, `useMakePublic`, `makeHoldingPublic`, `MakePublic*`/`OtcStockOffer*` types, and the related Cypress assertions). The OTC Options marketplace table (`OtcOptionsTable`) now shows the caller's own **latest bid** (the negotiation chain's current/newest-revision strike & premium) in the Strike/Premium columns for offers they've bid on, falling back to the listing terms otherwise.)_
 
 ---
 
@@ -104,7 +143,10 @@ src/
 │   │   ├── PasswordResetForm.tsx     # Token + new password form
 │   │   ├── PasswordResetForm.test.tsx
 │   │   ├── ActivationForm.tsx        # Token + initial password form
-│   │   └── ActivationForm.test.tsx
+│   │   ├── ActivationForm.test.tsx
+│   │   ├── BackendSelector.tsx       # Dropdown to choose backend host (5 presets + custom URL)
+│   │   ├── BackendSelector.test.tsx
+│   │   └── BackendSwitcherButton.tsx # Sidebar dialog launcher for in-app backend switch
 │   ├── employees/
 │   │   ├── EmployeeForm.tsx          # Thin wrapper: delegates to Create or Edit form
 │   │   ├── EmployeeForm.test.tsx
@@ -132,7 +174,9 @@ src/
 │   │   ├── ForexTable.tsx + .test.tsx         # Forex pairs list table
 │   │   ├── PriceChart.tsx + .test.tsx         # Recharts line chart with period selector
 │   │   ├── SecurityInfoPanel.tsx + .test.tsx  # Key-value detail info panel
-│   │   └── OptionsChain.tsx + .test.tsx       # Calls/Puts options chain table
+│   │   ├── OptionsChain.tsx + .test.tsx       # Calls/Puts options chain table
+│   │   ├── WatchlistButton.tsx + .test.tsx    # Per-row heart; opens the add-to-list picker
+│   │   └── AddToWatchlistDialog.tsx + .test.tsx # Pick which watchlist to add a listing to
 │   ├── accounts/
 │   │   ├── LimitsUsageCard.tsx + .test.tsx    # Daily/monthly spending usage progress bars
 │   │   └── AccountSelector.tsx + .test.tsx   # Search-as-you-type account picker; businessOnly prop filters to business accounts
@@ -140,15 +184,43 @@ src/
 │   │   ├── CreateOrderForm.tsx + .test.tsx    # Order creation form
 │   │   ├── OrderTable.tsx + .test.tsx         # Reusable orders table with actions (cancel/approve/decline)
 │   │   └── OrdersTable.tsx + .test.tsx        # Simplified admin orders table (approve/decline only)
-│   ├── otc/
-│   │   ├── OtcOffersTable.tsx + .test.tsx     # OTC offers list with Buy action
-│   │   └── BuyOtcDialog.tsx + .test.tsx       # Dialog to buy an OTC offer
+│   ├── notifications/
+│   │   ├── NotificationItem.tsx + .test.tsx       # Single row with unread dot + relative time
+│   │   ├── NotificationDropdown.tsx + .test.tsx   # Popover content: list, empty/loading/error states, Mark all as read
+│   │   └── NotificationBell.tsx + .test.tsx       # Bell icon + unread badge ("9+" cap); base-ui Popover
+│   ├── shared/
+│   │   ├── AppErrorBoundary.tsx + .test.tsx       # Class boundary at router root; toasts + renders ErrorFallback
+│   │   ├── ErrorFallback.tsx + .test.tsx          # Stateless fallback page used by the boundary
+│   │   ├── PageTransition.tsx + .test.tsx         # Re-keys on pathname; 200ms fade + slide-in for every route change
+│   │   ├── TopProgressBar.tsx + .test.tsx         # Top-of-viewport accent bar driven by useIsFetching/useIsMutating (250ms grace)
+│   │   ├── LoadingSpinner.tsx                     # Existing
+│   │   ├── PaginationControls.tsx                 # Existing
+│   │   └── ProtectedRoute.tsx + .test.tsx         # Existing
+│   ├── funds/
+│   │   ├── FundsTable.tsx + .test.tsx              # Discovery table; rows linked to /funds/:id
+│   │   ├── FundDetailsPanel.tsx + .test.tsx        # Secondary "Fund details" card (manager via useEmployee)
+│   │   ├── FundSummaryCards.tsx + .test.tsx        # Hero stat cards (value/profit/contributed/investors)
+│   │   ├── FundNavChart.tsx + .test.tsx            # NAV-vs-system-average performance line chart
+│   │   ├── FundAllocationPieChart.tsx + .test.tsx  # Value-weighted holdings allocation pie
+│   │   ├── FundRiskMetrics.tsx + .test.tsx         # SP3 risk/return metric cards (metrics_available guard)
+│   │   ├── fundFormat.ts                           # Shared formatRsd/formatPct/signClass helpers
+│   │   ├── FundHoldingsTable.tsx                   # Per-row useStock to resolve ticker
+│   │   ├── CreateFundForm.tsx + .test.tsx          # name + description + minimum_contribution_rsd
+│   │   ├── InvestInFundDialog.tsx + .test.tsx      # Source account + amount + currency; asBank toggle
+│   │   ├── RedeemFromFundDialog.tsx + .test.tsx    # Amount or "withdraw full"; asBank toggle
+│   │   ├── SellFundHoldingDialog.tsx + .test.tsx   # Market sell of a fund holding (venue via useListingsForSell; on_behalf_of_fund_id)
+│   │   └── MyFundsList.tsx + .test.tsx             # Per-position cards with Invest/Redeem
+│   ├── profit/
+│   │   ├── ActuaryPerformanceTable.tsx + .test.tsx # Sorted by realised_profit_rsd desc
+│   │   └── BankFundPositionsTable.tsx              # Linked to /funds/:id with Invest/Redeem actions
 │   ├── portfolio/
-│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Make Public/Exercise actions
+│   │   ├── HoldingTable.tsx + .test.tsx       # Holdings table with Sell/Exercise actions
 │   │   ├── HoldingsTable.tsx + .test.tsx      # Alternative holdings table variant
-│   │   ├── MakePublicDialog.tsx + .test.tsx   # Dialog to set holding public quantity
 │   │   ├── SellOrderDialog.tsx + .test.tsx    # Dialog to create sell order from portfolio
-│   │   └── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
+│   │   ├── PortfolioSummaryCard.tsx + .test.tsx # Summary stats card
+│   │   ├── WatchlistPanel.tsx + .test.tsx     # Favorites tab: list dropdown, New list, delete, Type filter, items
+│   │   ├── CreateWatchlistDialog.tsx + .test.tsx # New named-list form (1–64 chars)
+│   │   └── FavoritesTable.tsx + .test.tsx     # Tracked listings of the selected list (Buy + Remove per row)
 │   ├── tax/
 │   │   ├── TaxTable.tsx + .test.tsx           # Tax records table (used in TaxPage)
 │   │   └── TaxTrackingTable.tsx + .test.tsx   # Tax tracking table (used in TaxTrackingPage)
@@ -224,6 +296,7 @@ src/
 │   ├── AccountDetailsPage.tsx + .test.tsx
 │   ├── AdminAccountsPage.tsx + .test.tsx
 │   ├── AdminAccountCardsPage.tsx + .test.tsx     # Lists cards for an account; block/unblock/deactivate per card; "Create Card" button opens CreateCardDialog
+│   ├── BankAccountActivityPage.tsx + .test.tsx  # Paginated ledger (debit/credit) for a bank-owned account; employee-only (bank-accounts.manage)
 │   ├── AdminClientsPage.tsx + .test.tsx
 │   ├── AdminCardRequestsPage.tsx + .test.tsx
 │   ├── AdminLoanRequestsPage.tsx + .test.tsx
@@ -240,12 +313,18 @@ src/
 │   ├── AdminOrdersPage.tsx + .test.tsx
 │   ├── TaxPage.tsx + .test.tsx
 │   ├── TaxTrackingPage.tsx + .test.tsx   # (not yet routed)
-│   ├── OtcPortalPage.tsx + .test.tsx     # (not yet routed)
+│   ├── FundsDiscoveryPage.tsx            # /funds — search + active-only + InvestInFundDialog
+│   ├── FundDetailsPage.tsx               # /funds/:id — hero cards + NAV chart + allocation pie + risk metrics + details + holdings + Invest
+│   ├── FundPortfolioView.tsx             # /funds/:id/portfolio — portfolio-style page (summary + perf + enriched holdings; employee-only per-holding Sell → SellFundHoldingDialog)
+│   ├── CreateFundPage.tsx                # /funds/new — gated on funds.manage
+│   ├── ActuaryPerformancePage.tsx        # /admin/profit/actuaries — gated on actuaries.read.all
+│   ├── BankFundPositionsPage.tsx         # /admin/profit/funds — gated on funds.bank-position-read; reuses Invest/Redeem dialogs with asBank
 │   ├── AdminRolesPage.tsx + .test.tsx
 │   ├── AdminEmployeeLimitsPage.tsx + .test.tsx
 │   ├── AdminClientLimitsPage.tsx
 │   ├── AdminInterestRatesPage.tsx + .test.tsx
 │   ├── AdminFeesPage.tsx + .test.tsx
+│   ├── AdminPeerBanksPage.tsx + .test.tsx  # Settings: SI-TX peer bank registry CRUD
 │   ├── CardListPage.tsx + .test.tsx
 │   ├── CardRequestPage.tsx + .test.tsx
 │   ├── CreateAccountPage.tsx + .test.tsx
@@ -284,8 +363,8 @@ src/
 │   ├── useSecurities.ts + .test.ts   # React Query: stocks, futures, forex, options hooks
 │   ├── useOrders.ts + .test.ts       # React Query: orders CRUD hooks (my + admin)
 │   ├── usePortfolio.ts + .test.ts    # React Query: portfolio, holdings, exercise hooks
+│   ├── useWatchlist.ts + .test.ts    # React Query: named watchlists + items + membership hooks
 │   ├── useTax.ts + .test.ts          # React Query: tax records + collect hooks
-│   ├── useOtc.ts + .test.ts          # React Query: OTC offers + buy hooks
 │   ├── useRoles.ts                   # React Query: roles CRUD hooks
 │   ├── usePermissions.ts             # React Query: permissions + employee role/permission assignment
 │   ├── useFees.ts                    # React Query: transfer fees CRUD hooks
@@ -295,7 +374,8 @@ src/
 │
 ├── lib/
 │   ├── api/
-│   │   ├── axios.ts                  # Axios instance + interceptors (token refresh)
+│   │   ├── axios.ts                  # Axios instance + interceptors (token refresh, runtime baseURL)
+│   │   ├── backendHost.ts + .test.ts # Runtime-configurable backend host (5 presets + custom URL, persisted in localStorage)
 │   │   ├── auth.ts + .test.ts        # Auth API calls
 │   │   ├── employees.ts + .test.ts   # Employee CRUD API calls
 │   │   ├── accounts.ts               # Account API calls
@@ -314,8 +394,8 @@ src/
 │   │   ├── securities.ts + .test.ts # Securities API calls (stocks, futures, forex, options)
 │   │   ├── orders.ts + .test.ts     # Orders API calls (create, cancel, approve, decline)
 │   │   ├── portfolio.ts + .test.ts  # Portfolio API calls (holdings, make public, exercise)
+│   │   ├── watchlist.ts + .test.ts  # Named watchlist API calls (lists + items)
 │   │   ├── tax.ts + .test.ts        # Tax API calls (records, collect)
-│   │   ├── otc.ts + .test.ts        # OTC API calls (offers, buy)
 │   │   ├── fees.ts                  # Transfer fees API calls (CRUD)
 │   │   ├── limits.ts                # Employee/client limits + template API calls
 │   │   └── permissions.ts + .test.ts # Permissions API + employee role/permission assignment
@@ -324,6 +404,7 @@ src/
 │       ├── banking.ts                # CARD_BRANDS, CARD_STATUSES, CARD_STATUS_LABELS, CARD_STATUS_VARIANT, CARD_LIMITS
 │       ├── format.ts + .test.ts      # maskCardNumber (spaced format), formatAccountNumber, formatCurrency
 │       ├── dateFormatter.ts + .test.ts  # todayISO, formatDateDisplay, formatDateLocale
+│       ├── watchlist.ts + .test.ts   # Watchlist label helpers (default list → "Favorites")
 │       ├── jwt.ts + .test.ts         # JWT decode utility
 │       └── validation.ts + .test.ts  # Zod schemas
 │
@@ -349,8 +430,8 @@ src/
 │   ├── security.ts                  # Stock, FuturesContract, ForexPair, Option, PriceHistory types + filters
 │   ├── order.ts                     # Order, CreateOrderPayload, OrderFilters types
 │   ├── portfolio.ts                 # Holding, PortfolioSummary, PortfolioFilters types
+│   ├── watchlist.ts                 # WatchlistItem, Watchlist, WatchlistsResponse, CreateWatchlistPayload types
 │   ├── tax.ts                       # TaxRecord, TaxFilters, CollectTaxResponse types
-│   ├── otc.ts                       # OtcOffer, OtcOfferListResponse, OtcBuyRequest, OtcFilters types
 │   ├── fee.ts                       # TransferFee, FeeListResponse, CreateFeePayload, UpdateFeePayload types
 │   ├── limits.ts                    # EmployeeLimits, ClientLimits, LimitTemplate, update payload types
 │   └── verification.ts              # Verification interfaces
@@ -385,6 +466,7 @@ src/
 | `/employees/:id` | EditEmployeePage | `employees.update` |
 | `/admin/accounts` | AdminAccountsPage | admin |
 | `/admin/accounts/:id/cards` | AdminAccountCardsPage | admin |
+| `/admin/bank-accounts/:id/activity` | BankAccountActivityPage | `bank-accounts.manage` |
 | `/admin/clients` | AdminClientsPage | admin |
 | `/admin/clients/new` | CreateClientPage | admin |
 | `/admin/clients/:id` | EditClientPage | admin |
@@ -401,6 +483,7 @@ src/
 | `/admin/limits/clients` | AdminClientLimitsPage | `limits.manage` |
 | `/admin/interest-rates` | AdminInterestRatesPage | `interest-rates.manage` |
 | `/admin/fees` | AdminFeesPage | `fees.manage` |
+| `/admin/peer-banks` | AdminPeerBanksPage | `requireAdmin` |
 
 ### Protected Routes — Shared Trading (AppLayout + ProtectedRoute)
 
@@ -442,7 +525,7 @@ src/
 ## 5. Pages
 
 ### LoginPage
-- Renders `LoginForm`. Background GIF is provided by `AuthLayout`.
+- Renders `BackendSelector` (dropdown to choose which backend the frontend talks to) above `LoginForm`. Background GIF is provided by `AuthLayout`.
 - Handles unified login for both employees and clients via a single `/login` route.
 - After successful login, reads `userType` from Redux state (derived from JWT `system_type` field): redirects employees to `/admin/accounts`, clients to `/home`.
 
@@ -502,7 +585,7 @@ src/
 ### StockExchangesPage
 - Displays list of stock exchanges with search filter and pagination.
 - Accessible to all employees (`requiredRole="Employee"`).
-- Testing mode toggle button visible only to users with `exchanges.manage` permission (checked via `selectHasPermission`).
+- Testing mode toggle button visible to admins (`EmployeeAdmin`) and to users with `exchanges.manage` permission (checked via `selectHasPermission`, which bypasses for admins).
 - Fetches exchanges via `useStockExchanges(apiFilters)` and testing mode via `useTestingMode()`.
 - Toggle calls `useSetTestingMode` mutation.
 
@@ -537,8 +620,9 @@ src/
 ### PortfolioPage
 - Fetches holdings via `usePortfolio(filters)` and summary via `usePortfolioSummary()`.
 - Renders `PortfolioSummaryCard` + security_type filter + `HoldingTable` + pagination.
-- Actions: Make Public (opens `MakePublicDialog`), Exercise (for options).
-- Make Public uses `useMakePublic` mutation; Exercise uses `useExerciseOption` mutation.
+- Actions: Sell (navigates to the sell-order page), Exercise (for option holdings).
+- Exercise uses `useExerciseOption` mutation. (The former "Make Public" action and its `MakePublicDialog`/`useMakePublic`/`makeHoldingPublic` chain were removed.)
+- Tabs (URL-synced via `?tab=`): My Holdings, My Funds, My Price Alerts, Favorites, and **Recurring Orders** (`?tab=recurring-orders`). The Recurring Orders tab renders `RecurringOrdersTable` from `useRecurringOrders()` with Pause/Resume/Cancel wired to `usePause/Resume/CancelRecurringOrder` mutations. The **Favorites** tab renders `WatchlistPanel` — a list dropdown (default shown as "Favorites"), a "New list" button, per-list delete, and the selected list's `FavoritesTable` (named watchlists via `/me/watchlists`).
 
 ### AdminOrdersPage
 - Supervisor view for order approval. Requires `orders.approve` permission.
@@ -588,11 +672,19 @@ src/
 - Create: opens `CreateFeeDialog`; Edit: opens `EditFeeDialog`; Deactivate: confirmation dialog → `useDeleteFee` mutation.
 - Mutations: `useCreateFee`, `useUpdateFee`, `useDeleteFee`.
 
-### OtcPortalPage _(created, not yet routed)_
-- OTC trading portal for clients.
-- Fetches OTC offers via `useOtcOffers()`; fetches client accounts via `useClientAccounts()`.
-- Renders `OtcOffersTable`. Selecting an offer opens `BuyOtcDialog` to specify quantity and account.
-- Buy action uses `useBuyOtcOffer` mutation; invalidates `['otc-offers']` and `['portfolio']`.
+### AdminPeerBanksPage
+- Settings page for the SI-TX cross-bank peer registry. Admin-only (`requireAdmin`); see REST_API_v3 §38.
+- Fetches the registry via `usePeerBanks()` (`GET /api/v3/peer-banks`); renders `PeerBanksTable` with Edit, Disable/Enable, and Remove actions per row.
+- **Add Peer Bank** dialog (`CreatePeerBankDialog`): collects `bank_code`, `routing_number`, `base_url`, `api_token` (required) plus optional `hmac_inbound_key` / `hmac_outbound_key` and an `active` flag. Validates the URL is `http(s)://...` before submit.
+- **Edit Peer Bank** dialog (`EditPeerBankDialog`): updates `base_url` / `active`; lets the admin rotate `api_token` and HMAC keys (blank fields keep the current secret). Identifying fields (`bank_code`, `routing_number`) are read-only after creation.
+- **Toggle Active** is a one-click `PUT /api/v3/peer-banks/:id` with `{active: !current}` — disabling a peer immediately stops both inbound and outbound traffic without losing the configuration.
+- **Remove** confirms via dialog before `DELETE /api/v3/peer-banks/:id`.
+- API: `lib/api/peerBanks.ts`. Hooks: `usePeerBanks`, `useCreatePeerBank`, `useUpdatePeerBank`, `useDeletePeerBank` (`hooks/usePeerBanks.ts`). Types: `types/peerBank.ts`.
+
+### OTC hub (`OtcView`)
+- Single sidebar entry at `/otc`; renders a tab strip + animated `<Outlet/>`.
+- Two tabs: **Market** (→ `/otc/options`, the `OtcOptionsView` marketplace, default surface) and **Contracts** (→ `/otc/contracts`, `OtcContractsView`).
+- The legacy stock-offers portal (formerly the "Market" tab / `OtcPortalView` at `/otc/market`) was removed; `/otc/market` now redirects to `/otc/options`, and `/otc` redirects to `/otc/options`.
 
 ### TaxTrackingPage _(created, not yet routed)_
 - Alternative tax tracking page (complements `TaxPage`).
@@ -642,6 +734,15 @@ src/
 - Validation: `activationSchema`
 - On submit: calls `activateAccount({token, password, confirm_password})`
 - On success: confirmation message
+
+**BackendSelector** (`components/auth/BackendSelector.tsx`)
+- Dropdown to choose the API host the frontend talks to. Five presets: `localhost` (`http://localhost:8080`), `instance1` / `instance2` / `instance3` (`https://project-exbanka.bytenity.com/instanceN`), and `custom` (user-entered URL).
+- Persists selection in `localStorage` under `exbanka.backendPreset` / `exbanka.backendCustomUrl`. Selecting a preset persists immediately; the custom URL requires hitting **Apply** and is validated as `http(s)://...`.
+- Optional `onHostChange(host)` callback fires after a successful save.
+- Backed by `lib/api/backendHost.ts` (presets, getters, `setSelection`, `subscribeToHostChange`); `lib/api/axios.ts` reads the host on every request, so a switch takes effect without a rebuild.
+
+**BackendSwitcherButton** (`components/auth/BackendSwitcherButton.tsx`)
+- Sidebar entry that opens a dialog containing `BackendSelector` for in-app switching. The Sidebar wires `onHostChange` to clear tokens (`sessionStorage`), `queryClient.clear()`, dispatch `clearAuth()`, and navigate to `/login` — since a new backend issues different tokens, the existing session is no longer valid.
 
 ---
 
@@ -711,7 +812,7 @@ src/
 ### Stock Exchange Components
 
 **StockExchangeTable** (`components/stockExchanges/StockExchangeTable.tsx`)
-- Displays stock exchanges in a Shadcn `Table` with columns: Name, Acronym, MIC Code, Country, Currency, Time Zone.
+- Displays stock exchanges in a Shadcn `Table` with columns: Name, Acronym, MIC Code, Country, Currency, Time Zone, Working ("Yes"/"No" from the `is_open` flag — whether the exchange is currently operating).
 - Props: `exchanges: StockExchange[]`.
 - Time zone displayed as `UTC+/-X` format.
 
@@ -743,13 +844,31 @@ src/
 - Calls/Puts options chain table with ITM/OTM coloring.
 - Props: `options: Option[]`, `currentPrice: string`.
 
+**WatchlistButton** (`views/securities/components/WatchlistButton.tsx`)
+- Heart toggle rendered per row in the Stocks/Futures/Forex/Options tables. Filled when the listing is in **any** of the caller's lists (`inWatchlist`). Clicking always opens the add-to-list picker — removal is done from the Favorites tab.
+- Props: `listingId`, `ticker`, `inWatchlist`, `disabled?`, `onOpen(listingId, ticker)`.
+
+**AddToWatchlistDialog** (`views/securities/components/AddToWatchlistDialog.tsx`)
+- Dialog opened by the heart. A `Select` of the caller's watchlists (default shown as "Favorites" via `displayWatchlistName`); confirming POSTs to `/me/watchlists/:id/items`. Disabled when the caller has no lists.
+- Props: `open`, `onOpenChange`, `listing: { listing_id, ticker }`, `watchlists: Watchlist[]`, `onSubmit(watchlistId)`, `loading`.
+
+> The four securities tables (`StockTable`, `FuturesTable`, `ForexTable`, `OptionsTable`) take `watchlistIds?: Set<number>` (membership for the filled heart) and `onOpenWatchlist?: (listingId, ticker) => void`.
+
 ---
 
 ### Order Components
 
-**CreateOrderForm** (`components/orders/CreateOrderForm.tsx`)
+**CreateOrderForm** (`views/orders/components/CreateOrderForm.tsx`)
 - Order form: direction (buy/sell), order type, quantity, conditional limit/stop values, account selector.
-- Props: `onSubmit`, `defaultDirection?`, `defaultListingId?`.
+- State/payload logic lives in the `useCreateOrderForm` hook; order-type/limit/stop fields are extracted to `OrderTypeFields`.
+- Scheduling: when `schedulingEnabled` (any market **buy** of a non-option/non-forex security, by a client or an employee in any charge mode) and order type is Market, a **"Schedule order"** checkbox renders `ScheduleOrderFields` (frequency Weekly/Monthly). Checked, the primary button becomes **"Place order and schedule"** (buy now + create recurring order) and a secondary **"Schedule"** button creates the recurring order only. Note: `/me/recurring-orders` is caller-scoped, so an employee's template is created under the employee principal (with the chosen `account_id`), not the client/fund being charged.
+- Props: `defaultDirection`, `onSubmit(payload, frequency?)`, `submitting`, `listingId?`, `accounts?`, `depositAccounts?`, `schedulingEnabled?`, `onScheduleOnly?`.
+
+**OrderTypeFields** (`views/orders/components/OrderTypeFields.tsx`)
+- Order-type select with conditional Limit/Stop value inputs. Extracted from `CreateOrderForm`.
+
+**ScheduleOrderFields** (`views/orders/components/ScheduleOrderFields.tsx`)
+- "Schedule order" checkbox + Frequency (Weekly/Monthly) select for recurring buy templates.
 
 **OrderTable** (`components/orders/OrderTable.tsx`)
 - Reusable orders table. Columns: Ticker, Security, Direction, Type, Quantity, Status, Actions.
@@ -771,10 +890,6 @@ src/
 **HoldingsTable** (`components/portfolio/HoldingsTable.tsx`)
 - Alternative holdings table variant (complements `HoldingTable`).
 
-**MakePublicDialog** (`components/portfolio/MakePublicDialog.tsx`)
-- Dialog to set a holding's public quantity.
-- Props: `open`, `holding: Holding`, `onClose`, `onConfirm(quantity: number)`.
-
 **SellOrderDialog** (`components/portfolio/SellOrderDialog.tsx`)
 - Dialog to pre-fill and submit a sell order directly from the portfolio view.
 
@@ -782,18 +897,55 @@ src/
 - Grid of summary stats: Total Value, Total Cost, Profit/Loss (color-coded), Holdings count.
 - Props: `summary: PortfolioSummary`.
 
+**RecurringOrdersTable** (`views/portfolio/components/RecurringOrdersTable.tsx`)
+- Lists the caller's recurring-order templates. Columns: Security (ticker via `useListingMap`, fallback `#<listing_id>`), Side, Quantity, Frequency (`Weekly · <weekday>` / `Monthly · day <n>`), Status (Badge), Actions.
+- Status-aware actions: `active` → Pause + Cancel; `paused` → Resume + Cancel; `cancelled` → none. Cancel opens `CancelRecurringOrderDialog` and only fires `onCancel` after confirmation. Buttons disabled while `busyId === order.id`.
+- Props: `orders: RecurringOrder[]`, `onPause(id)`, `onResume(id)`, `onCancel(id)`, `busyId?: number`.
+
+**CancelRecurringOrderDialog** (`views/portfolio/components/CancelRecurringOrderDialog.tsx`)
+- Confirmation dialog (on Shadcn `Dialog`) for the irreversible cancel of a recurring order. "Keep order" closes; "Cancel order" confirms.
+- Props: `open`, `onOpenChange`, `onConfirm`, `loading?`.
+
+**WatchlistPanel** (`views/portfolio/components/WatchlistPanel.tsx`)
+- Container rendered in the Portfolio → Favorites tab. A `Select` of the caller's watchlists (default labelled "Favorites", each option suffixed with its item count), a **New list** button opening `CreateWatchlistDialog`, a **Type** filter `Select` (aria-label "Filter by type"; All types / Stocks / Futures / Forex / Options) that re-queries items with `{ listing_type }` when not "all", and — for non-default lists — a **Delete list** button. Initially selects the default list and fetches its items via `useWatchlistItems(currentId, filters)`; selecting another list switches the fetch. Renders `FavoritesTable` wired to `useRemoveFromWatchlistItems` for the selected list and to an `onOrder` handler that navigates to `/securities/order/new?listingId=…&direction=buy&securityType=…&ticker=…` (quick order from the watchlist).
+- No props (self-contained; uses `useWatchlists` / `useWatchlistItems` / `useCreateWatchlist` / `useDeleteWatchlist` / `useRemoveFromWatchlistItems` / `useNavigate`).
+
+**CreateWatchlistDialog** (`views/portfolio/components/CreateWatchlistDialog.tsx`)
+- Small form to create a named list. Name input validated to 1–64 characters; submits the trimmed name (POST `/me/watchlists`).
+- Props: `open`, `onOpenChange`, `onSubmit(name)`, `loading`.
+
+**FavoritesTable** (`views/portfolio/components/FavoritesTable.tsx`)
+- Table of a list's tracked listings. Columns: Ticker, Type, Price, Change, Change %, Added, Actions (optional **Buy** — aria-label `Create order for <ticker>`, rendered before Remove when `onOrder` is provided — then Remove). Empty-state prompt when the list has no items.
+- Props: `items: WatchlistItem[]`, `onRemove(listingId)`, `busyListingId?: number`, `onOrder?(item: WatchlistItem)`.
+
 ---
 
-### OTC Components
+### OTC Options Components
 
-**OtcOffersTable** (`components/otc/OtcOffersTable.tsx`)
-- Displays OTC offers. Columns: Ticker, Name, Type, Quantity, Price, Actions.
-- Props: `offers: OtcOffer[]`, `onBuy: (offer: OtcOffer) => void`.
+**OtcOptionsTable** (`views/otcOptions/components/OtcOptionsTable.tsx`)
+- Marketplace table of OTC option offers. Columns: Ticker, Direction, Qty, Strike, Premium, Best Bid/Ask, Bidders, Settles, Bank, Action.
+- For offers the caller has bid on (`my_negotiation_id` matching a chain in the optional `myBids` map), the **Strike** and **Premium** columns show the caller's own latest bid (the chain's current, newest-revision terms) instead of the owner's listing terms; rows with no bid show the listing terms.
+- Props: `rows: OtcOptionRow[]`, `forceOwn?`, `myBids?: Map<number, { strike_price; premium }>`, `onBid`, `onActivity`, `onRowOpen`.
 
-**BuyOtcDialog** (`components/otc/BuyOtcDialog.tsx`)
-- Shadcn Dialog to buy an OTC offer. Fields: quantity, account selector.
-- Props: `open`, `onOpenChange`, `offer: OtcOffer`, `accounts: Account[]`.
-- Submits via `useBuyOtcOffer` mutation.
+_(The legacy stock-offers portal components — `OtcOffersTable`, `BuyOtcDialog`, `BuyOnBehalfOtcDialog`, `BuyRemoteOtcDialog`, `OtcPeersStatusBanner` — were removed along with the `otcPortal` module.)_
+
+---
+
+### OTC Options View Module Components (`views/otcOptions/components/`)
+
+**CreateOtcOptionDialog** (`views/otcOptions/components/CreateOtcOptionDialog.tsx`)
+- Dialog for listing owners to post a new OTC option. Collects: direction (buy/sell), ticker, quantity, and settlement account (`account_id`).
+- Strike price, premium, and settlement date are NOT collected here — bidders name those terms when they place a bid.
+- Submits via `useCreateOtcOption` mutation (POST `/me/otc/options`).
+
+**OfferActivityPanel** (`views/otcOptions/components/OfferActivityPanel.tsx`)
+- Owner-only panel showing cross-chain timeline for a listing. Contains an inline `AmountEditor` sub-component allowing the listing owner to change the stock amount:
+  - Edit button reveals a numeric input; Save is disabled unless a positive number is entered.
+  - Save calls `useUpdateOtcOption` mutation (PUT `/me/otc/options/:id` with `{ quantity }`).
+- Per-chain action buttons render directly off the backend's viewer-relative flags: **Accept** when `can_accept`, **Counter** when `can_counter`, **Reject** when `can_reject` (each independent — Reject is available on any live chain even when it is not the poster's turn). Shows "Waiting on bidder" only when an active chain has none of the three. **Cancel listing** and **See history** are always available.
+
+**BidderActivityPanel** (`views/otcOptions/components/BidderActivityPanel.tsx`)
+- Bidder-only panel for the caller's own chain on a listing ("Your bidding history"). Action buttons render off the chain's flags: **Counter** when `can_counter`, the in-table **Accept** (via `NegotiationRevisionsTable`'s `accept` prop) when `can_accept`, **Withdraw** when `can_withdraw`. The "Waiting on" indicator and the "Waiting on the other side…" hint are derived from `awaiting_viewer` / `last_action_mine`.
 
 ---
 
@@ -856,11 +1008,12 @@ src/
 - Logo: "EXBanka"
 - Nav links (employee portal): Employees, Card Requests (`/admin/cards/requests`), Loan Requests, etc.
 - Tax link shown only for users with `tax.manage` permission.
-- **Settings section** (shown when user has any of `employees.permissions`, `limits.manage`, `interest-rates.manage`, `fees.manage`):
+- **Settings section** (shown to `EmployeeAdmin`):
   - Roles & Permissions → `/admin/roles` (requires `employees.permissions`)
   - Employee Limits → `/admin/limits/employees` (requires `limits.manage`)
   - Interest Rates → `/admin/interest-rates` (requires `interest-rates.manage`)
   - Fees → `/admin/fees` (requires `fees.manage`)
+  - Peer Banks → `/admin/peer-banks` (admin-only — manage SI-TX cross-bank peer registry)
 - Displays current user's email
 - Logout button → dispatches `logoutThunk` → redirects to `/login`
 
@@ -929,7 +1082,23 @@ interface AuthState {
 | `selectIsAuthenticated` | `status === 'authenticated'` |
 | `selectIsAdmin` | `user.role === 'EmployeeAdmin'` |
 | `selectCurrentUser` | `AuthUser \| null` |
-| `selectHasPermission(state, perm)` | `boolean` — checks `user.permissions[]` |
+| `selectHasPermission(state, perm)` | `boolean` — returns `true` for `EmployeeAdmin` (bypass); otherwise prefix-matches against `user.permissions[]` |
+
+### Error Handling (`lib/errors/`, `lib/queryClient.ts`, `components/shared/AppErrorBoundary.tsx`)
+
+Errors are surfaced to the user through one canonical pipeline. **No silent failures.** See [Error Handling — Developer Guide](/docs/error-handling.md) and the policy in `CLAUDE.md`.
+
+| Layer | File | Responsibility |
+|---|---|---|
+| Parser | `lib/errors/parseApiError.ts` | Pure `unknown -> AppError`. Maps `AxiosError` (4xx/5xx, network, timeout), `Error`, `string`, unknown. |
+| Notifier | `lib/errors/notify.ts` | `notifyError(err)` parses + `toast.error`. `notifySuccess(msg)` for happy paths. |
+| Global query fallback | `lib/queryClient.ts` | `createQueryClient()` configures `queryCache.onError` and `mutationCache.onError`. Queries/mutations without their own `onError` automatically toast. |
+| Render boundary | `components/shared/AppErrorBoundary.tsx` | Class boundary at the router root; catches render exceptions, toasts, shows `ErrorFallback`. |
+| Toaster mount | `main.tsx` | One `<Toaster richColors position="top-right" />` at the providers root. |
+
+**Per-call opt-outs:**
+- Query: `meta: { suppressGlobalError: true }` to suppress the global toast for an "expected to fail" query (e.g., polling).
+- Mutation: defining ANY `onError` callback suppresses the global toast — you own the error UX. Recommended pattern is to still call `notifyError(err)` inside that callback.
 
 ---
 
@@ -937,9 +1106,16 @@ interface AuthState {
 
 ### Axios Client (`lib/api/axios.ts`)
 
-- Base URL: `http://localhost:8080`
-- **Request interceptor:** attaches `Authorization: Bearer <access_token>` from `sessionStorage`
-- **Response interceptor:** on 401, attempts token refresh via `/api/auth/refresh`, retries original request. If refresh fails, clears session and redirects to `/login`.
+- Base URL: resolved at request time as `${getCurrentHost()}/api/${API_VERSION}` — see `lib/api/backendHost.ts`. The host is user-selectable from the login screen (and the sidebar) and persisted in `localStorage`; falls back to the build-time `VITE_API_HOST` (default `http://localhost:8080`).
+- **Request interceptor:** sets `config.baseURL` from `getApiBaseUrl()` and attaches `Authorization: Bearer <access_token>` from `sessionStorage`
+- **Response interceptor:** on 401, attempts token refresh via `/auth/refresh` against the current resolved host, retries original request. If refresh fails, clears session and redirects to `/login`.
+
+### Backend Host (`lib/api/backendHost.ts`)
+
+- `BACKEND_PRESETS`: localhost · instance1 · instance2 · instance3 · custom (`https://project-exbanka.bytenity.com/instance{1,2,3}` for the bytenity entries).
+- `getCurrentHost()` / `getCurrentSelection()` read from `localStorage` (keys `exbanka.backendPreset`, `exbanka.backendCustomUrl`); fall back to the env default when nothing is stored.
+- `setSelection({ presetId, customUrl? })` persists and validates (custom URL must be `http(s)://...`), then notifies subscribers.
+- `subscribeToHostChange(listener)` for components / clients that need to react to a switch.
 
 ### Auth API (`lib/api/auth.ts`)
 
@@ -967,7 +1143,7 @@ interface AuthState {
 | `getCardRequests(filters?)` | GET | `/api/cards/requests` — supports `status`, `page`, `page_size` query params |
 | `approveCardRequest(id)` | PUT | `/api/cards/requests/{id}/approve` |
 | `rejectCardRequest(id, reason)` | PUT | `/api/cards/requests/{id}/reject` — body `{ reason: string }` |
-| `createAuthorizedPerson(payload)` | POST | `/api/cards/authorized-person` — body `CreateAuthorizedPersonPayload`; returns `AuthorizedPerson & { id }` |
+| `createAuthorizedPerson(payload)` | POST | `/api/cards/authorized-persons` — body `CreateAuthorizedPersonPayload`; returns `AuthorizedPerson & { id }` |
 | `createCard(payload)` | POST | `/api/cards` — body `CreateCardPayload`; returns `Card` |
 
 ### Roles API (`lib/api/roles.ts`)
@@ -1006,7 +1182,7 @@ interface AuthState {
 | `getActuaries(filters?)` | GET | `/api/actuaries` — supports `search`, `position`, `page`, `page_size` query params |
 | `setActuaryLimit(id, payload)` | PUT | `/api/actuaries/{id}/limit` — body `{ limit: string }` |
 | `resetActuaryLimit(id)` | POST | `/api/actuaries/{id}/reset-limit` |
-| `setActuaryApproval(id, payload)` | PUT | `/api/actuaries/{id}/approval` — body `{ need_approval: boolean }` |
+| `setActuaryApproval(id, payload)` | POST | `/api/actuaries/{id}/require-approval` if `payload.need_approval` is `true`, else `/api/actuaries/{id}/skip-approval` (no body) |
 
 ### Stock Exchanges API (`lib/api/stockExchanges.ts`)
 
@@ -1015,6 +1191,73 @@ interface AuthState {
 | `getStockExchanges(filters?)` | GET | `/api/stock-exchanges` — supports `search`, `page`, `page_size` query params |
 | `getTestingMode()` | GET | `/api/stock-exchanges/testing-mode` |
 | `setTestingMode(enabled)` | POST | `/api/stock-exchanges/testing-mode` — body `{ enabled: boolean }` |
+
+### Notifications API (`lib/api/notifications.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getNotifications(filters?)` | GET | `/me/notifications` — supports `page`, `page_size`, `read` ("read" \| "unread") |
+| `getUnreadCount()` | GET | `/me/notifications/unread-count` |
+| `markNotificationRead(id)` | POST | `/me/notifications/{id}/read` |
+| `markAllNotificationsRead()` | POST | `/me/notifications/read-all` |
+
+### Investment Funds API (`lib/api/funds.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getFunds(filters?)` | GET | `/investment-funds` — `page`, `page_size`, `search`, `active_only` |
+| `getFund(id)` | GET | `/investment-funds/{id}` — returns `{ fund, holdings, performance }` |
+| `createFund(payload)` | POST | `/investment-funds` — body `CreateFundPayload`; requires `funds.manage` |
+| `updateFund(id, payload)` | PUT | `/investment-funds/{id}` — body `UpdateFundPayload`; requires `funds.manage` |
+| `investInFund(id, payload)` | POST | `/investment-funds/{id}/invest` — body `{ source_account_id, amount, currency, on_behalf_of_type? }` |
+| `redeemFromFund(id, payload)` | POST | `/investment-funds/{id}/redeem` — body `{ amount_rsd, target_account_id, on_behalf_of_type? }` |
+| `getMyFundPositions()` | GET | `/me/investment-funds` — caller's positions (employees act as bank) |
+
+### Profit Banke API (`lib/api/profit.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getActuaryPerformance()` | GET | `/actuaries/performance` — requires `actuaries.read.all` |
+| `getBankFundPositions()` | GET | `/investment-funds/positions` — requires `funds.bank-position-read` |
+
+### OTC Option Contracts API (`lib/api/otcOption.ts`) — §29
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `createOtcOptionOffer(payload)` | POST | `/otc/offers` — open negotiation thread |
+| `counterOtcOptionOffer(id, payload)` | POST | `/otc/offers/{id}/counter` |
+| `acceptOtcOptionOffer(id, payload)` | POST | `/otc/offers/{id}/accept` — premium SAGA + creates contract |
+| `rejectOtcOptionOffer(id)` | POST | `/otc/offers/{id}/reject` |
+| `getOtcOptionOffer(id)` | GET | `/otc/offers/{id}` — returns `{ offer, revisions }` |
+| `getMyOtcOptionOffers(filters?)` | GET | `/me/otc/offers` — `role`, `page`, `page_size` |
+| `getOtcOptionContract(id)` | GET | `/otc/contracts/{id}` |
+| `getMyOtcOptionContracts(filters?)` | GET | `/me/otc/contracts` |
+| `exerciseOtcOptionContract(id, payload)` | POST | `/otc/contracts/{id}/exercise` — 5-phase SAGA |
+
+### OTC Options View-Module API (`views/otcOptions/api/otcOptionsApi.ts`)
+
+Self-contained API surface for the `views/otcOptions/` module (spec §47.2). All functions call `/me/otc/options` or `/otc/options` routes on the shared `apiClient`.
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `listAll(filters?)` | GET | `/otc/options` — discovery feed; supports `ticker`, `direction`, `kind`, `bank_code`, `page`, `page_size` |
+| `listMine(filters?)` | GET | `/me/otc/options` — caller's own open listings |
+| `createListing(payload)` | POST | `/me/otc/options` — body `CreateOtcOptionPayload { direction, ticker, quantity, account_id }` |
+| `updateListing(offerId, payload)` | PUT | `/me/otc/options/:id` — owner-only; body `UpdateOtcOptionPayload { quantity }` |
+| `cancelListing(offerId)` | DELETE | `/me/otc/options/:id` |
+| `placeBid(offerId, payload)` | POST | `/otc/options/:id/bid` |
+| `counter(offerId, negotiationId, payload)` | POST | `/me/otc/options/:id/negotiations/:nid/counter` |
+| `acceptNegotiation(offerId, negotiationId, payload)` | POST | `/me/otc/options/:id/negotiations/:nid/accept` |
+| `rejectNegotiation(offerId, negotiationId)` | POST | `/me/otc/options/:id/negotiations/:nid/reject` |
+| `withdrawNegotiation(offerId, negotiationId)` | DELETE | `/me/otc/options/:id/negotiations/:nid` |
+| `listNegotiations(offerId)` | GET | `/otc/options/:id/negotiations` |
+| `listMyNegotiations(filters?)` | GET | `/me/otc/options/negotiations` — bidder's own chains |
+| `listNegotiationRevisions(negotiationId)` | GET | `/me/otc/options/negotiations/:nid/revisions` |
+| `getOfferTimeline(offerId)` | GET | `/otc/options/:id/timeline` — owner cross-chain activity stream |
+| `listMyHoldings()` | GET | delegates to `getPortfolio()` — used by sell-direction ticker picker |
+| `listStockCatalog()` | GET | `/securities/stocks` — used by buy-direction ticker picker |
+
+Raw `negotiation` and `revision` responses are normalized at the API boundary (`normalizeNegotiation`, `normalizeRevision`) to unify flat backend fields into the typed `OtcNegotiation` / `OtcNegotiationRevision` shapes. This includes the viewer-relative action hints (`viewer_role`, `last_action_mine`, `awaiting_viewer`, `can_accept`, `can_counter`, `can_reject`, `can_withdraw` on negotiations; `mine` / `is_latest` on revisions), each defaulted to `false`/`''` when omitted so the UI receives concrete booleans.
 
 ### Securities API (`lib/api/securities.ts`)
 
@@ -1042,7 +1285,21 @@ interface AuthState {
 | `cancelOrder(id)` | POST | `/api/me/orders/{id}/cancel` |
 | `getAllOrders(filters?)` | GET | `/api/orders` |
 | `approveOrder(id)` | POST | `/api/orders/{id}/approve` |
-| `declineOrder(id)` | POST | `/api/orders/{id}/decline` |
+| `declineOrder(id)` | POST | `/api/orders/{id}/reject` |
+
+### Recurring Orders API (`lib/api/recurringOrders.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `createRecurringOrder(payload)` | POST | `/api/v3/me/recurring-orders` |
+| `getMyRecurringOrders()` | GET | `/api/v3/me/recurring-orders` |
+| `pauseRecurringOrder(id)` | POST | `/api/v3/me/recurring-orders/:id/pause` |
+| `resumeRecurringOrder(id)` | POST | `/api/v3/me/recurring-orders/:id/resume` |
+| `cancelRecurringOrder(id)` | POST | `/api/v3/me/recurring-orders/:id/cancel` |
+
+- Creates a weekly/monthly recurring market-order template. Payload: `{ listing_id, side, quantity, account_id, interval, day_of_week?|day_of_month?, start_date_unix, end_date_unix }`. Returns the created `recurring_order`.
+- `getMyRecurringOrders()` lists the caller's recurring-order templates (returns `recurring_orders ?? []`). `pause`/`resume`/`cancel` transition a template's status (active ⇄ paused, and the terminal `cancelled`); each returns the updated `recurring_order`.
+- `buildRecurringOrderPayload(payload, interval, now?)` (`views/orders/components/buildRecurringOrderPayload.ts`) — pure helper that derives the recurring payload from a buy `CreateOrderPayload` + chosen frequency (weekly → today's `day_of_week`, monthly → today's `day_of_month` capped at 28); returns `null` when `listing_id`/`account_id` are missing.
 
 ### Portfolio API (`lib/api/portfolio.ts`)
 
@@ -1050,8 +1307,20 @@ interface AuthState {
 |---|---|---|
 | `getPortfolio(filters?)` | GET | `/api/me/portfolio` |
 | `getPortfolioSummary()` | GET | `/api/me/portfolio/summary` |
-| `makeHoldingPublic(id, payload)` | POST | `/api/me/portfolio/{id}/public` |
 | `exerciseOption(id)` | POST | `/api/me/portfolio/{id}/exercise` |
+
+### Watchlist API (`lib/api/watchlist.ts`)
+
+| Function | Method | Endpoint |
+|---|---|---|
+| `getWatchlists()` | GET | `/api/v3/me/watchlists` |
+| `createWatchlist(name)` | POST | `/api/v3/me/watchlists` |
+| `deleteWatchlist(watchlistId)` | DELETE | `/api/v3/me/watchlists/:id` |
+| `getWatchlistItems(watchlistId, filters?)` | GET | `/api/v3/me/watchlists/:id/items` |
+| `addToWatchlistItems(watchlistId, listing_id)` | POST | `/api/v3/me/watchlists/:id/items` |
+| `removeFromWatchlistItems(watchlistId, listing_id)` | DELETE | `/api/v3/me/watchlists/:id/items/:listing_id` |
+
+- Named watchlists replace the legacy single `/me/watchlist` calls. `getWatchlists()` tolerates either a `{ watchlists }` envelope or a bare array and defaults to `[]`; `getWatchlistItems` defaults `items` to `[]`. Owner (client vs. bank) is resolved server-side from the JWT. The default list comes back named `"My Watchlist"` and is displayed as `"Favorites"` via `displayWatchlistName` (`lib/utils/watchlist.ts`).
 
 ### Tax API (`lib/api/tax.ts`)
 
@@ -1059,13 +1328,6 @@ interface AuthState {
 |---|---|---|
 | `getTaxRecords(filters?)` | GET | `/api/tax` |
 | `collectTaxes()` | POST | `/api/tax/collect` |
-
-### OTC API (`lib/api/otc.ts`)
-
-| Function | Method | Endpoint |
-|---|---|---|
-| `getOtcOffers(filters?)` | GET | `/api/otc/offers` — supports `page`, `page_size`, `security_type`, `ticker` query params |
-| `buyOtcOffer(id, payload)` | POST | `/api/otc/offers/{id}/buy` — body `{ quantity, account_id }` |
 
 ### Fees API (`lib/api/fees.ts`)
 
@@ -1114,10 +1376,23 @@ interface AuthState {
 | `useActuaries(filters?)` | React Query | Fetch actuaries with server-side filters; query key: `['actuaries', filters]` |
 | `useSetActuaryLimit()` | React Query | Mutation: PUT limit; invalidates `['actuaries']` on success |
 | `useResetActuaryLimit()` | React Query | Mutation: POST reset limit; invalidates `['actuaries']` on success |
-| `useSetActuaryApproval()` | React Query | Mutation: PUT approval; invalidates `['actuaries']` on success |
+| `useSetActuaryApproval()` | React Query | Mutation: POST require-approval/skip-approval action; invalidates `['actuaries']` on success |
 | `useStockExchanges(filters?)` | React Query | Fetch stock exchanges; query key: `['stock-exchanges', filters]` |
 | `useTestingMode()` | React Query | Fetch testing mode status; query key: `['stock-exchanges', 'testing-mode']` |
 | `useSetTestingMode()` | React Query | Mutation: POST testing mode; invalidates `['stock-exchanges', 'testing-mode']` on success |
+| `useNotifications(filters?)` | React Query | Fetch notifications list; query key: `['notifications', filters]` |
+| `useUnreadNotificationCount()` | React Query | Fetch unread count; query key: `['notifications', 'unread-count']`; polls every 60s while tab is visible |
+| `useMarkNotificationRead()` | React Query | Mutation: POST mark single notification read; invalidates `['notifications']` |
+| `useMarkAllNotificationsRead()` | React Query | Mutation: POST mark all read; invalidates `['notifications']` |
+| `useFunds(filters?)` | React Query | List funds; `['funds', filters]` |
+| `useFund(id)` | React Query | Fund detail; `['funds', id]`, disabled when id is null |
+| `useMyFundPositions()` | React Query | `['funds', 'me']` |
+| `useCreateFund()` | React Query | Mutation: invalidates `['funds']` |
+| `useUpdateFund(id)` | React Query | Mutation: invalidates `['funds']` + `['funds', id]` |
+| `useInvestFund(id)` | React Query | Mutation: invalidates `['funds', id]` + `['funds', 'me']` + `['accounts']` |
+| `useRedeemFund(id)` | React Query | Mutation: same invalidations as invest |
+| `useActuaryPerformance()` | React Query | `['profit', 'actuaries']` |
+| `useBankFundPositions()` | React Query | `['profit', 'bank-fund-positions']` |
 | `useStocks(filters?)` | React Query | Fetch stocks; query key: `['stocks', filters]` |
 | `useStock(id)` | React Query | Fetch single stock; query key: `['stock', id]` |
 | `useStockHistory(id, filters?)` | React Query | Fetch stock price history; query key: `['stock-history', id, filters]` |
@@ -1134,14 +1409,24 @@ interface AuthState {
 | `useAllOrders(filters?)` | React Query | Fetch all orders (admin); query key: `['all-orders', filters]` |
 | `useApproveOrder()` | React Query | Mutation: approve order; invalidates `['all-orders']` |
 | `useDeclineOrder()` | React Query | Mutation: decline order; invalidates `['all-orders']` |
+| `useCreateRecurringOrder()` | React Query | Mutation: create recurring buy template (POST `/me/recurring-orders`); invalidates `['recurring-orders']` |
+| `useRecurringOrders()` | React Query | Query: list the caller's recurring-order templates (`['recurring-orders']`) |
+| `usePauseRecurringOrder()` | React Query | Mutation: pause a template (POST `/me/recurring-orders/:id/pause`); invalidates `['recurring-orders']` |
+| `useResumeRecurringOrder()` | React Query | Mutation: resume a template (POST `/me/recurring-orders/:id/resume`); invalidates `['recurring-orders']` |
+| `useCancelRecurringOrder()` | React Query | Mutation: cancel a template (POST `/me/recurring-orders/:id/cancel`); invalidates `['recurring-orders']` |
 | `usePortfolio(filters?)` | React Query | Fetch portfolio holdings; query key: `['portfolio', filters]` |
 | `usePortfolioSummary()` | React Query | Fetch portfolio summary; query key: `['portfolio-summary']` |
-| `useMakePublic()` | React Query | Mutation: make holding public; invalidates `['portfolio']` |
 | `useExerciseOption()` | React Query | Mutation: exercise option; invalidates `['portfolio']` |
+| `useWatchlists()` | React Query | List the caller's named watchlists; query key: `['watchlists']` |
+| `useWatchlistItems(watchlistId, filters?)` | React Query | Fetch one list's items; key `['watchlist-items', id, filters]`; disabled when `watchlistId == null` |
+| `useCreateWatchlist()` | React Query | Mutation: create a named list; invalidates `['watchlists']` |
+| `useDeleteWatchlist()` | React Query | Mutation: delete a list; invalidates `['watchlists']` + `['watchlist-items']` |
+| `useAddToWatchlistItems()` | React Query | Mutation `{ watchlistId, listingId }`: add to a list; invalidates `['watchlists']` + `['watchlist-items']` |
+| `useRemoveFromWatchlistItems()` | React Query | Mutation `{ watchlistId, listingId }`: remove from a list; invalidates `['watchlists']` + `['watchlist-items']` |
+| `useWatchlistMembership()` | React Query | `useQueries` over every list, unioned into a `Set<number>` of listing ids in any list (drives the filled-heart state) |
 | `useTaxRecords(filters?)` | React Query | Fetch tax records; query key: `['tax', filters]` |
 | `useCollectTaxes()` | React Query | Mutation: collect taxes; invalidates `['tax']` |
-| `useOtcOffers(filters?)` | React Query | Fetch OTC offers; query key: `['otc-offers', filters]` |
-| `useBuyOtcOffer()` | React Query | Mutation: buy OTC offer; invalidates `['otc-offers']` + `['portfolio']` |
+| `useUpdateOtcOption()` | React Query | Mutation (OTC Options module): PUT `/me/otc/options/:id` with `{ quantity }`; onSuccess toasts "Amount updated" + invalidates OTC options lists; no custom onError (global toast) |
 | `useRoles()` | React Query | Fetch roles; query key: `['roles']` |
 | `useCreateRole()` | React Query | Mutation: create role; invalidates `['roles']` |
 | `useUpdateRolePermissions()` | React Query | Mutation: update role permissions; invalidates `['roles']` |
@@ -1167,6 +1452,7 @@ interface AuthState {
 | `useClientLimits(id)` | React Query | Fetch client limits; query key: `['clientLimits', id]` |
 | `useUpdateClientLimits()` | React Query | Mutation: update client limits; invalidates `['clientLimits', id]` |
 | `useSearchAccounts(query)` | React Query | Search accounts by account_number_filter; query key: `['accounts', 'search', query]`; disabled when query is empty |
+| `useBankAccountActivity(id, filters?)` | React Query | Fetch ledger entries for a bank-owned account; query key: `['bankAccountActivity', id, filters]`; calls `GET /api/v3/bank-accounts/:id/activity` |
 | `useCreateCard()` | React Query | Mutation: POST authorized person then POST card sequentially; invalidates `['cards', 'account', account_number]` on success |
 
 ---
@@ -1283,8 +1569,8 @@ SetApprovalPayload   { need_approval: boolean }
 ### Stock Exchange Types (`types/stockExchange.ts`)
 
 ```typescript
-StockExchange        { id: number; exchange_name: string; exchange_acronym: string;
-                       exchange_mic_code: string; polity: string; currency: string; time_zone: string }
+StockExchange        { id: number; name: string; acronym: string; mic_code: string;
+                       polity: string; currency: string; time_zone: string; is_open: boolean }
 StockExchangeListResponse  { exchanges: StockExchange[]; total_count: number }
 StockExchangeFilters       { page?: number; page_size?: number; search?: string }
 TestingModeResponse        { testing_mode: boolean }
@@ -1335,6 +1621,20 @@ MyOrderFilters       { page?, page_size?, status?, direction?, order_type? }
 AdminOrderFilters    extends MyOrderFilters { agent_email? }
 ```
 
+### Recurring Order Types (`types/recurringOrder.ts`)
+
+```typescript
+RecurringOrderInterval      = 'weekly' | 'monthly'
+RecurringOrderStatus        = 'active' | 'paused' | 'cancelled'
+CreateRecurringOrderPayload { listing_id, side: 'buy'|'sell', quantity, account_id, interval,
+                              day_of_week?, day_of_month?, start_date_unix, end_date_unix }
+RecurringOrder              { id, listing_id, side, quantity, account_id, interval,
+                              day_of_week?, day_of_month?, start_date_unix, end_date_unix,
+                              status, created_at, updated_at }
+CreateRecurringOrderResponse { recurring_order: RecurringOrder }
+RecurringOrderListResponse   { recurring_orders: RecurringOrder[] }
+```
+
 ### Portfolio Types (`types/portfolio.ts`)
 
 ```typescript
@@ -1345,8 +1645,23 @@ PortfolioSummary     { total_value, total_cost, total_profit_loss, total_profit_
                        holdings_count }
 HoldingListResponse  { holdings: Holding[]; total_count: number }
 PortfolioFilters     { page?, page_size?, security_type? }
-MakePublicPayload    { quantity: number }
 ```
+
+### Watchlist Types (`types/watchlist.ts`)
+
+```typescript
+WatchlistSecurityType = 'stock' | 'option' | 'futures' | 'forex'
+WatchlistItem         { id, listing_id, security_type, ticker, current_price,
+                        daily_change, daily_change_percent, added_at_unix }
+WatchlistResponse     { items: WatchlistItem[] }
+WatchlistFilters      { listing_type? }
+Watchlist             { id, name, item_count, created_at }       // a named list
+WatchlistsResponse    { watchlists: Watchlist[] }
+CreateWatchlistPayload { name }
+WatchlistItemRef      { watchlistId, listingId }
+```
+
+Display helpers live in `lib/utils/watchlist.ts`: `DEFAULT_WATCHLIST_NAME` (`'My Watchlist'`), `FAVORITES_LABEL` (`'Favorites'`), `displayWatchlistName(name)`, `isDefaultWatchlist(list)`.
 
 ### Tax Types (`types/tax.ts`)
 
@@ -1358,13 +1673,21 @@ TaxFilters           { page?, page_size?, user_type?, search? }
 CollectTaxResponse   { collected_count, total_collected_rsd, failed_count }
 ```
 
-### OTC Types (`types/otc.ts`)
+### OTC Options View-Module Types (`views/otcOptions/types.ts`)
+
+Module-private types; kept in the view module for self-containment.
 
 ```typescript
-OtcOffer             { id, ticker, name, security_type: 'stock'|'futures', quantity, price, seller_id }
-OtcOfferListResponse { offers: OtcOffer[]; total_count: number }
-OtcBuyRequest        { quantity: number; account_id: number }
-OtcFilters           { page?, page_size?, security_type?, ticker? }
+CreateOtcOptionPayload { direction: OtcOptionDirection; ticker: string; quantity: string; account_id: number }
+  // NOTE: strike_price, premium, and settlement_date are NOT part of the create payload.
+  // Bidders name those terms when placing a bid; the listing is direction/ticker/quantity/account only.
+
+UpdateOtcOptionPayload { quantity: string }
+  // PUT /me/otc/options/:id — owner-only; re-sizes the listing's stock amount.
+
+PlaceBidPayload        { bidder_account_id: number; quantity: string; strike_price: string; premium: string; settlement_date: string }
+CounterNegotiationPayload { quantity: string; strike_price: string; premium: string; settlement_date: string }
+AcceptNegotiationPayload  { acceptor_account_id: number; on_behalf_of_fund_id?: number }
 ```
 
 ### Fee Types (`types/fee.ts`)
@@ -1450,27 +1773,39 @@ All defined in `lib/utils/validation.ts` using Zod.
 |---|---|---|
 | `passwordSchema` | Shared | 8–32 chars, 2+ digits, 1+ uppercase, 1+ lowercase |
 | `emailSchema` | Shared | Valid email format |
+| `phoneSchema` | Shared building block | `/^\+?[0-9]+$/`, max 15 chars — digits only, optional `+` at start |
+| `dateOfBirthStringSchema` | Shared building block (string DoB) | required, parseable date, not in the future, ≥ 16 years old |
+| `dateOfBirthTimestampSchema` | Shared building block (Unix timestamp DoB) | not in the future, ≥ 16 years old |
 | `loginSchema` | LoginForm | `{email, password}` |
 | `passwordResetSchema` | PasswordResetForm | `{token, new_password, confirm_password}` — passwords must match |
 | `activationSchema` | ActivationForm | `{token, password, confirm_password}` — passwords must match |
-| `createEmployeeSchema` | EmployeeCreateForm | All required fields + JMBG 13-digit regex |
-| `updateEmployeeSchema` | EmployeeEditForm | All optional; JMBG `/^\d{13}$/` if provided |
-| `authorizedPersonSchema` | AuthorizedPersonForm | first_name, last_name, date_of_birth (required), gender (optional), email, phone, address |
+| `createEmployeeSchema` | EmployeeCreateForm | All required fields + JMBG 13-digit regex; DoB via `dateOfBirthTimestampSchema`; phone via `phoneSchema` |
+| `updateEmployeeSchema` | EmployeeEditForm | All optional; JMBG `/^\d{13}$/` if provided; phone via `phoneSchema` |
+| `createClientSchema` | CreateClientView | first_name, last_name, email, jmbg required; DoB via `dateOfBirthStringSchema`; phone via `phoneSchema` |
+| `updateClientSchema` | EditClientForm | All optional; phone via `phoneSchema` |
+| `authorizedPersonSchema` | AuthorizedPersonForm | first_name, last_name, email required; DoB via `dateOfBirthStringSchema`; phone via `phoneSchema` |
+| `createLoanRequestSchema` | LoanApplicationForm | loan_type, interest_type, account_number, amount, currency_code, repayment_period required; phone via `phoneSchema` |
+
+### Server-side uniqueness — duplicate email
+
+Email uniqueness is enforced by the backend (no dedicated check endpoint). When a create/update mutation responds with HTTP 409 or HTTP 400 carrying a message matching email + (`exist`|`taken`|`duplicate`|`unique`|`alread`), the helper `lib/errors/isDuplicateEmailError.ts` recognizes the response and the affected forms surface an inline `setError('email', ...)` instead of a global toast. Wired in: `CreateEmployeeView`, `CreateClientView`, `EditClientView`, `CardRequestView` (for `AuthorizedPersonForm`).
 
 ---
 
 ## 12. Test Coverage
 
-_Measured: 2026-04-06 — 171 test suites, 872 tests, all passing._
+_Measured: 2026-06-12 — 234 test suites, 1412 tests, all passing. (Overall percentages below last fully re-instrumented 2026-06-11; the OTC negotiation-flag change added focused unit coverage for the normalizers, timeline mapping, `formatActor`, both revision/timeline tables, and both activity panels.)_
 
 ### Overall Coverage
 
 | Metric | Coverage |
 |---|---|
-| **Statements** | **76%** |
-| **Branches** | **61.81%** |
-| **Functions** | **56.23%** |
-| **Lines** | **77.38%** |
+| **Statements** | **79.65%** |
+| **Branches** | **66.34%** |
+| **Functions** | **62.81%** |
+| **Lines** | **81.16%** |
+
+> The named-watchlist feature is fully unit-tested: `lib/api/watchlist.ts`, `hooks/useWatchlist.ts`, and `lib/utils/watchlist.ts` at 100%; `WatchlistButton` 100%, `AddToWatchlistDialog`/`CreateWatchlistDialog` ~94% statements, `WatchlistPanel` ~84%.
 
 > Coverage decreased slightly from the previous measurement due to significant new code added (admin management pages, OTC portal, limits dashboard) that lacks unit test coverage. Cypress e2e tests (28+ test files) provide integration-level coverage for these new features but are not counted in Jest metrics.
 
@@ -1496,6 +1831,18 @@ _Measured: 2026-04-06 — 171 test suites, 872 tests, all passing._
 | `lib/api/actuaries.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/stockExchanges.ts` | 100% | 100% | 100% | 100% |
 | `lib/api/exchange.ts` | 100% | 100% | 100% | 100% |
+| `lib/api/watchlist.ts` | 100% | 100% | 100% | 100% |
+| `hooks/useWatchlist.ts` | 100% | 100% | 100% | 100% |
+| `lib/utils/watchlist.ts` | 100% | 100% | 100% | 100% |
+| `views/securities/WatchlistButton` | 100% | 100% | 100% | 100% |
+| `views/securities/AddToWatchlistDialog` | 94.73% | 75% | 100% | 100% |
+| `views/portfolio/CreateWatchlistDialog` | 94.11% | 80% | 100% | 100% |
+| `views/portfolio/WatchlistPanel` | 83.72% | 70.37% | 80% | 87.5% |
+| `views/otcOptions` (module total) | 82.08% | 80% | 53.33% | 85.71% |
+| `views/otcOptions/api/otcOptionsApi.ts` | 87.17% | 59.75% | 84.21% | 87.17% |
+| `views/otcOptions/components` | 73.02% | 60.42% | 44.56% | 75.09% |
+| `views/otcOptions/hooks` | 79.13% | 71.42% | 65.21% | 78.57% |
+| `views/otcOptions/lib` | 100% | 93.75% | 100% | 100% |
 | `lib/utils` | 92.52% | 82.14% | 76.19% | 93.61% |
 | `pages/LoginPage.tsx` | 100% | 83.33% | 100% | 100% |
 | `pages/StockExchangesPage.tsx` | 100% | 100% | 100% | 100% |
@@ -1505,7 +1852,6 @@ _Measured: 2026-04-06 — 171 test suites, 872 tests, all passing._
 | `pages/TaxPage.tsx` | ~90% | ~92% | ~67% | ~90% |
 | `pages/AdminOrdersPage.tsx` | ~90% | ~92% | ~67% | ~90% |
 | `pages/MyOrdersPage.tsx` | ~90% | 100% | ~67% | ~90% |
-| `pages/OtcPortalPage.tsx` | ~79% | 60% | 25% | ~82% |
 | `pages/TaxTrackingPage.tsx` | ~79% | ~57% | ~33% | ~87% |
 | `pages/PortfolioPage.tsx` | ~85% | 100% | 25% | ~85% |
 | `pages/AdminFeesPage.tsx` | low — new, no unit tests | — | — | — |

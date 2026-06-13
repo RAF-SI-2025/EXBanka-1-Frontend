@@ -7,19 +7,24 @@ import {
   updateAccountName,
   updateAccountLimits,
   getAllAccounts,
+  getAccountsByClient,
   getBankAccounts,
+  getAccountActivity,
+  getBankAccountActivity,
 } from '@/lib/api/accounts'
 import type {
   AccountFilters,
   CreateAccountRequest,
   UpdateAccountNameRequest,
   UpdateAccountLimitsRequest,
+  AccountActivityFilters,
 } from '@/types/account'
 
-export function useClientAccounts() {
+export function useClientAccounts(enabled = true) {
   return useQuery({
     queryKey: ['accounts', 'me'],
     queryFn: () => getClientAccounts(),
+    enabled,
   })
 }
 
@@ -78,17 +83,18 @@ export function useAllAccounts(filters?: AccountFilters) {
   })
 }
 
-export function useBankAccounts() {
+export function useBankAccounts(enabled = true) {
   return useQuery({
     queryKey: ['accounts', 'bank'],
     queryFn: () => getBankAccounts(),
+    enabled,
   })
 }
 
 export function useAccountsByClient(clientId: number) {
   return useQuery({
     queryKey: ['accounts', 'client', clientId],
-    queryFn: () => getAllAccounts({ client_id: clientId }),
+    queryFn: () => getAccountsByClient(clientId),
     enabled: clientId > 0,
   })
 }
@@ -98,5 +104,23 @@ export function useSearchAccounts(query: string) {
     queryKey: ['accounts', 'search', query],
     queryFn: () => getAllAccounts({ account_number_filter: query, page_size: 10 }),
     enabled: query.length > 0,
+  })
+}
+
+export function useAccountActivity(id: number, filters: AccountActivityFilters = {}) {
+  return useQuery({
+    queryKey: ['accountActivity', id, filters],
+    queryFn: () => getAccountActivity(id, filters),
+    enabled: id > 0,
+    meta: { suppressGlobalError: true },
+  })
+}
+
+export function useBankAccountActivity(id: number, filters: AccountActivityFilters = {}) {
+  return useQuery({
+    queryKey: ['bankAccountActivity', id, filters],
+    queryFn: () => getBankAccountActivity(id, filters),
+    enabled: id > 0,
+    meta: { suppressGlobalError: true },
   })
 }

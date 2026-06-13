@@ -1,0 +1,25 @@
+{
+  "notifications": [
+    {
+      "id": 1,
+      "type": "money_received",
+      "title": "Money Received",
+      "message": "You received 5000.00 to account 1234567890.",
+      "is_read": false,
+      "ref_type": "transfer",
+      "ref_id": 123,
+      "created_at": "2026-04-09T14:30:00Z"
+    },
+    {
+      "id": 2,
+      "type": "card_issued",
+      "title": "Card Issued",
+      "message": "A new card has been issued.",
+      "is_read": false,
+      "ref_type": "card",
+      "ref_id": 9,
+      "created_at": "2026-04-08T09:15:00Z"
+    }
+  ],
+  "total": 2
+}

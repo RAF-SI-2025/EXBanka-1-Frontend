@@ -1,0 +1,26 @@
+export interface StockExchange {
+  id: number
+  name: string
+  acronym: string
+  mic_code: string
+  polity: string
+  currency: string
+  time_zone: string
+  // Whether the exchange is currently operating (within trading hours).
+  is_open: boolean
+}
+
+export interface StockExchangeListResponse {
+  exchanges: StockExchange[]
+  total_count: number
+}
+
+export interface StockExchangeFilters {
+  page?: number
+  page_size?: number
+  search?: string
+}
+
+export interface TestingModeResponse {
+  testing_mode: boolean
+}

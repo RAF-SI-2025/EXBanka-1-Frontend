@@ -21,7 +21,7 @@ describe('getExchangeRates', () => {
 
     const result = await getExchangeRates()
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/v1/exchange/rates')
+    expect(apiClient.get).toHaveBeenCalledWith('/exchange/rates')
     expect(result).toEqual([mockRate])
   })
 })
@@ -32,7 +32,7 @@ describe('getExchangeRate', () => {
 
     const result = await getExchangeRate('EUR', 'RSD')
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/v1/exchange/rates/EUR/RSD')
+    expect(apiClient.get).toHaveBeenCalledWith('/exchange/rates/EUR/RSD')
     expect(result).toEqual(mockRate)
   })
 })
@@ -51,7 +51,7 @@ describe('convertCurrency', () => {
 
     const result = await convertCurrency({ from_currency: 'EUR', to_currency: 'RSD', amount: 100 })
 
-    expect(apiClient.get).toHaveBeenCalledWith('/api/v1/exchange/rates/EUR/RSD')
+    expect(apiClient.get).toHaveBeenCalledWith('/exchange/rates/EUR/RSD')
     expect(result).toEqual({
       from_amount: 100,
       from_currency: 'EUR',

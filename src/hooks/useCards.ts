@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getCards,
+  getMyCard,
   getAccountCards,
   requestCard,
   blockCard,
@@ -13,12 +14,15 @@ import {
   rejectCardRequest,
   createAuthorizedPerson,
   createCard,
+  createVirtualCard,
+  setCardPin,
+  verifyCardPin,
 } from '@/lib/api/cards'
 import type { CreateAuthorizedPersonRequest } from '@/types/authorized-person'
 import type { CardRequestFilters } from '@/types/cardRequest'
 import type { Account } from '@/types/account'
 import type { Client } from '@/types/client'
-import type { CardBrand } from '@/types/card'
+import type { CardBrand, CreateVirtualCardPayload } from '@/types/card'
 
 export function useCards() {
   return useQuery({
@@ -27,11 +31,19 @@ export function useCards() {
   })
 }
 
-export function useAccountCards(accountNumber: string) {
+export function useMyCard(id: number | null) {
   return useQuery({
-    queryKey: ['cards', 'account', accountNumber],
-    queryFn: () => getAccountCards(accountNumber),
-    enabled: !!accountNumber,
+    queryKey: ['card', 'me', id],
+    queryFn: () => getMyCard(id!),
+    enabled: id != null && id > 0,
+  })
+}
+
+export function useAccountCards(accountId: number) {
+  return useQuery({
+    queryKey: ['cards', 'account', accountId],
+    queryFn: () => getAccountCards(accountId),
+    enabled: accountId > 0,
   })
 }
 
@@ -102,10 +114,11 @@ export function useDeactivateCard() {
   })
 }
 
-export function useRequestCardForAuthorizedPerson() {
+export function useRequestCardForAuthorizedPerson(options?: { onError?: (err: unknown) => void }) {
   return useMutation({
     mutationFn: (payload: CreateAuthorizedPersonRequest & { account_id: number }) =>
       requestCardForAuthorizedPerson(payload),
+    onError: options?.onError,
   })
 }
 
@@ -133,6 +146,28 @@ export function useRejectCardRequest() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['card-requests'] })
     },
+  })
+}
+
+export function useCreateVirtualCard() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateVirtualCardPayload) => createVirtualCard(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] })
+    },
+  })
+}
+
+export function useSetCardPin() {
+  return useMutation({
+    mutationFn: ({ cardId, pin }: { cardId: number; pin: string }) => setCardPin(cardId, pin),
+  })
+}
+
+export function useVerifyCardPin() {
+  return useMutation({
+    mutationFn: ({ cardId, pin }: { cardId: number; pin: string }) => verifyCardPin(cardId, pin),
   })
 }
 
@@ -165,7 +200,7 @@ export function useCreateCard() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({
-        queryKey: ['cards', 'account', variables.account.account_number],
+        queryKey: ['cards', 'account', variables.account.id],
       })
     },
   })

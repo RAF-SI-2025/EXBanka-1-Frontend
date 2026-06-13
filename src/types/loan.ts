@@ -25,11 +25,11 @@ export interface Loan {
   loan_type: LoanType
   account_number: string
   amount: number
-  interest_rate: number
+  interest_rate?: number
   nominal_interest_rate?: number
   effective_interest_rate?: number
   interest_type?: InterestType
-  period: number
+  period?: number
   installment_amount: number
   contract_date?: string
   maturity_date?: string
