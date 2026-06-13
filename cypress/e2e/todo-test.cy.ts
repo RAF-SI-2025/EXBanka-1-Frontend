@@ -390,7 +390,10 @@ describe('todo test — Notifikacije (in-app panel mirrors backend events)', () 
   const openPanelAndAssert = (text: string) => {
     cy.loginAsClient('/home')
     cy.wait('@getUnread')
-    cy.get('[aria-label="Notifications"]').click()
+    // realClick — the popover trigger needs real pointer events; a synthetic
+    // click can leave the kept-mounted popup closed (content in DOM at
+    // opacity 0, so the visibility assert times out).
+    cy.get('[aria-label="Notifications"]').realClick()
     cy.wait('@getList')
     cy.contains(text).should('be.visible')
   }
@@ -513,11 +516,14 @@ describe('todo test — Price Alert', () => {
 
     cy.get('[aria-label="Create price alert for MSFT"]').click()
     // Switch the condition to "Price ≤ threshold" (lte) → BELOW.
-    // The option gets a synthetic .click() (employees.cy.ts precedent) — a
-    // realClick fires at screen coordinates and can land on the dialog
-    // overlay, dismissing the conditionally-mounted dialog entirely.
+    // Pointer-clicking an option dismisses the conditionally-mounted dialog
+    // (the select portal registers as an outside press), while a synthetic
+    // .click() doesn't change the selection at all. So: open with realClick,
+    // move the highlight with a real hover (no pointerdown ⇒ nothing to
+    // dismiss), and commit the highlighted option with Enter.
     cy.get('#alert-condition').realClick()
-    cy.contains('[role="option"]', 'Price ≤ threshold').should('be.visible').click()
+    cy.contains('[role="option"]', 'Price ≤ threshold').should('be.visible').realHover()
+    cy.realPress('Enter')
     cy.get('#alert-condition').should('contain.text', 'Price ≤ threshold')
     cy.get('#alert-threshold').type('300')
     cy.contains('button', 'Create alert').click()
